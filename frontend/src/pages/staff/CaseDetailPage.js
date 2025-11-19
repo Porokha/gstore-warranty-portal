@@ -26,6 +26,7 @@ import { casesService } from '../../services/casesService';
 import StatusBar from '../../components/cases/StatusBar';
 import ResultBar from '../../components/cases/ResultBar';
 import StatusChangeForm from '../../components/cases/StatusChangeForm';
+import FileUpload from '../../components/cases/FileUpload';
 
 const CaseDetailPage = () => {
   const { id } = useParams();
@@ -80,6 +81,7 @@ const CaseDetailPage = () => {
           <Tab label={t('common.details') || 'Details'} />
           <Tab label={t('common.status')} />
           <Tab label={t('common.result')} />
+          <Tab label={t('common.files') || 'Files'} />
           <Tab label={t('common.history') || 'History'} />
         </Tabs>
 
@@ -171,6 +173,12 @@ const CaseDetailPage = () => {
         )}
 
         {tab === 3 && (
+          <Box>
+            <FileUpload caseId={id} />
+          </Box>
+        )}
+
+        {tab === 4 && (
           <Box>
             <Typography variant="h6" gutterBottom>
               {t('common.history') || 'History'}
