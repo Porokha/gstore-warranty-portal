@@ -247,6 +247,42 @@ export class CasesService {
       changeStatusDto.note_private,
     );
 
+    // Send SMS notification if status changed and public note exists
+    if (changeStatusDto.note_public && case_.customer_phone) {
+      try {
+        await this.smsService.sendSms({
+          phone: case_.customer_phone,
+          templateKey: 'sms.case.status_change',
+          language: Language.KA,
+          variables: {
+            case_number: case_.case_number,
+            status: this.getStatusLabel(newStatus),
+            note: changeStatusDto.note_public,
+          },
+        });
+      } catch (error) {
+        // Log error but don't fail the status change
+        console.error('Failed to send SMS notification:', error);
+      }
+    }
+
+    // Send SMS if case is completed
+    if (newStatus === CaseStatusLevel.COMPLETED && case_.customer_phone) {
+      try {
+        await this.smsService.sendSms({
+          phone: case_.customer_phone,
+          templateKey: 'sms.case.completed',
+          language: Language.KA,
+          variables: {
+            case_number: case_.case_number,
+            result: newResult || 'completed',
+          },
+        });
+      } catch (error) {
+        console.error('Failed to send completion SMS:', error);
+      }
+    }
+
     return savedCase;
   }
 

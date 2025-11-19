@@ -275,8 +275,8 @@ export class SmsService {
     return this.templatesRepository.save(template);
   }
 
-  async getSettings(): Promise<SmsSettings> {
-    return this.getSettings();
+  async getSettingsConfig(): Promise<SmsSettings> {
+    return await this.getSettings();
   }
 
   async updateSettings(settingsData: Partial<SmsSettings>, updatedBy: number): Promise<SmsSettings> {

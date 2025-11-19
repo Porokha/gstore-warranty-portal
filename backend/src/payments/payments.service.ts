@@ -81,7 +81,27 @@ export class PaymentsService {
       estimated_days_after_payment: createOfferDto.estimated_days_after_payment || null,
     });
 
-    return this.paymentsRepository.save(payment);
+    const savedPayment = await this.paymentsRepository.save(payment);
+
+    // Send SMS notification for payable offers
+    if (createOfferDto.offer_type === 'payable' && case_.customer_phone && createOfferDto.offer_amount) {
+      try {
+        await this.smsService.sendSms({
+          phone: case_.customer_phone,
+          templateKey: 'sms.offer.payable',
+          language: Language.KA,
+          variables: {
+            case_number: case_.case_number,
+            amount: createOfferDto.offer_amount,
+            payment_code: savedPayment.generated_code || 'N/A',
+          },
+        });
+      } catch (error) {
+        console.error('Failed to send offer SMS:', error);
+      }
+    }
+
+    return savedPayment;
   }
 
   async findAllByCase(caseId: number): Promise<CasePayment[]> {

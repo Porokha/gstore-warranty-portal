@@ -71,7 +71,7 @@ export class SmsController {
 
   @Get('settings')
   getSettings() {
-    return this.smsService.getSettings();
+    return this.smsService.getSettingsConfig();
   }
 
   @Put('settings')
