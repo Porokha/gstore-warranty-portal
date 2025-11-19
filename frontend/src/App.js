@@ -45,8 +45,8 @@ function App() {
               </Route>
 
               {/* Staff Routes */}
+              <Route path="/staff/login" element={<LoginPage />} />
               <Route path="/staff" element={<PrivateRoute />}>
-                <Route path="login" element={<LoginPage />} />
                 <Route element={<StaffLayout />}>
                   <Route path="dashboard" element={<DashboardPage />} />
                   <Route path="cases" element={<CasesPage />} />
