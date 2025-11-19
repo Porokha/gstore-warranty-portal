@@ -12,6 +12,7 @@ import { FilesModule } from './files/files.module';
 import { SmsModule } from './sms/sms.module';
 import { AuditModule } from './audit/audit.module';
 import { PublicModule } from './public/public.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { DatabaseConfig } from './config/database.config';
 
 @Module({
@@ -32,6 +33,7 @@ import { DatabaseConfig } from './config/database.config';
     SmsModule,
     AuditModule,
     PublicModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],
