@@ -1,3 +1,21 @@
+# Build stage
+FROM node:18-alpine AS build
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies (including dev for building)
+RUN npm install --no-audit --no-fund
+
+# Copy application code
+COPY . .
+
+# Build application
+RUN npm run build
+
+# Production stage
 FROM node:18-alpine
 
 WORKDIR /app
@@ -5,14 +23,12 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
+# Install only production dependencies
 RUN npm install --only=production --no-audit --no-fund
 
-# Copy application code
-COPY . .
-
-# Build application (if needed)
-RUN npm run build || true
+# Copy built application from build stage
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/node_modules ./node_modules
 
 # Create uploads directory
 RUN mkdir -p uploads
