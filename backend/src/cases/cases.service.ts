@@ -13,6 +13,8 @@ import { UpdateCaseDto } from './dto/update-case.dto';
 import { ChangeStatusDto } from './dto/change-status.dto';
 import { User, UserRole } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
+import { SmsService } from '../sms/sms.service';
+import { Language } from '../sms/entities/sms-template.entity';
 
 @Injectable()
 export class CasesService {
@@ -22,6 +24,7 @@ export class CasesService {
     @InjectRepository(CaseStatusHistory)
     private historyRepository: Repository<CaseStatusHistory>,
     private usersService: UsersService,
+    private smsService: SmsService,
   ) {}
 
   async generateCaseNumber(): Promise<string> {
@@ -302,5 +305,15 @@ export class CasesService {
     });
 
     return this.historyRepository.save(history);
+  }
+
+  private getStatusLabel(status: CaseStatusLevel): string {
+    const labels = {
+      [CaseStatusLevel.OPENED]: 'ღია',
+      [CaseStatusLevel.INVESTIGATING]: 'კვლევა',
+      [CaseStatusLevel.PENDING]: 'მოლოდინში',
+      [CaseStatusLevel.COMPLETED]: 'დასრულებული',
+    };
+    return labels[status] || 'უცნობი';
   }
 }

@@ -12,6 +12,8 @@ import { CreateOfferDto } from './dto/create-offer.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { GenerateCodeDto } from './dto/generate-code.dto';
 import { VerifyCodeDto } from './dto/verify-code.dto';
+import { SmsService } from '../sms/sms.service';
+import { Language } from '../sms/entities/sms-template.entity';
 
 @Injectable()
 export class PaymentsService {
@@ -20,6 +22,7 @@ export class PaymentsService {
     private paymentsRepository: Repository<CasePayment>,
     @InjectRepository(ServiceCase)
     private casesRepository: Repository<ServiceCase>,
+    private smsService: SmsService,
   ) {}
 
   async generateCode(): Promise<string> {
