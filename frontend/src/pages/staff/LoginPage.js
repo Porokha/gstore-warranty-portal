@@ -51,6 +51,7 @@ const LoginPage = () => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               autoFocus
+              autoComplete="username"
             />
             <TextField
               margin="normal"
@@ -60,6 +61,7 @@ const LoginPage = () => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
             />
             {error && (
               <Typography color="error" variant="body2" sx={{ mt: 1 }}>
