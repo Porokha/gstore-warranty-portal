@@ -1,0 +1,19 @@
+# Don't exclude dist - we need it!
+# But we can exclude other things
+
+node_modules
+npm-debug.log
+.env
+.env.local
+.env.*.local
+.git
+.gitignore
+README.md
+.vscode
+.idea
+coverage
+*.log
+test
+*.test.ts
+*.spec.ts
+
