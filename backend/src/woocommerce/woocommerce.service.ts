@@ -154,9 +154,8 @@ export class WooCommerceService {
                         this.extractMetaDataValue(product.meta_data, 'serial_number') ||
                         this.extractMetaDataValue(product.meta_data, 'serial');
 
-    if (!serialNumber) {
-      throw new BadRequestException('Serial number is required but not found in order meta data');
-    }
+    // If serial number is not found, generate one using order ID and product ID
+    const finalSerialNumber = serialNumber || `ORD-${orderId}-PROD-${lineItem.product_id}-${lineItemIndex}`;
 
     const imei = this.extractMetaDataValue(lineItem.meta_data, 'imei') ||
                  this.extractMetaDataValue(product.meta_data, 'imei');
@@ -179,8 +178,12 @@ export class WooCommerceService {
       ? product.images[0].src
       : null;
 
-    // Generate warranty ID
-    const warrantyId = await this.warrantiesService.generateWarrantyId(CreatedSource.AUTO_WOO);
+    // Generate warranty ID using order ID and product ID
+    const warrantyId = await this.warrantiesService.generateWarrantyId(
+      CreatedSource.AUTO_WOO,
+      orderId,
+      lineItem.product_id,
+    );
 
     // Create warranty
     const warranty = this.warrantiesRepository.create({
@@ -190,7 +193,7 @@ export class WooCommerceService {
       order_line_index: lineItemIndex,
       sku: lineItem.sku || product.sku,
       imei: imei || null,
-      serial_number: serialNumber,
+      serial_number: finalSerialNumber,
       device_type: deviceType,
       title: product.name,
       thumbnail_url: thumbnailUrl,

@@ -17,9 +17,19 @@ export class WarrantiesService {
     private warrantiesRepository: Repository<Warranty>,
   ) {}
 
-  async generateWarrantyId(createdSource: CreatedSource = CreatedSource.MANUAL): Promise<string> {
+  async generateWarrantyId(
+    createdSource: CreatedSource = CreatedSource.MANUAL,
+    orderId?: number,
+    productId?: number,
+  ): Promise<string> {
     const prefix = createdSource === CreatedSource.AUTO_WOO ? 'WP' : 'MN';
     
+    // For WooCommerce orders, use order ID and product ID if provided
+    if (createdSource === CreatedSource.AUTO_WOO && orderId && productId) {
+      return `${prefix}-${orderId}-${productId}`;
+    }
+    
+    // Otherwise, use sequential numbering
     const lastWarranty = await this.warrantiesRepository.findOne({
       where: { created_source: createdSource },
       order: { id: 'DESC' },
