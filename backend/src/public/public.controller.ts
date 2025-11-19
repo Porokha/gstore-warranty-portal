@@ -1,18 +1,21 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { PublicService } from './public.service';
+import { SearchWarrantyDto } from './dto/search-warranty.dto';
+import { SearchCaseDto } from './dto/search-case.dto';
 
 @Controller('public')
 export class PublicController {
   constructor(private publicService: PublicService) {}
 
   @Post('search/warranty')
-  searchWarranty(@Body() body: { warranty_id: string; phone: string }) {
-    return this.publicService.searchWarranty(body.warranty_id, body.phone);
+  @HttpCode(HttpStatus.OK)
+  searchWarranty(@Body() searchDto: SearchWarrantyDto) {
+    return this.publicService.searchWarranty(searchDto);
   }
 
   @Post('search/case')
-  searchCase(@Body() body: { case_number: string; phone: string }) {
-    return this.publicService.searchCase(body.case_number, body.phone);
+  @HttpCode(HttpStatus.OK)
+  searchCase(@Body() searchDto: SearchCaseDto) {
+    return this.publicService.searchCase(searchDto);
   }
 }
-
