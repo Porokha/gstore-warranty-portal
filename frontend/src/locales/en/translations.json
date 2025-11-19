@@ -1,0 +1,61 @@
+{
+  "common": {
+    "dashboard": "Dashboard",
+    "openCases": "Open Service Cases",
+    "closeToDeadline": "Close to deadline cases",
+    "dueCases": "Due Service Cases",
+    "closedCases": "Closed Service Cases",
+    "activeWarranties": "Active Warranties",
+    "expiredWarranties": "Expired Warranties",
+    "warranties": "Warranties",
+    "finance": "Finance",
+    "settings": "Settings",
+    "createCase": "Create new service case",
+    "createWarranty": "Create new warranty product",
+    "login": "Login",
+    "logout": "Logout",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "status": "Status",
+    "result": "Result"
+  },
+  "status": {
+    "opened": "Opened",
+    "investigating": "Investigating",
+    "pending": "Pending",
+    "completed": "Completed"
+  },
+  "result": {
+    "covered": "Covered",
+    "payable": "Payable",
+    "returned": "Returned",
+    "replaceable": "Replaceable"
+  },
+  "case": {
+    "caseNumber": "Case number",
+    "orderId": "Order ID",
+    "productTitle": "Product title",
+    "productId": "Product ID",
+    "openDate": "Open date",
+    "deadline": "Deadline",
+    "customerName": "Customer name",
+    "customerLastName": "Customer last name",
+    "phone": "Phone",
+    "email": "Email",
+    "technician": "Technician"
+  },
+  "warranty": {
+    "warrantyId": "Warranty ID",
+    "purchaseDate": "Purchase date",
+    "warrantyEndDate": "Warranty end date",
+    "daysLeft": "Days left",
+    "daysAfterWarranty": "Days after warranty"
+  }
+}
+

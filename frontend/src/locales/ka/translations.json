@@ -1,0 +1,61 @@
+{
+  "common": {
+    "dashboard": "დაფა",
+    "openCases": "ღია შემთხვევები",
+    "closeToDeadline": "ვადასთან ახლოს",
+    "dueCases": "ვადაგადაცილებული",
+    "closedCases": "დასრულებული შემთხვევები",
+    "activeWarranties": "აქტიური გარანტიები",
+    "expiredWarranties": "ვადაგასული გარანტიები",
+    "warranties": "გარანტიები",
+    "finance": "ფინანსები",
+    "settings": "პარამეტრები",
+    "createCase": "ახალი შემთხვევის შექმნა",
+    "createWarranty": "ახალი გარანტიის შექმნა",
+    "login": "შესვლა",
+    "logout": "გასვლა",
+    "search": "ძიება",
+    "filter": "ფილტრი",
+    "export": "ექსპორტი",
+    "save": "შენახვა",
+    "cancel": "გაუქმება",
+    "delete": "წაშლა",
+    "edit": "რედაქტირება",
+    "view": "ნახვა",
+    "status": "სტატუსი",
+    "result": "შედეგი"
+  },
+  "status": {
+    "opened": "ღია",
+    "investigating": "კვლევა",
+    "pending": "მოლოდინში",
+    "completed": "დასრულებული"
+  },
+  "result": {
+    "covered": "გარანტიით შეკეთებული",
+    "payable": "გადასახდელი",
+    "returned": "დაბრუნდა როგორც არის",
+    "replaceable": "შესაცვლელი"
+  },
+  "case": {
+    "caseNumber": "შემთხვევის ნომერი",
+    "orderId": "შეკვეთის ID",
+    "productTitle": "პროდუქტის დასახელება",
+    "productId": "პროდუქტის ID",
+    "openDate": "გახსნის თარიღი",
+    "deadline": "დადგენილი ვადა",
+    "customerName": "კლიენტის სახელი",
+    "customerLastName": "კლიენტის გვარი",
+    "phone": "ტელეფონი",
+    "email": "ელ. ფოსტა",
+    "technician": "ტექნიკოსი"
+  },
+  "warranty": {
+    "warrantyId": "გარანტიის ID",
+    "purchaseDate": "შეძენის თარიღი",
+    "warrantyEndDate": "გარანტიის დასრულების თარიღი",
+    "daysLeft": "დარჩენილი დღეები",
+    "daysAfterWarranty": "გარანტიის გასვლიდან დღეები"
+  }
+}
+
