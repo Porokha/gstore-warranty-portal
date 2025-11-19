@@ -45,9 +45,14 @@ const CaseDetailPage = () => {
       onSuccess: () => {
         queryClient.invalidateQueries(['case', id]);
         queryClient.invalidateQueries('cases');
+        queryClient.invalidateQueries('dashboard');
       },
     }
   );
+
+  const handleStatusChange = (data) => {
+    statusChangeMutation.mutate(data);
+  };
 
   if (isLoading) {
     return (
@@ -146,7 +151,11 @@ const CaseDetailPage = () => {
               <Typography variant="h6" gutterBottom>
                 {t('common.changeStatus') || 'Change Status'}
               </Typography>
-              {/* Status change form will go here */}
+              <StatusChangeForm
+                case_={case_}
+                onStatusChange={handleStatusChange}
+                isLoading={statusChangeMutation.isLoading}
+              />
             </Box>
           </Box>
         )}
@@ -166,21 +175,49 @@ const CaseDetailPage = () => {
               {t('common.history') || 'History'}
             </Typography>
             {case_.status_history && case_.status_history.length > 0 ? (
-              case_.status_history.map((history) => (
-                <Box key={history.id} mb={2} p={2} border="1px solid #ccc" borderRadius={1}>
-                  <Typography variant="body2" color="text.secondary">
-                    {new Date(history.created_at).toLocaleString()}
-                  </Typography>
-                  <Typography>
-                    Status: {history.previous_status_level} → {history.new_status_level}
-                  </Typography>
-                  {history.note_public && (
-                    <Typography variant="body2" color="text.secondary">
-                      {history.note_public}
+              case_.status_history
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .map((history) => (
+                  <Box
+                    key={history.id}
+                    mb={2}
+                    p={2}
+                    sx={{
+                      border: '1px solid #ccc',
+                      borderRadius: 1,
+                      backgroundColor: '#f9f9f9',
+                    }}
+                  >
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      {new Date(history.created_at).toLocaleString()}
                     </Typography>
-                  )}
-                </Box>
-              ))
+                    {history.previous_status_level !== null && (
+                      <Typography variant="body1" gutterBottom>
+                        <strong>Status:</strong>{' '}
+                        {history.previous_status_level} → {history.new_status_level}
+                      </Typography>
+                    )}
+                    {history.new_result && (
+                      <Typography variant="body1" gutterBottom>
+                        <strong>Result:</strong> {history.new_result}
+                      </Typography>
+                    )}
+                    {history.note_public && (
+                      <Box mt={1} p={1} sx={{ backgroundColor: '#e3f2fd', borderRadius: 1 }}>
+                        <Typography variant="body2">
+                          <strong>Public Note:</strong> {history.note_public}
+                        </Typography>
+                      </Box>
+                    )}
+                    {history.note_private && (
+                      <Box mt={1} p={1} sx={{ backgroundColor: '#fff3e0', borderRadius: 1 }}>
+                        <Typography variant="body2" color="text.secondary">
+                          <strong>Private Note:</strong> {history.note_private}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                ))
             ) : (
               <Typography>{t('common.noHistory') || 'No history available'}</Typography>
             )}

@@ -51,6 +51,7 @@ function App() {
                 <Route element={<StaffLayout />}>
                   <Route path="dashboard" element={<DashboardPage />} />
                   <Route path="cases" element={<CasesPage />} />
+                  <Route path="cases/new" element={<CreateCasePage />} />
                   <Route path="cases/:id" element={<CaseDetailPage />} />
                   <Route path="warranties" element={<WarrantiesPage />} />
                   <Route path="settings" element={<SettingsPage />} />
