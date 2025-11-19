@@ -74,7 +74,11 @@
     "customerLastName": "Customer last name",
     "phone": "Phone",
     "email": "Email",
-    "technician": "Technician"
+    "technician": "Technician",
+    "sku": "SKU",
+    "serialNumber": "Serial Number",
+    "deviceType": "Device Type",
+    "deadlineDays": "Deadline (days from now)"
   },
   "warranty": {
     "warrantyId": "Warranty ID",
