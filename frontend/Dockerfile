@@ -22,8 +22,11 @@ ENV REACT_APP_API_URL=$REACT_APP_API_URL
 ENV REACT_APP_PORTAL_URL=$REACT_APP_PORTAL_URL
 ENV REACT_APP_NAME=$REACT_APP_NAME
 
-# Build the application with memory limit
+# Build the application with memory limit and optimizations
 ENV NODE_OPTIONS="--max-old-space-size=2048"
+ENV GENERATE_SOURCEMAP=false
+ENV INLINE_RUNTIME_CHUNK=false
+ENV DISABLE_ESLINT_PLUGIN=true
 RUN npm run build
 
 # Production stage

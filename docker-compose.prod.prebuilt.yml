@@ -1,0 +1,87 @@
+# Alternative docker-compose for pre-built frontend
+# Use this if Docker build keeps failing
+# Build frontend locally: cd frontend && npm run build
+# Then use: docker compose -f docker-compose.prod.prebuilt.yml up -d
+
+services:
+  # Database
+  db:
+    image: mysql:8.0
+    container_name: gstore-warranty-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME:-gstore_warranty}
+      MYSQL_USER: ${DB_USER:-gstore}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-gstore123}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/init:/docker-entrypoint-initdb.d
+    networks:
+      - gstore-network
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gstore-warranty-backend
+    environment:
+      NODE_ENV: production
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-gstore_warranty}
+      DB_USER: ${DB_USER:-gstore}
+      DB_PASSWORD: ${DB_PASSWORD:-gstore123}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      PORT: 3000
+      WOOCOMMERCE_URL: ${WOOCOMMERCE_URL:-}
+      WOOCOMMERCE_CONSUMER_KEY: ${WOOCOMMERCE_CONSUMER_KEY:-}
+      WOOCOMMERCE_CONSUMER_SECRET: ${WOOCOMMERCE_CONSUMER_SECRET:-}
+      BOG_API_URL: ${BOG_API_URL:-https://api.bog.ge}
+      BOG_MERCHANT_ID: ${BOG_MERCHANT_ID:-}
+      BOG_SECRET_KEY: ${BOG_SECRET_KEY:-}
+      BOG_CALLBACK_URL: ${BOG_CALLBACK_URL:-http://3.68.134.145:3000/api/bog/callback}
+      FRONTEND_URL: ${FRONTEND_URL:-http://3.68.134.145:3001}
+      PORTAL_URL: ${PORTAL_URL:-http://3.68.134.145:3001}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/.env:/app/.env:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - gstore-network
+    restart: unless-stopped
+
+  # Frontend - Using pre-built files (no build step)
+  frontend:
+    image: nginx:alpine
+    container_name: gstore-warranty-frontend
+    ports:
+      - "3001:80"
+    volumes:
+      - ./frontend/build:/usr/share/nginx/html:ro
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+    networks:
+      - gstore-network
+    restart: unless-stopped
+
+volumes:
+  db_data:
+    driver: local
+
+networks:
+  gstore-network:
+    driver: bridge
+
