@@ -39,8 +39,8 @@ export class User {
 
   @Column({
     type: 'enum',
-    enum: UserRole,
-    default: UserRole.TECHNICIAN,
+    enum: ['admin', 'technician'],
+    default: 'technician',
   })
   role: UserRole;
 
@@ -52,8 +52,8 @@ export class User {
 
   @Column({
     type: 'enum',
-    enum: LanguagePreference,
-    default: LanguagePreference.EN,
+    enum: ['en', 'ka'],
+    default: 'en',
   })
   language_pref: LanguagePreference;
 

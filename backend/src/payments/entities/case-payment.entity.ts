@@ -35,7 +35,7 @@ export class CasePayment {
 
   @Column({
     type: 'enum',
-    enum: ResultType,
+    enum: ['covered', 'payable', 'returned', 'replaceable'],
   })
   offer_type: ResultType; // covered, payable, replaceable
 
@@ -44,15 +44,15 @@ export class CasePayment {
 
   @Column({
     type: 'enum',
-    enum: PaymentMethod,
+    enum: ['onsite', 'online'],
     nullable: true,
   })
   payment_method: PaymentMethod;
 
   @Column({
     type: 'enum',
-    enum: PaymentStatus,
-    default: PaymentStatus.PENDING,
+    enum: ['pending', 'paid', 'failed'],
+    default: 'pending',
   })
   payment_status: PaymentStatus;
 
@@ -67,7 +67,7 @@ export class CasePayment {
 
   @Column({
     type: 'enum',
-    enum: CodeStatus,
+    enum: ['active', 'used'],
     nullable: true,
   })
   code_status: CodeStatus;

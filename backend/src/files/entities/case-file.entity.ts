@@ -29,7 +29,7 @@ export class CaseFile {
 
   @Column({
     type: 'enum',
-    enum: FileType,
+    enum: ['image', 'video', 'pdf', 'other'],
   })
   file_type: FileType;
 

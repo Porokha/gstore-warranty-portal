@@ -93,15 +93,15 @@ export class ServiceCase {
 
   @Column({
     type: 'enum',
-    enum: ResultType,
+    enum: ['covered', 'payable', 'returned', 'replaceable'],
     nullable: true,
   })
   result_type: ResultType;
 
   @Column({
     type: 'enum',
-    enum: Priority,
-    default: Priority.NORMAL,
+    enum: ['low', 'normal', 'high', 'critical'],
+    default: 'normal',
   })
   priority: Priority;
 

@@ -27,7 +27,7 @@ export class SmsLog {
 
   @Column({
     type: 'enum',
-    enum: SmsStatus,
+    enum: ['sent', 'failed', 'skipped'],
   })
   status: SmsStatus;
 

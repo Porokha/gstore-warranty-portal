@@ -28,14 +28,14 @@ export class CaseStatusHistory {
 
   @Column({
     type: 'enum',
-    enum: ResultType,
+    enum: ['covered', 'payable', 'returned', 'replaceable'],
     nullable: true,
   })
   previous_result: ResultType;
 
   @Column({
     type: 'enum',
-    enum: ResultType,
+    enum: ['covered', 'payable', 'returned', 'replaceable'],
     nullable: true,
   })
   new_result: ResultType;

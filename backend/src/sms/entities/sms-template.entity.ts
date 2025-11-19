@@ -24,7 +24,7 @@ export class SmsTemplate {
 
   @Column({
     type: 'enum',
-    enum: Language,
+    enum: ['en', 'ka'],
   })
   language: Language;
 

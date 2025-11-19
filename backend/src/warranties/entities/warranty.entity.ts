@@ -77,8 +77,8 @@ export class Warranty {
 
   @Column({
     type: 'enum',
-    enum: CreatedSource,
-    default: CreatedSource.MANUAL,
+    enum: ['auto_woo', 'manual'],
+    default: 'manual',
   })
   created_source: CreatedSource;
 
