@@ -14,6 +14,7 @@ import { AuditModule } from './audit/audit.module';
 import { PublicModule } from './public/public.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { WooCommerceModule } from './woocommerce/woocommerce.module';
+import { BogModule } from './bog/bog.module';
 import { DatabaseConfig } from './config/database.config';
 
 @Module({
@@ -36,6 +37,7 @@ import { DatabaseConfig } from './config/database.config';
     PublicModule,
     DashboardModule,
     WooCommerceModule,
+    BogModule,
   ],
   controllers: [AppController],
   providers: [AppService],
