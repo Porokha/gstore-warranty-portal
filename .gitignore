@@ -16,6 +16,9 @@ dist/
 out/
 *.tsbuildinfo
 
+# Exception: Allow frontend/build for deployment
+!frontend/build/
+
 # Environment variables
 .env
 .env.local
