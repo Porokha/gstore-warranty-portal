@@ -13,6 +13,7 @@ import { SmsModule } from './sms/sms.module';
 import { AuditModule } from './audit/audit.module';
 import { PublicModule } from './public/public.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { WooCommerceModule } from './woocommerce/woocommerce.module';
 import { DatabaseConfig } from './config/database.config';
 
 @Module({
@@ -34,6 +35,7 @@ import { DatabaseConfig } from './config/database.config';
     AuditModule,
     PublicModule,
     DashboardModule,
+    WooCommerceModule,
   ],
   controllers: [AppController],
   providers: [AppService],
