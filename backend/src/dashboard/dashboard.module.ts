@@ -5,9 +5,13 @@ import { DashboardController } from './dashboard.controller';
 import { ServiceCase } from '../cases/entities/service-case.entity';
 import { Warranty } from '../warranties/entities/warranty.entity';
 import { CasePayment } from '../payments/entities/case-payment.entity';
+import { SlaModule } from '../sla/sla.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ServiceCase, Warranty, CasePayment])],
+  imports: [
+    TypeOrmModule.forFeature([ServiceCase, Warranty, CasePayment]),
+    SlaModule,
+  ],
   controllers: [DashboardController],
   providers: [DashboardService],
   exports: [DashboardService],

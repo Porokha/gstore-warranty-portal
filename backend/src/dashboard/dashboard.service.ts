@@ -4,6 +4,7 @@ import { Repository, LessThan, LessThanOrEqual, MoreThan, Between } from 'typeor
 import { ServiceCase, CaseStatusLevel } from '../cases/entities/service-case.entity';
 import { Warranty } from '../warranties/entities/warranty.entity';
 import { CasePayment, PaymentStatus } from '../payments/entities/case-payment.entity';
+import { SlaService } from '../sla/sla.service';
 
 @Injectable()
 export class DashboardService {
@@ -14,6 +15,7 @@ export class DashboardService {
     private warrantiesRepository: Repository<Warranty>,
     @InjectRepository(CasePayment)
     private paymentsRepository: Repository<CasePayment>,
+    private slaService: SlaService,
   ) {}
 
   async getDashboardStats(timeFilter?: { start?: Date; end?: Date }) {
