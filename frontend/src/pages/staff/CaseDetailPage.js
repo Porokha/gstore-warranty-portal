@@ -25,6 +25,7 @@ import {
 import { casesService } from '../../services/casesService';
 import StatusBar from '../../components/cases/StatusBar';
 import ResultBar from '../../components/cases/ResultBar';
+import StatusChangeForm from '../../components/cases/StatusChangeForm';
 
 const CaseDetailPage = () => {
   const { id } = useParams();

@@ -36,7 +36,20 @@
     "all": "All",
     "priority": "Priority",
     "actions": "Actions",
-    "noCases": "No cases found"
+    "noCases": "No cases found",
+    "details": "Details",
+    "history": "History",
+    "currentStatus": "Current Status",
+    "changeStatus": "Change Status",
+    "newStatus": "New Status",
+    "publicNote": "Public Note (visible to customer)",
+    "privateNote": "Private Note (internal only)",
+    "updateStatus": "Update Status",
+    "close": "Close",
+    "noHistory": "No history available",
+    "none": "None",
+    "create": "Create",
+    "tags": "Tags"
   },
   "status": {
     "opened": "Opened",

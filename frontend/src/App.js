@@ -9,6 +9,7 @@ import LoginPage from './pages/staff/LoginPage';
 import DashboardPage from './pages/staff/DashboardPage';
 import CasesPage from './pages/staff/CasesPage';
 import CaseDetailPage from './pages/staff/CaseDetailPage';
+import CreateCasePage from './pages/staff/CreateCasePage';
 import WarrantiesPage from './pages/staff/WarrantiesPage';
 import SettingsPage from './pages/staff/SettingsPage';
 import PublicHomePage from './pages/public/PublicHomePage';
