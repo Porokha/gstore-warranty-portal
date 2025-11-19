@@ -14,8 +14,10 @@ if [ ! -d "node_modules" ]; then
     npm install
 fi
 
-# Build production bundle
+# Build production bundle with server API URL
 echo "🏗️  Building production bundle..."
+REACT_APP_API_URL=http://3.68.134.145:3000/api \
+REACT_APP_PORTAL_URL=http://3.68.134.145:3001 \
 npm run build
 
 if [ $? -ne 0 ]; then

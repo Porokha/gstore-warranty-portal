@@ -66,8 +66,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:3000/api}
-        REACT_APP_PORTAL_URL: ${REACT_APP_PORTAL_URL:-http://localhost:3001}
+        REACT_APP_API_URL: ${REACT_APP_API_URL:-http://3.68.134.145:3000/api}
+        REACT_APP_PORTAL_URL: ${REACT_APP_PORTAL_URL:-http://3.68.134.145:3001}
     container_name: gstore-warranty-frontend
     ports:
       - "3001:80"
