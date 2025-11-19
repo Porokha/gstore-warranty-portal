@@ -55,7 +55,24 @@
     "errorLoading": "Error loading data",
     "price": "Price",
     "thumbnailUrl": "Thumbnail URL",
-    "noWarranties": "No warranties found"
+    "noWarranties": "No warranties found",
+    "settingsSaved": "Settings saved successfully",
+    "unauthorized": "You do not have permission to access this page"
+  },
+  "settings": {
+    "smsNotifications": "SMS Notifications",
+    "smsNotificationsDescription": "Control when SMS notifications are automatically sent to customers",
+    "globalEnable": "Enable SMS Notifications",
+    "globalEnableDescription": "Master switch to enable/disable all SMS notifications",
+    "sendOnWarrantyCreated": "Send when warranty is created",
+    "sendOnCaseOpened": "Send when case is opened",
+    "sendOnStatusChange": "Send on status change (with public note)",
+    "sendOnOfferCreated": "Send when payable offer is created",
+    "sendOnPaymentConfirmed": "Send when payment is confirmed",
+    "sendOnCaseCompleted": "Send when case is completed",
+    "sendOnSlaDue": "Send when SLA is due",
+    "sendOnSlaStalled": "Send when SLA is stalled",
+    "sendOnSlaDeadline1day": "Send 1 day before deadline"
   },
   "status": {
     "opened": "Opened",

@@ -55,7 +55,24 @@
     "errorLoading": "მონაცემების ჩატვირთვის შეცდომა",
     "price": "ფასი",
     "thumbnailUrl": "მინიატურის URL",
-    "noWarranties": "გარანტიები არ მოიძებნა"
+    "noWarranties": "გარანტიები არ მოიძებნა",
+    "settingsSaved": "პარამეტრები წარმატებით შენახულია",
+    "unauthorized": "ამ გვერდზე წვდომა არ გაქვთ"
+  },
+  "settings": {
+    "smsNotifications": "SMS შეტყობინებები",
+    "smsNotificationsDescription": "კონტროლი, როდის იგზავნება SMS შეტყობინებები კლიენტებთან ავტომატურად",
+    "globalEnable": "SMS შეტყობინებების ჩართვა",
+    "globalEnableDescription": "მთავარი გადამრთველი ყველა SMS შეტყობინების ჩართვა/გამორთვისთვის",
+    "sendOnWarrantyCreated": "გაგზავნა გარანტიის შექმნისას",
+    "sendOnCaseOpened": "გაგზავნა შემთხვევის გახსნისას",
+    "sendOnStatusChange": "გაგზავნა სტატუსის შეცვლისას (საჯარო შენიშვნით)",
+    "sendOnOfferCreated": "გაგზავნა გადასახდელი შეთავაზების შექმნისას",
+    "sendOnPaymentConfirmed": "გაგზავნა გადახდის დადასტურებისას",
+    "sendOnCaseCompleted": "გაგზავნა შემთხვევის დასრულებისას",
+    "sendOnSlaDue": "გაგზავნა SLA-ს ვადის ამოწურვისას",
+    "sendOnSlaStalled": "გაგზავნა SLA-ს შეჩერებისას",
+    "sendOnSlaDeadline1day": "გაგზავნა 1 დღით ადრე ვადამდე"
   },
   "status": {
     "opened": "ღია",
