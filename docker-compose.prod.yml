@@ -39,8 +39,8 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./backend:/app
-      - /app/node_modules
+      # Only mount uploads directory (not the entire app directory)
+      # This prevents overriding the built dist folder
       - ./backend/uploads:/app/uploads
     depends_on:
       db:
