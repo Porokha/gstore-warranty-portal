@@ -82,6 +82,25 @@ export class CasesService {
     // Create initial history entry
     await this.createHistoryEntry(savedCase.id, createdBy, null, CaseStatusLevel.OPENED, null, null);
 
+    // Send SMS notification when case is opened
+    if (savedCase.customer_phone) {
+      try {
+        await this.smsService.sendSms({
+          phone: savedCase.customer_phone,
+          templateKey: 'sms.case.opened',
+          language: Language.KA,
+          variables: {
+            case_number: savedCase.case_number,
+            product_title: savedCase.product_title,
+            deadline: savedCase.deadline_at.toLocaleDateString('ka-GE'),
+          },
+        });
+      } catch (error) {
+        // Log error but don't fail case creation
+        console.error('Failed to send SMS notification:', error);
+      }
+    }
+
     return savedCase;
   }
 

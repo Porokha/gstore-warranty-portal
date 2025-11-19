@@ -224,7 +224,27 @@ export class PaymentsService {
       await this.casesRepository.save(payment.case_);
     }
 
-    return this.paymentsRepository.save(payment);
+    const savedPayment = await this.paymentsRepository.save(payment);
+
+    // Send SMS notification for payment confirmation
+    if (payment.case_ && payment.case_.customer_phone) {
+      try {
+        await this.smsService.sendSms({
+          phone: payment.case_.customer_phone,
+          templateKey: 'sms.payment.confirmed',
+          language: Language.KA,
+          variables: {
+            case_number: payment.case_.case_number,
+            amount: payment.offer_amount || 0,
+            transaction_id: bogTransactionId || 'N/A',
+          },
+        });
+      } catch (error) {
+        console.error('Failed to send payment confirmation SMS:', error);
+      }
+    }
+
+    return savedPayment;
   }
 
   async markAsFailed(paymentId: number): Promise<CasePayment> {
