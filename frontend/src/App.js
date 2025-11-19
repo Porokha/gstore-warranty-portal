@@ -8,6 +8,7 @@ import PublicLayout from './components/common/PublicLayout';
 import LoginPage from './pages/staff/LoginPage';
 import DashboardPage from './pages/staff/DashboardPage';
 import CasesPage from './pages/staff/CasesPage';
+import CaseDetailPage from './pages/staff/CaseDetailPage';
 import WarrantiesPage from './pages/staff/WarrantiesPage';
 import SettingsPage from './pages/staff/SettingsPage';
 import PublicHomePage from './pages/public/PublicHomePage';
@@ -50,6 +51,7 @@ function App() {
                 <Route element={<StaffLayout />}>
                   <Route path="dashboard" element={<DashboardPage />} />
                   <Route path="cases" element={<CasesPage />} />
+                  <Route path="cases/:id" element={<CaseDetailPage />} />
                   <Route path="warranties" element={<WarrantiesPage />} />
                   <Route path="settings" element={<SettingsPage />} />
                 </Route>

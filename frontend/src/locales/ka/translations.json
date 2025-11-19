@@ -23,7 +23,20 @@
     "edit": "რედაქტირება",
     "view": "ნახვა",
     "status": "სტატუსი",
-    "result": "შედეგი"
+    "result": "შედეგი",
+    "timeFilter": "დროის პერიოდი",
+    "allTime": "მთელი დრო",
+    "lastWeek": "ბოლო კვირა",
+    "lastMonth": "ბოლო თვე",
+    "days": "დღე",
+    "avgCompletionTime": "დასრულების საშუალო დრო",
+    "onTimeCases": "ვადამდე შესრულებული",
+    "totalPayments": "ჯამური გადახდები",
+    "totalMoneyIn": "შემოსული თანხა",
+    "all": "ყველა",
+    "priority": "პრიორიტეტი",
+    "actions": "მოქმედებები",
+    "noCases": "შემთხვევები არ მოიძებნა"
   },
   "status": {
     "opened": "ღია",

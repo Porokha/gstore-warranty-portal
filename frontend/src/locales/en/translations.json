@@ -23,7 +23,20 @@
     "edit": "Edit",
     "view": "View",
     "status": "Status",
-    "result": "Result"
+    "result": "Result",
+    "timeFilter": "Time Period",
+    "allTime": "All Time",
+    "lastWeek": "Last Week",
+    "lastMonth": "Last Month",
+    "days": "days",
+    "avgCompletionTime": "Avg. Completion Time",
+    "onTimeCases": "On-time Cases",
+    "totalPayments": "Total Payments",
+    "totalMoneyIn": "Total Money In",
+    "all": "All",
+    "priority": "Priority",
+    "actions": "Actions",
+    "noCases": "No cases found"
   },
   "status": {
     "opened": "Opened",
