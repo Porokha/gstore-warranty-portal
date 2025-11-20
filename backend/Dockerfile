@@ -41,9 +41,6 @@ RUN npm install --omit=dev --no-audit --no-fund
 # Copy built application from build stage
 COPY --from=build /app/dist ./dist
 
-# Copy compiled bcrypt from build stage (if it exists) to avoid recompilation
-COPY --from=build /app/node_modules/bcrypt ./node_modules/bcrypt 2>/dev/null || true
-
 # Verify dist was copied
 RUN ls -la dist/ && test -f dist/main.js || (echo "ERROR: dist/main.js not found after copy" && exit 1)
 
