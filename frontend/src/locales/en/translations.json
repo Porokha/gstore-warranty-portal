@@ -74,14 +74,24 @@
     "closeDate": "Close Date",
     "quickActions": "Quick Actions",
     "markCovered": "Mark Covered",
-    "markReturned": "Mark Returned"
+    "markReturned": "Mark Returned",
+    "offerDetails": "Offer Details"
+  },
+  "replacement": {
+    "details": "Replacement Details",
+    "productTitle": "Replacement Product Title",
+    "internalPrice": "Internal Price"
   },
   "payment": {
     "status": "Payment Status",
     "method": "Payment Method",
     "type": "Type",
     "code": "Code",
-    "offersAndPayments": "Offers & Payments"
+    "offersAndPayments": "Offers & Payments",
+    "estimatedDays": "Estimated Days After Payment",
+    "allowedMethods": "Allowed Payment Methods",
+    "online": "Online",
+    "onsite": "Onsite"
   },
   "payment": {
     "status": "Payment Status",

@@ -74,14 +74,24 @@
     "closeDate": "დახურვის თარიღი",
     "quickActions": "სწრაფი მოქმედებები",
     "markCovered": "მონიშნე გარანტიით",
-    "markReturned": "მონიშნე დაბრუნებულად"
+    "markReturned": "მონიშნე დაბრუნებულად",
+    "offerDetails": "შეთავაზების დეტალები"
+  },
+  "replacement": {
+    "details": "შეცვლის დეტალები",
+    "productTitle": "შემცვლელი პროდუქტის დასახელება",
+    "internalPrice": "შიდა ფასი"
   },
   "payment": {
     "status": "გადახდის სტატუსი",
     "method": "გადახდის მეთოდი",
     "type": "ტიპი",
     "code": "კოდი",
-    "offersAndPayments": "შეთავაზებები და გადახდები"
+    "offersAndPayments": "შეთავაზებები და გადახდები",
+    "estimatedDays": "სავარაუდო დღეები გადახდის შემდეგ",
+    "allowedMethods": "ნებადართული გადახდის მეთოდები",
+    "online": "ონლაინ",
+    "onsite": "ადგილზე"
   },
   "settings": {
     "smsNotifications": "SMS შეტყობინებები",
