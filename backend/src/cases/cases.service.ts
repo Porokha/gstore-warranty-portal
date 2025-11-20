@@ -115,55 +115,65 @@ export class CasesService {
     start_date?: Date;
     end_date?: Date;
   }): Promise<ServiceCase[]> {
-    const query = this.casesRepository.createQueryBuilder('case')
-      .leftJoinAndSelect('case.assigned_technician', 'technician')
-      .leftJoinAndSelect('case.warranty', 'warranty')
-      .orderBy('case.opened_at', 'DESC');
+    try {
+      const query = this.casesRepository.createQueryBuilder('case')
+        .leftJoinAndSelect('case.assigned_technician', 'technician')
+        .leftJoinAndSelect('case.warranty', 'warranty')
+        .orderBy('case.opened_at', 'DESC');
 
-    if (filters?.status !== undefined) {
-      query.andWhere('case.status_level = :status', { status: filters.status });
+      if (filters?.status !== undefined) {
+        query.andWhere('case.status_level = :status', { status: filters.status });
+      }
+
+      if (filters?.result) {
+        query.andWhere('case.result_type = :result', { result: filters.result });
+      }
+
+      if (filters?.priority) {
+        query.andWhere('case.priority = :priority', { priority: filters.priority });
+      }
+
+      if (filters?.device_type) {
+        query.andWhere('case.device_type = :device_type', { device_type: filters.device_type });
+      }
+
+      if (filters?.technician_id) {
+        query.andWhere('case.assigned_technician_id = :technician_id', {
+          technician_id: filters.technician_id,
+        });
+      }
+
+      if (filters?.tags && filters.tags.length > 0) {
+        // Use JSON_SEARCH for MySQL compatibility
+        const tagConditions = filters.tags.map((tag, index) => {
+          return `JSON_SEARCH(case.tags, 'one', :tag${index}) IS NOT NULL`;
+        });
+        filters.tags.forEach((tag, index) => {
+          query.setParameter(`tag${index}`, tag);
+        });
+        query.andWhere(`(${tagConditions.join(' OR ')})`);
+      }
+
+      if (filters?.search) {
+        query.andWhere(
+          '(case.case_number LIKE :search OR case.product_title LIKE :search OR case.customer_name LIKE :search OR case.customer_phone LIKE :search)',
+          { search: `%${filters.search}%` },
+        );
+      }
+
+      if (filters?.start_date) {
+        query.andWhere('case.opened_at >= :start_date', { start_date: filters.start_date });
+      }
+
+      if (filters?.end_date) {
+        query.andWhere('case.opened_at <= :end_date', { end_date: filters.end_date });
+      }
+
+      return await query.getMany();
+    } catch (error) {
+      console.error('Error in findAll cases:', error);
+      throw error;
     }
-
-    if (filters?.result) {
-      query.andWhere('case.result_type = :result', { result: filters.result });
-    }
-
-    if (filters?.priority) {
-      query.andWhere('case.priority = :priority', { priority: filters.priority });
-    }
-
-    if (filters?.device_type) {
-      query.andWhere('case.device_type = :device_type', { device_type: filters.device_type });
-    }
-
-    if (filters?.technician_id) {
-      query.andWhere('case.assigned_technician_id = :technician_id', {
-        technician_id: filters.technician_id,
-      });
-    }
-
-    if (filters?.tags && filters.tags.length > 0) {
-      query.andWhere('JSON_CONTAINS(case.tags, :tags)', {
-        tags: JSON.stringify(filters.tags),
-      });
-    }
-
-    if (filters?.search) {
-      query.andWhere(
-        '(case.case_number LIKE :search OR case.product_title LIKE :search OR case.customer_name LIKE :search OR case.customer_phone LIKE :search)',
-        { search: `%${filters.search}%` },
-      );
-    }
-
-    if (filters?.start_date) {
-      query.andWhere('case.opened_at >= :start_date', { start_date: filters.start_date });
-    }
-
-    if (filters?.end_date) {
-      query.andWhere('case.opened_at <= :end_date', { end_date: filters.end_date });
-    }
-
-    return query.getMany();
   }
 
   async findOne(id: number): Promise<ServiceCase> {
