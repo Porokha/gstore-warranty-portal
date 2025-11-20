@@ -57,7 +57,24 @@
     "thumbnailUrl": "Thumbnail URL",
     "noWarranties": "No warranties found",
     "settingsSaved": "Settings saved successfully",
-    "unauthorized": "You do not have permission to access this page"
+    "unauthorized": "You do not have permission to access this page",
+    "audit": "Audit",
+    "date": "Date",
+    "user": "User",
+    "userId": "User ID",
+    "action": "Action",
+    "viewPayload": "View Payload",
+    "noAuditLogs": "No audit logs found",
+    "noPayments": "No payments found",
+    "amount": "Amount",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "custom": "Custom"
+  },
+  "payment": {
+    "status": "Payment Status",
+    "method": "Payment Method",
+    "type": "Type"
   },
   "settings": {
     "smsNotifications": "SMS Notifications",

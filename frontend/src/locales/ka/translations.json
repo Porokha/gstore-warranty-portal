@@ -57,7 +57,24 @@
     "thumbnailUrl": "მინიატურის URL",
     "noWarranties": "გარანტიები არ მოიძებნა",
     "settingsSaved": "პარამეტრები წარმატებით შენახულია",
-    "unauthorized": "ამ გვერდზე წვდომა არ გაქვთ"
+    "unauthorized": "ამ გვერდზე წვდომა არ გაქვთ",
+    "audit": "აუდიტი",
+    "date": "თარიღი",
+    "user": "მომხმარებელი",
+    "userId": "მომხმარებლის ID",
+    "action": "მოქმედება",
+    "viewPayload": "პარამეტრების ნახვა",
+    "noAuditLogs": "აუდიტის ლოგები არ მოიძებნა",
+    "noPayments": "გადახდები არ მოიძებნა",
+    "amount": "თანხა",
+    "startDate": "დაწყების თარიღი",
+    "endDate": "დასრულების თარიღი",
+    "custom": "მორგებული"
+  },
+  "payment": {
+    "status": "გადახდის სტატუსი",
+    "method": "გადახდის მეთოდი",
+    "type": "ტიპი"
   },
   "settings": {
     "smsNotifications": "SMS შეტყობინებები",

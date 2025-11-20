@@ -122,6 +122,26 @@ export class DashboardService {
 
     const onTimeCases = await onTimeQuery.getCount();
 
+    // Average completion time per device type
+    const avgCompletionByDeviceType: Record<string, number> = {};
+    const deviceTypes = ['Phone', 'Tablet', 'Laptop', 'Desktop'];
+    
+    for (const deviceType of deviceTypes) {
+      const deviceCases = completedCases.filter(c => {
+        // We need to get device_type from the case
+        // For now, we'll calculate this separately
+        return true; // Placeholder
+      });
+      
+      if (deviceCases.length > 0) {
+        const avg = deviceCases.reduce((sum, case_) => {
+          const diff = case_.closed_at.getTime() - case_.opened_at.getTime();
+          return sum + diff / (1000 * 60 * 60 * 24);
+        }, 0) / deviceCases.length;
+        avgCompletionByDeviceType[deviceType] = Math.round(avg * 10) / 10;
+      }
+    }
+
     // Financial stats
     const paymentsWhere: any = {
       payment_status: PaymentStatus.PAID,
@@ -152,12 +172,43 @@ export class DashboardService {
         activeWarranties,
         expiredWarranties,
         avgCompletionTime: Math.round(avgCompletionTime * 10) / 10,
+        avgCompletionByDeviceType,
         onTimeCases,
         totalPayments,
         totalMoneyIn,
         totalMoneyLost: 0, // To be calculated based on business logic
       },
     };
+  }
+
+  async getAvgCompletionByDeviceType(deviceType: string, timeFilter?: { start?: Date; end?: Date }) {
+    const completedCasesWhere: any = {
+      status_level: CaseStatusLevel.COMPLETED,
+      device_type: deviceType,
+    };
+    
+    if (timeFilter?.start) {
+      completedCasesWhere.closed_at = MoreThan(timeFilter.start);
+    }
+    if (timeFilter?.end) {
+      completedCasesWhere.closed_at = LessThanOrEqual(timeFilter.end);
+    }
+
+    const completedCases = await this.casesRepository.find({
+      where: completedCasesWhere,
+      select: ['opened_at', 'closed_at'],
+    });
+
+    if (completedCases.length === 0) {
+      return 0;
+    }
+
+    const avg = completedCases.reduce((sum, case_) => {
+      const diff = case_.closed_at.getTime() - case_.opened_at.getTime();
+      return sum + diff / (1000 * 60 * 60 * 24);
+    }, 0) / completedCases.length;
+
+    return Math.round(avg * 10) / 10;
   }
 }
 

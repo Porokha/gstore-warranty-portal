@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -12,7 +12,18 @@ import {
   ListItemButton,
   ListItemText,
   Button,
+  Divider,
 } from '@mui/material';
+import {
+  Dashboard as DashboardIcon,
+  FolderOpen as OpenCasesIcon,
+  Folder as ClosedCasesIcon,
+  VerifiedUser as WarrantiesIcon,
+  AccountBalance as FinanceIcon,
+  Settings as SettingsIcon,
+  History as AuditIcon,
+  Add as AddIcon,
+} from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 
 const drawerWidth = 240;
@@ -21,6 +32,7 @@ const StaffLayout = () => {
   const { t, i18n } = useTranslation();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -33,10 +45,13 @@ const StaffLayout = () => {
   };
 
   const menuItems = [
-    { path: '/staff/dashboard', label: t('common.dashboard') },
-    { path: '/staff/cases', label: t('common.openCases') },
-    { path: '/staff/warranties', label: t('common.warranties') },
-    { path: '/staff/settings', label: t('common.settings') },
+    { path: '/staff/dashboard', label: t('common.dashboard'), icon: <DashboardIcon /> },
+    { path: '/staff/cases', label: t('common.openCases'), icon: <OpenCasesIcon /> },
+    { path: '/staff/cases/closed', label: t('common.closedCases'), icon: <ClosedCasesIcon /> },
+    { path: '/staff/warranties', label: t('common.warranties'), icon: <WarrantiesIcon /> },
+    { path: '/staff/finance', label: t('common.finance'), icon: <FinanceIcon /> },
+    { path: '/staff/settings', label: t('common.settings'), icon: <SettingsIcon /> },
+    { path: '/staff/audit', label: t('common.audit'), icon: <AuditIcon /> },
   ];
 
   return (
@@ -46,9 +61,26 @@ const StaffLayout = () => {
         sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
       >
         <Toolbar>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            Gstore Warranty Portal
-          </Typography>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexGrow: 1 }}>
+            {/* Top-left buttons above menu */}
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<AddIcon />}
+              onClick={() => navigate('/staff/cases/new')}
+              sx={{ mr: 1 }}
+            >
+              {t('common.createCase')}
+            </Button>
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<AddIcon />}
+              onClick={() => navigate('/staff/warranties/new')}
+            >
+              {t('common.createWarranty')}
+            </Button>
+          </Box>
           <Button color="inherit" onClick={toggleLanguage}>
             {i18n.language === 'en' ? 'KA' : 'EN'}
           </Button>
@@ -71,13 +103,24 @@ const StaffLayout = () => {
         <Toolbar />
         <Box sx={{ overflow: 'auto' }}>
           <List>
-            {menuItems.map((item) => (
-              <ListItem key={item.path} disablePadding>
-                <ListItemButton component={Link} to={item.path}>
-                  <ListItemText primary={item.label} />
-                </ListItemButton>
-              </ListItem>
-            ))}
+            {menuItems.map((item) => {
+              const isActive = location.pathname === item.path || 
+                (item.path === '/staff/cases' && location.pathname.startsWith('/staff/cases') && !location.pathname.includes('/closed'));
+              return (
+                <ListItem key={item.path} disablePadding>
+                  <ListItemButton 
+                    component={Link} 
+                    to={item.path}
+                    selected={isActive}
+                  >
+                    <Box sx={{ mr: 2, display: 'flex', alignItems: 'center' }}>
+                      {item.icon}
+                    </Box>
+                    <ListItemText primary={item.label} />
+                  </ListItemButton>
+                </ListItem>
+              );
+            })}
           </List>
         </Box>
       </Drawer>

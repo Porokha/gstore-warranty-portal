@@ -119,6 +119,40 @@ export class PaymentsService {
     });
   }
 
+  async findAll(filters?: {
+    start_date?: Date;
+    end_date?: Date;
+    device_type?: string;
+    payment_status?: PaymentStatus;
+    payment_method?: string;
+  }): Promise<CasePayment[]> {
+    const query = this.paymentsRepository.createQueryBuilder('payment')
+      .leftJoinAndSelect('payment.case_', 'case')
+      .orderBy('payment.created_at', 'DESC');
+
+    if (filters?.start_date) {
+      query.andWhere('payment.created_at >= :start_date', { start_date: filters.start_date });
+    }
+
+    if (filters?.end_date) {
+      query.andWhere('payment.created_at <= :end_date', { end_date: filters.end_date });
+    }
+
+    if (filters?.device_type) {
+      query.andWhere('case.device_type = :device_type', { device_type: filters.device_type });
+    }
+
+    if (filters?.payment_status) {
+      query.andWhere('payment.payment_status = :payment_status', { payment_status: filters.payment_status });
+    }
+
+    if (filters?.payment_method) {
+      query.andWhere('payment.payment_method = :payment_method', { payment_method: filters.payment_method });
+    }
+
+    return query.getMany();
+  }
+
   async findOne(id: number): Promise<CasePayment> {
     const payment = await this.paymentsRepository.findOne({
       where: { id },

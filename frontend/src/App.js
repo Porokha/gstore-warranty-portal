@@ -8,11 +8,14 @@ import PublicLayout from './components/common/PublicLayout';
 import LoginPage from './pages/staff/LoginPage';
 import DashboardPage from './pages/staff/DashboardPage';
 import CasesPage from './pages/staff/CasesPage';
+import ClosedCasesPage from './pages/staff/ClosedCasesPage';
 import CaseDetailPage from './pages/staff/CaseDetailPage';
 import CreateCasePage from './pages/staff/CreateCasePage';
 import WarrantiesPage from './pages/staff/WarrantiesPage';
 import CreateWarrantyPage from './pages/staff/CreateWarrantyPage';
+import FinancePage from './pages/staff/FinancePage';
 import SettingsPage from './pages/staff/SettingsPage';
+import AuditPage from './pages/staff/AuditPage';
 import PublicHomePage from './pages/public/PublicHomePage';
 import WarrantySearchPage from './pages/public/WarrantySearchPage';
 import CaseSearchPage from './pages/public/CaseSearchPage';
@@ -53,11 +56,14 @@ function App() {
                 <Route element={<StaffLayout />}>
                   <Route path="dashboard" element={<DashboardPage />} />
                   <Route path="cases" element={<CasesPage />} />
+                  <Route path="cases/closed" element={<ClosedCasesPage />} />
                   <Route path="cases/new" element={<CreateCasePage />} />
                   <Route path="cases/:id" element={<CaseDetailPage />} />
                   <Route path="warranties" element={<WarrantiesPage />} />
                   <Route path="warranties/new" element={<CreateWarrantyPage />} />
+                  <Route path="finance" element={<FinancePage />} />
                   <Route path="settings" element={<SettingsPage />} />
+                  <Route path="audit" element={<AuditPage />} />
                 </Route>
               </Route>
 

@@ -88,6 +88,40 @@ export class PaymentsController {
     return this.paymentsService.remove(id);
   }
 
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  findAll(
+    @Query('start_date') startDate?: string,
+    @Query('end_date') endDate?: string,
+    @Query('device_type') deviceType?: string,
+    @Query('payment_status') paymentStatus?: string,
+    @Query('payment_method') paymentMethod?: string,
+  ) {
+    const filters: any = {};
+    
+    if (startDate) {
+      filters.start_date = new Date(startDate);
+    }
+    
+    if (endDate) {
+      filters.end_date = new Date(endDate);
+    }
+    
+    if (deviceType) {
+      filters.device_type = deviceType;
+    }
+    
+    if (paymentStatus) {
+      filters.payment_status = paymentStatus;
+    }
+    
+    if (paymentMethod) {
+      filters.payment_method = paymentMethod;
+    }
+
+    return this.paymentsService.findAll(filters);
+  }
+
   @Get('stats/summary')
   @UseGuards(JwtAuthGuard)
   getStats(@Query('case_id') caseId?: number) {
