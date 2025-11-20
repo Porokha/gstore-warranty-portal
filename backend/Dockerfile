@@ -29,11 +29,14 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+# Install build dependencies for bcrypt
+RUN apk add --no-cache python3 make g++
+
 # Copy package files
 COPY package*.json ./
 
 # Install only production dependencies
-RUN npm install --only=production --no-audit --no-fund
+RUN npm install --omit=dev --no-audit --no-fund
 
 # Copy built application from build stage
 COPY --from=build /app/dist ./dist
