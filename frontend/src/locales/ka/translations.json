@@ -69,12 +69,19 @@
     "amount": "თანხა",
     "startDate": "დაწყების თარიღი",
     "endDate": "დასრულების თარიღი",
-    "custom": "მორგებული"
+    "custom": "მორგებული",
+    "warrantyId": "გარანტიის ID",
+    "closeDate": "დახურვის თარიღი",
+    "quickActions": "სწრაფი მოქმედებები",
+    "markCovered": "მონიშნე გარანტიით",
+    "markReturned": "მონიშნე დაბრუნებულად"
   },
   "payment": {
     "status": "გადახდის სტატუსი",
     "method": "გადახდის მეთოდი",
-    "type": "ტიპი"
+    "type": "ტიპი",
+    "code": "კოდი",
+    "offersAndPayments": "შეთავაზებები და გადახდები"
   },
   "settings": {
     "smsNotifications": "SMS შეტყობინებები",

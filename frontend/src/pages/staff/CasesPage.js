@@ -158,14 +158,18 @@ const CasesPage = () => {
           <TableHead>
             <TableRow>
               <TableCell>{t('case.caseNumber')}</TableCell>
+              <TableCell>{t('case.orderId')}</TableCell>
               <TableCell>{t('case.productTitle')}</TableCell>
-              <TableCell>{t('case.customerName')}</TableCell>
-              <TableCell>{t('case.phone')}</TableCell>
+              <TableCell>{t('case.productId')}</TableCell>
               <TableCell>{t('case.openDate')}</TableCell>
               <TableCell>{t('case.deadline')}</TableCell>
+              <TableCell>{t('case.customerName')}</TableCell>
+              <TableCell>{t('case.phone')}</TableCell>
+              <TableCell>{t('case.email')}</TableCell>
               <TableCell>{t('common.status')}</TableCell>
               <TableCell>{t('common.result')}</TableCell>
               <TableCell>{t('common.priority') || 'Priority'}</TableCell>
+              <TableCell>{t('common.tags')}</TableCell>
               <TableCell>{t('case.technician')}</TableCell>
               <TableCell>{t('common.actions') || 'Actions'}</TableCell>
             </TableRow>
@@ -175,17 +179,20 @@ const CasesPage = () => {
               cases.map((case_) => (
                 <TableRow key={case_.id} hover>
                   <TableCell>{case_.case_number}</TableCell>
+                  <TableCell>{case_.order_id || '-'}</TableCell>
                   <TableCell>{case_.product_title}</TableCell>
-                  <TableCell>
-                    {case_.customer_name} {case_.customer_last_name}
-                  </TableCell>
-                  <TableCell>{case_.customer_phone}</TableCell>
+                  <TableCell>{case_.product_id || '-'}</TableCell>
                   <TableCell>
                     {new Date(case_.opened_at).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
                     {new Date(case_.deadline_at).toLocaleDateString()}
                   </TableCell>
+                  <TableCell>
+                    {case_.customer_name} {case_.customer_last_name}
+                  </TableCell>
+                  <TableCell>{case_.customer_phone}</TableCell>
+                  <TableCell>{case_.customer_email || '-'}</TableCell>
                   <TableCell>
                     <StatusBar statusLevel={case_.status_level} size="small" />
                   </TableCell>
@@ -198,6 +205,20 @@ const CasesPage = () => {
                       color={getPriorityColor(case_.priority)}
                       size="small"
                     />
+                  </TableCell>
+                  <TableCell>
+                    {case_.tags && case_.tags.length > 0 ? (
+                      <Box display="flex" gap={0.5} flexWrap="wrap">
+                        {case_.tags.slice(0, 2).map((tag, idx) => (
+                          <Chip key={idx} label={tag} size="small" variant="outlined" />
+                        ))}
+                        {case_.tags.length > 2 && (
+                          <Chip label={`+${case_.tags.length - 2}`} size="small" />
+                        )}
+                      </Box>
+                    ) : (
+                      '-'
+                    )}
                   </TableCell>
                   <TableCell>
                     {case_.assigned_technician
@@ -218,7 +239,7 @@ const CasesPage = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={11} align="center">
+                <TableCell colSpan={15} align="center">
                   {t('common.noCases') || 'No cases found'}
                 </TableCell>
               </TableRow>

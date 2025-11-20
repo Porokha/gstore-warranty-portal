@@ -69,7 +69,19 @@
     "amount": "Amount",
     "startDate": "Start Date",
     "endDate": "End Date",
-    "custom": "Custom"
+    "custom": "Custom",
+    "warrantyId": "Warranty ID",
+    "closeDate": "Close Date",
+    "quickActions": "Quick Actions",
+    "markCovered": "Mark Covered",
+    "markReturned": "Mark Returned"
+  },
+  "payment": {
+    "status": "Payment Status",
+    "method": "Payment Method",
+    "type": "Type",
+    "code": "Code",
+    "offersAndPayments": "Offers & Payments"
   },
   "payment": {
     "status": "Payment Status",
