@@ -75,7 +75,13 @@
     "quickActions": "Quick Actions",
     "markCovered": "Mark Covered",
     "markReturned": "Mark Returned",
-    "offerDetails": "Offer Details"
+    "offerDetails": "Offer Details",
+    "createTemplate": "Create Template",
+    "editTemplate": "Edit Template",
+    "createUser": "Create User",
+    "editUser": "Edit User",
+    "noTemplates": "No templates found",
+    "noUsers": "No users found"
   },
   "replacement": {
     "details": "Replacement Details",
@@ -111,7 +117,23 @@
     "sendOnCaseCompleted": "Send when case is completed",
     "sendOnSlaDue": "Send when SLA is due",
     "sendOnSlaStalled": "Send when SLA is stalled",
-    "sendOnSlaDeadline1day": "Send 1 day before deadline"
+    "sendOnSlaDeadline1day": "Send 1 day before deadline",
+    "smsTemplates": "SMS Templates",
+    "userManagement": "User Management"
+  },
+  "template": {
+    "key": "Key",
+    "language": "Language",
+    "text": "Template Text",
+    "variablesHint": "Use {variable_name} for dynamic values"
+  },
+  "user": {
+    "username": "Username",
+    "name": "Name",
+    "lastName": "Last Name",
+    "role": "Role",
+    "language": "Language Preference",
+    "password": "Password"
   },
   "status": {
     "opened": "Opened",

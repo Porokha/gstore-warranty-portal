@@ -75,7 +75,13 @@
     "quickActions": "სწრაფი მოქმედებები",
     "markCovered": "მონიშნე გარანტიით",
     "markReturned": "მონიშნე დაბრუნებულად",
-    "offerDetails": "შეთავაზების დეტალები"
+    "offerDetails": "შეთავაზების დეტალები",
+    "createTemplate": "შაბლონის შექმნა",
+    "editTemplate": "შაბლონის რედაქტირება",
+    "createUser": "მომხმარებლის შექმნა",
+    "editUser": "მომხმარებლის რედაქტირება",
+    "noTemplates": "შაბლონები არ მოიძებნა",
+    "noUsers": "მომხმარებლები არ მოიძებნა"
   },
   "replacement": {
     "details": "შეცვლის დეტალები",
@@ -106,7 +112,23 @@
     "sendOnCaseCompleted": "გაგზავნა შემთხვევის დასრულებისას",
     "sendOnSlaDue": "გაგზავნა SLA-ს ვადის ამოწურვისას",
     "sendOnSlaStalled": "გაგზავნა SLA-ს შეჩერებისას",
-    "sendOnSlaDeadline1day": "გაგზავნა 1 დღით ადრე ვადამდე"
+    "sendOnSlaDeadline1day": "გაგზავნა 1 დღით ადრე ვადამდე",
+    "smsTemplates": "SMS შაბლონები",
+    "userManagement": "მომხმარებლების მართვა"
+  },
+  "template": {
+    "key": "გასაღები",
+    "language": "ენა",
+    "text": "შაბლონის ტექსტი",
+    "variablesHint": "გამოიყენეთ {variable_name} დინამიური მნიშვნელობებისთვის"
+  },
+  "user": {
+    "username": "მომხმარებლის სახელი",
+    "name": "სახელი",
+    "lastName": "გვარი",
+    "role": "როლი",
+    "language": "ენის პრეფერენსი",
+    "password": "პაროლი"
   },
   "status": {
     "opened": "ღია",
