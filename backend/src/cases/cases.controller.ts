@@ -24,7 +24,7 @@ export class CasesController {
 
   @Get()
   findAll(
-    @Query('status') status?: CaseStatusLevel,
+    @Query('status') status?: string,
     @Query('result') result?: ResultType,
     @Query('priority') priority?: Priority,
     @Query('device_type') device_type?: string,
@@ -35,11 +35,27 @@ export class CasesController {
     @Query('end_date') end_date?: string,
   ) {
     const filters: any = {};
-    if (status !== undefined) filters.status = parseInt(status as any);
+    
+    // Parse status - validate it's a valid number
+    if (status !== undefined && status !== null && status !== '') {
+      const statusNum = parseInt(status, 10);
+      if (!isNaN(statusNum) && statusNum >= 1 && statusNum <= 4) {
+        filters.status = statusNum as CaseStatusLevel;
+      }
+    }
+    
     if (result) filters.result = result;
     if (priority) filters.priority = priority;
     if (device_type) filters.device_type = device_type;
-    if (technician_id) filters.technician_id = parseInt(technician_id);
+    
+    // Parse technician_id - validate it's a valid number
+    if (technician_id !== undefined && technician_id !== null && technician_id !== '') {
+      const techId = parseInt(technician_id, 10);
+      if (!isNaN(techId)) {
+        filters.technician_id = techId;
+      }
+    }
+    
     if (tags) filters.tags = tags.split(',');
     if (search) filters.search = search;
     if (start_date) filters.start_date = new Date(start_date);
