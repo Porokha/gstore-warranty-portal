@@ -29,6 +29,7 @@ import {
   Edit as EditIcon,
   Add as AddIcon,
   Delete as DeleteIcon,
+  Build as BuildIcon,
 } from '@mui/icons-material';
 import { warrantiesService } from '../../services/warrantiesService';
 
@@ -233,22 +234,25 @@ const WarrantiesPage = () => {
                       />
                     </TableCell>
                     <TableCell>
-                      <Tooltip title={t('common.view')}>
-                        <IconButton
-                          size="small"
-                          onClick={() => navigate(`/staff/warranties/${warranty.id}`)}
-                        >
-                          <ViewIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title={t('common.edit')}>
-                        <IconButton
-                          size="small"
-                          onClick={() => navigate(`/staff/warranties/${warranty.id}/edit`)}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                      </Tooltip>
+                      <Box display="flex" gap={0.5}>
+                        <Tooltip title={t('common.view')}>
+                          <IconButton
+                            size="small"
+                            onClick={() => navigate(`/staff/warranties/${warranty.id}`)}
+                          >
+                            <ViewIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title={t('common.createCase')}>
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={() => navigate(`/staff/cases/new?warranty_id=${warranty.id}`)}
+                          >
+                            <BuildIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 );

@@ -11,6 +11,7 @@ export class DashboardController {
   async getStats(
     @Query('start') start?: string,
     @Query('end') end?: string,
+    @Query('device_type') deviceType?: string,
   ) {
     const timeFilter =
       start || end
@@ -20,7 +21,20 @@ export class DashboardController {
           }
         : undefined;
 
-    return this.dashboardService.getDashboardStats(timeFilter);
+    const stats = await this.dashboardService.getDashboardStats(timeFilter);
+    
+    // If device type is specified, get average completion time for that device type
+    if (deviceType) {
+      const avgCompletionByDevice = await this.dashboardService.getAvgCompletionByDeviceType(
+        deviceType,
+        timeFilter,
+      );
+      stats.timeFiltered.avgCompletionByDeviceType = {
+        [deviceType]: avgCompletionByDevice,
+      };
+    }
+
+    return stats;
   }
 }
 

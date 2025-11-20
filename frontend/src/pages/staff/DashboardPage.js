@@ -22,10 +22,11 @@ const DashboardPage = () => {
   const [timeFilter, setTimeFilter] = useState('all'); // all, week, month, custom
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
+  const [deviceType, setDeviceType] = useState(''); // For Row 3 filter
 
   const { data: stats, isLoading, refetch } = useQuery(
-    ['dashboard', startDate, endDate],
-    () => dashboardService.getStats(startDate, endDate),
+    ['dashboard', startDate, endDate, deviceType],
+    () => dashboardService.getStats(startDate, endDate, deviceType),
     {
       refetchInterval: 30000, // Refresh every 30 seconds
     }
@@ -174,14 +175,34 @@ const DashboardPage = () => {
       </Grid>
 
       {/* Row 3: Performance Stats */}
+      <Box mb={2}>
+        <FormControl size="small" sx={{ minWidth: 200 }}>
+          <InputLabel>{t('case.deviceType')} ({t('common.filter') || 'Filter'})</InputLabel>
+          <Select
+            value={deviceType}
+            label={`${t('case.deviceType')} (${t('common.filter') || 'Filter'})`}
+            onChange={(e) => setDeviceType(e.target.value)}
+          >
+            <MenuItem value="">{t('common.all') || 'All Devices'}</MenuItem>
+            <MenuItem value="Phone">Phone</MenuItem>
+            <MenuItem value="Tablet">Tablet</MenuItem>
+            <MenuItem value="Laptop">Laptop</MenuItem>
+            <MenuItem value="Desktop">Desktop</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
       <Grid container spacing={3} mb={3}>
         <Grid item xs={12} sm={6} md={4}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" color="text.secondary" gutterBottom>
               {t('common.avgCompletionTime') || 'Avg. Completion Time'}
+              {deviceType && ` (${deviceType})`}
             </Typography>
             <Typography variant="h3">
-              {timeFiltered.avgCompletionTime || 0} {t('common.days') || 'days'}
+              {deviceType && timeFiltered.avgCompletionByDeviceType?.[deviceType]
+                ? timeFiltered.avgCompletionByDeviceType[deviceType]
+                : timeFiltered.avgCompletionTime || 0}{' '}
+              {t('common.days') || 'days'}
             </Typography>
           </Paper>
         </Grid>
