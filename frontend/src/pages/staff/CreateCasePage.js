@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMutation } from 'react-query';
 import {
@@ -24,13 +24,16 @@ import { useQueryClient } from 'react-query';
 const CreateCasePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
   const [error, setError] = useState('');
 
+  const warrantyIdFromUrl = searchParams.get('warranty_id');
+
   const [formData, setFormData] = useState({
-    warranty_id: '',
+    warranty_id: warrantyIdFromUrl || '',
     sku: '',
     imei: '',
     serial_number: '',
@@ -45,6 +48,16 @@ const CreateCasePage = () => {
     priority: 'normal',
     deadline_days: 14,
   });
+
+  // If warranty_id is in URL, we could fetch warranty details to pre-fill form
+  useEffect(() => {
+    if (warrantyIdFromUrl) {
+      setFormData((prev) => ({
+        ...prev,
+        warranty_id: warrantyIdFromUrl,
+      }));
+    }
+  }, [warrantyIdFromUrl]);
 
   const createMutation = useMutation(
     (data) => casesService.create(data),

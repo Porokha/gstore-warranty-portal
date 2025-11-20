@@ -122,25 +122,6 @@ export class DashboardService {
 
     const onTimeCases = await onTimeQuery.getCount();
 
-    // Average completion time per device type
-    const avgCompletionByDeviceType: Record<string, number> = {};
-    const deviceTypes = ['Phone', 'Tablet', 'Laptop', 'Desktop'];
-    
-    for (const deviceType of deviceTypes) {
-      const deviceCases = completedCases.filter(c => {
-        // We need to get device_type from the case
-        // For now, we'll calculate this separately
-        return true; // Placeholder
-      });
-      
-      if (deviceCases.length > 0) {
-        const avg = deviceCases.reduce((sum, case_) => {
-          const diff = case_.closed_at.getTime() - case_.opened_at.getTime();
-          return sum + diff / (1000 * 60 * 60 * 24);
-        }, 0) / deviceCases.length;
-        avgCompletionByDeviceType[deviceType] = Math.round(avg * 10) / 10;
-      }
-    }
 
     // Financial stats
     const paymentsWhere: any = {
