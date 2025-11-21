@@ -1,10 +1,12 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { DashboardService } from './dashboard.service';
 
 @Controller('dashboard')
 @UseGuards(JwtAuthGuard)
 export class DashboardController {
+  private readonly logger = new Logger(DashboardController.name);
+
   constructor(private dashboardService: DashboardService) {}
 
   @Get('stats')
@@ -37,8 +39,16 @@ export class DashboardController {
 
       return stats;
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
-      throw error;
+      this.logger.error('Error fetching dashboard stats:', error);
+      this.logger.error('Error stack:', error.stack);
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Failed to fetch dashboard statistics',
+          error: error.message || 'Unknown error',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }
