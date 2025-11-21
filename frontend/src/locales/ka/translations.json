@@ -1,7 +1,7 @@
 {
   "common": {
     "dashboard": "დაფა",
-    "openCases": "ღია შემთხვევები",
+      "openCases": "მიმდინარე შემთხვევები",
     "closeToDeadline": "ვადასთან ახლოს",
     "dueCases": "ვადაგადაცილებული",
     "closedCases": "დასრულებული შემთხვევები",

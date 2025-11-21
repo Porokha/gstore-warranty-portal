@@ -1,7 +1,7 @@
 {
   "common": {
     "dashboard": "Dashboard",
-    "openCases": "Open Service Cases",
+      "openCases": "Running Service Cases",
     "closeToDeadline": "Close to deadline cases",
     "dueCases": "Due Service Cases",
     "closedCases": "Closed Service Cases",

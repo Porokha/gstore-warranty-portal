@@ -122,6 +122,14 @@ const CaseSearchPage = () => {
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
                 <Typography variant="body2" color="text.secondary">
+                  Customer Name
+                </Typography>
+                <Typography variant="body1" fontWeight="bold">
+                  {result.customer_name} {result.customer_last_name || ''}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Typography variant="body2" color="text.secondary">
                   Case Number
                 </Typography>
                 <Typography variant="body1" fontWeight="bold">
