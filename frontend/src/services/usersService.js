@@ -10,5 +10,15 @@ export const usersService = {
     const users = await usersService.getAll();
     return users.filter(user => user.role === 'technician');
   },
+
+  create: async (userData) => {
+    const response = await api.post('/users', userData);
+    return response.data;
+  },
+
+  update: async (id, userData) => {
+    const response = await api.put(`/users/${id}`, userData);
+    return response.data;
+  },
 };
 

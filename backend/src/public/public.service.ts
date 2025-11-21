@@ -41,6 +41,14 @@ export class PublicService {
       ? Math.ceil((warrantyEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
       : Math.ceil((now.getTime() - warrantyEnd.getTime()) / (1000 * 60 * 60 * 24));
 
+    // Get case IDs for navigation
+    const serviceCases = warranty.service_cases?.map((c) => ({
+      id: c.id,
+      case_number: c.case_number,
+      status_level: c.status_level,
+      opened_at: c.opened_at,
+    })) || [];
+
     // Return public-safe information
     return {
       warranty_id: warranty.warranty_id,
@@ -55,7 +63,8 @@ export class PublicService {
       days_left: isActive ? daysLeft : null,
       days_after_warranty: !isActive ? daysLeft : null,
       extended_days: warranty.extended_days,
-      service_cases_count: warranty.service_cases?.length || 0,
+      service_cases_count: serviceCases.length,
+      service_cases: serviceCases,
     };
   }
 
@@ -89,6 +98,17 @@ export class PublicService {
         new_result: h.new_result,
       }));
 
+    // Get warranty status if warranty exists
+    let warrantyStatus = null;
+    if (case_.warranty) {
+      const now = new Date();
+      const warrantyEnd = new Date(case_.warranty.warranty_end);
+      warrantyStatus = {
+        is_active: warrantyEnd >= now,
+        warranty_end: case_.warranty.warranty_end,
+      };
+    }
+
     // Return public-safe information
     return {
       case_number: case_.case_number,
@@ -100,6 +120,8 @@ export class PublicService {
       result_type: case_.result_type,
       status_history: publicHistory,
       warranty_id: case_.warranty?.warranty_id || null,
+      warranty_status: warrantyStatus,
+      customer_initial_note: case_.customer_initial_note || null,
       assigned_technician: case_.assigned_technician
         ? {
             name: case_.assigned_technician.name,

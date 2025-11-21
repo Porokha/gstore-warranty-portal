@@ -1,15 +1,26 @@
 import React, { useState } from 'react';
-import { Box, TextField, Button, Typography, Paper, Chip, Alert, Grid, Divider } from '@mui/material';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Box, TextField, Button, Typography, Paper, Chip, Alert, Grid, Divider, IconButton, Link } from '@mui/material';
+import { ArrowBack, Home } from '@mui/icons-material';
 import api from '../../services/api';
 import StatusBar from '../../components/cases/StatusBar';
 import ResultBar from '../../components/cases/ResultBar';
 
 const CaseSearchPage = () => {
-  const [caseNumber, setCaseNumber] = useState('');
-  const [phone, setPhone] = useState('');
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [caseNumber, setCaseNumber] = useState(searchParams.get('case_number') || '');
+  const [phone, setPhone] = useState(searchParams.get('phone') || '');
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Auto-search if params are provided
+  React.useEffect(() => {
+    if (caseNumber && phone && !result) {
+      handleSearch({ preventDefault: () => {} });
+    }
+  }, []);
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -23,6 +34,8 @@ const CaseSearchPage = () => {
         phone,
       });
       setResult(response.data);
+      // Update URL params
+      setSearchParams({ case_number: caseNumber, phone });
     } catch (err) {
       setError(err.response?.data?.message || 'Case not found or phone number does not match');
     } finally {
@@ -52,9 +65,19 @@ const CaseSearchPage = () => {
 
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto', mt: 4, mb: 4 }}>
-      <Typography variant="h4" gutterBottom align="center">
-        Search Service Case
-      </Typography>
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+        <Box display="flex" alignItems="center" gap={1}>
+          <IconButton onClick={() => navigate(-1)} aria-label="back">
+            <ArrowBack />
+          </IconButton>
+          <Typography variant="h4" component={Link} onClick={() => navigate('/')} sx={{ cursor: 'pointer', textDecoration: 'none', color: 'inherit' }}>
+            Search Service Case
+          </Typography>
+        </Box>
+        <IconButton onClick={() => navigate('/')} aria-label="home">
+          <Home />
+        </IconButton>
+      </Box>
       <Paper sx={{ p: 3 }}>
         <form onSubmit={handleSearch}>
           <TextField
@@ -111,7 +134,26 @@ const CaseSearchPage = () => {
                   <Typography variant="body2" color="text.secondary">
                     Warranty ID
                   </Typography>
-                  <Typography variant="body1">{result.warranty_id}</Typography>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Typography variant="body1">{result.warranty_id}</Typography>
+                    {result.warranty_status && (
+                      <Chip
+                        label={result.warranty_status.is_active ? 'Active Warranty' : 'Expired Warranty'}
+                        color={result.warranty_status.is_active ? 'success' : 'default'}
+                        size="small"
+                      />
+                    )}
+                  </Box>
+                </Grid>
+              )}
+              {result.customer_initial_note && (
+                <Grid item xs={12}>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Customer's Initial Note
+                  </Typography>
+                  <Alert severity="info" sx={{ mt: 0.5 }}>
+                    {result.customer_initial_note}
+                  </Alert>
                 </Grid>
               )}
               <Grid item xs={12}>

@@ -209,12 +209,22 @@ export class CasesService {
       });
     }
 
+    const oldData = { ...case_ };
     Object.assign(case_, updateDto);
     if (updateDto.deadline_at) {
       case_.deadline_at = new Date(updateDto.deadline_at);
     }
 
-    return this.casesRepository.save(case_);
+    const savedCase = await this.casesRepository.save(case_);
+
+    // Audit log
+    await this.auditService.log(userId, 'CASE_UPDATED', {
+      caseId: id,
+      oldData,
+      newData: savedCase,
+    });
+
+    return savedCase;
   }
 
   async changeStatus(
@@ -265,6 +275,15 @@ export class CasesService {
     }
 
     const savedCase = await this.casesRepository.save(case_);
+
+    // Audit log
+    await this.auditService.log(user.id, 'CASE_STATUS_CHANGED', {
+      caseId: id,
+      previousStatus,
+      newStatus,
+      previousResult,
+      newResult,
+    });
 
     // Create history entry
     await this.createHistoryEntry(

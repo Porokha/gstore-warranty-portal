@@ -64,6 +64,50 @@ const SettingsPage = () => {
     usersService.getAll()
   );
 
+  const userCreateMutation = useMutation(
+    (data) => usersService.create(data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries('users');
+        setUserDialogOpen(false);
+        setUserForm({
+          username: '',
+          password: '',
+          name: '',
+          last_name: '',
+          role: 'technician',
+          language_preference: 'ka',
+        });
+        setEditingUser(null);
+      },
+      onError: (error) => {
+        alert(error.response?.data?.message || 'Failed to create user');
+      },
+    }
+  );
+
+  const userUpdateMutation = useMutation(
+    ({ id, ...data }) => usersService.update(id, data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries('users');
+        setUserDialogOpen(false);
+        setUserForm({
+          username: '',
+          password: '',
+          name: '',
+          last_name: '',
+          role: 'technician',
+          language_preference: 'ka',
+        });
+        setEditingUser(null);
+      },
+      onError: (error) => {
+        alert(error.response?.data?.message || 'Failed to update user');
+      },
+    }
+  );
+
   const [localSettings, setLocalSettings] = useState({
     global_enabled: true,
     send_on_warranty_created: true,
@@ -155,7 +199,7 @@ const SettingsPage = () => {
       name: user.name,
       last_name: user.last_name,
       role: user.role,
-      language_preference: user.language_preference,
+      language_preference: user.language_pref || user.language_preference || 'ka',
     });
     setUserDialogOpen(true);
   };
@@ -462,6 +506,7 @@ const SettingsPage = () => {
             onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
             margin="normal"
             disabled={!!editingUser}
+            required={!editingUser}
           />
           <TextField
             fullWidth
@@ -511,11 +556,17 @@ const SettingsPage = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setUserDialogOpen(false)}>{t('common.cancel')}</Button>
-          <Button variant="contained" onClick={() => {
-            // TODO: Implement user create/update
-            alert('User management API integration needed');
-            setUserDialogOpen(false);
-          }}>
+          <Button
+            variant="contained"
+            onClick={() => {
+              if (editingUser) {
+                userUpdateMutation.mutate({ id: editingUser.id, ...userForm });
+              } else {
+                userCreateMutation.mutate(userForm);
+              }
+            }}
+            disabled={userCreateMutation.isLoading || userUpdateMutation.isLoading}
+          >
             {t('common.save')}
           </Button>
         </DialogActions>

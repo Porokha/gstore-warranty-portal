@@ -73,12 +73,24 @@ const CaseDetailPage = () => {
     }
   );
 
+  const [localCaseData, setLocalCaseData] = useState(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Initialize local data when case loads
+  React.useEffect(() => {
+    if (case_) {
+      setLocalCaseData(case_);
+      setHasUnsavedChanges(false);
+    }
+  }, [case_]);
+
   const updateCaseMutation = useMutation(
     (data) => casesService.update(id, data),
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['case', id]);
         queryClient.invalidateQueries('cases');
+        setHasUnsavedChanges(false);
       },
     }
   );
@@ -87,8 +99,25 @@ const CaseDetailPage = () => {
     statusChangeMutation.mutate(data);
   };
 
-  const handleUpdateCase = (field, value) => {
-    updateCaseMutation.mutate({ [field]: value });
+  const handleFieldChange = (field, value) => {
+    setLocalCaseData((prev) => ({ ...prev, [field]: value }));
+    setHasUnsavedChanges(true);
+  };
+
+  const handleSaveChanges = () => {
+    if (!localCaseData || !hasUnsavedChanges) return;
+    
+    // Build update object with only changed fields
+    const updateData = {};
+    Object.keys(localCaseData).forEach((key) => {
+      if (case_[key] !== localCaseData[key]) {
+        updateData[key] = localCaseData[key];
+      }
+    });
+
+    if (Object.keys(updateData).length > 0) {
+      updateCaseMutation.mutate(updateData);
+    }
   };
 
   // Extract status timestamps from history
@@ -119,12 +148,25 @@ const CaseDetailPage = () => {
 
   return (
     <Dialog open={true} onClose={() => navigate('/staff/cases')} maxWidth="lg" fullWidth>
-      <DialogTitle>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Typography variant="h6">{case_.case_number}</Typography>
-          <Button onClick={() => navigate('/staff/cases')}>{t('common.close')}</Button>
-        </Box>
-      </DialogTitle>
+        <DialogTitle>
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Typography variant="h6">{case_?.case_number}</Typography>
+            <Box>
+              {hasUnsavedChanges && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleSaveChanges}
+                  disabled={updateCaseMutation.isLoading}
+                  sx={{ mr: 1 }}
+                >
+                  {updateCaseMutation.isLoading ? <CircularProgress size={20} /> : t('common.save')}
+                </Button>
+              )}
+              <Button onClick={() => navigate('/staff/cases')}>{t('common.close')}</Button>
+            </Box>
+          </Box>
+        </DialogTitle>
       <DialogContent>
         <Tabs value={tab} onChange={(e, newValue) => setTab(newValue)} sx={{ mb: 3 }}>
           <Tab label={t('common.details')} />
@@ -160,7 +202,8 @@ const CaseDetailPage = () => {
                 fullWidth
                 label={t('case.orderId')}
                 value={case_.order_id || ''}
-                onChange={(e) => handleUpdateCase('order_id', e.target.value ? parseInt(e.target.value) : null)}
+                onChange={(e) => handleFieldChange('order_id', e.target.value ? parseInt(e.target.value) : null)}
+                value={localCaseData?.order_id || ''}
                 disabled={!isAdmin}
                 margin="normal"
                 type="number"
@@ -171,7 +214,8 @@ const CaseDetailPage = () => {
                 fullWidth
                 label={t('case.productId')}
                 value={case_.product_id || ''}
-                onChange={(e) => handleUpdateCase('product_id', e.target.value ? parseInt(e.target.value) : null)}
+                onChange={(e) => handleFieldChange('product_id', e.target.value ? parseInt(e.target.value) : null)}
+                value={localCaseData?.product_id || ''}
                 disabled={!isAdmin}
                 margin="normal"
                 type="number"
@@ -182,7 +226,8 @@ const CaseDetailPage = () => {
                 fullWidth
                 label={t('case.productTitle')}
                 value={case_.product_title}
-                onChange={(e) => handleUpdateCase('product_title', e.target.value)}
+                onChange={(e) => handleFieldChange('product_title', e.target.value)}
+                value={localCaseData?.product_title || ''}
                 disabled={!isAdmin}
                 margin="normal"
               />
@@ -192,7 +237,8 @@ const CaseDetailPage = () => {
                 fullWidth
                 label={t('case.sku')}
                 value={case_.sku || ''}
-                onChange={(e) => handleUpdateCase('sku', e.target.value)}
+                onChange={(e) => handleFieldChange('sku', e.target.value)}
+                value={localCaseData?.sku || ''}
                 disabled={!isAdmin}
                 margin="normal"
               />
@@ -202,7 +248,8 @@ const CaseDetailPage = () => {
                 fullWidth
                 label={t('case.serialNumber')}
                 value={case_.serial_number || ''}
-                onChange={(e) => handleUpdateCase('serial_number', e.target.value)}
+                onChange={(e) => handleFieldChange('serial_number', e.target.value)}
+                value={localCaseData?.serial_number || ''}
                 disabled={!isAdmin}
                 margin="normal"
               />
@@ -213,7 +260,8 @@ const CaseDetailPage = () => {
                 <Select
                   value={case_.device_type || 'Laptop'}
                   label={t('case.deviceType')}
-                  onChange={(e) => handleUpdateCase('device_type', e.target.value)}
+                  onChange={(e) => handleFieldChange('device_type', e.target.value)}
+                  value={localCaseData?.device_type || 'Laptop'}
                   disabled={!isAdmin}
                 >
                   <MenuItem value="Laptop">Laptop</MenuItem>
@@ -229,7 +277,8 @@ const CaseDetailPage = () => {
                 fullWidth
                 label="IMEI"
                 value={case_.imei || ''}
-                onChange={(e) => handleUpdateCase('imei', e.target.value)}
+                onChange={(e) => handleFieldChange('imei', e.target.value)}
+                value={localCaseData?.imei || ''}
                 disabled={!isAdmin}
                 margin="normal"
               />
@@ -239,7 +288,8 @@ const CaseDetailPage = () => {
                 fullWidth
                 label={t('case.customerName')}
                 value={case_.customer_name}
-                onChange={(e) => handleUpdateCase('customer_name', e.target.value)}
+                onChange={(e) => handleFieldChange('customer_name', e.target.value)}
+                value={localCaseData?.customer_name || ''}
                 disabled={!isAdmin}
                 margin="normal"
               />
@@ -249,7 +299,8 @@ const CaseDetailPage = () => {
                 fullWidth
                 label={t('case.customerLastName')}
                 value={case_.customer_last_name || ''}
-                onChange={(e) => handleUpdateCase('customer_last_name', e.target.value)}
+                onChange={(e) => handleFieldChange('customer_last_name', e.target.value)}
+                value={localCaseData?.customer_last_name || ''}
                 disabled={!isAdmin}
                 margin="normal"
               />
@@ -259,7 +310,8 @@ const CaseDetailPage = () => {
                 fullWidth
                 label={t('case.phone')}
                 value={case_.customer_phone}
-                onChange={(e) => handleUpdateCase('customer_phone', e.target.value)}
+                onChange={(e) => handleFieldChange('customer_phone', e.target.value)}
+                value={localCaseData?.customer_phone || ''}
                 disabled={!isAdmin}
                 margin="normal"
               />
@@ -269,7 +321,8 @@ const CaseDetailPage = () => {
                 fullWidth
                 label={t('case.email')}
                 value={case_.customer_email || ''}
-                onChange={(e) => handleUpdateCase('customer_email', e.target.value)}
+                onChange={(e) => handleFieldChange('customer_email', e.target.value)}
+                value={localCaseData?.customer_email || ''}
                 disabled={!isAdmin}
                 margin="normal"
                 type="email"
@@ -282,7 +335,8 @@ const CaseDetailPage = () => {
                 rows={4}
                 label={t('case.customerInitialNote') || "Customer's Initial Note (Problem Description)"}
                 value={case_.customer_initial_note || ''}
-                onChange={(e) => handleUpdateCase('customer_initial_note', e.target.value)}
+                onChange={(e) => handleFieldChange('customer_initial_note', e.target.value)}
+                value={localCaseData?.customer_initial_note || ''}
                 disabled={!isAdmin}
                 margin="normal"
               />
@@ -301,7 +355,8 @@ const CaseDetailPage = () => {
                 fullWidth
                 label={t('case.deadline')}
                 value={case_.deadline_at ? new Date(case_.deadline_at).toISOString().slice(0, 16) : ''}
-                onChange={(e) => handleUpdateCase('deadline_at', e.target.value ? new Date(e.target.value).toISOString() : null)}
+                onChange={(e) => handleFieldChange('deadline_at', e.target.value ? new Date(e.target.value).toISOString() : null)}
+                value={localCaseData?.deadline_at ? new Date(localCaseData.deadline_at).toISOString().slice(0, 16) : ''}
                 disabled={!isAdmin}
                 margin="normal"
                 type="datetime-local"
@@ -325,7 +380,8 @@ const CaseDetailPage = () => {
                 <Select
                   value={case_.priority}
                   label={t('common.priority')}
-                  onChange={(e) => handleUpdateCase('priority', e.target.value)}
+                  onChange={(e) => handleFieldChange('priority', e.target.value)}
+                  value={localCaseData?.priority || 'normal'}
                   disabled={!isAdmin}
                 >
                   <MenuItem value="low">Low</MenuItem>
@@ -342,7 +398,8 @@ const CaseDetailPage = () => {
                   <Select
                     value={case_.assigned_technician_id || ''}
                     label={t('case.technician')}
-                    onChange={(e) => handleUpdateCase('assigned_technician_id', e.target.value)}
+                    onChange={(e) => handleFieldChange('assigned_technician_id', e.target.value ? parseInt(e.target.value) : null)}
+                    value={localCaseData?.assigned_technician_id || ''}
                   >
                     <MenuItem value="">{t('common.none')}</MenuItem>
                     {technicians?.map((tech) => (
@@ -360,7 +417,8 @@ const CaseDetailPage = () => {
                 options={[]}
                 freeSolo
                 value={case_.tags || []}
-                onChange={(event, newValue) => handleUpdateCase('tags', newValue)}
+                onChange={(event, newValue) => handleFieldChange('tags', newValue)}
+                value={localCaseData?.tags || []}
                 renderInput={(params) => (
                   <TextField
                     {...params}

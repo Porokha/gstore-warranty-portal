@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
-import { Box, TextField, Button, Typography, Paper, Chip, Alert, Grid } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { Box, TextField, Button, Typography, Paper, Chip, Alert, Grid, IconButton, Link } from '@mui/material';
+import { ArrowBack, Home } from '@mui/icons-material';
 import api from '../../services/api';
 
 const WarrantySearchPage = () => {
+  const navigate = useNavigate();
   const [warrantyId, setWarrantyId] = useState('');
   const [phone, setPhone] = useState('');
   const [result, setResult] = useState(null);
@@ -28,11 +31,31 @@ const WarrantySearchPage = () => {
     }
   };
 
+  const getStatusLabel = (level) => {
+    const statuses = {
+      1: 'Opened',
+      2: 'Investigating',
+      3: 'Pending',
+      4: 'Completed',
+    };
+    return statuses[level] || 'Unknown';
+  };
+
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto', mt: 4, mb: 4 }}>
-      <Typography variant="h4" gutterBottom align="center">
-        Search Warranty
-      </Typography>
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+        <Box display="flex" alignItems="center" gap={1}>
+          <IconButton onClick={() => navigate(-1)} aria-label="back">
+            <ArrowBack />
+          </IconButton>
+          <Typography variant="h4" component={Link} onClick={() => navigate('/')} sx={{ cursor: 'pointer', textDecoration: 'none', color: 'inherit' }}>
+            Search Warranty
+          </Typography>
+        </Box>
+        <IconButton onClick={() => navigate('/')} aria-label="home">
+          <Home />
+        </IconButton>
+      </Box>
       <Paper sx={{ p: 3 }}>
         <form onSubmit={handleSearch}>
           <TextField
@@ -166,14 +189,41 @@ const WarrantySearchPage = () => {
                   <Typography variant="body1">+{result.extended_days} days</Typography>
                 </Grid>
               )}
-              {result.service_cases_count > 0 && (
+              {result.service_cases && result.service_cases.length > 0 && (
                 <Grid item xs={12}>
-                  <Typography variant="body2" color="text.secondary">
-                    Service Cases
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Service Cases ({result.service_cases.length})
                   </Typography>
-                  <Typography variant="body1">
-                    {result.service_cases_count} case(s) associated with this warranty
-                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
+                    {result.service_cases.map((serviceCase) => (
+                      <Paper
+                        key={serviceCase.id}
+                        sx={{
+                          p: 2,
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          border: '1px solid #e0e0e0',
+                        }}
+                      >
+                        <Box>
+                          <Typography variant="body1" fontWeight="bold">
+                            {serviceCase.case_number}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Status: {getStatusLabel(serviceCase.status_level)} • Opened: {new Date(serviceCase.opened_at).toLocaleDateString()}
+                          </Typography>
+                        </Box>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={() => navigate(`/search/case?case_number=${serviceCase.case_number}&phone=${phone}`)}
+                        >
+                          View Case
+                        </Button>
+                      </Paper>
+                    ))}
+                  </Box>
                 </Grid>
               )}
             </Grid>
