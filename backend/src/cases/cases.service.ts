@@ -15,6 +15,7 @@ import { User, UserRole } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
 import { SmsService } from '../sms/sms.service';
 import { Language } from '../sms/entities/sms-template.entity';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class CasesService {
@@ -25,6 +26,7 @@ export class CasesService {
     private historyRepository: Repository<CaseStatusHistory>,
     private usersService: UsersService,
     private smsService: SmsService,
+    private auditService: AuditService,
   ) {}
 
   async generateCaseNumber(): Promise<string> {
@@ -370,6 +372,28 @@ export class CasesService {
     });
 
     return this.historyRepository.save(history);
+  }
+
+  async remove(id: number, deletedBy: number): Promise<void> {
+    const case_ = await this.findOne(id);
+    
+    // Log deletion in audit before removing
+    await this.auditService.log(deletedBy, 'case.deleted', {
+      case_id: case_.id,
+      case_number: case_.case_number,
+      customer_name: case_.customer_name,
+      customer_phone: case_.customer_phone,
+      product_title: case_.product_title,
+      status_level: case_.status_level,
+      result_type: case_.result_type,
+      deleted_at: new Date().toISOString(),
+    });
+
+    // Delete associated records (history, payments, files will be cascade deleted if configured)
+    await this.historyRepository.delete({ case_id: id });
+    
+    // Remove the case
+    await this.casesRepository.remove(case_);
   }
 
   private getStatusLabel(status: CaseStatusLevel): string {

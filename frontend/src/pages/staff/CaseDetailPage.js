@@ -526,6 +526,24 @@ const CaseDetailPage = () => {
         )}
       </DialogContent>
       <DialogActions>
+        {isAdmin && (
+          <Button
+            color="error"
+            onClick={async () => {
+              if (window.confirm(t('case.deleteCaseConfirm'))) {
+                try {
+                  await casesService.delete(id);
+                  queryClient.invalidateQueries('cases');
+                  navigate('/staff/cases');
+                } catch (error) {
+                  alert(error.response?.data?.message || t('common.errorLoading'));
+                }
+              }
+            }}
+          >
+            {t('case.deleteCase')}
+          </Button>
+        )}
         <Button onClick={() => navigate('/staff/cases')}>{t('common.close')}</Button>
       </DialogActions>
     </Dialog>

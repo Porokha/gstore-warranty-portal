@@ -162,7 +162,20 @@
     "sku": "SKU",
     "serialNumber": "Serial Number",
     "deviceType": "Device Type",
-    "deadlineDays": "Deadline (days from now)"
+    "deadlineDays": "Deadline (days from now)",
+    "customerInitialNote": "Customer's Initial Note (Problem Description)",
+    "customerInitialNotePlaceholder": "Describe what the customer reported as the problem...",
+    "createFromWarranty": "Create from Existing Warranty Product",
+    "createFromBlank": "Create from Blank",
+    "selectWarranty": "Search and select warranty product",
+    "searchWarrantyPlaceholder": "Type to search by warranty ID, product title, customer name, or phone",
+    "warrantySelected": "Warranty selected. Fields have been pre-filled. Please fill in any missing required fields.",
+    "fieldRequired": "This field is required",
+    "imeiRequired": "IMEI is required for phones",
+    "phoneRequired": "Phone number is required",
+    "deleteCase": "Delete Case",
+    "deleteCaseConfirm": "Are you sure you want to delete this case? This action cannot be undone. Case history will be preserved in audit logs.",
+    "caseDeleted": "Case deleted successfully"
   },
   "warranty": {
     "warrantyId": "Warranty ID",
@@ -170,7 +183,10 @@
     "warrantyEndDate": "Warranty end date",
     "warrantyStart": "Warranty Start",
     "daysLeft": "Days left",
-    "daysAfterWarranty": "Days after warranty"
+    "daysAfterWarranty": "Days after warranty",
+    "deleteWarranty": "Delete Warranty",
+    "deleteWarrantyConfirm": "Are you sure you want to delete this warranty? This action cannot be undone. Warranty history will be preserved in audit logs.",
+    "warrantyDeleted": "Warranty deleted successfully"
   }
 }
 

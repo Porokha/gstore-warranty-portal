@@ -9,7 +9,8 @@
 /coverage
 
 # production
-/build
+# /build - Commented out to allow build files in repo for deployment
+# !build/ - Allow build directory
 
 # misc
 .DS_Store

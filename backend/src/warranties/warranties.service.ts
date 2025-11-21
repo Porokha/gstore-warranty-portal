@@ -9,12 +9,14 @@ import { Warranty, CreatedSource } from './entities/warranty.entity';
 import { CreateWarrantyDto } from './dto/create-warranty.dto';
 import { UpdateWarrantyDto } from './dto/update-warranty.dto';
 import { FilterWarrantyDto } from './dto/filter-warranty.dto';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class WarrantiesService {
   constructor(
     @InjectRepository(Warranty)
     private warrantiesRepository: Repository<Warranty>,
+    private auditService: AuditService,
   ) {}
 
   async generateWarrantyId(
@@ -222,7 +224,7 @@ export class WarrantiesService {
     return this.warrantiesRepository.save(warranty);
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: number, deletedBy: number): Promise<void> {
     const warranty = await this.findOne(id);
     
     // Check if warranty has associated service cases
@@ -231,6 +233,19 @@ export class WarrantiesService {
         'Cannot delete warranty with associated service cases'
       );
     }
+
+    // Log deletion in audit before removing
+    await this.auditService.log(deletedBy, 'warranty.deleted', {
+      warranty_id: warranty.id,
+      warranty_number: warranty.warranty_id,
+      customer_name: warranty.customer_name,
+      customer_last_name: warranty.customer_last_name,
+      customer_phone: warranty.customer_phone,
+      product_title: warranty.title,
+      sku: warranty.sku,
+      serial_number: warranty.serial_number,
+      deleted_at: new Date().toISOString(),
+    });
 
     await this.warrantiesRepository.remove(warranty);
   }

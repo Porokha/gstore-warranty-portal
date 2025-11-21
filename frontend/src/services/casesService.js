@@ -44,5 +44,10 @@ export const casesService = {
     const response = await api.post(`/cases/${id}/reopen`);
     return response.data;
   },
+
+  delete: async (id) => {
+    const response = await api.delete(`/cases/${id}`);
+    return response.data;
+  },
 };
 

@@ -169,7 +169,17 @@ const CreateCasePage = () => {
         : undefined,
       deadline_days: parseInt(formData.deadline_days) || 14,
       tags: tags,
+      // Only include customer_last_name and customer_initial_note if they have values
+      customer_last_name: formData.customer_last_name || undefined,
+      customer_initial_note: formData.customer_initial_note || undefined,
     };
+    
+    // Remove undefined values to avoid sending them
+    Object.keys(submitData).forEach(key => {
+      if (submitData[key] === undefined || submitData[key] === '') {
+        delete submitData[key];
+      }
+    });
 
     createMutation.mutate(submitData);
   };

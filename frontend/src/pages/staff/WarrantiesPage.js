@@ -32,10 +32,15 @@ import {
   Build as BuildIcon,
 } from '@mui/icons-material';
 import { warrantiesService } from '../../services/warrantiesService';
+import { useQueryClient } from 'react-query';
+import { useAuth } from '../../contexts/AuthContext';
 
 const WarrantiesPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [searchParams, setSearchParams] = useSearchParams();
   
   const [filters, setFilters] = useState({
@@ -233,27 +238,48 @@ const WarrantiesPage = () => {
                         size="small"
                       />
                     </TableCell>
-                    <TableCell>
-                      <Box display="flex" gap={0.5}>
-                        <Tooltip title={t('common.view')}>
-                          <IconButton
-                            size="small"
-                            onClick={() => navigate(`/staff/warranties/${warranty.id}`)}
-                          >
-                            <ViewIcon />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title={t('common.createCase')}>
-                          <IconButton
-                            size="small"
-                            color="primary"
-                            onClick={() => navigate(`/staff/cases/new?warranty_id=${warranty.id}`)}
-                          >
-                            <BuildIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                    </TableCell>
+                      <TableCell>
+                        <Box display="flex" gap={0.5}>
+                          <Tooltip title={t('common.view')}>
+                            <IconButton
+                              size="small"
+                              onClick={() => navigate(`/staff/warranties/${warranty.id}`)}
+                            >
+                              <ViewIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title={t('common.createCase')}>
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              onClick={() => navigate(`/staff/cases/new?warranty_id=${warranty.id}`)}
+                            >
+                              <BuildIcon />
+                            </IconButton>
+                          </Tooltip>
+                          {isAdmin && (
+                            <Tooltip title={t('warranty.deleteWarranty')}>
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={async () => {
+                                  if (window.confirm(t('warranty.deleteWarrantyConfirm'))) {
+                                    try {
+                                      await warrantiesService.delete(warranty.id);
+                                      queryClient.invalidateQueries('warranties');
+                                      alert(t('warranty.warrantyDeleted'));
+                                    } catch (error) {
+                                      alert(error.response?.data?.message || t('common.errorLoading'));
+                                    }
+                                  }
+                                }}
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </Box>
+                      </TableCell>
                   </TableRow>
                 );
               })
