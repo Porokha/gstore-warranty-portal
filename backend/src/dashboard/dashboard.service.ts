@@ -101,16 +101,19 @@ export class DashboardService {
 
     const avgCompletionTime =
       completedCases.length > 0
-        ? completedCases.reduce((sum, case_) => {
-            const diff = case_.closed_at.getTime() - case_.opened_at.getTime();
-            return sum + diff / (1000 * 60 * 60 * 24); // days
-          }, 0) / completedCases.length
+        ? completedCases
+            .filter((case_) => case_.closed_at != null) // Filter out cases without closed_at
+            .reduce((sum, case_) => {
+              const diff = case_.closed_at.getTime() - case_.opened_at.getTime();
+              return sum + diff / (1000 * 60 * 60 * 24); // days
+            }, 0) / completedCases.filter((case_) => case_.closed_at != null).length || 0
         : 0;
 
     // On-time cases (closed before or on deadline)
     let onTimeQuery = this.casesRepository
       .createQueryBuilder('case')
       .where('case.status_level = :completed', { completed: CaseStatusLevel.COMPLETED })
+      .andWhere('case.closed_at IS NOT NULL')
       .andWhere('case.closed_at <= case.deadline_at');
     
     if (timeFilter?.start) {
@@ -153,7 +156,7 @@ export class DashboardService {
         activeWarranties,
         expiredWarranties,
         avgCompletionTime: Math.round(avgCompletionTime * 10) / 10,
-        avgCompletionByDeviceType,
+        avgCompletionByDeviceType: {}, // Will be populated by controller if device_type is specified
         onTimeCases,
         totalPayments,
         totalMoneyIn,
@@ -180,14 +183,16 @@ export class DashboardService {
       select: ['opened_at', 'closed_at'],
     });
 
-    if (completedCases.length === 0) {
+    const validCases = completedCases.filter((case_) => case_.closed_at != null);
+    
+    if (validCases.length === 0) {
       return 0;
     }
 
-    const avg = completedCases.reduce((sum, case_) => {
+    const avg = validCases.reduce((sum, case_) => {
       const diff = case_.closed_at.getTime() - case_.opened_at.getTime();
       return sum + diff / (1000 * 60 * 60 * 24);
-    }, 0) / completedCases.length;
+    }, 0) / validCases.length;
 
     return Math.round(avg * 10) / 10;
   }
