@@ -201,9 +201,8 @@ const CaseDetailPage = () => {
               <TextField
                 fullWidth
                 label={t('case.orderId')}
-                value={case_.order_id || ''}
-                onChange={(e) => handleFieldChange('order_id', e.target.value ? parseInt(e.target.value) : null)}
                 value={localCaseData?.order_id || ''}
+                onChange={(e) => handleFieldChange('order_id', e.target.value ? parseInt(e.target.value) : null)}
                 disabled={!isAdmin}
                 margin="normal"
                 type="number"
@@ -213,9 +212,8 @@ const CaseDetailPage = () => {
               <TextField
                 fullWidth
                 label={t('case.productId')}
-                value={case_.product_id || ''}
-                onChange={(e) => handleFieldChange('product_id', e.target.value ? parseInt(e.target.value) : null)}
                 value={localCaseData?.product_id || ''}
+                onChange={(e) => handleFieldChange('product_id', e.target.value ? parseInt(e.target.value) : null)}
                 disabled={!isAdmin}
                 margin="normal"
                 type="number"
@@ -225,9 +223,8 @@ const CaseDetailPage = () => {
               <TextField
                 fullWidth
                 label={t('case.productTitle')}
-                value={case_.product_title}
-                onChange={(e) => handleFieldChange('product_title', e.target.value)}
                 value={localCaseData?.product_title || ''}
+                onChange={(e) => handleFieldChange('product_title', e.target.value)}
                 disabled={!isAdmin}
                 margin="normal"
               />
@@ -236,9 +233,8 @@ const CaseDetailPage = () => {
               <TextField
                 fullWidth
                 label={t('case.sku')}
-                value={case_.sku || ''}
-                onChange={(e) => handleFieldChange('sku', e.target.value)}
                 value={localCaseData?.sku || ''}
+                onChange={(e) => handleFieldChange('sku', e.target.value)}
                 disabled={!isAdmin}
                 margin="normal"
               />
@@ -247,9 +243,8 @@ const CaseDetailPage = () => {
               <TextField
                 fullWidth
                 label={t('case.serialNumber')}
-                value={case_.serial_number || ''}
-                onChange={(e) => handleFieldChange('serial_number', e.target.value)}
                 value={localCaseData?.serial_number || ''}
+                onChange={(e) => handleFieldChange('serial_number', e.target.value)}
                 disabled={!isAdmin}
                 margin="normal"
               />
@@ -258,10 +253,9 @@ const CaseDetailPage = () => {
               <FormControl fullWidth margin="normal">
                 <InputLabel>{t('case.deviceType')}</InputLabel>
                 <Select
-                  value={case_.device_type || 'Laptop'}
+                  value={localCaseData?.device_type || 'Laptop'}
                   label={t('case.deviceType')}
                   onChange={(e) => handleFieldChange('device_type', e.target.value)}
-                  value={localCaseData?.device_type || 'Laptop'}
                   disabled={!isAdmin}
                 >
                   <MenuItem value="Laptop">Laptop</MenuItem>
@@ -276,9 +270,8 @@ const CaseDetailPage = () => {
               <TextField
                 fullWidth
                 label="IMEI"
-                value={case_.imei || ''}
-                onChange={(e) => handleFieldChange('imei', e.target.value)}
                 value={localCaseData?.imei || ''}
+                onChange={(e) => handleFieldChange('imei', e.target.value)}
                 disabled={!isAdmin}
                 margin="normal"
               />
@@ -287,9 +280,8 @@ const CaseDetailPage = () => {
               <TextField
                 fullWidth
                 label={t('case.customerName')}
-                value={case_.customer_name}
-                onChange={(e) => handleFieldChange('customer_name', e.target.value)}
                 value={localCaseData?.customer_name || ''}
+                onChange={(e) => handleFieldChange('customer_name', e.target.value)}
                 disabled={!isAdmin}
                 margin="normal"
               />
@@ -298,9 +290,8 @@ const CaseDetailPage = () => {
               <TextField
                 fullWidth
                 label={t('case.customerLastName')}
-                value={case_.customer_last_name || ''}
-                onChange={(e) => handleFieldChange('customer_last_name', e.target.value)}
                 value={localCaseData?.customer_last_name || ''}
+                onChange={(e) => handleFieldChange('customer_last_name', e.target.value)}
                 disabled={!isAdmin}
                 margin="normal"
               />
@@ -309,9 +300,8 @@ const CaseDetailPage = () => {
               <TextField
                 fullWidth
                 label={t('case.phone')}
-                value={case_.customer_phone}
-                onChange={(e) => handleFieldChange('customer_phone', e.target.value)}
                 value={localCaseData?.customer_phone || ''}
+                onChange={(e) => handleFieldChange('customer_phone', e.target.value)}
                 disabled={!isAdmin}
                 margin="normal"
               />
@@ -320,9 +310,8 @@ const CaseDetailPage = () => {
               <TextField
                 fullWidth
                 label={t('case.email')}
-                value={case_.customer_email || ''}
-                onChange={(e) => handleFieldChange('customer_email', e.target.value)}
                 value={localCaseData?.customer_email || ''}
+                onChange={(e) => handleFieldChange('customer_email', e.target.value)}
                 disabled={!isAdmin}
                 margin="normal"
                 type="email"
@@ -334,9 +323,8 @@ const CaseDetailPage = () => {
                 multiline
                 rows={4}
                 label={t('case.customerInitialNote') || "Customer's Initial Note (Problem Description)"}
-                value={case_.customer_initial_note || ''}
-                onChange={(e) => handleFieldChange('customer_initial_note', e.target.value)}
                 value={localCaseData?.customer_initial_note || ''}
+                onChange={(e) => handleFieldChange('customer_initial_note', e.target.value)}
                 disabled={!isAdmin}
                 margin="normal"
               />
@@ -354,9 +342,8 @@ const CaseDetailPage = () => {
               <TextField
                 fullWidth
                 label={t('case.deadline')}
-                value={case_.deadline_at ? new Date(case_.deadline_at).toISOString().slice(0, 16) : ''}
-                onChange={(e) => handleFieldChange('deadline_at', e.target.value ? new Date(e.target.value).toISOString() : null)}
                 value={localCaseData?.deadline_at ? new Date(localCaseData.deadline_at).toISOString().slice(0, 16) : ''}
+                onChange={(e) => handleFieldChange('deadline_at', e.target.value ? new Date(e.target.value).toISOString() : null)}
                 disabled={!isAdmin}
                 margin="normal"
                 type="datetime-local"
@@ -378,10 +365,9 @@ const CaseDetailPage = () => {
               <FormControl fullWidth margin="normal">
                 <InputLabel>{t('common.priority')}</InputLabel>
                 <Select
-                  value={case_.priority}
+                  value={localCaseData?.priority || 'normal'}
                   label={t('common.priority')}
                   onChange={(e) => handleFieldChange('priority', e.target.value)}
-                  value={localCaseData?.priority || 'normal'}
                   disabled={!isAdmin}
                 >
                   <MenuItem value="low">Low</MenuItem>
@@ -396,10 +382,9 @@ const CaseDetailPage = () => {
                 <FormControl fullWidth margin="normal">
                   <InputLabel>{t('case.technician')}</InputLabel>
                   <Select
-                    value={case_.assigned_technician_id || ''}
+                    value={localCaseData?.assigned_technician_id || ''}
                     label={t('case.technician')}
                     onChange={(e) => handleFieldChange('assigned_technician_id', e.target.value ? parseInt(e.target.value) : null)}
-                    value={localCaseData?.assigned_technician_id || ''}
                   >
                     <MenuItem value="">{t('common.none')}</MenuItem>
                     {technicians?.map((tech) => (
@@ -416,9 +401,8 @@ const CaseDetailPage = () => {
                 multiple
                 options={[]}
                 freeSolo
-                value={case_.tags || []}
-                onChange={(event, newValue) => handleFieldChange('tags', newValue)}
                 value={localCaseData?.tags || []}
+                onChange={(event, newValue) => handleFieldChange('tags', newValue)}
                 renderInput={(params) => (
                   <TextField
                     {...params}

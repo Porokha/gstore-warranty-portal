@@ -121,6 +121,8 @@ export class PublicService {
       status_history: publicHistory,
       warranty_id: case_.warranty?.warranty_id || null,
       warranty_status: warrantyStatus,
+      customer_name: case_.customer_name,
+      customer_last_name: case_.customer_last_name || null,
       customer_initial_note: case_.customer_initial_note || null,
       assigned_technician: case_.assigned_technician
         ? {

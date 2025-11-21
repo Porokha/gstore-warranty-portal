@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Box, TextField, Button, Typography, Paper, Chip, Alert, Grid, Divider, IconButton, Link } from '@mui/material';
-import { ArrowBack, Home } from '@mui/icons-material';
+import { ArrowBack } from '@mui/icons-material';
 import api from '../../services/api';
 import StatusBar from '../../components/cases/StatusBar';
 import ResultBar from '../../components/cases/ResultBar';
@@ -65,18 +65,17 @@ const CaseSearchPage = () => {
 
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto', mt: 4, mb: 4 }}>
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-        <Box display="flex" alignItems="center" gap={1}>
-          <IconButton onClick={() => navigate(-1)} aria-label="back">
-            <ArrowBack />
-          </IconButton>
-          <Typography variant="h4" component={Link} onClick={() => navigate('/')} sx={{ cursor: 'pointer', textDecoration: 'none', color: 'inherit' }}>
-            Search Service Case
-          </Typography>
-        </Box>
-        <IconButton onClick={() => navigate('/')} aria-label="home">
-          <Home />
+      <Box display="flex" alignItems="center" gap={1} mb={2}>
+        <IconButton onClick={() => navigate(-1)} aria-label="back">
+          <ArrowBack />
         </IconButton>
+        <Typography 
+          variant="h4" 
+          onClick={() => navigate('/')} 
+          sx={{ cursor: 'pointer', textDecoration: 'none', color: 'inherit', '&:hover': { textDecoration: 'underline' } }}
+        >
+          Search Service Case
+        </Typography>
       </Box>
       <Paper sx={{ p: 3 }}>
         <form onSubmit={handleSearch}>
@@ -206,8 +205,16 @@ const CaseSearchPage = () => {
                   </Typography>
                 </Grid>
               )}
+              <Grid item xs={12} md={6}>
+                <Typography variant="body2" color="text.secondary">
+                  Customer Name
+                </Typography>
+                <Typography variant="body1" fontWeight="bold">
+                  {result.customer_name} {result.customer_last_name || ''}
+                </Typography>
+              </Grid>
               {result.assigned_technician && (
-                <Grid item xs={12}>
+                <Grid item xs={12} md={6}>
                   <Typography variant="body2" color="text.secondary">
                     Assigned Technician
                   </Typography>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, TextField, Button, Typography, Paper, Chip, Alert, Grid, IconButton, Link } from '@mui/material';
-import { ArrowBack, Home } from '@mui/icons-material';
+import { ArrowBack } from '@mui/icons-material';
 import api from '../../services/api';
 
 const WarrantySearchPage = () => {
@@ -43,18 +43,17 @@ const WarrantySearchPage = () => {
 
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto', mt: 4, mb: 4 }}>
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-        <Box display="flex" alignItems="center" gap={1}>
-          <IconButton onClick={() => navigate(-1)} aria-label="back">
-            <ArrowBack />
-          </IconButton>
-          <Typography variant="h4" component={Link} onClick={() => navigate('/')} sx={{ cursor: 'pointer', textDecoration: 'none', color: 'inherit' }}>
-            Search Warranty
-          </Typography>
-        </Box>
-        <IconButton onClick={() => navigate('/')} aria-label="home">
-          <Home />
+      <Box display="flex" alignItems="center" gap={1} mb={2}>
+        <IconButton onClick={() => navigate(-1)} aria-label="back">
+          <ArrowBack />
         </IconButton>
+        <Typography 
+          variant="h4" 
+          onClick={() => navigate('/')} 
+          sx={{ cursor: 'pointer', textDecoration: 'none', color: 'inherit', '&:hover': { textDecoration: 'underline' } }}
+        >
+          Search Warranty
+        </Typography>
       </Box>
       <Paper sx={{ p: 3 }}>
         <form onSubmit={handleSearch}>
