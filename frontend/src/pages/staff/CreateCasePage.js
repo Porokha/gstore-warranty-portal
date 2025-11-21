@@ -159,24 +159,32 @@ const CreateCasePage = () => {
       return;
     }
 
+    // Build submit data, converting empty strings to undefined
     const submitData = {
-      ...formData,
       warranty_id: formData.warranty_id ? parseInt(formData.warranty_id) : undefined,
+      sku: formData.sku,
+      imei: formData.imei || undefined,
+      serial_number: formData.serial_number,
+      device_type: formData.device_type,
+      product_title: formData.product_title,
+      customer_name: formData.customer_name,
+      customer_last_name: formData.customer_last_name?.trim() || undefined,
+      customer_phone: formData.customer_phone,
+      customer_email: formData.customer_email?.trim() || undefined,
+      customer_initial_note: formData.customer_initial_note?.trim() || undefined,
       order_id: formData.order_id ? parseInt(formData.order_id) : undefined,
       product_id: formData.product_id ? parseInt(formData.product_id) : undefined,
       assigned_technician_id: formData.assigned_technician_id
         ? parseInt(formData.assigned_technician_id)
         : undefined,
+      priority: formData.priority,
       deadline_days: parseInt(formData.deadline_days) || 14,
-      tags: tags,
-      // Only include customer_last_name and customer_initial_note if they have values
-      customer_last_name: formData.customer_last_name || undefined,
-      customer_initial_note: formData.customer_initial_note || undefined,
+      tags: tags.length > 0 ? tags : undefined,
     };
     
-    // Remove undefined values to avoid sending them
+    // Remove undefined and empty string values
     Object.keys(submitData).forEach(key => {
-      if (submitData[key] === undefined || submitData[key] === '') {
+      if (submitData[key] === undefined || submitData[key] === '' || submitData[key] === null) {
         delete submitData[key];
       }
     });
