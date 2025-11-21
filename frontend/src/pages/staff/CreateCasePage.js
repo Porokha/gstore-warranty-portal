@@ -119,7 +119,10 @@ const CreateCasePage = () => {
         navigate(`/staff/cases/${data.id}`);
       },
       onError: (error) => {
-        setError(error.response?.data?.message || 'Failed to create case');
+        console.error('Case creation error:', error.response?.data);
+        const errorMessage = error.response?.data?.message || 
+                           (error.response?.data?.message?.join ? error.response.data.message.join(', ') : 'Failed to create case');
+        setError(errorMessage);
       },
     }
   );
@@ -189,6 +192,9 @@ const CreateCasePage = () => {
       }
     });
 
+    // Debug: log what we're sending
+    console.log('Submitting case data:', JSON.stringify(submitData, null, 2));
+    
     createMutation.mutate(submitData);
   };
 

@@ -75,6 +75,8 @@ export class CasesController {
 
   @Post()
   create(@Body() createDto: CreateCaseDto, @Request() req) {
+    // Log received data for debugging
+    console.log('Received case creation request:', JSON.stringify(createDto, null, 2));
     return this.casesService.create(createDto, req.user.id);
   }
 
