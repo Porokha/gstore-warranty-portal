@@ -42,19 +42,19 @@ export class DashboardService {
     });
 
     // Time-filtered stats
-    const closedCasesWhere: any = {
-      status_level: CaseStatusLevel.COMPLETED,
-    };
+    let closedCasesQuery = this.casesRepository
+      .createQueryBuilder('case')
+      .where('case.status_level = :completed', { completed: CaseStatusLevel.COMPLETED })
+      .andWhere('case.closed_at IS NOT NULL');
+    
     if (timeFilter?.start) {
-      closedCasesWhere.closed_at = MoreThan(timeFilter.start);
+      closedCasesQuery = closedCasesQuery.andWhere('case.closed_at > :start', { start: timeFilter.start });
     }
     if (timeFilter?.end) {
-      closedCasesWhere.closed_at = LessThanOrEqual(timeFilter.end);
+      closedCasesQuery = closedCasesQuery.andWhere('case.closed_at <= :end', { end: timeFilter.end });
     }
 
-    const closedCases = await this.casesRepository.count({
-      where: closedCasesWhere,
-    });
+    const closedCases = await closedCasesQuery.getCount();
 
     // Active warranties (purchased in period, still active)
     const activeWarrantiesWhere: any = {
@@ -87,17 +87,21 @@ export class DashboardService {
     });
 
     // Average completion time
-    const completedCasesWhere: any = {
-      status_level: CaseStatusLevel.COMPLETED,
-    };
+    let completedCasesQuery = this.casesRepository
+      .createQueryBuilder('case')
+      .where('case.status_level = :completed', { completed: CaseStatusLevel.COMPLETED })
+      .andWhere('case.closed_at IS NOT NULL');
+    
     if (timeFilter?.start) {
-      completedCasesWhere.closed_at = MoreThan(timeFilter.start);
+      completedCasesQuery = completedCasesQuery.andWhere('case.closed_at > :start', { start: timeFilter.start });
+    }
+    if (timeFilter?.end) {
+      completedCasesQuery = completedCasesQuery.andWhere('case.closed_at <= :end', { end: timeFilter.end });
     }
 
-    const completedCases = await this.casesRepository.find({
-      where: completedCasesWhere,
-      select: ['opened_at', 'closed_at'],
-    });
+    const completedCases = await completedCasesQuery
+      .select(['case.opened_at', 'case.closed_at'])
+      .getMany();
 
     const avgCompletionTime =
       completedCases.length > 0
@@ -166,33 +170,31 @@ export class DashboardService {
   }
 
   async getAvgCompletionByDeviceType(deviceType: string, timeFilter?: { start?: Date; end?: Date }) {
-    const completedCasesWhere: any = {
-      status_level: CaseStatusLevel.COMPLETED,
-      device_type: deviceType,
-    };
+    let completedCasesQuery = this.casesRepository
+      .createQueryBuilder('case')
+      .where('case.status_level = :completed', { completed: CaseStatusLevel.COMPLETED })
+      .andWhere('case.device_type = :deviceType', { deviceType })
+      .andWhere('case.closed_at IS NOT NULL');
     
     if (timeFilter?.start) {
-      completedCasesWhere.closed_at = MoreThan(timeFilter.start);
+      completedCasesQuery = completedCasesQuery.andWhere('case.closed_at > :start', { start: timeFilter.start });
     }
     if (timeFilter?.end) {
-      completedCasesWhere.closed_at = LessThanOrEqual(timeFilter.end);
+      completedCasesQuery = completedCasesQuery.andWhere('case.closed_at <= :end', { end: timeFilter.end });
     }
 
-    const completedCases = await this.casesRepository.find({
-      where: completedCasesWhere,
-      select: ['opened_at', 'closed_at'],
-    });
-
-    const validCases = completedCases.filter((case_) => case_.closed_at != null);
+    const completedCases = await completedCasesQuery
+      .select(['case.opened_at', 'case.closed_at'])
+      .getMany();
     
-    if (validCases.length === 0) {
+    if (completedCases.length === 0) {
       return 0;
     }
 
-    const avg = validCases.reduce((sum, case_) => {
+    const avg = completedCases.reduce((sum, case_) => {
       const diff = case_.closed_at.getTime() - case_.opened_at.getTime();
       return sum + diff / (1000 * 60 * 60 * 24);
-    }, 0) / validCases.length;
+    }, 0) / completedCases.length;
 
     return Math.round(avg * 10) / 10;
   }
