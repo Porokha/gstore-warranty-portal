@@ -70,6 +70,9 @@ export class ServiceCase {
   @Column({ nullable: true })
   customer_email: string;
 
+  @Column({ type: 'text', nullable: true })
+  customer_initial_note: string; // Customer's description of the problem
+
   @Column({ nullable: true })
   order_id: number;
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useMutation } from 'react-query';
+import { useMutation, useQuery } from 'react-query';
 import {
   Container,
   Paper,
@@ -17,8 +17,14 @@ import {
   Chip,
   Alert,
   CircularProgress,
+  Autocomplete,
+  Divider,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import { casesService } from '../../services/casesService';
+import { warrantiesService } from '../../services/warrantiesService';
+import { usersService } from '../../services/usersService';
 import { useQueryClient } from 'react-query';
 
 const CreateCasePage = () => {
@@ -29,6 +35,9 @@ const CreateCasePage = () => {
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
   const [error, setError] = useState('');
+  const [mode, setMode] = useState('blank'); // 'blank' or 'warranty'
+  const [selectedWarranty, setSelectedWarranty] = useState(null);
+  const [warrantySearchTerm, setWarrantySearchTerm] = useState('');
 
   const warrantyIdFromUrl = searchParams.get('warranty_id');
 
@@ -40,8 +49,10 @@ const CreateCasePage = () => {
     device_type: 'Laptop',
     product_title: '',
     customer_name: '',
+    customer_last_name: '',
     customer_phone: '',
     customer_email: '',
+    customer_initial_note: '',
     order_id: '',
     product_id: '',
     assigned_technician_id: '',
@@ -49,15 +60,56 @@ const CreateCasePage = () => {
     deadline_days: 14,
   });
 
-  // If warranty_id is in URL, we could fetch warranty details to pre-fill form
+  // Fetch warranties for search
+  const { data: warranties, isLoading: isLoadingWarranties } = useQuery(
+    ['warranties', warrantySearchTerm],
+    () => warrantiesService.getAll({ search: warrantySearchTerm }),
+    {
+      enabled: mode === 'warranty' && warrantySearchTerm.length > 0,
+      keepPreviousData: true,
+    }
+  );
+
+  // Fetch technicians
+  const { data: users } = useQuery('users', usersService.getAll);
+  const availableTechnicians = users?.filter(u => u.role === 'technician') || [];
+
+  // If warranty_id is in URL, set mode to warranty and fetch warranty
   useEffect(() => {
     if (warrantyIdFromUrl) {
-      setFormData((prev) => ({
-        ...prev,
-        warranty_id: warrantyIdFromUrl,
-      }));
+      setMode('warranty');
+      warrantiesService.getById(warrantyIdFromUrl).then((warranty) => {
+        setSelectedWarranty(warranty);
+        fillFormFromWarranty(warranty);
+      });
     }
   }, [warrantyIdFromUrl]);
+
+  // Fill form from warranty data
+  const fillFormFromWarranty = (warranty) => {
+    if (!warranty) return;
+    
+    setFormData((prev) => ({
+      ...prev,
+      warranty_id: warranty.id,
+      sku: warranty.sku || '',
+      serial_number: warranty.serial_number || '',
+      imei: warranty.imei || '',
+      device_type: warranty.device_type || 'Laptop',
+      product_title: warranty.title || '',
+      customer_name: warranty.customer_name || '',
+      customer_last_name: warranty.customer_last_name || '',
+      customer_phone: warranty.customer_phone || '',
+      customer_email: warranty.customer_email || '',
+      order_id: warranty.order_id || '',
+      product_id: warranty.product_id || '',
+    }));
+  };
+
+  const handleWarrantySelect = (warranty) => {
+    setSelectedWarranty(warranty);
+    fillFormFromWarranty(warranty);
+  };
 
   const createMutation = useMutation(
     (data) => casesService.create(data),
@@ -95,6 +147,12 @@ const CreateCasePage = () => {
     e.preventDefault();
     setError('');
 
+    // Validate required fields
+    if (!formData.customer_phone) {
+      setError('Phone number is required');
+      return;
+    }
+
     // Validate IMEI for phones
     if (formData.device_type.toLowerCase() === 'phone' && !formData.imei) {
       setError('IMEI is required for phone devices');
@@ -116,6 +174,32 @@ const CreateCasePage = () => {
     createMutation.mutate(submitData);
   };
 
+  const handleModeChange = (newMode) => {
+    setMode(newMode);
+    if (newMode === 'blank') {
+      setSelectedWarranty(null);
+      setFormData({
+        warranty_id: '',
+        sku: '',
+        imei: '',
+        serial_number: '',
+        device_type: 'Laptop',
+        product_title: '',
+        customer_name: '',
+        customer_last_name: '',
+        customer_phone: '',
+        customer_email: '',
+        customer_initial_note: '',
+        order_id: '',
+        product_id: '',
+        assigned_technician_id: '',
+        priority: 'normal',
+        deadline_days: 14,
+      });
+      setTags([]);
+    }
+  };
+
   return (
     <Container maxWidth="md">
       <Box sx={{ marginTop: 4, marginBottom: 4 }}>
@@ -123,7 +207,73 @@ const CreateCasePage = () => {
           {t('common.createCase')}
         </Typography>
 
-        <Paper elevation={3} sx={{ padding: 4 }}>
+        <Paper elevation={3} sx={{ padding: 4, mb: 3 }}>
+          <Box display="flex" gap={2} mb={3}>
+            <Button
+              variant={mode === 'warranty' ? 'contained' : 'outlined'}
+              onClick={() => handleModeChange('warranty')}
+              fullWidth
+            >
+              {t('case.createFromWarranty') || 'Create from Existing Warranty Product'}
+            </Button>
+            <Button
+              variant={mode === 'blank' ? 'contained' : 'outlined'}
+              onClick={() => handleModeChange('blank')}
+              fullWidth
+            >
+              {t('case.createFromBlank') || 'Create from Blank'}
+            </Button>
+          </Box>
+
+          {mode === 'warranty' && (
+            <Box mb={3}>
+              <Autocomplete
+                options={warranties || []}
+                getOptionLabel={(option) => 
+                  `${option.warranty_id} - ${option.title} (${option.customer_name} ${option.customer_last_name})`
+                }
+                loading={isLoadingWarranties}
+                value={selectedWarranty}
+                onChange={(event, newValue) => {
+                  handleWarrantySelect(newValue);
+                }}
+                onInputChange={(event, newInputValue) => {
+                  setWarrantySearchTerm(newInputValue);
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label={t('case.selectWarranty') || 'Search and select warranty product'}
+                    placeholder={t('case.searchWarrantyPlaceholder') || 'Type to search by warranty ID, product title, customer name, or phone'}
+                    fullWidth
+                  />
+                )}
+                renderOption={(props, option) => (
+                  <Box component="li" {...props} key={option.id}>
+                    <Box>
+                      <Typography variant="body1" fontWeight="bold">
+                        {option.warranty_id} - {option.title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {option.customer_name} {option.customer_last_name} | {option.customer_phone}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        SKU: {option.sku} | Serial: {option.serial_number}
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
+              />
+              {selectedWarranty && (
+                <Alert severity="info" sx={{ mt: 2 }}>
+                  {t('case.warrantySelected') || 'Warranty selected. Fields have been pre-filled. Please fill in any missing required fields.'}
+                </Alert>
+              )}
+            </Box>
+          )}
+
+          <Divider sx={{ mb: 3 }} />
+
           <form onSubmit={handleSubmit}>
             {error && (
               <Alert severity="error" sx={{ mb: 2 }}>
@@ -141,6 +291,8 @@ const CreateCasePage = () => {
                   value={formData.sku}
                   onChange={handleChange}
                   margin="normal"
+                  error={!formData.sku}
+                  helperText={!formData.sku ? t('case.fieldRequired') || 'This field is required' : ''}
                 />
               </Grid>
               <Grid item xs={12} md={6}>
@@ -152,11 +304,13 @@ const CreateCasePage = () => {
                   value={formData.serial_number}
                   onChange={handleChange}
                   margin="normal"
+                  error={!formData.serial_number}
+                  helperText={!formData.serial_number ? t('case.fieldRequired') || 'This field is required' : ''}
                 />
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <FormControl fullWidth margin="normal">
+                <FormControl fullWidth margin="normal" required>
                   <InputLabel>{t('case.deviceType') || 'Device Type'}</InputLabel>
                   <Select
                     name="device_type"
@@ -183,7 +337,8 @@ const CreateCasePage = () => {
                     value={formData.imei}
                     onChange={handleChange}
                     margin="normal"
-                    helperText="Required for phones"
+                    error={!formData.imei}
+                    helperText={!formData.imei ? t('case.imeiRequired') || 'IMEI is required for phones' : ''}
                   />
                 </Grid>
               )}
@@ -197,6 +352,8 @@ const CreateCasePage = () => {
                   value={formData.product_title}
                   onChange={handleChange}
                   margin="normal"
+                  error={!formData.product_title}
+                  helperText={!formData.product_title ? t('case.fieldRequired') || 'This field is required' : ''}
                 />
               </Grid>
 
@@ -207,6 +364,18 @@ const CreateCasePage = () => {
                   label={t('case.customerName')}
                   name="customer_name"
                   value={formData.customer_name}
+                  onChange={handleChange}
+                  margin="normal"
+                  error={!formData.customer_name}
+                  helperText={!formData.customer_name ? t('case.fieldRequired') || 'This field is required' : ''}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label={t('case.customerLastName')}
+                  name="customer_last_name"
+                  value={formData.customer_last_name}
                   onChange={handleChange}
                   margin="normal"
                 />
@@ -220,6 +389,8 @@ const CreateCasePage = () => {
                   value={formData.customer_phone}
                   onChange={handleChange}
                   margin="normal"
+                  error={!formData.customer_phone}
+                  helperText={!formData.customer_phone ? t('case.phoneRequired') || 'Phone number is required' : ''}
                 />
               </Grid>
               <Grid item xs={12} md={6}>
@@ -231,6 +402,20 @@ const CreateCasePage = () => {
                   value={formData.customer_email}
                   onChange={handleChange}
                   margin="normal"
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={4}
+                  label={t('case.customerInitialNote') || "Customer's Initial Note (Problem Description)"}
+                  name="customer_initial_note"
+                  value={formData.customer_initial_note}
+                  onChange={handleChange}
+                  margin="normal"
+                  placeholder={t('case.customerInitialNotePlaceholder') || 'Describe what the customer reported as the problem...'}
                 />
               </Grid>
 
@@ -260,6 +445,25 @@ const CreateCasePage = () => {
                     <MenuItem value="normal">Normal</MenuItem>
                     <MenuItem value="high">High</MenuItem>
                     <MenuItem value="critical">Critical</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth margin="normal">
+                  <InputLabel>{t('case.technician')}</InputLabel>
+                  <Select
+                    name="assigned_technician_id"
+                    value={formData.assigned_technician_id}
+                    onChange={handleChange}
+                    label={t('case.technician')}
+                  >
+                    <MenuItem value="">{t('common.none')}</MenuItem>
+                    {availableTechnicians.map((tech) => (
+                      <MenuItem key={tech.id} value={tech.id}>
+                        {tech.name} {tech.last_name}
+                      </MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
               </Grid>
@@ -323,4 +527,3 @@ const CreateCasePage = () => {
 };
 
 export default CreateCasePage;
-

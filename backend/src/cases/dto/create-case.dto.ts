@@ -41,6 +41,10 @@ export class CreateCaseDto {
   customer_email?: string;
 
   @IsOptional()
+  @IsString()
+  customer_initial_note?: string; // Customer's description of the problem
+
+  @IsOptional()
   @IsInt()
   order_id?: number;
 

@@ -19,6 +19,38 @@ export class UpdateCaseDto {
   customer_email?: string;
 
   @IsOptional()
+  @IsString()
+  customer_initial_note?: string;
+
+  @IsOptional()
+  @IsString()
+  sku?: string;
+
+  @IsOptional()
+  @IsString()
+  serial_number?: string;
+
+  @IsOptional()
+  @IsString()
+  imei?: string;
+
+  @IsOptional()
+  @IsString()
+  device_type?: string;
+
+  @IsOptional()
+  @IsInt()
+  warranty_id?: number;
+
+  @IsOptional()
+  @IsInt()
+  order_id?: number;
+
+  @IsOptional()
+  @IsInt()
+  product_id?: number;
+
+  @IsOptional()
   @IsInt()
   assigned_technician_id?: number;
 

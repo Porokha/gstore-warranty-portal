@@ -159,18 +159,22 @@ const CaseDetailPage = () => {
               <TextField
                 fullWidth
                 label={t('case.orderId')}
-                value={case_.order_id || '-'}
-                disabled
+                value={case_.order_id || ''}
+                onChange={(e) => handleUpdateCase('order_id', e.target.value ? parseInt(e.target.value) : null)}
+                disabled={!isAdmin}
                 margin="normal"
+                type="number"
               />
             </Grid>
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
                 label={t('case.productId')}
-                value={case_.product_id || '-'}
-                disabled
+                value={case_.product_id || ''}
+                onChange={(e) => handleUpdateCase('product_id', e.target.value ? parseInt(e.target.value) : null)}
+                disabled={!isAdmin}
                 margin="normal"
+                type="number"
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -178,7 +182,8 @@ const CaseDetailPage = () => {
                 fullWidth
                 label={t('case.productTitle')}
                 value={case_.product_title}
-                disabled
+                onChange={(e) => handleUpdateCase('product_title', e.target.value)}
+                disabled={!isAdmin}
                 margin="normal"
               />
             </Grid>
@@ -186,8 +191,9 @@ const CaseDetailPage = () => {
               <TextField
                 fullWidth
                 label={t('case.sku')}
-                value={case_.sku || '-'}
-                disabled
+                value={case_.sku || ''}
+                onChange={(e) => handleUpdateCase('sku', e.target.value)}
+                disabled={!isAdmin}
                 margin="normal"
               />
             </Grid>
@@ -195,17 +201,36 @@ const CaseDetailPage = () => {
               <TextField
                 fullWidth
                 label={t('case.serialNumber')}
-                value={case_.serial_number || '-'}
-                disabled
+                value={case_.serial_number || ''}
+                onChange={(e) => handleUpdateCase('serial_number', e.target.value)}
+                disabled={!isAdmin}
                 margin="normal"
               />
             </Grid>
             <Grid item xs={12} md={6}>
+              <FormControl fullWidth margin="normal">
+                <InputLabel>{t('case.deviceType')}</InputLabel>
+                <Select
+                  value={case_.device_type || 'Laptop'}
+                  label={t('case.deviceType')}
+                  onChange={(e) => handleUpdateCase('device_type', e.target.value)}
+                  disabled={!isAdmin}
+                >
+                  <MenuItem value="Laptop">Laptop</MenuItem>
+                  <MenuItem value="Phone">Phone</MenuItem>
+                  <MenuItem value="Tablet">Tablet</MenuItem>
+                  <MenuItem value="Desktop">Desktop</MenuItem>
+                  <MenuItem value="Other">Other</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label={t('case.deviceType')}
-                value={case_.device_type || '-'}
-                disabled
+                label="IMEI"
+                value={case_.imei || ''}
+                onChange={(e) => handleUpdateCase('imei', e.target.value)}
+                disabled={!isAdmin}
                 margin="normal"
               />
             </Grid>
@@ -214,7 +239,8 @@ const CaseDetailPage = () => {
                 fullWidth
                 label={t('case.customerName')}
                 value={case_.customer_name}
-                disabled
+                onChange={(e) => handleUpdateCase('customer_name', e.target.value)}
+                disabled={!isAdmin}
                 margin="normal"
               />
             </Grid>
@@ -222,8 +248,9 @@ const CaseDetailPage = () => {
               <TextField
                 fullWidth
                 label={t('case.customerLastName')}
-                value={case_.customer_last_name || '-'}
-                disabled
+                value={case_.customer_last_name || ''}
+                onChange={(e) => handleUpdateCase('customer_last_name', e.target.value)}
+                disabled={!isAdmin}
                 margin="normal"
               />
             </Grid>
@@ -232,7 +259,8 @@ const CaseDetailPage = () => {
                 fullWidth
                 label={t('case.phone')}
                 value={case_.customer_phone}
-                disabled
+                onChange={(e) => handleUpdateCase('customer_phone', e.target.value)}
+                disabled={!isAdmin}
                 margin="normal"
               />
             </Grid>
@@ -240,8 +268,22 @@ const CaseDetailPage = () => {
               <TextField
                 fullWidth
                 label={t('case.email')}
-                value={case_.customer_email || '-'}
-                disabled
+                value={case_.customer_email || ''}
+                onChange={(e) => handleUpdateCase('customer_email', e.target.value)}
+                disabled={!isAdmin}
+                margin="normal"
+                type="email"
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                multiline
+                rows={4}
+                label={t('case.customerInitialNote') || "Customer's Initial Note (Problem Description)"}
+                value={case_.customer_initial_note || ''}
+                onChange={(e) => handleUpdateCase('customer_initial_note', e.target.value)}
+                disabled={!isAdmin}
                 margin="normal"
               />
             </Grid>
@@ -258,9 +300,12 @@ const CaseDetailPage = () => {
               <TextField
                 fullWidth
                 label={t('case.deadline')}
-                value={new Date(case_.deadline_at).toLocaleString()}
-                disabled
+                value={case_.deadline_at ? new Date(case_.deadline_at).toISOString().slice(0, 16) : ''}
+                onChange={(e) => handleUpdateCase('deadline_at', e.target.value ? new Date(e.target.value).toISOString() : null)}
+                disabled={!isAdmin}
                 margin="normal"
+                type="datetime-local"
+                InputLabelProps={{ shrink: true }}
               />
             </Grid>
             {case_.closed_at && (
