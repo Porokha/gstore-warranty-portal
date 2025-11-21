@@ -64,6 +64,9 @@ export class ServiceCase {
   @Column()
   customer_name: string;
 
+  @Column({ nullable: true })
+  customer_last_name: string;
+
   @Column()
   customer_phone: string;
 

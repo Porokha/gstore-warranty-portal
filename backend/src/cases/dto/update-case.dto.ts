@@ -12,6 +12,10 @@ export class UpdateCaseDto {
 
   @IsOptional()
   @IsString()
+  customer_last_name?: string;
+
+  @IsOptional()
+  @IsString()
   customer_phone?: string;
 
   @IsOptional()

@@ -32,6 +32,10 @@ export class CreateCaseDto {
   @IsNotEmpty()
   customer_name: string;
 
+  @IsOptional()
+  @IsString()
+  customer_last_name?: string;
+
   @IsString()
   @IsNotEmpty()
   customer_phone: string;
