@@ -101,6 +101,7 @@ const CreateCasePage = () => {
       customer_last_name: warranty.customer_last_name || '',
       customer_phone: warranty.customer_phone || '',
       customer_email: warranty.customer_email || '',
+      customer_initial_note: '', // Always start empty for new case
       order_id: warranty.order_id || '',
       product_id: warranty.product_id || '',
     }));
