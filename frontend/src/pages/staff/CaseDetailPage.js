@@ -140,7 +140,7 @@ const CaseDetailPage = () => {
     );
   }
 
-  if (!case_) {
+  if (!case_ || !localCaseData) {
     return <Alert severity="error">Case not found</Alert>;
   }
 
@@ -150,7 +150,7 @@ const CaseDetailPage = () => {
     <Dialog open={true} onClose={() => navigate('/staff/cases')} maxWidth="lg" fullWidth>
         <DialogTitle>
           <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Typography variant="h6">{case_?.case_number}</Typography>
+            <Typography variant="h6">{localCaseData?.case_number || case_?.case_number}</Typography>
             <Box>
               {hasUnsavedChanges && (
                 <Button
