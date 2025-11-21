@@ -51,7 +51,7 @@ const CreateWarrantyPage = () => {
     {
       onSuccess: (data) => {
         queryClient.invalidateQueries('warranties');
-        navigate(`/staff/warranties/${data.id}`);
+        navigate('/staff/warranties');
       },
       onError: (error) => {
         setError(error.response?.data?.message || 'Failed to create warranty');

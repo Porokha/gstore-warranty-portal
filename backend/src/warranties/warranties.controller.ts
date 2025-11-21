@@ -43,14 +43,14 @@ export class WarrantiesController {
     return this.warrantiesService.getStats(start, end);
   }
 
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.warrantiesService.findOne(id);
-  }
-
   @Get('warranty-id/:warrantyId')
   findByWarrantyId(@Param('warrantyId') warrantyId: string) {
     return this.warrantiesService.findByWarrantyId(warrantyId);
+  }
+
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.warrantiesService.findOne(id);
   }
 
   @Put(':id')
