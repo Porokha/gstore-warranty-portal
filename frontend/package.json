@@ -4,20 +4,21 @@
   "description": "Gstore Warranty Portal Frontend",
   "private": true,
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.21.1",
-    "react-scripts": "5.0.1",
-    "i18next": "^23.7.6",
-    "react-i18next": "^13.5.0",
-    "i18next-browser-languagedetector": "^7.2.0",
-    "axios": "^1.6.2",
-    "@mui/material": "^5.15.0",
-    "@mui/icons-material": "^5.15.0",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
+    "@mui/icons-material": "^5.15.0",
+    "@mui/material": "^5.15.0",
+    "axios": "^1.6.2",
     "date-fns": "^3.0.6",
-    "react-query": "^3.39.3"
+    "i18next": "^23.7.6",
+    "i18next-browser-languagedetector": "^7.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-i18next": "^13.5.0",
+    "react-query": "^3.39.3",
+    "react-router-dom": "^6.21.1",
+    "react-scripts": "5.0.1",
+    "recharts": "^3.5.0"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -45,4 +46,3 @@
   },
   "proxy": "http://localhost:3000"
 }
-
