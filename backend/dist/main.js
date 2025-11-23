@@ -47,8 +47,8 @@ async function bootstrap() {
     }));
     app.setGlobalPrefix('api');
     const config = new swagger_1.DocumentBuilder()
-        .setTitle('Gstore Warranty Portal API')
-        .setDescription('API documentation for Gstore Warranty & Service Management Portal')
+        .setTitle('ZEZVA Warranty Portal API')
+        .setDescription('API documentation for ZEZVA Warranty & Service Management Portal')
         .setVersion('1.0')
         .addBearerAuth()
         .build();

@@ -28,21 +28,24 @@ let DashboardService = class DashboardService {
     async getDashboardStats(timeFilter) {
         const now = new Date();
         const in48Hours = new Date(now.getTime() + 48 * 60 * 60 * 1000);
-        const openCases = await this.casesRepository.count({
-            where: { status_level: (0, typeorm_2.LessThan)(service_case_entity_1.CaseStatusLevel.COMPLETED) },
-        });
+        const openCases = await this.casesRepository
+            .createQueryBuilder('case')
+            .where('case.status_level < :completed', { completed: service_case_entity_1.CaseStatusLevel.COMPLETED })
+            .andWhere('(case.deleted_at IS NULL OR case.deleted_at = :null)', { null: null })
+            .getCount();
         const closeToDeadline = await this.casesRepository
             .createQueryBuilder('case')
             .where('case.status_level < :completed', { completed: service_case_entity_1.CaseStatusLevel.COMPLETED })
             .andWhere('case.deadline_at <= :in48Hours', { in48Hours })
             .andWhere('case.deadline_at > :now', { now })
+            .andWhere('(case.deleted_at IS NULL OR case.deleted_at = :null)', { null: null })
             .getCount();
-        const dueCases = await this.casesRepository.count({
-            where: {
-                status_level: (0, typeorm_2.LessThan)(service_case_entity_1.CaseStatusLevel.COMPLETED),
-                deadline_at: (0, typeorm_2.LessThan)(now),
-            },
-        });
+        const dueCases = await this.casesRepository
+            .createQueryBuilder('case')
+            .where('case.status_level < :completed', { completed: service_case_entity_1.CaseStatusLevel.COMPLETED })
+            .andWhere('case.deadline_at < :now', { now })
+            .andWhere('(case.deleted_at IS NULL OR case.deleted_at = :null)', { null: null })
+            .getCount();
         let closedCasesQuery = this.casesRepository
             .createQueryBuilder('case')
             .where('case.status_level = :completed', { completed: service_case_entity_1.CaseStatusLevel.COMPLETED })
