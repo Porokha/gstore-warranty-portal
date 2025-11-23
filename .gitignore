@@ -20,8 +20,9 @@ out/
 !frontend/build/
 !backend/dist/
 
-# Exception: Allow frontend/build for deployment
+# Exception: Allow prebuilt builds for deployment
 !frontend/build/
+!backend/dist/
 
 # Environment variables
 .env
