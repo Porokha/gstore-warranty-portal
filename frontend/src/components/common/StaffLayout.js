@@ -24,6 +24,7 @@ import {
   Settings as SettingsIcon,
   History as AuditIcon,
   Add as AddIcon,
+  CloudUpload as ImportIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -54,6 +55,9 @@ const StaffLayout = () => {
     { path: '/staff/statistics', label: t('common.statistics') || 'Statistics', icon: <StatisticsIcon /> },
     { path: '/staff/settings', label: t('common.settings'), icon: <SettingsIcon /> },
     { path: '/staff/audit', label: t('common.audit'), icon: <AuditIcon /> },
+    { path: '/staff/cases/import/csv', label: t('common.importCSV') + ' - Cases', icon: <ImportIcon /> },
+    { path: '/staff/warranties/import/csv', label: t('common.importCSV') + ' - ' + t('common.warranties'), icon: <ImportIcon /> },
+    { path: '/staff/warranties/import/woocommerce', label: t('common.importWooCommerce'), icon: <ImportIcon /> },
   ];
 
   return (
@@ -107,7 +111,7 @@ const StaffLayout = () => {
           <List>
             {menuItems.map((item) => {
               const isActive = location.pathname === item.path || 
-                (item.path === '/staff/cases' && location.pathname.startsWith('/staff/cases') && !location.pathname.includes('/closed'));
+                (item.path === '/staff/cases' && location.pathname.startsWith('/staff/cases') && !location.pathname.includes('/closed') && !location.pathname.includes('/import'));
               return (
                 <ListItem key={item.path} disablePadding>
                   <ListItemButton 
