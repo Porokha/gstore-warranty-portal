@@ -61,13 +61,13 @@ const PublicHomePage = () => {
                 height: 3,
               },
             }}
+            variant="fullWidth"
           >
             <Tab
               icon={<WarrantyIcon sx={{ fontSize: 24, mb: 0.5 }} />}
               iconPosition="top"
               label={t('public.searchWarranty')}
               sx={{
-                flex: 1,
                 '&.Mui-selected': {
                   color: '#3b82f6',
                 },
@@ -78,7 +78,6 @@ const PublicHomePage = () => {
               iconPosition="top"
               label={t('public.searchCase')}
               sx={{
-                flex: 1,
                 '&.Mui-selected': {
                   color: '#10b981',
                 },
@@ -110,26 +109,28 @@ const PublicHomePage = () => {
                 <Typography variant="body2" sx={{ color: '#64748b', mb: 3, textAlign: 'center' }}>
                   {t('public.searchWarrantyDescription')}
                 </Typography>
-                <Button
-                  component={Link}
-                  to="/search/warranty"
-                  variant="contained"
-                  fullWidth
-                  startIcon={<SearchIcon />}
-                  sx={{
-                    py: 1.5,
-                    borderRadius: 2,
-                    bgcolor: '#3b82f6',
-                    fontWeight: 600,
-                    textTransform: 'none',
-                    fontSize: '15px',
-                    '&:hover': {
-                      bgcolor: '#2563eb',
-                    },
-                  }}
-                >
-                  {t('public.searchWarranty')}
-                </Button>
+                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                  <Button
+                    component={Link}
+                    to="/search/warranty"
+                    variant="contained"
+                    startIcon={<SearchIcon />}
+                    sx={{
+                      py: 1.5,
+                      px: 3,
+                      borderRadius: 2,
+                      bgcolor: '#3b82f6',
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      fontSize: '15px',
+                      '&:hover': {
+                        bgcolor: '#2563eb',
+                      },
+                    }}
+                  >
+                    {t('public.searchWarranty')}
+                  </Button>
+                </Box>
               </Box>
             )}
 
@@ -156,26 +157,28 @@ const PublicHomePage = () => {
                 <Typography variant="body2" sx={{ color: '#64748b', mb: 3, textAlign: 'center' }}>
                   {t('public.searchCaseDescription')}
                 </Typography>
-                <Button
-                  component={Link}
-                  to="/search/case"
-                  variant="contained"
-                  fullWidth
-                  startIcon={<SearchIcon />}
-                  sx={{
-                    py: 1.5,
-                    borderRadius: 2,
-                    bgcolor: '#10b981',
-                    fontWeight: 600,
-                    textTransform: 'none',
-                    fontSize: '15px',
-                    '&:hover': {
-                      bgcolor: '#059669',
-                    },
-                  }}
-                >
-                  {t('public.searchCase')}
-                </Button>
+                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                  <Button
+                    component={Link}
+                    to="/search/case"
+                    variant="contained"
+                    startIcon={<SearchIcon />}
+                    sx={{
+                      py: 1.5,
+                      px: 3,
+                      borderRadius: 2,
+                      bgcolor: '#10b981',
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      fontSize: '15px',
+                      '&:hover': {
+                        bgcolor: '#059669',
+                      },
+                    }}
+                  >
+                    {t('public.searchCase')}
+                  </Button>
+                </Box>
               </Box>
             )}
           </Box>
