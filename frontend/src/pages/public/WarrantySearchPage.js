@@ -87,18 +87,31 @@ const WarrantySearchPage = () => {
     try {
       const logoImg = new Image();
       logoImg.crossOrigin = 'anonymous';
-      logoImg.src = '/zezva-pdf.png';
+      logoImg.src = process.env.PUBLIC_URL + '/zezva-pdf.png';
       
       await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Logo load timeout'));
+        }, 5000);
+        
         logoImg.onload = () => {
-          const logoWidth = 80;
-          const logoHeight = (logoImg.height / logoImg.width) * logoWidth;
-          const logoX = (pageWidth - logoWidth) / 2;
-          pdf.addImage(logoImg, 'PNG', logoX, yPos, logoWidth, logoHeight);
-          yPos += logoHeight + 20;
-          resolve();
+          clearTimeout(timeout);
+          try {
+            const logoWidth = 80;
+            const logoHeight = (logoImg.height / logoImg.width) * logoWidth;
+            const logoX = (pageWidth - logoWidth) / 2;
+            pdf.addImage(logoImg, 'PNG', logoX, yPos, logoWidth, logoHeight);
+            yPos += logoHeight + 20;
+            resolve();
+          } catch (err) {
+            clearTimeout(timeout);
+            reject(err);
+          }
         };
-        logoImg.onerror = reject;
+        logoImg.onerror = (err) => {
+          clearTimeout(timeout);
+          reject(err);
+        };
       });
     } catch (err) {
       console.error('Error loading logo:', err);
