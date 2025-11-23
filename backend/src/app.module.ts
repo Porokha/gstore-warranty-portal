@@ -16,6 +16,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { WooCommerceModule } from './woocommerce/woocommerce.module';
 import { BogModule } from './bog/bog.module';
 import { SlaModule } from './sla/sla.module';
+import { StatisticsModule } from './statistics/statistics.module';
 import { DatabaseConfig } from './config/database.config';
 
 @Module({
@@ -40,6 +41,7 @@ import { DatabaseConfig } from './config/database.config';
     WooCommerceModule,
     BogModule,
     SlaModule,
+    StatisticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

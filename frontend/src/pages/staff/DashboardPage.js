@@ -96,7 +96,7 @@ const DashboardPage = () => {
               cursor: 'pointer',
               '&:hover': { boxShadow: 4 },
             }}
-            onClick={() => navigate('/staff/cases?status=1,2,3')}
+            onClick={() => navigate('/staff/cases')}
           >
             <Typography variant="h6" color="text.secondary" gutterBottom>
               {t('common.openCases')}
