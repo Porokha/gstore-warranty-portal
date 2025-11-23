@@ -125,7 +125,8 @@
     "sendOnSlaStalled": "Send when SLA is stalled",
     "sendOnSlaDeadline1day": "Send 1 day before deadline",
     "smsTemplates": "SMS Templates",
-    "userManagement": "User Management"
+    "userManagement": "User Management",
+    "apiKeys": "API Keys"
   },
   "template": {
     "key": "Key",

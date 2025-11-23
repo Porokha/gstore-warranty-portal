@@ -40,6 +40,7 @@ import {
 import { smsService } from '../../services/smsService';
 import { usersService } from '../../services/usersService';
 import { useAuth } from '../../contexts/AuthContext';
+import ApiKeysSettings from '../../components/settings/ApiKeysSettings';
 
 const SettingsPage = () => {
   const { t } = useTranslation();
