@@ -19,7 +19,7 @@ import {
   IconButton,
 } from '@mui/material';
 import {
-  Email as EmailIcon,
+  Person as PersonIcon,
   Lock as LockIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
@@ -30,7 +30,7 @@ import ZevaLogo from '../../components/common/ZevaLogo';
 
 const LoginPage = () => {
   const { t, i18n } = useTranslation();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -44,10 +44,10 @@ const LoginPage = () => {
     setError('');
     setLoading(true);
     try {
-      await login(email, password);
+      await login(username, password);
       navigate('/staff/dashboard');
     } catch (err) {
-      setError('Invalid email or password');
+      setError('Invalid username or password');
     } finally {
       setLoading(false);
     }
@@ -115,14 +115,14 @@ const LoginPage = () => {
           <form onSubmit={handleSubmit}>
             <TextField
               fullWidth
-              label="Email Address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              label="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               autoFocus
-              autoComplete="email"
+              autoComplete="username"
               margin="normal"
               required
-              placeholder="your.email@zeva.ge"
+              placeholder="Enter your username"
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 2,
@@ -148,7 +148,7 @@ const LoginPage = () => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <EmailIcon sx={{ color: '#64748b', fontSize: 20 }} />
+                    <PersonIcon sx={{ color: '#64748b', fontSize: 20 }} />
                   </InputAdornment>
                 ),
               }}

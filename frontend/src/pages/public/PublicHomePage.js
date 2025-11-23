@@ -6,6 +6,7 @@ import {
   FolderOpen as CaseIcon,
   Search as SearchIcon,
 } from '@mui/icons-material';
+import ZevaLogo from '../../components/common/ZevaLogo';
 
 const PublicHomePage = () => {
   return (
