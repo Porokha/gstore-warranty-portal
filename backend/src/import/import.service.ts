@@ -2,7 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as fs from 'fs';
-import * as csv from 'csv-parser';
+import csv from 'csv-parser';
 import { ServiceCase, CaseStatusLevel, Priority } from '../cases/entities/service-case.entity';
 import { Warranty, CreatedSource } from '../warranties/entities/warranty.entity';
 import { CasesService } from '../cases/cases.service';
