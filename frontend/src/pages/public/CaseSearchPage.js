@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Box, TextField, Button, Typography, Paper, Chip, Alert, Grid, Divider, IconButton, Link, Container, InputAdornment } from '@mui/material';
 import { ArrowBack, Search as SearchIcon, FolderOpen as CaseIcon } from '@mui/icons-material';
 import api from '../../services/api';
@@ -7,6 +8,7 @@ import StatusBar from '../../components/cases/StatusBar';
 import ResultBar from '../../components/cases/ResultBar';
 
 const CaseSearchPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [caseNumber, setCaseNumber] = useState(searchParams.get('case_number') || '');
@@ -34,10 +36,9 @@ const CaseSearchPage = () => {
         phone,
       });
       setResult(response.data);
-      // Update URL params
       setSearchParams({ case_number: caseNumber, phone });
     } catch (err) {
-      setError(err.response?.data?.message || 'Case not found or phone number does not match');
+      setError(err.response?.data?.message || t('caseSearch.notFound'));
     } finally {
       setLoading(false);
     }
@@ -45,20 +46,20 @@ const CaseSearchPage = () => {
 
   const getStatusLabel = (level) => {
     const statuses = {
-      1: 'Opened',
-      2: 'Investigating',
-      3: 'Pending',
-      4: 'Completed',
+      1: t('status.opened'),
+      2: t('status.investigating'),
+      3: t('status.pending'),
+      4: t('status.completed'),
     };
     return statuses[level] || 'Unknown';
   };
 
   const getResultLabel = (result) => {
     const results = {
-      covered: 'Covered by Warranty',
-      payable: 'Payable',
-      returned: 'Returned as is',
-      replaceable: 'Replaceable',
+      covered: t('result.covered'),
+      payable: t('result.payable'),
+      returned: t('result.returned'),
+      replaceable: t('result.replaceable'),
     };
     return results[result] || result;
   };
@@ -66,10 +67,8 @@ const CaseSearchPage = () => {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
-        bgcolor: '#f5f7fa',
-        backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        backgroundSize: 'cover',
+        minHeight: 'calc(100vh - 70px)',
+        bgcolor: '#fcf4e8',
         pt: 4,
         pb: 8,
       }}
@@ -92,12 +91,12 @@ const CaseSearchPage = () => {
             sx={{
               cursor: 'pointer',
               textDecoration: 'none',
-              color: '#ffffff',
+              color: '#1e293b',
               fontWeight: 700,
               '&:hover': { textDecoration: 'underline' },
             }}
           >
-            Search Service Case
+            {t('caseSearch.title')}
           </Typography>
         </Box>
 
@@ -125,14 +124,14 @@ const CaseSearchPage = () => {
               <CaseIcon sx={{ color: '#ffffff', fontSize: 28 }} />
             </Box>
             <Typography variant="h5" sx={{ fontWeight: 600, color: '#1e293b' }}>
-              Find Your Service Case
+              {t('caseSearch.findCase')}
             </Typography>
           </Box>
 
           <form onSubmit={handleSearch}>
             <TextField
               fullWidth
-              label="Case Number"
+              label={t('caseSearch.caseNumber')}
               value={caseNumber}
               onChange={(e) => setCaseNumber(e.target.value)}
               margin="normal"
@@ -149,7 +148,7 @@ const CaseSearchPage = () => {
             />
             <TextField
               fullWidth
-              label="Phone Number"
+              label={t('caseSearch.phoneNumber')}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               margin="normal"
@@ -183,7 +182,7 @@ const CaseSearchPage = () => {
                 },
               }}
             >
-              {loading ? 'Searching...' : 'Search'}
+              {loading ? t('caseSearch.searching') : t('caseSearch.search')}
             </Button>
           </form>
 
@@ -196,12 +195,12 @@ const CaseSearchPage = () => {
           {result && (
             <Box sx={{ mt: 4 }}>
               <Typography variant="h6" sx={{ fontWeight: 600, color: '#1e293b', mb: 3 }}>
-                Case Details
+                {t('caseSearch.caseDetails')}
               </Typography>
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
                   <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '13px' }}>
-                    Customer Name
+                    {t('caseSearch.customerName')}
                   </Typography>
                   <Typography variant="body1" sx={{ fontWeight: 600, color: '#1e293b', fontSize: '16px' }}>
                     {result.customer_name} {result.customer_last_name || ''}
@@ -209,7 +208,7 @@ const CaseSearchPage = () => {
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '13px' }}>
-                    Case Number
+                    {t('caseSearch.caseNumber')}
                   </Typography>
                   <Typography variant="body1" sx={{ fontWeight: 600, color: '#1e293b', fontSize: '16px' }}>
                     {result.case_number}
@@ -218,7 +217,7 @@ const CaseSearchPage = () => {
                 {result.warranty_id && (
                   <Grid item xs={12} md={6}>
                     <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '13px' }}>
-                      Warranty ID
+                      {t('caseSearch.warrantyId')}
                     </Typography>
                     <Box display="flex" alignItems="center" gap={1}>
                       <Typography variant="body1" sx={{ color: '#1e293b', fontSize: '15px' }}>
@@ -226,7 +225,7 @@ const CaseSearchPage = () => {
                       </Typography>
                       {result.warranty_status && (
                         <Chip
-                          label={result.warranty_status.is_active ? 'Active Warranty' : 'Expired Warranty'}
+                          label={result.warranty_status.is_active ? t('caseSearch.activeWarranty') : t('caseSearch.expiredWarranty')}
                           sx={{
                             bgcolor: result.warranty_status.is_active ? '#d1fae5' : '#f1f5f9',
                             color: result.warranty_status.is_active ? '#059669' : '#64748b',
@@ -243,7 +242,7 @@ const CaseSearchPage = () => {
                 {result.customer_initial_note && (
                   <Grid item xs={12}>
                     <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '13px' }}>
-                      Customer's Initial Note
+                      {t('caseSearch.customerNote')}
                     </Typography>
                     <Alert severity="info" sx={{ mt: 0.5, borderRadius: 2 }}>
                       {result.customer_initial_note}
@@ -252,7 +251,7 @@ const CaseSearchPage = () => {
                 )}
                 <Grid item xs={12}>
                   <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '13px' }}>
-                    Product
+                    {t('caseSearch.product')}
                   </Typography>
                   <Typography variant="body1" sx={{ fontWeight: 600, color: '#1e293b', fontSize: '16px' }}>
                     {result.product_title}
@@ -260,7 +259,7 @@ const CaseSearchPage = () => {
                 </Grid>
                 <Grid item xs={12} md={4}>
                   <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '13px' }}>
-                    Device Type
+                    {t('caseSearch.deviceType')}
                   </Typography>
                   <Typography variant="body1" sx={{ color: '#1e293b', fontSize: '15px' }}>
                     {result.device_type}
@@ -268,7 +267,7 @@ const CaseSearchPage = () => {
                 </Grid>
                 <Grid item xs={12} md={4}>
                   <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '13px' }}>
-                    Opened Date
+                    {t('caseSearch.openedDate')}
                   </Typography>
                   <Typography variant="body1" sx={{ color: '#1e293b', fontSize: '15px' }}>
                     {new Date(result.opened_at).toLocaleDateString()}
@@ -276,7 +275,7 @@ const CaseSearchPage = () => {
                 </Grid>
                 <Grid item xs={12} md={4}>
                   <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '13px' }}>
-                    Deadline
+                    {t('caseSearch.deadline')}
                   </Typography>
                   <Typography variant="body1" sx={{ color: '#1e293b', fontSize: '15px' }}>
                     {new Date(result.deadline_at).toLocaleDateString()}
@@ -284,7 +283,7 @@ const CaseSearchPage = () => {
                 </Grid>
                 <Grid item xs={12}>
                   <Typography variant="body2" sx={{ color: '#64748b', mb: 1, fontSize: '13px' }}>
-                    Status
+                    {t('caseSearch.status')}
                   </Typography>
                   <StatusBar statusLevel={result.status_level} size="medium" />
                   <Typography variant="body2" sx={{ mt: 1, color: '#64748b', fontSize: '13px' }}>
@@ -294,7 +293,7 @@ const CaseSearchPage = () => {
                 {result.result_type && (
                   <Grid item xs={12}>
                     <Typography variant="body2" sx={{ color: '#64748b', mb: 1, fontSize: '13px' }}>
-                      Result
+                      {t('caseSearch.result')}
                     </Typography>
                     <ResultBar resultType={result.result_type} size="medium" />
                     <Typography variant="body2" sx={{ mt: 1, color: '#64748b', fontSize: '13px' }}>
@@ -305,7 +304,7 @@ const CaseSearchPage = () => {
                 {result.assigned_technician && (
                   <Grid item xs={12} md={6}>
                     <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '13px' }}>
-                      Assigned Technician
+                      {t('caseSearch.assignedTechnician')}
                     </Typography>
                     <Typography variant="body1" sx={{ color: '#1e293b', fontSize: '15px' }}>
                       {result.assigned_technician.name} {result.assigned_technician.last_name}
@@ -318,7 +317,7 @@ const CaseSearchPage = () => {
                 <>
                   <Divider sx={{ my: 4 }} />
                   <Typography variant="h6" sx={{ fontWeight: 600, color: '#1e293b', mb: 2 }}>
-                    Status Updates
+                    {t('caseSearch.statusUpdates')}
                   </Typography>
                   {result.status_history.map((history, index) => (
                     <Box
@@ -336,12 +335,12 @@ const CaseSearchPage = () => {
                       </Typography>
                       {history.new_status_level && (
                         <Typography variant="body2" sx={{ mt: 0.5, color: '#1e293b', fontSize: '14px' }}>
-                          Status: {getStatusLabel(history.new_status_level)}
+                          {t('caseSearch.status')}: {getStatusLabel(history.new_status_level)}
                         </Typography>
                       )}
                       {history.new_result && (
                         <Typography variant="body2" sx={{ mt: 0.5, color: '#1e293b', fontSize: '14px' }}>
-                          Result: {getResultLabel(history.new_result)}
+                          {t('caseSearch.result')}: {getResultLabel(history.new_result)}
                         </Typography>
                       )}
                       {history.note_public && (
