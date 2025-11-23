@@ -19,7 +19,7 @@ const PublicLayout = () => {
             }}
             onClick={() => navigate('/')}
           >
-            Gstore Warranty Portal
+            ZEZVA Warranty Portal
           </Typography>
         </Toolbar>
       </AppBar>

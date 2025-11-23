@@ -40,7 +40,7 @@ export class SmsService {
   ) {
     this.apiUrl = this.configService.get<string>('SENDER_API_URL') || 'https://api.sender.ge';
     this.apiKey = this.configService.get<string>('SENDER_API_KEY');
-    this.senderName = this.configService.get<string>('SENDER_SENDER_NAME') || 'Gstore';
+    this.senderName = this.configService.get<string>('SENDER_SENDER_NAME') || 'ZEZVA';
 
     if (!this.apiKey) {
       this.logger.warn('SMS API key not configured');

@@ -36,6 +36,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useQuery } from 'react-query';
 import { casesService } from '../../services/casesService';
+import ZevaLogo from './ZevaLogo';
 
 const drawerWidth = 280;
 
@@ -108,24 +109,7 @@ const StaffLayout = () => {
       >
         <Toolbar sx={{ bgcolor: '#1e293b', minHeight: '80px !important' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Box
-              sx={{
-                width: 40,
-                height: 40,
-                borderRadius: 2,
-                bgcolor: '#3b82f6',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 'bold',
-                fontSize: '18px',
-              }}
-            >
-              G
-            </Box>
-            <Typography variant="h6" sx={{ fontWeight: 600, color: '#ffffff' }}>
-              Gstore Portal
-            </Typography>
+            <ZevaLogo size="small" variant="light" />
           </Box>
         </Toolbar>
         

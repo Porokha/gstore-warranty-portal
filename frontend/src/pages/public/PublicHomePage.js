@@ -21,27 +21,9 @@ const PublicHomePage = () => {
     >
       <Container maxWidth="md">
         <Box sx={{ textAlign: 'center', mb: 6 }}>
-          <Box
-            sx={{
-              width: 80,
-              height: 80,
-              borderRadius: 3,
-              bgcolor: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              mx: 'auto',
-              mb: 3,
-              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
-            }}
-          >
-            <Typography variant="h3" sx={{ color: '#3b82f6', fontWeight: 700 }}>
-              G
-            </Typography>
+          <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
+            <ZevaLogo size="large" showSubtitle={true} variant="light" />
           </Box>
-          <Typography variant="h3" sx={{ fontWeight: 700, color: '#ffffff', mb: 2 }}>
-            Gstore Warranty Portal
-          </Typography>
           <Typography variant="h6" sx={{ color: 'rgba(255, 255, 255, 0.9)', fontWeight: 400 }}>
             Check your warranty status and service cases
           </Typography>
