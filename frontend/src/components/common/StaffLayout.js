@@ -20,6 +20,7 @@ import {
   Folder as ClosedCasesIcon,
   VerifiedUser as WarrantiesIcon,
   AccountBalance as FinanceIcon,
+  BarChart as StatisticsIcon,
   Settings as SettingsIcon,
   History as AuditIcon,
   Add as AddIcon,
@@ -50,6 +51,7 @@ const StaffLayout = () => {
     { path: '/staff/cases/closed', label: t('common.closedCases'), icon: <ClosedCasesIcon /> },
     { path: '/staff/warranties', label: t('common.warranties'), icon: <WarrantiesIcon /> },
     { path: '/staff/finance', label: t('common.finance'), icon: <FinanceIcon /> },
+    { path: '/staff/statistics', label: t('common.statistics') || 'Statistics', icon: <StatisticsIcon /> },
     { path: '/staff/settings', label: t('common.settings'), icon: <SettingsIcon /> },
     { path: '/staff/audit', label: t('common.audit'), icon: <AuditIcon /> },
   ];

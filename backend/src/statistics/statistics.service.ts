@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan, MoreThan, Between } from 'typeorm';
+import * as ExcelJS from 'exceljs';
 import { ServiceCase, CaseStatusLevel } from '../cases/entities/service-case.entity';
 import { User, UserRole } from '../users/entities/user.entity';
 import { CasePayment, PaymentStatus } from '../payments/entities/case-payment.entity';
@@ -111,26 +112,40 @@ export class StatisticsService {
     };
 
     // Payment stats
-    const paymentsWhere: any = {};
+    let totalPayments = 0;
+    let paidPayments = 0;
+    let totalPaidAmount = 0;
+
     if (technicianId) {
       // Get case IDs for this technician
       const caseIds = await this.casesRepository.find({
         where: { assigned_technician_id: technicianId },
         select: ['id'],
       });
-      paymentsWhere.case_id = { $in: caseIds.map(c => c.id) };
+      
+      if (caseIds.length > 0) {
+        const ids = caseIds.map(c => c.id);
+        totalPayments = await this.paymentsRepository
+          .createQueryBuilder('payment')
+          .where('payment.case_id IN (:...ids)', { ids })
+          .getCount();
+        
+        paidPayments = await this.paymentsRepository
+          .createQueryBuilder('payment')
+          .where('payment.case_id IN (:...ids)', { ids })
+          .andWhere('payment.payment_status = :status', { status: PaymentStatus.PAID })
+          .getCount();
+
+        const paidResult = await this.paymentsRepository
+          .createQueryBuilder('payment')
+          .where('payment.case_id IN (:...ids)', { ids })
+          .andWhere('payment.payment_status = :status', { status: PaymentStatus.PAID })
+          .select('SUM(payment.offer_amount)', 'total')
+          .getRawOne();
+        
+        totalPaidAmount = parseFloat(paidResult?.total || '0');
+      }
     }
-
-    const totalPayments = await this.paymentsRepository.count({ where: paymentsWhere });
-    const paidPayments = await this.paymentsRepository.count({
-      where: { ...paymentsWhere, payment_status: PaymentStatus.PAID },
-    });
-
-    const paidAmount = await this.paymentsRepository
-      .createQueryBuilder('payment')
-      .where('payment.payment_status = :status', { status: PaymentStatus.PAID })
-      .select('SUM(payment.paid_amount)', 'total')
-      .getRawOne();
 
     return {
       technicianId,
@@ -169,6 +184,93 @@ export class StatisticsService {
     );
 
     return stats;
+  }
+
+  async exportToExcel(stats: any): Promise<Buffer> {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Technician Statistics');
+
+    // Add headers
+    worksheet.columns = [
+      { header: 'Metric', key: 'metric', width: 30 },
+      { header: 'Value', key: 'value', width: 20 },
+    ];
+
+    // Add data
+    worksheet.addRow({ metric: 'Total Cases', value: stats.totalCases });
+    worksheet.addRow({ metric: 'Running Cases', value: stats.runningCases });
+    worksheet.addRow({ metric: 'Completed Cases', value: stats.completedCases });
+    worksheet.addRow({ metric: 'Average Completion Time (days)', value: stats.avgCompletionTime });
+    worksheet.addRow({ metric: 'On-time Cases', value: stats.onTimeCases });
+    worksheet.addRow({ metric: 'On-time Rate (%)', value: stats.onTimeRate });
+    worksheet.addRow({});
+    worksheet.addRow({ metric: 'Cases by Status', value: '' });
+    worksheet.addRow({ metric: '  - Opened', value: stats.casesByStatus.opened });
+    worksheet.addRow({ metric: '  - Investigating', value: stats.casesByStatus.investigating });
+    worksheet.addRow({ metric: '  - Pending', value: stats.casesByStatus.pending });
+    worksheet.addRow({ metric: '  - Completed', value: stats.casesByStatus.completed });
+    worksheet.addRow({});
+    worksheet.addRow({ metric: 'Cases by Priority', value: '' });
+    worksheet.addRow({ metric: '  - Low', value: stats.casesByPriority.low });
+    worksheet.addRow({ metric: '  - Normal', value: stats.casesByPriority.normal });
+    worksheet.addRow({ metric: '  - High', value: stats.casesByPriority.high });
+    worksheet.addRow({ metric: '  - Critical', value: stats.casesByPriority.critical });
+    worksheet.addRow({});
+    worksheet.addRow({ metric: 'Payment Statistics', value: '' });
+    worksheet.addRow({ metric: 'Total Payments', value: stats.totalPayments });
+    worksheet.addRow({ metric: 'Paid Payments', value: stats.paidPayments });
+    worksheet.addRow({ metric: 'Total Paid Amount (₾)', value: stats.totalPaidAmount });
+
+    // Style header row
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' },
+    };
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    return Buffer.from(buffer);
+  }
+
+  async exportAllToExcel(stats: any[]): Promise<Buffer> {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('All Technicians Statistics');
+
+    // Add headers
+    worksheet.columns = [
+      { header: 'Technician', key: 'technician', width: 25 },
+      { header: 'Total Cases', key: 'totalCases', width: 15 },
+      { header: 'Running', key: 'running', width: 15 },
+      { header: 'Completed', key: 'completed', width: 15 },
+      { header: 'Avg Completion (days)', key: 'avgCompletion', width: 20 },
+      { header: 'On-time Rate (%)', key: 'onTimeRate', width: 18 },
+      { header: 'Total Paid (₾)', key: 'totalPaid', width: 15 },
+    ];
+
+    // Add data rows
+    stats.forEach((stat) => {
+      worksheet.addRow({
+        technician: `${stat.technician.name} ${stat.technician.last_name}`,
+        totalCases: stat.totalCases,
+        running: stat.runningCases,
+        completed: stat.completedCases,
+        avgCompletion: stat.avgCompletionTime,
+        onTimeRate: stat.onTimeRate,
+        totalPaid: stat.totalPaidAmount,
+      });
+    });
+
+    // Style header row
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' },
+    };
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    return Buffer.from(buffer);
   }
 }
 

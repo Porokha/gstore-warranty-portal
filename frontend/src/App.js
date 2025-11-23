@@ -16,6 +16,7 @@ import CreateWarrantyPage from './pages/staff/CreateWarrantyPage';
 import FinancePage from './pages/staff/FinancePage';
 import SettingsPage from './pages/staff/SettingsPage';
 import AuditPage from './pages/staff/AuditPage';
+import StatisticsPage from './pages/staff/StatisticsPage';
 import PublicHomePage from './pages/public/PublicHomePage';
 import WarrantySearchPage from './pages/public/WarrantySearchPage';
 import CaseSearchPage from './pages/public/CaseSearchPage';
@@ -62,6 +63,7 @@ function App() {
                   <Route path="warranties" element={<WarrantiesPage />} />
                   <Route path="warranties/new" element={<CreateWarrantyPage />} />
                   <Route path="finance" element={<FinancePage />} />
+                  <Route path="statistics" element={<StatisticsPage />} />
                   <Route path="settings" element={<SettingsPage />} />
                   <Route path="audit" element={<AuditPage />} />
                 </Route>
