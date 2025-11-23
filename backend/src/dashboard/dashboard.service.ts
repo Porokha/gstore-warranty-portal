@@ -19,24 +19,27 @@ export class DashboardService {
     const now = new Date();
     const in48Hours = new Date(now.getTime() + 48 * 60 * 60 * 1000);
 
-    // Real-time stats (no time filter)
-    const openCases = await this.casesRepository.count({
-      where: { status_level: LessThan(CaseStatusLevel.COMPLETED) },
-    });
+    // Real-time stats (no time filter) - count all non-completed cases
+    const openCases = await this.casesRepository
+      .createQueryBuilder('case')
+      .where('case.status_level < :completed', { completed: CaseStatusLevel.COMPLETED })
+      .andWhere('(case.deleted_at IS NULL OR case.deleted_at = :null)', { null: null })
+      .getCount();
 
     const closeToDeadline = await this.casesRepository
       .createQueryBuilder('case')
       .where('case.status_level < :completed', { completed: CaseStatusLevel.COMPLETED })
       .andWhere('case.deadline_at <= :in48Hours', { in48Hours })
       .andWhere('case.deadline_at > :now', { now })
+      .andWhere('(case.deleted_at IS NULL OR case.deleted_at = :null)', { null: null })
       .getCount();
 
-    const dueCases = await this.casesRepository.count({
-      where: {
-        status_level: LessThan(CaseStatusLevel.COMPLETED),
-        deadline_at: LessThan(now),
-      },
-    });
+    const dueCases = await this.casesRepository
+      .createQueryBuilder('case')
+      .where('case.status_level < :completed', { completed: CaseStatusLevel.COMPLETED })
+      .andWhere('case.deadline_at < :now', { now })
+      .andWhere('(case.deleted_at IS NULL OR case.deleted_at = :null)', { null: null })
+      .getCount();
 
     // Time-filtered stats
     let closedCasesQuery = this.casesRepository

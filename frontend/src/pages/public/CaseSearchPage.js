@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Box, TextField, Button, Typography, Paper, Chip, Alert, Grid, Divider, IconButton, Link } from '@mui/material';
-import { ArrowBack } from '@mui/icons-material';
+import { Box, TextField, Button, Typography, Paper, Chip, Alert, Grid, Divider, IconButton, Link, Container, InputAdornment } from '@mui/material';
+import { ArrowBack, Search as SearchIcon, FolderOpen as CaseIcon } from '@mui/icons-material';
 import api from '../../services/api';
 import StatusBar from '../../components/cases/StatusBar';
 import ResultBar from '../../components/cases/ResultBar';
@@ -64,217 +64,299 @@ const CaseSearchPage = () => {
   };
 
   return (
-    <Box sx={{ maxWidth: 800, mx: 'auto', mt: 4, mb: 4 }}>
-      <Box display="flex" alignItems="center" gap={1} mb={2}>
-        <IconButton onClick={() => navigate(-1)} aria-label="back">
-          <ArrowBack />
-        </IconButton>
-        <Typography 
-          variant="h4" 
-          onClick={() => navigate('/')} 
-          sx={{ cursor: 'pointer', textDecoration: 'none', color: 'inherit', '&:hover': { textDecoration: 'underline' } }}
-        >
-          Search Service Case
-        </Typography>
-      </Box>
-      <Paper sx={{ p: 3 }}>
-        <form onSubmit={handleSearch}>
-          <TextField
-            fullWidth
-            label="Case Number"
-            value={caseNumber}
-            onChange={(e) => setCaseNumber(e.target.value)}
-            margin="normal"
-            required
-            placeholder="e.g., SCN-000001"
-          />
-          <TextField
-            fullWidth
-            label="Phone Number"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            margin="normal"
-            required
-            placeholder="e.g., +995 555 123 456"
-          />
-          <Button
-            type="submit"
-            variant="contained"
-            fullWidth
-            sx={{ mt: 2 }}
-            disabled={loading}
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: '#f5f7fa',
+        backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        backgroundSize: 'cover',
+        pt: 4,
+        pb: 8,
+      }}
+    >
+      <Container maxWidth="md">
+        <Box display="flex" alignItems="center" gap={1} mb={3}>
+          <IconButton
+            onClick={() => navigate('/')}
+            aria-label="back"
+            sx={{
+              bgcolor: '#ffffff',
+              '&:hover': { bgcolor: '#f1f5f9' },
+            }}
           >
-            {loading ? 'Searching...' : 'Search'}
-          </Button>
-        </form>
+            <ArrowBack />
+          </IconButton>
+          <Typography
+            variant="h4"
+            onClick={() => navigate('/')}
+            sx={{
+              cursor: 'pointer',
+              textDecoration: 'none',
+              color: '#ffffff',
+              fontWeight: 700,
+              '&:hover': { textDecoration: 'underline' },
+            }}
+          >
+            Search Service Case
+          </Typography>
+        </Box>
 
-        {error && (
-          <Alert severity="error" sx={{ mt: 2 }}>
-            {error}
-          </Alert>
-        )}
-
-        {result && (
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Case Details
+        <Paper
+          elevation={0}
+          sx={{
+            p: 4,
+            borderRadius: 3,
+            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
+            bgcolor: '#ffffff',
+          }}
+        >
+          <Box display="flex" alignItems="center" gap={2} mb={3}>
+            <Box
+              sx={{
+                width: 48,
+                height: 48,
+                borderRadius: 2,
+                bgcolor: '#10b981',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <CaseIcon sx={{ color: '#ffffff', fontSize: 28 }} />
+            </Box>
+            <Typography variant="h5" sx={{ fontWeight: 600, color: '#1e293b' }}>
+              Find Your Service Case
             </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <Typography variant="body2" color="text.secondary">
-                  Customer Name
-                </Typography>
-                <Typography variant="body1" fontWeight="bold">
-                  {result.customer_name} {result.customer_last_name || ''}
-                </Typography>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Typography variant="body2" color="text.secondary">
-                  Case Number
-                </Typography>
-                <Typography variant="body1" fontWeight="bold">
-                  {result.case_number}
-                </Typography>
-              </Grid>
-              {result.warranty_id && (
-                <Grid item xs={12} md={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Warranty ID
-                  </Typography>
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <Typography variant="body1">{result.warranty_id}</Typography>
-                    {result.warranty_status && (
-                      <Chip
-                        label={result.warranty_status.is_active ? 'Active Warranty' : 'Expired Warranty'}
-                        color={result.warranty_status.is_active ? 'success' : 'default'}
-                        size="small"
-                      />
-                    )}
-                  </Box>
-                </Grid>
-              )}
-              {result.customer_initial_note && (
-                <Grid item xs={12}>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Customer's Initial Note
-                  </Typography>
-                  <Alert severity="info" sx={{ mt: 0.5 }}>
-                    {result.customer_initial_note}
-                  </Alert>
-                </Grid>
-              )}
-              <Grid item xs={12}>
-                <Typography variant="body2" color="text.secondary">
-                  Product
-                </Typography>
-                <Typography variant="body1" fontWeight="bold">
-                  {result.product_title}
-                </Typography>
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Typography variant="body2" color="text.secondary">
-                  Device Type
-                </Typography>
-                <Typography variant="body1">{result.device_type}</Typography>
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Typography variant="body2" color="text.secondary">
-                  Opened Date
-                </Typography>
-                <Typography variant="body1">
-                  {new Date(result.opened_at).toLocaleDateString()}
-                </Typography>
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Typography variant="body2" color="text.secondary">
-                  Deadline
-                </Typography>
-                <Typography variant="body1">
-                  {new Date(result.deadline_at).toLocaleDateString()}
-                </Typography>
-              </Grid>
-              <Grid item xs={12}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Status
-                </Typography>
-                <StatusBar statusLevel={result.status_level} size="medium" />
-                <Typography variant="body2" sx={{ mt: 1 }}>
-                  {getStatusLabel(result.status_level)}
-                </Typography>
-              </Grid>
-              {result.result_type && (
-                <Grid item xs={12}>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Result
-                  </Typography>
-                  <ResultBar resultType={result.result_type} size="medium" />
-                  <Typography variant="body2" sx={{ mt: 1 }}>
-                    {getResultLabel(result.result_type)}
-                  </Typography>
-                </Grid>
-              )}
-              <Grid item xs={12} md={6}>
-                <Typography variant="body2" color="text.secondary">
-                  Customer Name
-                </Typography>
-                <Typography variant="body1" fontWeight="bold">
-                  {result.customer_name} {result.customer_last_name || ''}
-                </Typography>
-              </Grid>
-              {result.assigned_technician && (
-                <Grid item xs={12} md={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Assigned Technician
-                  </Typography>
-                  <Typography variant="body1">
-                    {result.assigned_technician.name} {result.assigned_technician.last_name}
-                  </Typography>
-                </Grid>
-              )}
-            </Grid>
-
-            {result.status_history && result.status_history.length > 0 && (
-              <>
-                <Divider sx={{ my: 3 }} />
-                <Typography variant="h6" gutterBottom>
-                  Status Updates
-                </Typography>
-                {result.status_history.map((history, index) => (
-                  <Box
-                    key={index}
-                    sx={{
-                      p: 2,
-                      mb: 2,
-                      border: '1px solid #e0e0e0',
-                      borderRadius: 1,
-                      backgroundColor: '#f9f9f9',
-                    }}
-                  >
-                    <Typography variant="body2" color="text.secondary">
-                      {new Date(history.created_at).toLocaleString()}
-                    </Typography>
-                    {history.new_status_level && (
-                      <Typography variant="body2" sx={{ mt: 0.5 }}>
-                        Status: {getStatusLabel(history.new_status_level)}
-                      </Typography>
-                    )}
-                    {history.new_result && (
-                      <Typography variant="body2" sx={{ mt: 0.5 }}>
-                        Result: {getResultLabel(history.new_result)}
-                      </Typography>
-                    )}
-                    {history.note_public && (
-                      <Alert severity="info" sx={{ mt: 1 }}>
-                        {history.note_public}
-                      </Alert>
-                    )}
-                  </Box>
-                ))}
-              </>
-            )}
           </Box>
-        )}
-      </Paper>
+
+          <form onSubmit={handleSearch}>
+            <TextField
+              fullWidth
+              label="Case Number"
+              value={caseNumber}
+              onChange={(e) => setCaseNumber(e.target.value)}
+              margin="normal"
+              required
+              placeholder="e.g., SCN-000001"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  '&:hover fieldset': {
+                    borderColor: '#10b981',
+                  },
+                },
+              }}
+            />
+            <TextField
+              fullWidth
+              label="Phone Number"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              margin="normal"
+              required
+              placeholder="e.g., +995 555 123 456"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  '&:hover fieldset': {
+                    borderColor: '#10b981',
+                  },
+                },
+              }}
+            />
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              disabled={loading}
+              startIcon={<SearchIcon />}
+              sx={{
+                mt: 3,
+                py: 1.5,
+                borderRadius: 2,
+                bgcolor: '#10b981',
+                fontWeight: 600,
+                textTransform: 'none',
+                fontSize: '16px',
+                '&:hover': {
+                  bgcolor: '#059669',
+                },
+              }}
+            >
+              {loading ? 'Searching...' : 'Search'}
+            </Button>
+          </form>
+
+          {error && (
+            <Alert severity="error" sx={{ mt: 3, borderRadius: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          {result && (
+            <Box sx={{ mt: 4 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600, color: '#1e293b', mb: 3 }}>
+                Case Details
+              </Typography>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '13px' }}>
+                    Customer Name
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 600, color: '#1e293b', fontSize: '16px' }}>
+                    {result.customer_name} {result.customer_last_name || ''}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '13px' }}>
+                    Case Number
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 600, color: '#1e293b', fontSize: '16px' }}>
+                    {result.case_number}
+                  </Typography>
+                </Grid>
+                {result.warranty_id && (
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '13px' }}>
+                      Warranty ID
+                    </Typography>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <Typography variant="body1" sx={{ color: '#1e293b', fontSize: '15px' }}>
+                        {result.warranty_id}
+                      </Typography>
+                      {result.warranty_status && (
+                        <Chip
+                          label={result.warranty_status.is_active ? 'Active Warranty' : 'Expired Warranty'}
+                          sx={{
+                            bgcolor: result.warranty_status.is_active ? '#d1fae5' : '#f1f5f9',
+                            color: result.warranty_status.is_active ? '#059669' : '#64748b',
+                            fontWeight: 500,
+                            fontSize: '11px',
+                            height: 24,
+                          }}
+                          size="small"
+                        />
+                      )}
+                    </Box>
+                  </Grid>
+                )}
+                {result.customer_initial_note && (
+                  <Grid item xs={12}>
+                    <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '13px' }}>
+                      Customer's Initial Note
+                    </Typography>
+                    <Alert severity="info" sx={{ mt: 0.5, borderRadius: 2 }}>
+                      {result.customer_initial_note}
+                    </Alert>
+                  </Grid>
+                )}
+                <Grid item xs={12}>
+                  <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '13px' }}>
+                    Product
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 600, color: '#1e293b', fontSize: '16px' }}>
+                    {result.product_title}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '13px' }}>
+                    Device Type
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: '#1e293b', fontSize: '15px' }}>
+                    {result.device_type}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '13px' }}>
+                    Opened Date
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: '#1e293b', fontSize: '15px' }}>
+                    {new Date(result.opened_at).toLocaleDateString()}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '13px' }}>
+                    Deadline
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: '#1e293b', fontSize: '15px' }}>
+                    {new Date(result.deadline_at).toLocaleDateString()}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="body2" sx={{ color: '#64748b', mb: 1, fontSize: '13px' }}>
+                    Status
+                  </Typography>
+                  <StatusBar statusLevel={result.status_level} size="medium" />
+                  <Typography variant="body2" sx={{ mt: 1, color: '#64748b', fontSize: '13px' }}>
+                    {getStatusLabel(result.status_level)}
+                  </Typography>
+                </Grid>
+                {result.result_type && (
+                  <Grid item xs={12}>
+                    <Typography variant="body2" sx={{ color: '#64748b', mb: 1, fontSize: '13px' }}>
+                      Result
+                    </Typography>
+                    <ResultBar resultType={result.result_type} size="medium" />
+                    <Typography variant="body2" sx={{ mt: 1, color: '#64748b', fontSize: '13px' }}>
+                      {getResultLabel(result.result_type)}
+                    </Typography>
+                  </Grid>
+                )}
+                {result.assigned_technician && (
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '13px' }}>
+                      Assigned Technician
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: '#1e293b', fontSize: '15px' }}>
+                      {result.assigned_technician.name} {result.assigned_technician.last_name}
+                    </Typography>
+                  </Grid>
+                )}
+              </Grid>
+
+              {result.status_history && result.status_history.length > 0 && (
+                <>
+                  <Divider sx={{ my: 4 }} />
+                  <Typography variant="h6" sx={{ fontWeight: 600, color: '#1e293b', mb: 2 }}>
+                    Status Updates
+                  </Typography>
+                  {result.status_history.map((history, index) => (
+                    <Box
+                      key={index}
+                      sx={{
+                        p: 2.5,
+                        mb: 2,
+                        border: '1px solid #e2e8f0',
+                        borderRadius: 2,
+                        bgcolor: '#f8fafc',
+                      }}
+                    >
+                      <Typography variant="body2" sx={{ color: '#64748b', fontSize: '12px' }}>
+                        {new Date(history.created_at).toLocaleString()}
+                      </Typography>
+                      {history.new_status_level && (
+                        <Typography variant="body2" sx={{ mt: 0.5, color: '#1e293b', fontSize: '14px' }}>
+                          Status: {getStatusLabel(history.new_status_level)}
+                        </Typography>
+                      )}
+                      {history.new_result && (
+                        <Typography variant="body2" sx={{ mt: 0.5, color: '#1e293b', fontSize: '14px' }}>
+                          Result: {getResultLabel(history.new_result)}
+                        </Typography>
+                      )}
+                      {history.note_public && (
+                        <Alert severity="info" sx={{ mt: 1.5, borderRadius: 2 }}>
+                          {history.note_public}
+                        </Alert>
+                      )}
+                    </Box>
+                  ))}
+                </>
+              )}
+            </Box>
+          )}
+        </Paper>
+      </Container>
     </Box>
   );
 };
