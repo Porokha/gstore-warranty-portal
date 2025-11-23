@@ -46,6 +46,16 @@ const StaffLayout = () => {
   const location = useLocation();
   const [userMenuAnchor, setUserMenuAnchor] = React.useState(null);
 
+  // Get urgent cases count for badge
+  const { data: urgentCasesCount } = useQuery(
+    'urgent-cases-badge',
+    () => casesService.getAll({ status: 'opened,investigating,pending', priority: 'high,critical' }),
+    {
+      select: (data) => data?.data?.length || 0,
+      refetchInterval: 30000,
+    }
+  );
+
   const handleLogout = () => {
     logout();
     navigate('/staff/login');
@@ -58,7 +68,7 @@ const StaffLayout = () => {
 
   const menuItems = [
     { path: '/staff/dashboard', label: t('common.dashboard'), icon: <DashboardIcon /> },
-    { path: '/staff/cases', label: 'Service Cases', icon: <OpenCasesIcon />, badge: urgentCasesData },
+    { path: '/staff/cases', label: 'Service Cases', icon: <OpenCasesIcon />, badge: urgentCasesCount },
     { path: '/staff/warranties', label: t('common.warranties'), icon: <WarrantiesIcon /> },
     { path: '/staff/finance', label: 'Payments', icon: <FinanceIcon /> },
     { path: '/staff/statistics', label: t('common.statistics') || 'Statistics', icon: <StatisticsIcon /> },
