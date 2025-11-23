@@ -507,20 +507,6 @@ const SettingsPage = () => {
         </DialogActions>
       </Dialog>
 
-        {/* Tab 4: API Keys */}
-        {tab === 3 && (
-          <Box>
-            <Typography variant="h6" gutterBottom>
-              {t('settings.apiKeys') || 'API Keys Configuration'}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" gutterBottom sx={{ mb: 3 }}>
-              Configure API keys for WooCommerce, BOG Payment Gateway, and Sender SMS service.
-            </Typography>
-            <ApiKeysSettings />
-          </Box>
-        )}
-      </Paper>
-
       {/* User Dialog */}
       <Dialog open={userDialogOpen} onClose={() => setUserDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>

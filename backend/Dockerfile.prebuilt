@@ -1,0 +1,33 @@
+# Pre-built backend Dockerfile
+# Use this when backend is already built locally
+# Build command: cd backend && npm install && npm run build
+# Then use: docker compose -f docker-compose.prod.prebuilt.yml up -d
+
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install build dependencies for bcrypt (needed for native modules)
+RUN apk add --no-cache python3 make g++
+
+# Copy package files
+COPY package*.json ./
+
+# Install only production dependencies (much faster)
+RUN npm install --omit=dev --no-audit --no-fund
+
+# Copy pre-built application (assumes dist/ folder exists)
+COPY dist ./dist
+
+# Copy any other necessary files
+COPY .env* ./
+
+# Create uploads directory
+RUN mkdir -p uploads
+
+# Expose port
+EXPOSE 3000
+
+# Start application
+CMD ["npm", "run", "start:prod"]
+

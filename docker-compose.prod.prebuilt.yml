@@ -1,6 +1,7 @@
-# Alternative docker-compose for pre-built frontend
-# Use this if Docker build keeps failing
-# Build frontend locally: cd frontend && npm run build
+# Pre-built docker-compose for both frontend and backend
+# Build steps:
+# 1. Frontend: cd frontend && npm run build
+# 2. Backend: cd backend && npm install && npm run build
 # Then use: docker compose -f docker-compose.prod.prebuilt.yml up -d
 
 services:
@@ -26,11 +27,11 @@ services:
       timeout: 5s
       retries: 5
 
-  # Backend API
+  # Backend API - Using pre-built dist folder
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.prebuilt
     container_name: gstore-warranty-backend
     environment:
       NODE_ENV: production
@@ -62,7 +63,7 @@ services:
       - gstore-network
     restart: unless-stopped
 
-  # Frontend - Using pre-built files (no build step)
+  # Frontend - Using pre-built files
   frontend:
     image: nginx:alpine
     container_name: gstore-warranty-frontend
@@ -84,4 +85,3 @@ volumes:
 networks:
   gstore-network:
     driver: bridge
-
