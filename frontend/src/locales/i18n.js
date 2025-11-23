@@ -16,7 +16,8 @@ i18n
         translation: kaTranslations,
       },
     },
-    fallbackLng: 'ka',
+    fallbackLng: 'en',
+    lng: 'en',
     debug: process.env.NODE_ENV === 'development',
     interpolation: {
       escapeValue: false,

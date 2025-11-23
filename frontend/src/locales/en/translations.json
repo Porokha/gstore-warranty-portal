@@ -210,6 +210,13 @@
     "deleteWarranty": "Delete Warranty",
     "deleteWarrantyConfirm": "Are you sure you want to delete this warranty? This action cannot be undone. Warranty history will be preserved in audit logs.",
     "warrantyDeleted": "Warranty deleted successfully"
+  },
+  "public": {
+    "checkWarrantyStatus": "Check your warranty status and service cases",
+    "searchWarranty": "Search Warranty",
+    "searchWarrantyDescription": "Find your warranty information by warranty ID and phone number",
+    "searchCase": "Search Service Case",
+    "searchCaseDescription": "Track your service case status by case number and phone number"
   }
 }
 

@@ -29,7 +29,7 @@ const PublicHomePage = () => {
       <Container maxWidth="md">
         <Box sx={{ textAlign: 'center', mb: 6 }}>
           <Typography variant="h5" sx={{ color: '#1e293b', fontWeight: 400, fontSize: '18px' }}>
-            Check your warranty status and service cases
+            {t('public.checkWarrantyStatus')}
           </Typography>
         </Box>
 
@@ -65,7 +65,7 @@ const PublicHomePage = () => {
             <Tab
               icon={<WarrantyIcon sx={{ fontSize: 24, mb: 0.5 }} />}
               iconPosition="top"
-              label="Search Warranty"
+              label={t('public.searchWarranty')}
               sx={{
                 flex: 1,
                 '&.Mui-selected': {
@@ -76,7 +76,7 @@ const PublicHomePage = () => {
             <Tab
               icon={<CaseIcon sx={{ fontSize: 24, mb: 0.5 }} />}
               iconPosition="top"
-              label="Search Service Case"
+              label={t('public.searchCase')}
               sx={{
                 flex: 1,
                 '&.Mui-selected': {
@@ -105,10 +105,10 @@ const PublicHomePage = () => {
                   <WarrantyIcon sx={{ color: '#ffffff', fontSize: 32 }} />
                 </Box>
                 <Typography variant="h5" sx={{ fontWeight: 600, color: '#1e293b', mb: 1, textAlign: 'center' }}>
-                  Search Warranty
+                  {t('public.searchWarranty')}
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#64748b', mb: 3, textAlign: 'center' }}>
-                  Find your warranty information by warranty ID and phone number
+                  {t('public.searchWarrantyDescription')}
                 </Typography>
                 <Button
                   component={Link}
@@ -128,7 +128,7 @@ const PublicHomePage = () => {
                     },
                   }}
                 >
-                  Search Warranty
+                  {t('public.searchWarranty')}
                 </Button>
               </Box>
             )}
@@ -151,10 +151,10 @@ const PublicHomePage = () => {
                   <CaseIcon sx={{ color: '#ffffff', fontSize: 32 }} />
                 </Box>
                 <Typography variant="h5" sx={{ fontWeight: 600, color: '#1e293b', mb: 1, textAlign: 'center' }}>
-                  Search Service Case
+                  {t('public.searchCase')}
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#64748b', mb: 3, textAlign: 'center' }}>
-                  Track your service case status by case number and phone number
+                  {t('public.searchCaseDescription')}
                 </Typography>
                 <Button
                   component={Link}
@@ -174,7 +174,7 @@ const PublicHomePage = () => {
                     },
                   }}
                 >
-                  Search Case
+                  {t('public.searchCase')}
                 </Button>
               </Box>
             )}
