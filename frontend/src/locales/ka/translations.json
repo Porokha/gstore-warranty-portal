@@ -137,6 +137,22 @@
     "language": "ენის პრეფერენსი",
     "password": "პაროლი"
   },
+  "login": {
+    "welcomeBack": "კეთილი იყოს თქვენი დაბრუნება",
+    "signInToAccess": "შედით თქვენს პერსონალურ პორტალში",
+    "username": "მომხმარებლის სახელი",
+    "usernamePlaceholder": "შეიყვანეთ მომხმარებლის სახელი",
+    "password": "პაროლი",
+    "passwordPlaceholder": "შეიყვანეთ პაროლი",
+    "rememberMe": "დამახსოვრება",
+    "signIn": "შესვლა",
+    "signingIn": "შესვლა...",
+    "invalidCredentials": "არასწორი მომხმარებლის სახელი ან პაროლი",
+    "needHelp": "გჭირდებათ დახმარება?",
+    "contactSupport": "დაუკავშირდით მხარდაჭერას",
+    "staffPortalOnly": "მხოლოდ პერსონალის პორტალი",
+    "copyright": "© 2024 ZEZVA ყველა უფლება დაცულია"
+  },
   "status": {
     "opened": "ღია",
     "investigating": "კვლევა",
