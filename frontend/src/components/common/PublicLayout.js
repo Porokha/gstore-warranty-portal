@@ -1,34 +1,67 @@
 import React from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { Box, Container, AppBar, Toolbar, Typography } from '@mui/material';
+import { Box, AppBar, Toolbar, Button, IconButton } from '@mui/material';
+import { Language as LanguageIcon } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
+import ZevaLogo from './ZevaLogo';
 
 const PublicLayout = () => {
   const navigate = useNavigate();
+  const { i18n } = useTranslation();
   
   return (
-    <Box>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography 
-            variant="h6" 
-            component="div" 
-            sx={{ 
-              flexGrow: 1, 
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <AppBar
+        position="sticky"
+        sx={{
+          bgcolor: '#1e293b',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+          zIndex: 1000,
+        }}
+      >
+        <Toolbar
+          sx={{
+            justifyContent: 'space-between',
+            minHeight: '70px !important',
+            px: 3,
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
               cursor: 'pointer',
-              '&:hover': { opacity: 0.8 }
+              '&:hover': { opacity: 0.9 },
             }}
             onClick={() => navigate('/')}
           >
-            ZEZVA Warranty Portal
-          </Typography>
+            <ZevaLogo size="medium" variant="light" />
+          </Box>
+          <Button
+            onClick={() => {
+              const newLang = i18n.language === 'en' ? 'ka' : 'en';
+              i18n.changeLanguage(newLang);
+            }}
+            startIcon={<LanguageIcon />}
+            sx={{
+              color: '#ffffff',
+              textTransform: 'none',
+              fontWeight: 500,
+              fontSize: '14px',
+              '&:hover': {
+                bgcolor: 'rgba(255, 255, 255, 0.1)',
+              },
+            }}
+          >
+            {i18n.language === 'en' ? 'EN' : 'KA'}
+          </Button>
         </Toolbar>
       </AppBar>
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Box sx={{ flex: 1, bgcolor: '#fcf4e8' }}>
         <Outlet />
-      </Container>
+      </Box>
     </Box>
   );
 };
 
 export default PublicLayout;
-

@@ -1,157 +1,185 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Box, Button, Typography, Paper, Container, Grid } from '@mui/material';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Box, Button, Typography, Paper, Container, Tabs, Tab } from '@mui/material';
 import {
   VerifiedUser as WarrantyIcon,
   FolderOpen as CaseIcon,
   Search as SearchIcon,
 } from '@mui/icons-material';
-import ZevaLogo from '../../components/common/ZevaLogo';
+import { useTranslation } from 'react-i18next';
 
 const PublicHomePage = () => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState(0);
+
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
+
   return (
     <Box
       sx={{
-        minHeight: '100vh',
-        bgcolor: '#f5f7fa',
-        backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        backgroundSize: 'cover',
-        pt: 8,
+        minHeight: 'calc(100vh - 70px)',
+        bgcolor: '#fcf4e8',
+        pt: 6,
         pb: 8,
       }}
     >
       <Container maxWidth="md">
         <Box sx={{ textAlign: 'center', mb: 6 }}>
-          <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
-            <ZevaLogo size="large" showSubtitle={true} variant="light" />
-          </Box>
-          <Typography variant="h6" sx={{ color: 'rgba(255, 255, 255, 0.9)', fontWeight: 400 }}>
+          <Typography variant="h5" sx={{ color: '#1e293b', fontWeight: 400, fontSize: '18px' }}>
             Check your warranty status and service cases
           </Typography>
         </Box>
 
-        <Grid container spacing={3} justifyContent="center">
-          <Grid item xs={12} sm={6} md={5}>
-            <Paper
-              elevation={0}
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: 3,
+            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
+            bgcolor: '#ffffff',
+            overflow: 'hidden',
+          }}
+        >
+          <Tabs
+            value={activeTab}
+            onChange={handleTabChange}
+            sx={{
+              borderBottom: '1px solid #e2e8f0',
+              '& .MuiTab-root': {
+                textTransform: 'none',
+                fontWeight: 500,
+                fontSize: '15px',
+                minHeight: 64,
+                '&.Mui-selected': {
+                  color: '#3b82f6',
+                },
+              },
+              '& .MuiTabs-indicator': {
+                bgcolor: '#3b82f6',
+                height: 3,
+              },
+            }}
+          >
+            <Tab
+              icon={<WarrantyIcon sx={{ fontSize: 24, mb: 0.5 }} />}
+              iconPosition="top"
+              label="Search Warranty"
               sx={{
-                p: 4,
-                borderRadius: 3,
-                boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
-                bgcolor: '#ffffff',
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                transition: 'transform 0.2s, box-shadow 0.2s',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
+                flex: 1,
+                '&.Mui-selected': {
+                  color: '#3b82f6',
                 },
               }}
-            >
-              <Box
-                sx={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 2,
-                  bgcolor: '#3b82f6',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mb: 3,
-                }}
-              >
-                <WarrantyIcon sx={{ color: '#ffffff', fontSize: 32 }} />
-              </Box>
-              <Typography variant="h5" sx={{ fontWeight: 600, color: '#1e293b', mb: 1 }}>
-                Search Warranty
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#64748b', mb: 3, flexGrow: 1 }}>
-                Find your warranty information by warranty ID and phone number
-              </Typography>
-              <Button
-                component={Link}
-                to="/search/warranty"
-                variant="contained"
-                fullWidth
-                startIcon={<SearchIcon />}
-                sx={{
-                  py: 1.5,
-                  borderRadius: 2,
-                  bgcolor: '#3b82f6',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  fontSize: '15px',
-                  '&:hover': {
-                    bgcolor: '#2563eb',
-                  },
-                }}
-              >
-                Search Warranty
-              </Button>
-            </Paper>
-          </Grid>
-          <Grid item xs={12} sm={6} md={5}>
-            <Paper
-              elevation={0}
+            />
+            <Tab
+              icon={<CaseIcon sx={{ fontSize: 24, mb: 0.5 }} />}
+              iconPosition="top"
+              label="Search Service Case"
               sx={{
-                p: 4,
-                borderRadius: 3,
-                boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
-                bgcolor: '#ffffff',
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                transition: 'transform 0.2s, box-shadow 0.2s',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
+                flex: 1,
+                '&.Mui-selected': {
+                  color: '#10b981',
                 },
               }}
-            >
-              <Box
-                sx={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 2,
-                  bgcolor: '#10b981',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mb: 3,
-                }}
-              >
-                <CaseIcon sx={{ color: '#ffffff', fontSize: 32 }} />
+            />
+          </Tabs>
+
+          <Box sx={{ p: 4 }}>
+            {activeTab === 0 && (
+              <Box>
+                <Box
+                  sx={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 2,
+                    bgcolor: '#3b82f6',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mb: 3,
+                    mx: 'auto',
+                  }}
+                >
+                  <WarrantyIcon sx={{ color: '#ffffff', fontSize: 32 }} />
+                </Box>
+                <Typography variant="h5" sx={{ fontWeight: 600, color: '#1e293b', mb: 1, textAlign: 'center' }}>
+                  Search Warranty
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#64748b', mb: 3, textAlign: 'center' }}>
+                  Find your warranty information by warranty ID and phone number
+                </Typography>
+                <Button
+                  component={Link}
+                  to="/search/warranty"
+                  variant="contained"
+                  fullWidth
+                  startIcon={<SearchIcon />}
+                  sx={{
+                    py: 1.5,
+                    borderRadius: 2,
+                    bgcolor: '#3b82f6',
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    fontSize: '15px',
+                    '&:hover': {
+                      bgcolor: '#2563eb',
+                    },
+                  }}
+                >
+                  Search Warranty
+                </Button>
               </Box>
-              <Typography variant="h5" sx={{ fontWeight: 600, color: '#1e293b', mb: 1 }}>
-                Search Service Case
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#64748b', mb: 3, flexGrow: 1 }}>
-                Track your service case status by case number and phone number
-              </Typography>
-              <Button
-                component={Link}
-                to="/search/case"
-                variant="contained"
-                fullWidth
-                startIcon={<SearchIcon />}
-                sx={{
-                  py: 1.5,
-                  borderRadius: 2,
-                  bgcolor: '#10b981',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  fontSize: '15px',
-                  '&:hover': {
-                    bgcolor: '#059669',
-                  },
-                }}
-              >
-                Search Case
-              </Button>
-            </Paper>
-          </Grid>
-        </Grid>
+            )}
+
+            {activeTab === 1 && (
+              <Box>
+                <Box
+                  sx={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 2,
+                    bgcolor: '#10b981',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mb: 3,
+                    mx: 'auto',
+                  }}
+                >
+                  <CaseIcon sx={{ color: '#ffffff', fontSize: 32 }} />
+                </Box>
+                <Typography variant="h5" sx={{ fontWeight: 600, color: '#1e293b', mb: 1, textAlign: 'center' }}>
+                  Search Service Case
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#64748b', mb: 3, textAlign: 'center' }}>
+                  Track your service case status by case number and phone number
+                </Typography>
+                <Button
+                  component={Link}
+                  to="/search/case"
+                  variant="contained"
+                  fullWidth
+                  startIcon={<SearchIcon />}
+                  sx={{
+                    py: 1.5,
+                    borderRadius: 2,
+                    bgcolor: '#10b981',
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    fontSize: '15px',
+                    '&:hover': {
+                      bgcolor: '#059669',
+                    },
+                  }}
+                >
+                  Search Case
+                </Button>
+              </Box>
+            )}
+          </Box>
+        </Paper>
       </Container>
     </Box>
   );
