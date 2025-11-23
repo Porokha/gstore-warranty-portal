@@ -10,7 +10,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { BogService } from './bog.service';
+import { BogService, BOGPaymentResponse } from './bog.service';
 import { InitiatePaymentDto } from './dto/initiate-payment.dto';
 import { PaymentsService } from '../payments/payments.service';
 
@@ -27,7 +27,7 @@ export class BogController {
   async initiatePayment(
     @Param('paymentId', ParseIntPipe) paymentId: number,
     @Body() initiateDto: InitiatePaymentDto,
-  ) {
+  ): Promise<BOGPaymentResponse> {
     // Get payment to extract customer info if not provided
     const payment = await this.paymentsService.findOne(paymentId);
     

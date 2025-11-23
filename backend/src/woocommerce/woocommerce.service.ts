@@ -6,7 +6,7 @@ import axios, { AxiosInstance } from 'axios';
 import { Warranty, CreatedSource } from '../warranties/entities/warranty.entity';
 import { WarrantiesService } from '../warranties/warranties.service';
 
-interface WooCommerceOrder {
+export interface WooCommerceOrder {
   id: number;
   status: string;
   date_created: string;
@@ -29,7 +29,7 @@ interface WooCommerceOrder {
   }>;
 }
 
-interface WooCommerceProduct {
+export interface WooCommerceProduct {
   id: number;
   name: string;
   sku: string;
@@ -259,6 +259,65 @@ export class WooCommerceService {
     }
 
     return warranties;
+  }
+
+  async syncOrdersByStatus(statuses: string[], limit: number = 100) {
+    if (!this.api) {
+      throw new BadRequestException('WooCommerce not configured');
+    }
+
+    try {
+      const allWarranties = [];
+      let page = 1;
+      let hasMore = true;
+
+      while (hasMore && allWarranties.length < limit) {
+        const response = await this.api.get('/wp-json/wc/v3/orders', {
+          params: {
+            status: statuses.join(','),
+            per_page: Math.min(100, limit - allWarranties.length),
+            page,
+          },
+        });
+
+        const orders: WooCommerceOrder[] = response.data;
+
+        if (orders.length === 0) {
+          hasMore = false;
+          break;
+        }
+
+        for (const order of orders) {
+          try {
+            for (let i = 0; i < order.line_items.length; i++) {
+              const warranty = await this.createWarrantyFromOrder(order.id, i, statuses);
+              allWarranties.push(warranty);
+              
+              if (allWarranties.length >= limit) {
+                hasMore = false;
+                break;
+              }
+            }
+          } catch (error) {
+            this.logger.error(`Failed to process order ${order.id}:`, error.message);
+          }
+        }
+
+        page++;
+        if (orders.length < 100) {
+          hasMore = false;
+        }
+      }
+
+      return {
+        success: true,
+        imported: allWarranties.length,
+        warranties: allWarranties,
+      };
+    } catch (error) {
+      this.logger.error('Failed to sync orders:', error.message);
+      throw new BadRequestException(`Failed to sync orders: ${error.message}`);
+    }
   }
 }
 

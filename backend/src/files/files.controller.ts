@@ -21,6 +21,9 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { FilesService } from './files.service';
 import { ServiceCase } from '../cases/entities/service-case.entity';
 
+// Multer file type - using any to avoid type issues
+type MulterFile = any;
+
 @Controller('files')
 export class FilesController {
   constructor(private filesService: FilesService) {}
@@ -72,7 +75,7 @@ export class FilesController {
   )
   async uploadFile(
     @Param('caseId', ParseIntPipe) caseId: number,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: MulterFile,
     @CurrentUser() user: any,
   ) {
     if (!file) {

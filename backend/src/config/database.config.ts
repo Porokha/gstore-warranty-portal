@@ -8,12 +8,12 @@ export class DatabaseConfig implements TypeOrmOptionsFactory {
 
   createTypeOrmOptions(): TypeOrmModuleOptions {
     return {
-      type: this.configService.get('DB_TYPE') || 'mysql',
+      type: (this.configService.get('DB_TYPE') || 'mysql') as any,
       host: this.configService.get('DB_HOST') || 'localhost',
       port: parseInt(this.configService.get('DB_PORT') || '3306', 10),
       username: this.configService.get('DB_USER') || 'root',
-      password: this.configService.get('DB_PASSWORD') || '',
-      database: this.configService.get('DB_NAME') || 'gstore_warranty',
+      password: (this.configService.get('DB_PASSWORD') || '') as string,
+      database: (this.configService.get('DB_NAME') || 'gstore_warranty') as string,
       entities: [__dirname + '/../**/*.entity{.ts,.js}'],
       migrations: [__dirname + '/../../database/migrations/*{.ts,.js}'],
       synchronize: this.configService.get('DB_SYNCHRONIZE') === 'true',

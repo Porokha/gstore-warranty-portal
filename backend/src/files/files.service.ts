@@ -47,7 +47,7 @@ export class FilesService {
 
   async uploadFile(
     caseId: number,
-    file: Express.Multer.File,
+    file: any,
     uploadedBy: number,
   ): Promise<CaseFile> {
     const case_ = await this.casesRepository.findOne({

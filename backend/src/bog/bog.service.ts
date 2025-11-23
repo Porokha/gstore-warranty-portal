@@ -23,7 +23,7 @@ interface BOGPaymentRequest {
   };
 }
 
-interface BOGPaymentResponse {
+export interface BOGPaymentResponse {
   order_id: string;
   payment_id: string;
   payment_url: string;

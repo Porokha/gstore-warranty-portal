@@ -11,7 +11,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { WooCommerceService } from './woocommerce.service';
+import { WooCommerceService, WooCommerceOrder, WooCommerceProduct } from './woocommerce.service';
 
 @Controller('woocommerce')
 export class WooCommerceController {
@@ -51,13 +51,13 @@ export class WooCommerceController {
 
   @Get('order/:orderId')
   @UseGuards(JwtAuthGuard)
-  async getOrder(@Param('orderId', ParseIntPipe) orderId: number) {
+  async getOrder(@Param('orderId', ParseIntPipe) orderId: number): Promise<WooCommerceOrder> {
     return this.wooCommerceService.getOrder(orderId);
   }
 
   @Get('product/:productId')
   @UseGuards(JwtAuthGuard)
-  async getProduct(@Param('productId', ParseIntPipe) productId: number) {
+  async getProduct(@Param('productId', ParseIntPipe) productId: number): Promise<WooCommerceProduct> {
     return this.wooCommerceService.getProduct(productId);
   }
 
@@ -69,7 +69,9 @@ export class WooCommerceController {
   ) {
     const statuses = body.statuses || ['completed'];
     const limit = body.limit || 100;
-    return this.wooCommerceService.syncOrdersByStatus(statuses, limit);
+    // Use the existing method with proper parameters
+    const result = await this.wooCommerceService.syncOrdersByStatus(statuses, limit);
+    return result;
   }
 }
 

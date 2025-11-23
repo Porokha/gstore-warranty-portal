@@ -19,6 +19,9 @@ import { UserRole } from '../users/entities/user.entity';
 import { ImportService } from './import.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
+// Multer file type - using any to avoid type issues
+type MulterFile = any;
+
 @Controller('import')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
@@ -48,13 +51,13 @@ export class ImportController {
     }),
   )
   async importCases(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: MulterFile,
     @CurrentUser() user: any,
   ) {
     if (!file) {
       throw new Error('No file uploaded');
     }
-    return this.importService.importCasesFromCSV(file.path, user.id);
+    return this.importService.importCasesFromCSV((file as any).path, user.id);
   }
 
   @Post('warranties/csv')
@@ -80,13 +83,13 @@ export class ImportController {
     }),
   )
   async importWarranties(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: MulterFile,
     @CurrentUser() user: any,
   ) {
     if (!file) {
       throw new Error('No file uploaded');
     }
-    return this.importService.importWarrantiesFromCSV(file.path, user.id);
+    return this.importService.importWarrantiesFromCSV((file as any).path, user.id);
   }
 
   @Get('cases/csv/example')

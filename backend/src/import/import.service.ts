@@ -94,8 +94,7 @@ export class ImportService {
         .on('data', async (row) => {
           try {
             // Map CSV row to CreateWarrantyDto
-            const warrantyData: CreateWarrantyDto = {
-              warranty_id: row.warranty_id || undefined,
+            const warrantyData: any = {
               title: row.title || '',
               sku: row.sku || '',
               imei: row.imei || undefined,
@@ -105,9 +104,9 @@ export class ImportService {
               customer_last_name: row.customer_last_name || undefined,
               customer_phone: row.customer_phone || '',
               customer_email: row.customer_email || undefined,
-              purchase_date: row.purchase_date ? new Date(row.purchase_date) : new Date(),
-              warranty_start: row.warranty_start ? new Date(row.warranty_start) : new Date(),
-              warranty_end: row.warranty_end ? new Date(row.warranty_end) : undefined,
+              purchase_date: row.purchase_date ? new Date(row.purchase_date).toISOString() : new Date().toISOString(),
+              warranty_start: row.warranty_start ? new Date(row.warranty_start).toISOString() : new Date().toISOString(),
+              warranty_end: row.warranty_end ? new Date(row.warranty_end).toISOString() : undefined,
               warranty_duration_days: row.warranty_duration_days
                 ? parseInt(row.warranty_duration_days)
                 : 365,
@@ -124,11 +123,10 @@ export class ImportService {
 
             // Calculate warranty_end if not provided
             if (!warrantyData.warranty_end) {
-              const start = warrantyData.warranty_start || warrantyData.purchase_date;
-              warrantyData.warranty_end = new Date(start);
-              warrantyData.warranty_end.setDate(
-                warrantyData.warranty_end.getDate() + warrantyData.warranty_duration_days
-              );
+              const start = new Date(warrantyData.warranty_start || warrantyData.purchase_date);
+              const endDate = new Date(start);
+              endDate.setDate(endDate.getDate() + (parseInt(row.warranty_duration_days) || 365));
+              warrantyData.warranty_end = endDate.toISOString();
             }
 
             const created = await this.warrantiesService.create(warrantyData);

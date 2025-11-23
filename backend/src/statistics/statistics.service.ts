@@ -147,6 +147,17 @@ export class StatisticsService {
       }
     }
 
+    // For non-technician queries, get all payments
+    if (!technicianId) {
+      const paidResult = await this.paymentsRepository
+        .createQueryBuilder('payment')
+        .where('payment.payment_status = :status', { status: PaymentStatus.PAID })
+        .select('SUM(payment.offer_amount)', 'total')
+        .getRawOne();
+      
+      totalPaidAmount = parseFloat(paidResult?.total || '0');
+    }
+
     return {
       technicianId,
       period: { start, end },
@@ -160,7 +171,7 @@ export class StatisticsService {
       casesByPriority,
       totalPayments,
       paidPayments,
-      totalPaidAmount: paidAmount?.total || 0,
+      totalPaidAmount,
     };
   }
 
