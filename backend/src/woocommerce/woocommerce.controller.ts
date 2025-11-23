@@ -60,5 +60,16 @@ export class WooCommerceController {
   async getProduct(@Param('productId', ParseIntPipe) productId: number) {
     return this.wooCommerceService.getProduct(productId);
   }
+
+  @Post('sync/orders')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async syncOrders(
+    @Body() body: { statuses?: string[]; limit?: number },
+  ) {
+    const statuses = body.statuses || ['completed'];
+    const limit = body.limit || 100;
+    return this.wooCommerceService.syncOrdersByStatus(statuses, limit);
+  }
 }
 

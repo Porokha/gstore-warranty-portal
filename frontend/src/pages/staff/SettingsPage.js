@@ -237,6 +237,7 @@ const SettingsPage = () => {
           <Tab label={t('settings.smsNotifications') || 'SMS Notifications'} />
           <Tab label={t('settings.smsTemplates') || 'SMS Templates'} />
           <Tab label={t('settings.userManagement') || 'User Management'} />
+          <Tab label={t('settings.apiKeys') || 'API Keys'} />
         </Tabs>
 
         {/* Tab 1: SMS Settings */}
@@ -492,6 +493,20 @@ const SettingsPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+        {/* Tab 4: API Keys */}
+        {tab === 3 && (
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              {t('settings.apiKeys') || 'API Keys Configuration'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" gutterBottom sx={{ mb: 3 }}>
+              Configure API keys for WooCommerce, BOG Payment Gateway, and Sender SMS service.
+            </Typography>
+            <ApiKeysSettings />
+          </Box>
+        )}
+      </Paper>
 
       {/* User Dialog */}
       <Dialog open={userDialogOpen} onClose={() => setUserDialogOpen(false)} maxWidth="sm" fullWidth>

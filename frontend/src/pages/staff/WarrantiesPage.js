@@ -103,16 +103,30 @@ const WarrantiesPage = () => {
 
   return (
     <div>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">{t('common.warranties')}</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => navigate('/staff/warranties/new')}
-        >
-          {t('common.createWarranty')}
-        </Button>
-      </Box>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+          <Typography variant="h4">{t('common.warranties')}</Typography>
+          <Box display="flex" gap={1}>
+            <Button
+              variant="outlined"
+              onClick={() => navigate('/staff/warranties/import/csv')}
+            >
+              {t('common.importCSV') || 'Import CSV'}
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => navigate('/staff/warranties/import/woocommerce')}
+            >
+              {t('common.importWooCommerce') || 'Import from WooCommerce'}
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => navigate('/staff/warranties/new')}
+            >
+              {t('common.createWarranty')}
+            </Button>
+          </Box>
+        </Box>
 
       {/* Filters */}
       <Paper sx={{ p: 2, mb: 3 }}>

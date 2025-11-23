@@ -45,7 +45,8 @@
     "rxjs": "^7.8.1",
     "typeorm": "^0.3.17",
     "uuid": "^9.0.1",
-    "exceljs": "^4.4.0"
+    "exceljs": "^4.4.0",
+    "csv-parser": "^3.0.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.2.1",

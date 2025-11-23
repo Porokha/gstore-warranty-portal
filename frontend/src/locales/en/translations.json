@@ -32,6 +32,8 @@
       "statistics": "Statistics",
       "technicianStatistics": "Technician Statistics",
       "myStatistics": "My Statistics",
+      "importCSV": "Import CSV",
+      "importWooCommerce": "Import from WooCommerce",
     "days": "days",
     "avgCompletionTime": "Avg. Completion Time",
     "onTimeCases": "On-time Cases",

@@ -88,13 +88,21 @@ const CasesPage = () => {
     <div>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4">{t('common.openCases')}</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => navigate('/staff/cases/new')}
-        >
-          {t('common.createCase')}
-        </Button>
+        <Box display="flex" gap={1}>
+          <Button
+            variant="outlined"
+            onClick={() => navigate('/staff/cases/import/csv')}
+          >
+            {t('common.importCSV') || 'Import CSV'}
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => navigate('/staff/cases/new')}
+          >
+            {t('common.createCase')}
+          </Button>
+        </Box>
       </Box>
 
       {/* Filters */}

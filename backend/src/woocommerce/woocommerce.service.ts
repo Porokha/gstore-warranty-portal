@@ -116,10 +116,16 @@ export class WooCommerceService {
     return 'Laptop'; // Default
   }
 
-  async createWarrantyFromOrder(orderId: number, lineItemIndex: number = 0): Promise<Warranty> {
+  async createWarrantyFromOrder(orderId: number, lineItemIndex: number = 0, allowedStatuses?: string[]): Promise<Warranty> {
     const order = await this.getOrder(orderId);
 
-    if (order.status !== 'completed') {
+    // Check if order status is allowed (for manual import)
+    if (allowedStatuses && !allowedStatuses.includes(order.status)) {
+      throw new BadRequestException(`Order status ${order.status} is not allowed. Allowed statuses: ${allowedStatuses.join(', ')}`);
+    }
+    
+    // For automatic webhook, only allow completed
+    if (!allowedStatuses && order.status !== 'completed') {
       throw new BadRequestException('Can only create warranty for completed orders');
     }
 
@@ -239,13 +245,13 @@ export class WooCommerceService {
     }
   }
 
-  async syncOrder(orderId: number): Promise<Warranty[]> {
+  async syncOrder(orderId: number, allowedStatuses?: string[]): Promise<Warranty[]> {
     const order = await this.getOrder(orderId);
     const warranties: Warranty[] = [];
 
     for (let i = 0; i < order.line_items.length; i++) {
       try {
-        const warranty = await this.createWarrantyFromOrder(orderId, i);
+        const warranty = await this.createWarrantyFromOrder(orderId, i, allowedStatuses);
         warranties.push(warranty);
       } catch (error) {
         this.logger.error(`Failed to sync warranty for order ${orderId}, line item ${i}:`, error.message);
