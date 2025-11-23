@@ -14,7 +14,7 @@ const PublicLayout = () => {
       <AppBar
         position="sticky"
         sx={{
-          bgcolor: '#1e293b',
+          bgcolor: '#f4e7d3',
           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
           zIndex: 1000,
         }}
@@ -35,7 +35,7 @@ const PublicLayout = () => {
             }}
             onClick={() => navigate('/')}
           >
-            <ZevaLogo size="medium" variant="light" />
+            <ZevaLogo size="large" variant="default" />
           </Box>
           <Button
             onClick={() => {
@@ -44,12 +44,12 @@ const PublicLayout = () => {
             }}
             startIcon={<LanguageIcon />}
             sx={{
-              color: '#ffffff',
+              color: '#1e293b',
               textTransform: 'none',
               fontWeight: 500,
               fontSize: '14px',
               '&:hover': {
-                bgcolor: 'rgba(255, 255, 255, 0.1)',
+                bgcolor: 'rgba(0, 0, 0, 0.05)',
               },
             }}
           >

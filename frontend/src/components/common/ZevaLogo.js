@@ -8,7 +8,7 @@ const ZevaLogo = ({ size = 'medium', showSubtitle = false, variant = 'default' }
   const sizes = {
     small: { logo: 40, text: '20px', subtitle: '12px' },
     medium: { logo: 60, text: '28px', subtitle: '14px' },
-    large: { logo: 120, text: '36px', subtitle: '16px' },
+    large: { logo: 140, text: '36px', subtitle: '16px' },
   };
 
   const currentSize = sizes[size] || sizes.medium;
