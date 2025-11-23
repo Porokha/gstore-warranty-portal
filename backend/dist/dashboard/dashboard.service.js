@@ -167,6 +167,102 @@ let DashboardService = class DashboardService {
         }, 0) / completedCases.length;
         return Math.round(avg * 10) / 10;
     }
+    async getCasesByStatus(timeFilter) {
+        let query = this.casesRepository.createQueryBuilder('case');
+        if (timeFilter?.start) {
+            query = query.andWhere('case.created_at >= :start', { start: timeFilter.start });
+        }
+        if (timeFilter?.end) {
+            query = query.andWhere('case.created_at <= :end', { end: timeFilter.end });
+        }
+        const cases = await query.getMany();
+        const statusCounts = {
+            opened: 0,
+            investigating: 0,
+            pending: 0,
+            completed: 0,
+        };
+        cases.forEach((case_) => {
+            switch (case_.status_level) {
+                case service_case_entity_1.CaseStatusLevel.OPENED:
+                    statusCounts.opened++;
+                    break;
+                case service_case_entity_1.CaseStatusLevel.INVESTIGATING:
+                    statusCounts.investigating++;
+                    break;
+                case service_case_entity_1.CaseStatusLevel.PENDING:
+                    statusCounts.pending++;
+                    break;
+                case service_case_entity_1.CaseStatusLevel.COMPLETED:
+                    statusCounts.completed++;
+                    break;
+            }
+        });
+        const total = cases.length;
+        if (total === 0) {
+            return [
+                { name: 'Completed', value: 0, percentage: 0, color: '#10b981' },
+                { name: 'Investigating', value: 0, percentage: 0, color: '#f59e0b' },
+                { name: 'Pending', value: 0, percentage: 0, color: '#3b82f6' },
+                { name: 'Opened', value: 0, percentage: 0, color: '#8b5cf6' },
+            ];
+        }
+        return [
+            {
+                name: 'Completed',
+                value: statusCounts.completed,
+                percentage: Math.round((statusCounts.completed / total) * 100),
+                color: '#10b981',
+            },
+            {
+                name: 'Investigating',
+                value: statusCounts.investigating,
+                percentage: Math.round((statusCounts.investigating / total) * 100),
+                color: '#f59e0b',
+            },
+            {
+                name: 'Pending',
+                value: statusCounts.pending,
+                percentage: Math.round((statusCounts.pending / total) * 100),
+                color: '#3b82f6',
+            },
+            {
+                name: 'Opened',
+                value: statusCounts.opened,
+                percentage: Math.round((statusCounts.opened / total) * 100),
+                color: '#8b5cf6',
+            },
+        ];
+    }
+    async getCompletionTimeByDeviceType(timeFilter) {
+        const deviceTypes = ['Phone', 'Laptop', 'Tablet', 'Desktop', 'Wearable', 'Accessory'];
+        const result = [];
+        for (const deviceType of deviceTypes) {
+            let query = this.casesRepository
+                .createQueryBuilder('case')
+                .where('case.status_level = :completed', { completed: service_case_entity_1.CaseStatusLevel.COMPLETED })
+                .andWhere('case.device_type = :deviceType', { deviceType })
+                .andWhere('case.closed_at IS NOT NULL');
+            if (timeFilter?.start) {
+                query = query.andWhere('case.closed_at >= :start', { start: timeFilter.start });
+            }
+            if (timeFilter?.end) {
+                query = query.andWhere('case.closed_at <= :end', { end: timeFilter.end });
+            }
+            const cases = await query.getMany();
+            if (cases.length > 0) {
+                const avgTime = cases.reduce((sum, case_) => {
+                    const diff = case_.closed_at.getTime() - case_.opened_at.getTime();
+                    return sum + diff / (1000 * 60 * 60 * 24);
+                }, 0) / cases.length;
+                result.push({
+                    name: deviceType === 'Phone' ? 'Smartphones' : deviceType === 'Wearable' ? 'Wearables' : deviceType + 's',
+                    value: Math.round(avgTime * 10) / 10,
+                });
+            }
+        }
+        return result;
+    }
 };
 exports.DashboardService = DashboardService;
 exports.DashboardService = DashboardService = __decorate([

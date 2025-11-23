@@ -19,9 +19,12 @@ export declare class WooCommerceController {
     syncOrders(body: {
         statuses?: string[];
         limit?: number;
+        dateFrom?: string;
+        skipDuplicates?: boolean;
     }): Promise<{
         success: boolean;
         imported: number;
+        skipped: number;
         warranties: any[];
     }>;
 }

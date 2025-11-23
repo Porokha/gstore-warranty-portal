@@ -16,4 +16,13 @@ export declare class SettingsController {
         success: boolean;
         message: string;
     }>;
+    getWooCommerceAutomation(): Promise<{
+        enabled: boolean;
+    }>;
+    setWooCommerceAutomation(body: {
+        enabled: boolean;
+    }): Promise<{
+        success: boolean;
+        message: string;
+    }>;
 }

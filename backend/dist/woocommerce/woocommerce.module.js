@@ -13,6 +13,7 @@ const woocommerce_service_1 = require("./woocommerce.service");
 const woocommerce_controller_1 = require("./woocommerce.controller");
 const warranty_entity_1 = require("../warranties/entities/warranty.entity");
 const warranties_module_1 = require("../warranties/warranties.module");
+const settings_module_1 = require("../settings/settings.module");
 let WooCommerceModule = class WooCommerceModule {
 };
 exports.WooCommerceModule = WooCommerceModule;
@@ -21,6 +22,7 @@ exports.WooCommerceModule = WooCommerceModule = __decorate([
         imports: [
             typeorm_1.TypeOrmModule.forFeature([warranty_entity_1.Warranty]),
             warranties_module_1.WarrantiesModule,
+            settings_module_1.SettingsModule,
         ],
         controllers: [woocommerce_controller_1.WooCommerceController],
         providers: [woocommerce_service_1.WooCommerceService],

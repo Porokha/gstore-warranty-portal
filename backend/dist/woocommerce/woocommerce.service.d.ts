@@ -2,6 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
 import { Warranty } from '../warranties/entities/warranty.entity';
 import { WarrantiesService } from '../warranties/warranties.service';
+import { SettingsService } from '../settings/settings.service';
 export interface WooCommerceOrder {
     id: number;
     status: string;
@@ -40,12 +41,13 @@ export declare class WooCommerceService {
     private configService;
     private warrantiesRepository;
     private warrantiesService;
+    private settingsService;
     private readonly logger;
     private readonly api;
     private readonly baseUrl;
     private readonly consumerKey;
     private readonly consumerSecret;
-    constructor(configService: ConfigService, warrantiesRepository: Repository<Warranty>, warrantiesService: WarrantiesService);
+    constructor(configService: ConfigService, warrantiesRepository: Repository<Warranty>, warrantiesService: WarrantiesService, settingsService: SettingsService);
     getOrder(orderId: number): Promise<WooCommerceOrder>;
     getProduct(productId: number): Promise<WooCommerceProduct>;
     private extractMetaDataValue;
@@ -53,9 +55,14 @@ export declare class WooCommerceService {
     createWarrantyFromOrder(orderId: number, lineItemIndex?: number, allowedStatuses?: string[]): Promise<Warranty>;
     processOrderWebhook(orderId: number, status: string): Promise<void>;
     syncOrder(orderId: number, allowedStatuses?: string[]): Promise<Warranty[]>;
-    syncOrdersByStatus(statuses: string[], limit?: number): Promise<{
+    syncOrdersByStatus(statuses: string[], options?: {
+        limit?: number;
+        dateFrom?: string;
+        skipDuplicates?: boolean;
+    }): Promise<{
         success: boolean;
         imported: number;
+        skipped: number;
         warranties: any[];
     }>;
 }

@@ -234,10 +234,10 @@ export class DashboardService {
     const total = cases.length;
     if (total === 0) {
       return [
-        { name: 'Completed', value: 0, percentage: 0 },
-        { name: 'Investigating', value: 0, percentage: 0 },
-        { name: 'Pending', value: 0, percentage: 0 },
-        { name: 'Opened', value: 0, percentage: 0 },
+        { name: 'Completed', value: 0, percentage: 0, color: '#10b981' },
+        { name: 'Investigating', value: 0, percentage: 0, color: '#f59e0b' },
+        { name: 'Pending', value: 0, percentage: 0, color: '#3b82f6' },
+        { name: 'Opened', value: 0, percentage: 0, color: '#8b5cf6' },
       ];
     }
 

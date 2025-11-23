@@ -45,8 +45,11 @@ let WooCommerceController = class WooCommerceController {
     }
     async syncOrders(body) {
         const statuses = body.statuses || ['completed'];
-        const limit = body.limit || 100;
-        const result = await this.wooCommerceService.syncOrdersByStatus(statuses, limit);
+        const result = await this.wooCommerceService.syncOrdersByStatus(statuses, {
+            limit: body.limit,
+            dateFrom: body.dateFrom,
+            skipDuplicates: body.skipDuplicates ?? true,
+        });
         return result;
     }
 };

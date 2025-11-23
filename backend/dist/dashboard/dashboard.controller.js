@@ -49,6 +49,44 @@ let DashboardController = DashboardController_1 = class DashboardController {
             }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    async getCasesByStatus(start, end) {
+        try {
+            const timeFilter = start || end
+                ? {
+                    start: start ? new Date(start) : undefined,
+                    end: end ? new Date(end) : undefined,
+                }
+                : undefined;
+            return await this.dashboardService.getCasesByStatus(timeFilter);
+        }
+        catch (error) {
+            this.logger.error('Error fetching cases by status:', error);
+            throw new common_1.HttpException({
+                statusCode: common_1.HttpStatus.INTERNAL_SERVER_ERROR,
+                message: 'Failed to fetch cases by status',
+                error: error.message || 'Unknown error',
+            }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    async getCompletionTimeByDevice(start, end) {
+        try {
+            const timeFilter = start || end
+                ? {
+                    start: start ? new Date(start) : undefined,
+                    end: end ? new Date(end) : undefined,
+                }
+                : undefined;
+            return await this.dashboardService.getCompletionTimeByDeviceType(timeFilter);
+        }
+        catch (error) {
+            this.logger.error('Error fetching completion time by device:', error);
+            throw new common_1.HttpException({
+                statusCode: common_1.HttpStatus.INTERNAL_SERVER_ERROR,
+                message: 'Failed to fetch completion time by device',
+                error: error.message || 'Unknown error',
+            }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 };
 exports.DashboardController = DashboardController;
 __decorate([
@@ -60,6 +98,22 @@ __decorate([
     __metadata("design:paramtypes", [String, String, String]),
     __metadata("design:returntype", Promise)
 ], DashboardController.prototype, "getStats", null);
+__decorate([
+    (0, common_1.Get)('charts/cases-by-status'),
+    __param(0, (0, common_1.Query)('start')),
+    __param(1, (0, common_1.Query)('end')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], DashboardController.prototype, "getCasesByStatus", null);
+__decorate([
+    (0, common_1.Get)('charts/completion-time'),
+    __param(0, (0, common_1.Query)('start')),
+    __param(1, (0, common_1.Query)('end')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], DashboardController.prototype, "getCompletionTimeByDevice", null);
 exports.DashboardController = DashboardController = DashboardController_1 = __decorate([
     (0, common_1.Controller)('dashboard'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

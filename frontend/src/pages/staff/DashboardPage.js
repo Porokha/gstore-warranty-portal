@@ -46,7 +46,6 @@ import {
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { dashboardService } from '../../services/dashboardService';
 import { casesService } from '../../services/casesService';
-import api from '../../services/api';
 
 const DashboardPage = () => {
   const { t } = useTranslation();
@@ -78,13 +77,7 @@ const DashboardPage = () => {
 
   const { data: statusChartData } = useQuery(
     ['dashboard', 'cases-by-status', timeFilter, customStart, customEnd],
-    async () => {
-      const params = new URLSearchParams();
-      if (timeRange.start) params.append('start', timeRange.start.toISOString());
-      if (timeRange.end) params.append('end', timeRange.end.toISOString());
-      const response = await api.get(`/dashboard/charts/cases-by-status?${params.toString()}`);
-      return response.data;
-    },
+    () => dashboardService.getCasesByStatus(timeRange.start, timeRange.end),
     {
       refetchInterval: 30000,
     }
@@ -92,13 +85,7 @@ const DashboardPage = () => {
 
   const { data: completionChartData } = useQuery(
     ['dashboard', 'completion-time', timeFilter, customStart, customEnd],
-    async () => {
-      const params = new URLSearchParams();
-      if (timeRange.start) params.append('start', timeRange.start.toISOString());
-      if (timeRange.end) params.append('end', timeRange.end.toISOString());
-      const response = await api.get(`/dashboard/charts/completion-time?${params.toString()}`);
-      return response.data;
-    },
+    () => dashboardService.getCompletionTimeByDevice(timeRange.start, timeRange.end),
     {
       refetchInterval: 30000,
     }

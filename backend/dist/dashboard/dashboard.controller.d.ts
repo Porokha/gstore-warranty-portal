@@ -21,4 +21,11 @@ export declare class DashboardController {
             totalMoneyLost: number;
         };
     }>;
+    getCasesByStatus(start?: string, end?: string): Promise<{
+        name: string;
+        value: number;
+        percentage: number;
+        color: string;
+    }[]>;
+    getCompletionTimeByDevice(start?: string, end?: string): Promise<any[]>;
 }

@@ -30,6 +30,14 @@ let SettingsController = class SettingsController {
         await this.settingsService.setApiKeys(keys);
         return { success: true, message: 'API keys updated successfully' };
     }
+    async getWooCommerceAutomation() {
+        const enabled = await this.settingsService.get('WOOCOMMERCE_AUTOMATION_ENABLED');
+        return { enabled: enabled === 'true' };
+    }
+    async setWooCommerceAutomation(body) {
+        await this.settingsService.set('WOOCOMMERCE_AUTOMATION_ENABLED', body.enabled ? 'true' : 'false', 'Enable/disable automatic warranty creation from WooCommerce completed orders');
+        return { success: true, message: 'WooCommerce automation setting updated successfully' };
+    }
 };
 exports.SettingsController = SettingsController;
 __decorate([
@@ -45,6 +53,19 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], SettingsController.prototype, "setApiKeys", null);
+__decorate([
+    (0, common_1.Get)('woocommerce-automation'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], SettingsController.prototype, "getWooCommerceAutomation", null);
+__decorate([
+    (0, common_1.Post)('woocommerce-automation'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], SettingsController.prototype, "setWooCommerceAutomation", null);
 exports.SettingsController = SettingsController = __decorate([
     (0, common_1.Controller)('settings'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

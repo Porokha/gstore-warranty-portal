@@ -21,11 +21,13 @@ const typeorm_2 = require("typeorm");
 const axios_1 = require("axios");
 const warranty_entity_1 = require("../warranties/entities/warranty.entity");
 const warranties_service_1 = require("../warranties/warranties.service");
+const settings_service_1 = require("../settings/settings.service");
 let WooCommerceService = WooCommerceService_1 = class WooCommerceService {
-    constructor(configService, warrantiesRepository, warrantiesService) {
+    constructor(configService, warrantiesRepository, warrantiesService, settingsService) {
         this.configService = configService;
         this.warrantiesRepository = warrantiesRepository;
         this.warrantiesService = warrantiesService;
+        this.settingsService = settingsService;
         this.logger = new common_1.Logger(WooCommerceService_1.name);
         this.baseUrl = this.configService.get('WOOCOMMERCE_URL');
         this.consumerKey = this.configService.get('WOOCOMMERCE_CONSUMER_KEY');
@@ -157,10 +159,25 @@ let WooCommerceService = WooCommerceService_1 = class WooCommerceService {
             this.logger.log(`Order ${orderId} status is ${status}, skipping warranty creation`);
             return;
         }
+        const automationEnabled = await this.settingsService.get('WOOCOMMERCE_AUTOMATION_ENABLED');
+        if (automationEnabled !== 'true') {
+            this.logger.log(`WooCommerce automation is disabled, skipping order ${orderId}`);
+            return;
+        }
         try {
             const order = await this.getOrder(orderId);
             for (let i = 0; i < order.line_items.length; i++) {
                 try {
+                    const existing = await this.warrantiesRepository.findOne({
+                        where: {
+                            order_id: orderId,
+                            order_line_index: i,
+                        },
+                    });
+                    if (existing) {
+                        this.logger.log(`Warranty already exists for order ${orderId}, line item ${i}, skipping`);
+                        continue;
+                    }
                     await this.createWarrantyFromOrder(orderId, i);
                 }
                 catch (error) {
@@ -187,40 +204,75 @@ let WooCommerceService = WooCommerceService_1 = class WooCommerceService {
         }
         return warranties;
     }
-    async syncOrdersByStatus(statuses, limit = 100) {
+    async syncOrdersByStatus(statuses, options) {
         if (!this.api) {
             throw new common_1.BadRequestException('WooCommerce not configured');
         }
         try {
             const allWarranties = [];
+            const skipped = [];
             let page = 1;
             let hasMore = true;
-            while (hasMore && allWarranties.length < limit) {
-                const response = await this.api.get('/wp-json/wc/v3/orders', {
-                    params: {
-                        status: statuses.join(','),
-                        per_page: Math.min(100, limit - allWarranties.length),
-                        page,
-                    },
-                });
+            const limit = options?.limit;
+            const dateFrom = options?.dateFrom ? new Date(options.dateFrom) : null;
+            const skipDuplicates = options?.skipDuplicates ?? true;
+            while (hasMore && (!limit || allWarranties.length < limit)) {
+                const params = {
+                    status: statuses.join(','),
+                    per_page: 100,
+                    page,
+                    orderby: 'date',
+                    order: 'desc',
+                };
+                if (dateFrom) {
+                    params.after = dateFrom.toISOString();
+                }
+                const response = await this.api.get('/wp-json/wc/v3/orders', { params });
                 const orders = response.data;
                 if (orders.length === 0) {
                     hasMore = false;
                     break;
                 }
                 for (const order of orders) {
+                    if (dateFrom) {
+                        const orderDate = new Date(order.date_created);
+                        if (orderDate < dateFrom) {
+                            continue;
+                        }
+                    }
                     try {
                         for (let i = 0; i < order.line_items.length; i++) {
+                            if (skipDuplicates) {
+                                const existing = await this.warrantiesRepository.findOne({
+                                    where: {
+                                        order_id: order.id,
+                                        order_line_index: i,
+                                    },
+                                });
+                                if (existing) {
+                                    skipped.push({ orderId: order.id, lineIndex: i });
+                                    continue;
+                                }
+                            }
                             const warranty = await this.createWarrantyFromOrder(order.id, i, statuses);
                             allWarranties.push(warranty);
-                            if (allWarranties.length >= limit) {
+                            if (limit && allWarranties.length >= limit) {
                                 hasMore = false;
                                 break;
                             }
                         }
                     }
                     catch (error) {
-                        this.logger.error(`Failed to process order ${order.id}:`, error.message);
+                        if (error.message?.includes('already exists')) {
+                            skipped.push({ orderId: order.id });
+                        }
+                        else {
+                            this.logger.error(`Failed to process order ${order.id}:`, error.message);
+                        }
+                    }
+                    if (limit && allWarranties.length >= limit) {
+                        hasMore = false;
+                        break;
                     }
                 }
                 page++;
@@ -231,6 +283,7 @@ let WooCommerceService = WooCommerceService_1 = class WooCommerceService {
             return {
                 success: true,
                 imported: allWarranties.length,
+                skipped: skipped.length,
                 warranties: allWarranties,
             };
         }
@@ -246,6 +299,7 @@ exports.WooCommerceService = WooCommerceService = WooCommerceService_1 = __decor
     __param(1, (0, typeorm_1.InjectRepository)(warranty_entity_1.Warranty)),
     __metadata("design:paramtypes", [config_1.ConfigService,
         typeorm_2.Repository,
-        warranties_service_1.WarrantiesService])
+        warranties_service_1.WarrantiesService,
+        settings_service_1.SettingsService])
 ], WooCommerceService);
 //# sourceMappingURL=woocommerce.service.js.map

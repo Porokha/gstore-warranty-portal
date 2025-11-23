@@ -32,4 +32,17 @@ export declare class DashboardService {
         start?: Date;
         end?: Date;
     }): Promise<number>;
+    getCasesByStatus(timeFilter?: {
+        start?: Date;
+        end?: Date;
+    }): Promise<{
+        name: string;
+        value: number;
+        percentage: number;
+        color: string;
+    }[]>;
+    getCompletionTimeByDeviceType(timeFilter?: {
+        start?: Date;
+        end?: Date;
+    }): Promise<any[]>;
 }
