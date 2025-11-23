@@ -53,11 +53,9 @@ const StaffLayout = () => {
     { path: '/staff/warranties', label: t('common.warranties'), icon: <WarrantiesIcon /> },
     { path: '/staff/finance', label: t('common.finance'), icon: <FinanceIcon /> },
     { path: '/staff/statistics', label: t('common.statistics') || 'Statistics', icon: <StatisticsIcon /> },
+    { path: '/staff/import', label: t('common.importCSV') || 'Import', icon: <ImportIcon /> },
     { path: '/staff/settings', label: t('common.settings'), icon: <SettingsIcon /> },
     { path: '/staff/audit', label: t('common.audit'), icon: <AuditIcon /> },
-    { path: '/staff/cases/import/csv', label: t('common.importCSV') + ' - Cases', icon: <ImportIcon /> },
-    { path: '/staff/warranties/import/csv', label: t('common.importCSV') + ' - ' + t('common.warranties'), icon: <ImportIcon /> },
-    { path: '/staff/warranties/import/woocommerce', label: t('common.importWooCommerce'), icon: <ImportIcon /> },
   ];
 
   return (
@@ -111,7 +109,8 @@ const StaffLayout = () => {
           <List>
             {menuItems.map((item) => {
               const isActive = location.pathname === item.path || 
-                (item.path === '/staff/cases' && location.pathname.startsWith('/staff/cases') && !location.pathname.includes('/closed') && !location.pathname.includes('/import'));
+                (item.path === '/staff/cases' && location.pathname.startsWith('/staff/cases') && !location.pathname.includes('/closed') && !location.pathname.includes('/import')) ||
+                (item.path === '/staff/import' && location.pathname.startsWith('/staff/import'));
               return (
                 <ListItem key={item.path} disablePadding>
                   <ListItemButton 

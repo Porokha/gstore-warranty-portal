@@ -41,6 +41,7 @@ import { smsService } from '../../services/smsService';
 import { usersService } from '../../services/usersService';
 import { useAuth } from '../../contexts/AuthContext';
 import ApiKeysSettings from '../../components/settings/ApiKeysSettings';
+import api from '../../services/api';
 
 const SettingsPage = () => {
   const { t } = useTranslation();
@@ -64,6 +65,19 @@ const SettingsPage = () => {
   const { data: users, isLoading: usersLoading } = useQuery('users', () =>
     usersService.getAll()
   );
+
+  const { data: wooCommerceAutomationData } = useQuery('woocommerce-automation', async () => {
+    const response = await api.get('/settings/woocommerce-automation');
+    return response.data;
+  });
+
+  const [wooCommerceAutomation, setWooCommerceAutomation] = useState(false);
+
+  React.useEffect(() => {
+    if (wooCommerceAutomationData) {
+      setWooCommerceAutomation(wooCommerceAutomationData.enabled);
+    }
+  }, [wooCommerceAutomationData]);
 
   const userCreateMutation = useMutation(
     (data) => usersService.create(data),
@@ -239,6 +253,7 @@ const SettingsPage = () => {
           <Tab label={t('settings.smsTemplates') || 'SMS Templates'} />
           <Tab label={t('settings.userManagement') || 'User Management'} />
           <Tab label={t('settings.apiKeys') || 'API Keys'} />
+          <Tab label="WooCommerce" />
         </Tabs>
 
         {/* Tab 1: SMS Settings */}
@@ -455,6 +470,63 @@ const SettingsPage = () => {
               Configure API keys for WooCommerce, BOG Payment Gateway, and Sender SMS service.
             </Typography>
             <ApiKeysSettings />
+          </Box>
+        )}
+
+        {/* Tab 5: WooCommerce Automation */}
+        {tab === 4 && (
+          <Box>
+            <Box display="flex" justifyContent="flex-end" mb={2}>
+              <Button
+                variant="contained"
+                startIcon={<SaveIcon />}
+                onClick={async () => {
+                  try {
+                    await api.post('/settings/woocommerce-automation', {
+                      enabled: wooCommerceAutomation,
+                    });
+                    setSaveSuccess(true);
+                    setTimeout(() => setSaveSuccess(false), 3000);
+                  } catch (error) {
+                    alert(error.response?.data?.message || 'Failed to save WooCommerce automation setting');
+                  }
+                }}
+              >
+                {t('common.save')}
+              </Button>
+            </Box>
+
+            <Typography variant="h6" gutterBottom>
+              WooCommerce Automation
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Control whether warranties are automatically created when WooCommerce orders are marked as "completed".
+            </Typography>
+
+            <Divider sx={{ mb: 3 }} />
+
+            <Box mb={3}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={wooCommerceAutomation}
+                    onChange={(e) => setWooCommerceAutomation(e.target.checked)}
+                    color="primary"
+                  />
+                }
+                label={
+                  <Box>
+                    <Typography variant="body1" fontWeight="bold">
+                      Enable WooCommerce Automation
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      When enabled, warranties will be automatically created from WooCommerce orders when they are marked as "completed".
+                      When disabled, you must manually import warranties using the Import page.
+                    </Typography>
+                  </Box>
+                }
+              />
+            </Box>
           </Box>
         )}
       </Paper>

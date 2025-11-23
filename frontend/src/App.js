@@ -17,9 +17,7 @@ import FinancePage from './pages/staff/FinancePage';
 import SettingsPage from './pages/staff/SettingsPage';
 import AuditPage from './pages/staff/AuditPage';
 import StatisticsPage from './pages/staff/StatisticsPage';
-import ImportCasesPage from './pages/staff/ImportCasesPage';
-import ImportWarrantiesPage from './pages/staff/ImportWarrantiesPage';
-import WooCommerceImportPage from './pages/staff/WooCommerceImportPage';
+import ImportPage from './pages/staff/ImportPage';
 import PublicHomePage from './pages/public/PublicHomePage';
 import WarrantySearchPage from './pages/public/WarrantySearchPage';
 import CaseSearchPage from './pages/public/CaseSearchPage';
@@ -65,9 +63,7 @@ function App() {
                   <Route path="cases/:id" element={<CaseDetailPage />} />
                   <Route path="warranties" element={<WarrantiesPage />} />
                   <Route path="warranties/new" element={<CreateWarrantyPage />} />
-                  <Route path="warranties/import/csv" element={<ImportWarrantiesPage />} />
-                  <Route path="warranties/import/woocommerce" element={<WooCommerceImportPage />} />
-                  <Route path="cases/import/csv" element={<ImportCasesPage />} />
+                  <Route path="import" element={<ImportPage />} />
                   <Route path="finance" element={<FinancePage />} />
                   <Route path="statistics" element={<StatisticsPage />} />
                   <Route path="settings" element={<SettingsPage />} />

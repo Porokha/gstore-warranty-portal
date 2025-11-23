@@ -65,12 +65,19 @@ export class WooCommerceController {
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async syncOrders(
-    @Body() body: { statuses?: string[]; limit?: number },
+    @Body() body: { 
+      statuses?: string[]; 
+      limit?: number;
+      dateFrom?: string;
+      skipDuplicates?: boolean;
+    },
   ) {
     const statuses = body.statuses || ['completed'];
-    const limit = body.limit || 100;
-    // Use the existing method with proper parameters
-    const result = await this.wooCommerceService.syncOrdersByStatus(statuses, limit);
+    const result = await this.wooCommerceService.syncOrdersByStatus(statuses, {
+      limit: body.limit,
+      dateFrom: body.dateFrom,
+      skipDuplicates: body.skipDuplicates ?? true,
+    });
     return result;
   }
 }

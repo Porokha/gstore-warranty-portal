@@ -24,6 +24,7 @@ export class ImportService {
   async importCasesFromCSV(filePath: string, userId: number) {
     const results: any[] = [];
     const errors: any[] = [];
+    const skipped: any[] = [];
 
     return new Promise((resolve, reject) => {
       fs.createReadStream(filePath)
@@ -59,10 +60,28 @@ export class ImportService {
               return;
             }
 
+            // Check for duplicates - by serial_number and order_id if provided
+            const existingCase = await this.casesRepository.findOne({
+              where: [
+                { serial_number: caseData.serial_number, order_id: caseData.order_id || null },
+                ...(caseData.order_id ? [{ order_id: caseData.order_id }] : []),
+              ],
+            });
+
+            if (existingCase) {
+              skipped.push({ row, reason: 'Duplicate case found' });
+              return;
+            }
+
             const created = await this.casesService.create(caseData, userId);
             results.push({ row, case: created });
           } catch (error) {
-            errors.push({ row, error: error.message });
+            // Check if it's a duplicate error
+            if (error.message?.includes('already exists') || error.message?.includes('duplicate')) {
+              skipped.push({ row, reason: error.message });
+            } else {
+              errors.push({ row, error: error.message });
+            }
           }
         })
         .on('end', () => {
@@ -71,9 +90,11 @@ export class ImportService {
           resolve({
             success: true,
             imported: results.length,
+            skipped: skipped.length,
             errors: errors.length,
             details: {
               successful: results,
+              skipped,
               failed: errors,
             },
           });
@@ -87,6 +108,7 @@ export class ImportService {
   async importWarrantiesFromCSV(filePath: string, userId: number) {
     const results: any[] = [];
     const errors: any[] = [];
+    const skipped: any[] = [];
 
     return new Promise((resolve, reject) => {
       fs.createReadStream(filePath)
@@ -121,6 +143,19 @@ export class ImportService {
               return;
             }
 
+            // Check for duplicates - by serial_number and order_id if provided
+            const existingWarranty = await this.warrantiesRepository.findOne({
+              where: [
+                { serial_number: warrantyData.serial_number, order_id: warrantyData.order_id || null },
+                ...(warrantyData.order_id ? [{ order_id: warrantyData.order_id }] : []),
+              ],
+            });
+
+            if (existingWarranty) {
+              skipped.push({ row, reason: 'Duplicate warranty found' });
+              return;
+            }
+
             // Calculate warranty_end if not provided
             if (!warrantyData.warranty_end) {
               const start = new Date(warrantyData.warranty_start || warrantyData.purchase_date);
@@ -132,7 +167,12 @@ export class ImportService {
             const created = await this.warrantiesService.create(warrantyData);
             results.push({ row, warranty: created });
           } catch (error) {
-            errors.push({ row, error: error.message });
+            // Check if it's a duplicate error
+            if (error.message?.includes('already exists') || error.message?.includes('duplicate')) {
+              skipped.push({ row, reason: error.message });
+            } else {
+              errors.push({ row, error: error.message });
+            }
           }
         })
         .on('end', () => {
@@ -141,9 +181,11 @@ export class ImportService {
           resolve({
             success: true,
             imported: results.length,
+            skipped: skipped.length,
             errors: errors.length,
             details: {
               successful: results,
+              skipped,
               failed: errors,
             },
           });

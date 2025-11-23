@@ -21,5 +21,21 @@ export class SettingsController {
     await this.settingsService.setApiKeys(keys);
     return { success: true, message: 'API keys updated successfully' };
   }
+
+  @Get('woocommerce-automation')
+  async getWooCommerceAutomation() {
+    const enabled = await this.settingsService.get('WOOCOMMERCE_AUTOMATION_ENABLED');
+    return { enabled: enabled === 'true' };
+  }
+
+  @Post('woocommerce-automation')
+  async setWooCommerceAutomation(@Body() body: { enabled: boolean }) {
+    await this.settingsService.set(
+      'WOOCOMMERCE_AUTOMATION_ENABLED',
+      body.enabled ? 'true' : 'false',
+      'Enable/disable automatic warranty creation from WooCommerce completed orders'
+    );
+    return { success: true, message: 'WooCommerce automation setting updated successfully' };
+  }
 }
 
