@@ -13,12 +13,8 @@ import {
   InputAdornment,
   Checkbox,
   FormControlLabel,
-  Select,
-  MenuItem,
   Link,
   IconButton,
-  FormControl,
-  InputLabel,
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -43,6 +39,7 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
     setError('');
     setLoading(true);
     try {
@@ -50,7 +47,6 @@ const LoginPage = () => {
       navigate('/staff/dashboard');
     } catch (err) {
       setError(t('login.invalidCredentials'));
-    } finally {
       setLoading(false);
     }
   };
@@ -88,7 +84,7 @@ const LoginPage = () => {
             mx: 'auto',
           }}
         >
-          <Box sx={{ mb: 3 }}>
+          <Box sx={{ mb: 3, textAlign: 'center' }}>
             <Typography
               variant="h4"
               sx={{
@@ -252,35 +248,30 @@ const LoginPage = () => {
           </form>
         </Paper>
 
-        {/* Language Selector - Centered */}
+        {/* Language Selector - Centered Button */}
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, width: '100%' }}>
-          <FormControl sx={{ minWidth: 140 }}>
-            <Select
-              value={i18n.language}
-              onChange={(e) => i18n.changeLanguage(e.target.value)}
-              sx={{
-                bgcolor: '#ffffff',
-                borderRadius: 2,
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#e2e8f0',
-                },
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#3b82f6',
-                },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#3b82f6',
-                },
-              }}
-              startAdornment={
-                <InputAdornment position="start">
-                  <LanguageIcon sx={{ color: '#64748b', fontSize: 18, ml: 1 }} />
-                </InputAdornment>
-              }
-            >
-              <MenuItem value="en">EN</MenuItem>
-              <MenuItem value="ka">KA</MenuItem>
-            </Select>
-          </FormControl>
+          <Button
+            onClick={() => {
+              const newLang = i18n.language === 'en' ? 'ka' : 'en';
+              i18n.changeLanguage(newLang);
+            }}
+            startIcon={<LanguageIcon />}
+            sx={{
+              bgcolor: '#ffffff',
+              color: '#64748b',
+              borderRadius: 2,
+              border: '1px solid #e2e8f0',
+              textTransform: 'none',
+              px: 2,
+              py: 1,
+              '&:hover': {
+                bgcolor: '#f8fafc',
+                borderColor: '#3b82f6',
+              },
+            }}
+          >
+            {i18n.language === 'en' ? 'EN' : 'KA'}
+          </Button>
         </Box>
 
         {/* Help Link */}
