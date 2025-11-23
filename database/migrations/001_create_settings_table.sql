@@ -1,0 +1,10 @@
+-- Create settings table for API keys and configuration
+CREATE TABLE IF NOT EXISTS settings (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  `key` VARCHAR(255) UNIQUE NOT NULL,
+  value TEXT NOT NULL,
+  description VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
