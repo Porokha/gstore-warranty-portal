@@ -16,6 +16,10 @@ dist/
 out/
 *.tsbuildinfo
 
+# Exception: Allow prebuilt builds for deployment
+!frontend/build/
+!backend/dist/
+
 # Exception: Allow frontend/build for deployment
 !frontend/build/
 
