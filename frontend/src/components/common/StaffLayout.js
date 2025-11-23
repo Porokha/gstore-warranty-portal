@@ -34,6 +34,8 @@ import {
   Person as PersonIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
+import { useQuery } from 'react-query';
+import { casesService } from '../../services/casesService';
 
 const drawerWidth = 280;
 
@@ -56,15 +58,16 @@ const StaffLayout = () => {
 
   const menuItems = [
     { path: '/staff/dashboard', label: t('common.dashboard'), icon: <DashboardIcon /> },
-    { path: '/staff/cases', label: 'Service Cases', icon: <OpenCasesIcon />, badge: 12 },
+    { path: '/staff/cases', label: 'Service Cases', icon: <OpenCasesIcon />, badge: urgentCasesData },
     { path: '/staff/warranties', label: t('common.warranties'), icon: <WarrantiesIcon /> },
     { path: '/staff/finance', label: 'Payments', icon: <FinanceIcon /> },
+    { path: '/staff/statistics', label: t('common.statistics') || 'Statistics', icon: <StatisticsIcon /> },
     { path: '/staff/import', label: 'Import Data', icon: <ImportIcon /> },
   ];
 
   const bottomMenuItems = [
     { path: '/staff/settings', label: t('common.settings'), icon: <SettingsIcon /> },
-    { path: '/staff/audit', label: 'Audit Logs', icon: <AuditIcon /> },
+    { path: '/staff/audit', label: t('common.audit'), icon: <AuditIcon /> },
   ];
 
   const getInitials = (name) => {
@@ -156,7 +159,7 @@ const StaffLayout = () => {
                         fontWeight: isActive ? 600 : 400,
                       }}
                     />
-                    {item.badge && (
+                    {item.badge && item.badge > 0 && (
                       <Badge 
                         badgeContent={item.badge} 
                         color="error"
@@ -303,9 +306,7 @@ const StaffLayout = () => {
             <Box sx={{ flexGrow: 1 }} />
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <IconButton sx={{ color: '#64748b' }}>
-                <Badge badgeContent={3} color="error">
-                  <NotificationsIcon />
-                </Badge>
+                <NotificationsIcon />
               </IconButton>
               <IconButton sx={{ color: '#64748b' }}>
                 <PersonIcon />

@@ -193,5 +193,116 @@ export class DashboardService {
 
     return Math.round(avg * 10) / 10;
   }
+
+  async getCasesByStatus(timeFilter?: { start?: Date; end?: Date }) {
+    let query = this.casesRepository.createQueryBuilder('case');
+    
+    if (timeFilter?.start) {
+      query = query.andWhere('case.created_at >= :start', { start: timeFilter.start });
+    }
+    if (timeFilter?.end) {
+      query = query.andWhere('case.created_at <= :end', { end: timeFilter.end });
+    }
+
+    const cases = await query.getMany();
+    
+    const statusCounts = {
+      opened: 0,
+      investigating: 0,
+      pending: 0,
+      completed: 0,
+    };
+
+    cases.forEach((case_) => {
+      // Use status_level enum to determine status
+      switch (case_.status_level) {
+        case CaseStatusLevel.OPENED:
+          statusCounts.opened++;
+          break;
+        case CaseStatusLevel.INVESTIGATING:
+          statusCounts.investigating++;
+          break;
+        case CaseStatusLevel.PENDING:
+          statusCounts.pending++;
+          break;
+        case CaseStatusLevel.COMPLETED:
+          statusCounts.completed++;
+          break;
+      }
+    });
+
+    const total = cases.length;
+    if (total === 0) {
+      return [
+        { name: 'Completed', value: 0, percentage: 0 },
+        { name: 'Investigating', value: 0, percentage: 0 },
+        { name: 'Pending', value: 0, percentage: 0 },
+        { name: 'Opened', value: 0, percentage: 0 },
+      ];
+    }
+
+    return [
+      { 
+        name: 'Completed', 
+        value: statusCounts.completed, 
+        percentage: Math.round((statusCounts.completed / total) * 100),
+        color: '#10b981',
+      },
+      { 
+        name: 'Investigating', 
+        value: statusCounts.investigating, 
+        percentage: Math.round((statusCounts.investigating / total) * 100),
+        color: '#f59e0b',
+      },
+      { 
+        name: 'Pending', 
+        value: statusCounts.pending, 
+        percentage: Math.round((statusCounts.pending / total) * 100),
+        color: '#3b82f6',
+      },
+      { 
+        name: 'Opened', 
+        value: statusCounts.opened, 
+        percentage: Math.round((statusCounts.opened / total) * 100),
+        color: '#8b5cf6',
+      },
+    ];
+  }
+
+  async getCompletionTimeByDeviceType(timeFilter?: { start?: Date; end?: Date }) {
+    const deviceTypes = ['Phone', 'Laptop', 'Tablet', 'Desktop', 'Wearable', 'Accessory'];
+    const result = [];
+
+    for (const deviceType of deviceTypes) {
+      let query = this.casesRepository
+        .createQueryBuilder('case')
+        .where('case.status_level = :completed', { completed: CaseStatusLevel.COMPLETED })
+        .andWhere('case.device_type = :deviceType', { deviceType })
+        .andWhere('case.closed_at IS NOT NULL');
+
+      if (timeFilter?.start) {
+        query = query.andWhere('case.closed_at >= :start', { start: timeFilter.start });
+      }
+      if (timeFilter?.end) {
+        query = query.andWhere('case.closed_at <= :end', { end: timeFilter.end });
+      }
+
+      const cases = await query.getMany();
+
+      if (cases.length > 0) {
+        const avgTime = cases.reduce((sum, case_) => {
+          const diff = case_.closed_at.getTime() - case_.opened_at.getTime();
+          return sum + diff / (1000 * 60 * 60 * 24); // days
+        }, 0) / cases.length;
+
+        result.push({
+          name: deviceType === 'Phone' ? 'Smartphones' : deviceType === 'Wearable' ? 'Wearables' : deviceType + 's',
+          value: Math.round(avgTime * 10) / 10,
+        });
+      }
+    }
+
+    return result;
+  }
 }
 

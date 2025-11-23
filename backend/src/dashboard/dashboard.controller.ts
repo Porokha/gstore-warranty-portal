@@ -51,5 +51,59 @@ export class DashboardController {
       );
     }
   }
+
+  @Get('charts/cases-by-status')
+  async getCasesByStatus(
+    @Query('start') start?: string,
+    @Query('end') end?: string,
+  ) {
+    try {
+      const timeFilter =
+        start || end
+          ? {
+              start: start ? new Date(start) : undefined,
+              end: end ? new Date(end) : undefined,
+            }
+          : undefined;
+      return await this.dashboardService.getCasesByStatus(timeFilter);
+    } catch (error) {
+      this.logger.error('Error fetching cases by status:', error);
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Failed to fetch cases by status',
+          error: error.message || 'Unknown error',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Get('charts/completion-time')
+  async getCompletionTimeByDevice(
+    @Query('start') start?: string,
+    @Query('end') end?: string,
+  ) {
+    try {
+      const timeFilter =
+        start || end
+          ? {
+              start: start ? new Date(start) : undefined,
+              end: end ? new Date(end) : undefined,
+            }
+          : undefined;
+      return await this.dashboardService.getCompletionTimeByDeviceType(timeFilter);
+    } catch (error) {
+      this.logger.error('Error fetching completion time by device:', error);
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Failed to fetch completion time by device',
+          error: error.message || 'Unknown error',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }
 
