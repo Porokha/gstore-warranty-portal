@@ -83,7 +83,7 @@ const WarrantySearchPage = () => {
     pdf.setFillColor(252, 244, 232); // #fcf4e8
     pdf.rect(0, 0, pageWidth, pageHeight, 'F');
 
-    // Load and add logo
+    // Load and add logo with compression
     try {
       const logoImg = new Image();
       logoImg.crossOrigin = 'anonymous';
@@ -97,11 +97,39 @@ const WarrantySearchPage = () => {
         logoImg.onload = () => {
           clearTimeout(timeout);
           try {
-            const logoWidth = 80;
-            const logoHeight = (logoImg.height / logoImg.width) * logoWidth;
+            // Create canvas to compress image
+            const canvas = document.createElement('canvas');
+            const maxWidth = 200;
+            const maxHeight = 200;
+            let width = logoImg.width;
+            let height = logoImg.height;
+
+            // Calculate new dimensions
+            if (width > height) {
+              if (width > maxWidth) {
+                height = (height * maxWidth) / width;
+                width = maxWidth;
+              }
+            } else {
+              if (height > maxHeight) {
+                width = (width * maxHeight) / height;
+                height = maxHeight;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(logoImg, 0, 0, width, height);
+
+            // Convert to data URL with compression
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            
+            const logoWidth = 60;
+            const logoHeight = (height / width) * logoWidth;
             const logoX = (pageWidth - logoWidth) / 2;
-            pdf.addImage(logoImg, 'PNG', logoX, yPos, logoWidth, logoHeight);
-            yPos += logoHeight + 20;
+            pdf.addImage(compressedDataUrl, 'JPEG', logoX, yPos, logoWidth, logoHeight);
+            yPos += logoHeight + 15;
             resolve();
           } catch (err) {
             clearTimeout(timeout);
@@ -118,52 +146,95 @@ const WarrantySearchPage = () => {
       yPos += 30;
     }
 
-    // Title
-    pdf.setFontSize(20);
+    // Title with styling
+    pdf.setFontSize(24);
     pdf.setTextColor(30, 41, 59); // #1e293b
+    pdf.setFont(undefined, 'bold');
     pdf.text(t('warrantySearch.warrantyDetails'), pageWidth / 2, yPos, { align: 'center' });
-    yPos += 15;
+    yPos += 12;
 
-    // Warranty Information
-    pdf.setFontSize(12);
-    pdf.setTextColor(100, 116, 139); // #64748b
-    const lineHeight = 8;
+    // Divider line
+    pdf.setDrawColor(200, 200, 200);
+    pdf.setLineWidth(0.5);
+    pdf.line(margin, yPos, pageWidth - margin, yPos);
+    yPos += 10;
+
+    // Warranty Information with styled boxes
+    const lineHeight = 9;
+    const fieldSpacing = 2;
+    const boxPadding = 3;
+    const labelWidth = 50;
+
     const fields = [
-      { label: t('warrantySearch.warrantyId'), value: result.warranty_id },
-      { label: t('warrantySearch.status'), value: result.is_active ? t('warrantySearch.active') : t('warrantySearch.expired') },
+      { label: t('warrantySearch.warrantyId'), value: result.warranty_id, highlight: true },
+      { label: t('warrantySearch.status'), value: result.is_active ? t('warrantySearch.active') : t('warrantySearch.expired'), highlight: true },
       { label: t('warrantySearch.product'), value: result.title },
-      { label: t('warrantySearch.sku'), value: result.sku },
-      { label: t('warrantySearch.serialNumber'), value: result.serial_number },
-      { label: t('warrantySearch.deviceType'), value: result.device_type },
+      { label: t('warrantySearch.sku'), value: result.sku || 'N/A' },
+      { label: t('warrantySearch.serialNumber'), value: result.serial_number || 'N/A' },
+      { label: t('warrantySearch.deviceType'), value: result.device_type || 'N/A' },
       { label: t('warrantySearch.purchaseDate'), value: new Date(result.purchase_date).toLocaleDateString() },
       { label: t('warrantySearch.warrantyStart'), value: new Date(result.warranty_start).toLocaleDateString() },
       { label: t('warrantySearch.warrantyEnd'), value: new Date(result.warranty_end).toLocaleDateString() },
     ];
 
     if (result.is_active && result.days_left !== null) {
-      fields.push({ label: t('warrantySearch.daysRemaining'), value: `${result.days_left} ${t('common.days')}` });
+      fields.push({ label: t('warrantySearch.daysRemaining'), value: `${result.days_left} ${t('common.days')}`, highlight: true });
     }
 
-    fields.forEach((field) => {
-      if (yPos > pageHeight - 30) {
+    fields.forEach((field, index) => {
+      if (yPos > pageHeight - 40) {
         pdf.addPage();
         pdf.setFillColor(252, 244, 232);
         pdf.rect(0, 0, pageWidth, pageHeight, 'F');
         yPos = margin;
       }
+
+      // Background box for highlighted fields
+      if (field.highlight) {
+        pdf.setFillColor(255, 255, 255);
+        pdf.setDrawColor(220, 220, 220);
+        pdf.setLineWidth(0.3);
+        pdf.roundedRect(margin - boxPadding, yPos - 6, contentWidth + (boxPadding * 2), lineHeight + 2, 2, 'FD');
+      }
+
+      // Label
       pdf.setFontSize(10);
-      pdf.setTextColor(100, 116, 139);
+      pdf.setTextColor(100, 116, 139); // #64748b
+      pdf.setFont(undefined, 'normal');
       pdf.text(field.label + ':', margin, yPos);
+
+      // Value
       pdf.setFontSize(11);
-      pdf.setTextColor(30, 41, 59);
-      pdf.text(field.value, margin + 60, yPos);
-      yPos += lineHeight;
+      pdf.setTextColor(30, 41, 59); // #1e293b
+      if (field.highlight) {
+        pdf.setFont(undefined, 'bold');
+      } else {
+        pdf.setFont(undefined, 'normal');
+      }
+      
+      // Handle long text wrapping
+      const maxValueWidth = contentWidth - labelWidth - 10;
+      const valueLines = pdf.splitTextToSize(field.value, maxValueWidth);
+      pdf.text(valueLines, margin + labelWidth, yPos);
+      
+      if (valueLines.length > 1) {
+        yPos += (valueLines.length - 1) * 5;
+      }
+      
+      yPos += lineHeight + fieldSpacing;
     });
 
-    // Report date
+    // Footer divider
     yPos += 5;
-    pdf.setFontSize(9);
-    pdf.setTextColor(100, 116, 139);
+    pdf.setDrawColor(200, 200, 200);
+    pdf.setLineWidth(0.5);
+    pdf.line(margin, yPos, pageWidth - margin, yPos);
+    yPos += 8;
+
+    // Report date in footer
+    pdf.setFontSize(8);
+    pdf.setTextColor(150, 150, 150);
+    pdf.setFont(undefined, 'italic');
     pdf.text(t('warrantySearch.reportDate') + ': ' + new Date().toLocaleString(), margin, yPos);
 
     // Save PDF
