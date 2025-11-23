@@ -17,6 +17,8 @@ import {
   MenuItem,
   Link,
   IconButton,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -47,15 +49,10 @@ const LoginPage = () => {
       await login(username, password);
       navigate('/staff/dashboard');
     } catch (err) {
-      setError('Invalid username or password');
+      setError(t('login.invalidCredentials'));
     } finally {
       setLoading(false);
     }
-  };
-
-  const toggleLanguage = () => {
-    const newLang = i18n.language === 'en' ? 'ka' : 'en';
-    i18n.changeLanguage(newLang);
   };
 
   return (
@@ -69,15 +66,16 @@ const LoginPage = () => {
         bgcolor: '#f5f7fa',
         position: 'relative',
         py: 4,
+        px: 2,
       }}
     >
       {/* Logo at top */}
-      <Box sx={{ mb: 6, textAlign: 'center' }}>
+      <Box sx={{ mb: 6, textAlign: 'center', width: '100%' }}>
         <ZevaLogo size="large" showSubtitle={true} variant="default" />
       </Box>
 
       {/* Login Card */}
-      <Container maxWidth="sm">
+      <Container maxWidth="sm" sx={{ width: '100%' }}>
         <Paper
           elevation={0}
           sx={{
@@ -87,6 +85,7 @@ const LoginPage = () => {
             bgcolor: '#ffffff',
             width: '100%',
             maxWidth: 440,
+            mx: 'auto',
           }}
         >
           <Box sx={{ mb: 3 }}>
@@ -99,7 +98,7 @@ const LoginPage = () => {
                 fontSize: '28px',
               }}
             >
-              Welcome Back
+              {t('login.welcomeBack')}
             </Typography>
             <Typography
               variant="body2"
@@ -108,21 +107,21 @@ const LoginPage = () => {
                 fontSize: '14px',
               }}
             >
-              Sign in to access your staff portal
+              {t('login.signInToAccess')}
             </Typography>
           </Box>
 
           <form onSubmit={handleSubmit}>
             <TextField
               fullWidth
-              label="Username"
+              label={t('login.username')}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               autoFocus
               autoComplete="username"
               margin="normal"
               required
-              placeholder="Enter your username"
+              placeholder={t('login.usernamePlaceholder')}
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 2,
@@ -155,14 +154,14 @@ const LoginPage = () => {
             />
             <TextField
               fullWidth
-              label="Password"
+              label={t('login.password')}
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
               margin="normal"
               required
-              placeholder="Enter your password"
+              placeholder={t('login.passwordPlaceholder')}
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 2,
@@ -218,7 +217,7 @@ const LoginPage = () => {
               }
               label={
                 <Typography variant="body2" sx={{ color: '#64748b', fontSize: '14px' }}>
-                  Remember me
+                  {t('login.rememberMe')}
                 </Typography>
               }
               sx={{ mt: 1 }}
@@ -248,38 +247,46 @@ const LoginPage = () => {
                 },
               }}
             >
-              {loading ? 'Signing in...' : 'Sign in'}
+              {loading ? t('login.signingIn') : t('login.signIn')}
             </Button>
           </form>
         </Paper>
 
-        {/* Language Selector */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-          <Select
-            value={i18n.language}
-            onChange={(e) => i18n.changeLanguage(e.target.value)}
-            sx={{
-              bgcolor: '#ffffff',
-              borderRadius: 2,
-              minWidth: 120,
-              '& .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#e2e8f0',
-              },
-              '&:hover .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#3b82f6',
-              },
-            }}
-            startAdornment={<LanguageIcon sx={{ mr: 1, color: '#64748b', fontSize: 18 }} />}
-          >
-            <MenuItem value="en">EN</MenuItem>
-            <MenuItem value="ka">KA</MenuItem>
-          </Select>
+        {/* Language Selector - Centered */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, width: '100%' }}>
+          <FormControl sx={{ minWidth: 140 }}>
+            <Select
+              value={i18n.language}
+              onChange={(e) => i18n.changeLanguage(e.target.value)}
+              sx={{
+                bgcolor: '#ffffff',
+                borderRadius: 2,
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#e2e8f0',
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#3b82f6',
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#3b82f6',
+                },
+              }}
+              startAdornment={
+                <InputAdornment position="start">
+                  <LanguageIcon sx={{ color: '#64748b', fontSize: 18, ml: 1 }} />
+                </InputAdornment>
+              }
+            >
+              <MenuItem value="en">EN</MenuItem>
+              <MenuItem value="ka">KA</MenuItem>
+            </Select>
+          </FormControl>
         </Box>
 
         {/* Help Link */}
-        <Box sx={{ textAlign: 'center', mt: 3 }}>
+        <Box sx={{ textAlign: 'center', mt: 3, width: '100%' }}>
           <Typography variant="body2" sx={{ color: '#64748b', fontSize: '14px' }}>
-            Need help?{' '}
+            {t('login.needHelp')}{' '}
             <Link
               href="#"
               sx={{
@@ -291,18 +298,18 @@ const LoginPage = () => {
                 },
               }}
             >
-              Contact Support
+              {t('login.contactSupport')}
             </Link>
           </Typography>
         </Box>
 
         {/* Footer */}
-        <Box sx={{ textAlign: 'center', mt: 4 }}>
+        <Box sx={{ textAlign: 'center', mt: 4, width: '100%' }}>
           <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '12px', display: 'block', mb: 0.5 }}>
-            Staff Portal Access Only
+            {t('login.staffPortalOnly')}
           </Typography>
           <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '12px' }}>
-            © 2024 ZEZVA All rights reserved
+            {t('login.copyright')}
           </Typography>
         </Box>
       </Container>
