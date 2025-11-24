@@ -57,6 +57,17 @@ async function bootstrap() {
     }),
   );
 
+  // Log all incoming requests for debugging
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/api/settings') || req.path.startsWith('/api/woocommerce')) {
+      console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`, {
+        hasAuth: !!req.headers.authorization,
+        contentType: req.headers['content-type'],
+      });
+    }
+    next();
+  });
+
   // API prefix
   app.setGlobalPrefix('api');
 

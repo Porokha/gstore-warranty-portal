@@ -45,6 +45,15 @@ async function bootstrap() {
         forbidNonWhitelisted: true,
         transform: true,
     }));
+    app.use((req, res, next) => {
+        if (req.path.startsWith('/api/settings') || req.path.startsWith('/api/woocommerce')) {
+            console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`, {
+                hasAuth: !!req.headers.authorization,
+                contentType: req.headers['content-type'],
+            });
+        }
+        next();
+    });
     app.setGlobalPrefix('api');
     const config = new swagger_1.DocumentBuilder()
         .setTitle('ZEZVA Warranty Portal API')
