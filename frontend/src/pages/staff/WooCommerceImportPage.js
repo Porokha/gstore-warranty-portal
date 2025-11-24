@@ -64,6 +64,10 @@ const WooCommerceImportPage = () => {
         setSuccess(data);
       },
       onError: (err) => {
+        console.error('WooCommerce import error - Full error object:', err);
+        console.error('Error response:', err.response);
+        console.error('Error response data:', err.response?.data);
+        
         let errorMessage = 'Failed to import from WooCommerce';
         if (err.response?.data) {
           const errorData = err.response.data;
@@ -75,12 +79,11 @@ const WooCommerceImportPage = () => {
           errorMessage = err.message;
         }
         setError(errorMessage);
-        console.error('WooCommerce import error:', {
+        console.error('WooCommerce import error summary:', {
           status: err.response?.status,
           statusText: err.response?.statusText,
           data: err.response?.data,
           message: err.message,
-          fullError: err,
         });
       },
     }

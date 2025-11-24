@@ -106,6 +106,28 @@ export class WooCommerceService {
     } catch (error) {
       this.logger.error('Failed to get WooCommerce API from settings:', error);
       this.logger.error('Error details:', error.message, error.stack);
+      
+      // If API is already initialized from previous call, use it (but log warning)
+      if (this.api) {
+        this.logger.warn('Using cached WooCommerce API instance, but settings check failed');
+        return this.api;
+      }
+      
+      // Log what we found in settings
+      this.logger.error('WooCommerce API initialization failed. Checking settings directly...');
+      try {
+        const directCheck = await this.settingsService.getApiKeys();
+        this.logger.error('Direct settings check:', {
+          hasUrl: !!directCheck.woocommerce_url,
+          hasKey: !!directCheck.woocommerce_consumer_key,
+          hasSecret: !!directCheck.woocommerce_consumer_secret,
+          url: directCheck.woocommerce_url || 'MISSING',
+        });
+      } catch (checkError) {
+        this.logger.error('Failed to check settings directly:', checkError);
+      }
+      
+      throw new BadRequestException('WooCommerce API not configured. Please set WooCommerce API keys in Settings > API Keys.');
     }
 
     // If API is already initialized from previous call, use it (but log warning)
