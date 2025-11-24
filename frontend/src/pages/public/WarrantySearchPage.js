@@ -227,7 +227,8 @@ const WarrantySearchPage = () => {
         pdf.setFillColor(255, 255, 255);
         pdf.setDrawColor(220, 220, 220);
         pdf.setLineWidth(0.3);
-        pdf.roundedRect(margin - boxPadding, yPos - 6, contentWidth + (boxPadding * 2), lineHeight + 2, 2, 'FD');
+        // roundedRect(x, y, width, height, rx, ry, style)
+        pdf.roundedRect(margin - boxPadding, yPos - 6, contentWidth + (boxPadding * 2), lineHeight + 2, 2, 2, 'FD');
       }
 
       // Label
