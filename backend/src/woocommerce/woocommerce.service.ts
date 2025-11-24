@@ -289,8 +289,11 @@ export class WooCommerceService {
       skipDuplicates?: boolean;
     }
   ) {
+    // Re-initialize API in case settings were updated
+    await this.initializeApi();
+    
     if (!this.api) {
-      throw new BadRequestException('WooCommerce API not configured. Please set WooCommerce API keys in Settings.');
+      throw new BadRequestException('WooCommerce API not configured. Please set WooCommerce API keys in Settings > API Keys.');
     }
 
     if (!statuses || statuses.length === 0) {

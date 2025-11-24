@@ -39,17 +39,41 @@ const WarrantyDetailPage = () => {
 
   if (error) {
     return (
-      <Alert severity="error">
-        {t('common.errorLoading') || 'Error loading warranty'}
-      </Alert>
+      <Box>
+        <Box display="flex" alignItems="center" gap={2} mb={3}>
+          <Button
+            startIcon={<ArrowBack />}
+            onClick={() => navigate('/staff/warranties')}
+            sx={{ textTransform: 'none' }}
+          >
+            {t('common.back') || 'Back'}
+          </Button>
+        </Box>
+        <Alert severity="error">
+          {error.response?.status === 404 
+            ? (t('warranty.warrantyNotFound') || 'Warranty not found')
+            : (t('common.errorLoading') || 'Error loading warranty')}
+        </Alert>
+      </Box>
     );
   }
 
-  if (!warranty) {
+  if (!warranty && !isLoading) {
     return (
-      <Alert severity="warning">
-        {t('warranty.warrantyNotFound') || 'Warranty not found'}
-      </Alert>
+      <Box>
+        <Box display="flex" alignItems="center" gap={2} mb={3}>
+          <Button
+            startIcon={<ArrowBack />}
+            onClick={() => navigate('/staff/warranties')}
+            sx={{ textTransform: 'none' }}
+          >
+            {t('common.back') || 'Back'}
+          </Button>
+        </Box>
+        <Alert severity="warning">
+          {t('warranty.warrantyNotFound') || 'Warranty not found'}
+        </Alert>
+      </Box>
     );
   }
 
