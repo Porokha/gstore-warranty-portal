@@ -36,25 +36,32 @@ let WooCommerceService = WooCommerceService_1 = class WooCommerceService {
     async getApi() {
         try {
             const apiKeys = await this.settingsService.getApiKeys();
+            this.logger.debug('Retrieved API keys from settings:', {
+                hasUrl: !!apiKeys.woocommerce_url,
+                hasKey: !!apiKeys.woocommerce_consumer_key,
+                hasSecret: !!apiKeys.woocommerce_consumer_secret,
+                url: apiKeys.woocommerce_url ? `${apiKeys.woocommerce_url.substring(0, 20)}...` : 'none',
+            });
             const baseUrl = apiKeys.woocommerce_url || this.configService.get('WOOCOMMERCE_URL');
             const consumerKey = apiKeys.woocommerce_consumer_key || this.configService.get('WOOCOMMERCE_CONSUMER_KEY');
             const consumerSecret = apiKeys.woocommerce_consumer_secret || this.configService.get('WOOCOMMERCE_CONSUMER_SECRET');
             const currentHash = `${baseUrl || ''}|${consumerKey || ''}|${consumerSecret ? '***' : ''}`;
             this.logger.log(`WooCommerce API check - URL: ${baseUrl ? `set (${baseUrl})` : 'missing'}, Key: ${consumerKey ? 'set' : 'missing'}, Secret: ${consumerSecret ? 'set' : 'missing'}`);
             if (baseUrl && consumerKey && consumerSecret) {
+                const normalizedUrl = baseUrl.trim().replace(/\/$/, '');
                 const needsReinit = !this.api || this.lastApiKeyHash !== currentHash;
                 if (needsReinit) {
-                    this.baseUrl = baseUrl;
+                    this.baseUrl = normalizedUrl;
                     this.lastApiKeyHash = currentHash;
                     this.api = axios_1.default.create({
-                        baseURL: `${baseUrl}/wp-json/wc/v3`,
+                        baseURL: `${normalizedUrl}/wp-json/wc/v3`,
                         auth: {
-                            username: consumerKey,
-                            password: consumerSecret,
+                            username: consumerKey.trim(),
+                            password: consumerSecret.trim(),
                         },
                         timeout: 30000,
                     });
-                    this.logger.log(`WooCommerce API initialized from settings (URL: ${baseUrl})`);
+                    this.logger.log(`WooCommerce API initialized from settings (URL: ${normalizedUrl})`);
                 }
                 return this.api;
             }

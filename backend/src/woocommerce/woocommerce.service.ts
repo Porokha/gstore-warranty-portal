@@ -64,6 +64,13 @@ export class WooCommerceService {
     // Always try to get from settings first (in case settings were updated)
     try {
       const apiKeys = await this.settingsService.getApiKeys();
+      this.logger.debug('Retrieved API keys from settings:', {
+        hasUrl: !!apiKeys.woocommerce_url,
+        hasKey: !!apiKeys.woocommerce_consumer_key,
+        hasSecret: !!apiKeys.woocommerce_consumer_secret,
+        url: apiKeys.woocommerce_url ? `${apiKeys.woocommerce_url.substring(0, 20)}...` : 'none',
+      });
+      
       const baseUrl = apiKeys.woocommerce_url || this.configService.get<string>('WOOCOMMERCE_URL');
       const consumerKey = apiKeys.woocommerce_consumer_key || this.configService.get<string>('WOOCOMMERCE_CONSUMER_KEY');
       const consumerSecret = apiKeys.woocommerce_consumer_secret || this.configService.get<string>('WOOCOMMERCE_CONSUMER_SECRET');
@@ -74,21 +81,23 @@ export class WooCommerceService {
       this.logger.log(`WooCommerce API check - URL: ${baseUrl ? `set (${baseUrl})` : 'missing'}, Key: ${consumerKey ? 'set' : 'missing'}, Secret: ${consumerSecret ? 'set' : 'missing'}`);
 
       if (baseUrl && consumerKey && consumerSecret) {
+        // Normalize URL (remove trailing slash if present)
+        const normalizedUrl = baseUrl.trim().replace(/\/$/, '');
         // Check if we need to reinitialize (credentials changed or not initialized)
         const needsReinit = !this.api || this.lastApiKeyHash !== currentHash;
 
         if (needsReinit) {
-          this.baseUrl = baseUrl;
+          this.baseUrl = normalizedUrl;
           this.lastApiKeyHash = currentHash;
           this.api = axios.create({
-            baseURL: `${baseUrl}/wp-json/wc/v3`,
+            baseURL: `${normalizedUrl}/wp-json/wc/v3`,
             auth: {
-              username: consumerKey,
-              password: consumerSecret,
+              username: consumerKey.trim(),
+              password: consumerSecret.trim(),
             },
             timeout: 30000,
           });
-          this.logger.log(`WooCommerce API initialized from settings (URL: ${baseUrl})`);
+          this.logger.log(`WooCommerce API initialized from settings (URL: ${normalizedUrl})`);
         }
         return this.api;
       } else {
