@@ -49,12 +49,18 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    const errorData = error.response?.data;
+    const errorMessage = errorData?.message || errorData?.error || error.message;
     console.error('❌ API Error:', error.config?.method?.toUpperCase(), error.config?.url, {
       status: error.response?.status,
       statusText: error.response?.statusText,
-      message: error.message,
-      data: error.response?.data,
+      message: errorMessage,
+      fullData: errorData,
     });
+    // Log the full error data for debugging
+    if (errorData) {
+      console.error('❌ Full error response data:', JSON.stringify(errorData, null, 2));
+    }
     if (error.response?.status === 401) {
       localStorage.removeItem('access_token');
       window.location.href = '/staff/login';
