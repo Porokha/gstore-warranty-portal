@@ -71,6 +71,7 @@ let WooCommerceService = WooCommerceService_1 = class WooCommerceService {
         }
         catch (error) {
             this.logger.error('Failed to get WooCommerce API from settings:', error);
+            this.logger.error('Error details:', error.message, error.stack);
         }
         if (this.api) {
             this.logger.warn('Using cached WooCommerce API instance, but settings check failed');

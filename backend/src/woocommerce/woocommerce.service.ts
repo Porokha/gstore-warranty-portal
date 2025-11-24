@@ -105,6 +105,7 @@ export class WooCommerceService {
       }
     } catch (error) {
       this.logger.error('Failed to get WooCommerce API from settings:', error);
+      this.logger.error('Error details:', error.message, error.stack);
     }
 
     // If API is already initialized from previous call, use it (but log warning)

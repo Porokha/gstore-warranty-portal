@@ -28,7 +28,16 @@ let SettingsController = class SettingsController {
     }
     async setApiKeys(keys) {
         await this.settingsService.setApiKeys(keys);
-        return { success: true, message: 'API keys updated successfully' };
+        const saved = await this.settingsService.getApiKeys();
+        return {
+            success: true,
+            message: 'API keys updated successfully',
+            saved: {
+                hasUrl: !!saved.woocommerce_url,
+                hasKey: !!saved.woocommerce_consumer_key,
+                hasSecret: !!saved.woocommerce_consumer_secret,
+            }
+        };
     }
     async getWooCommerceAutomation() {
         const enabled = await this.settingsService.get('WOOCOMMERCE_AUTOMATION_ENABLED');
