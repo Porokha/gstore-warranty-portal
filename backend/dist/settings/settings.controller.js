@@ -24,6 +24,7 @@ let SettingsController = SettingsController_1 = class SettingsController {
     constructor(settingsService) {
         this.settingsService = settingsService;
         this.logger = new common_1.Logger(SettingsController_1.name);
+        this.logger.log('SettingsController initialized');
     }
     async getApiKeys() {
         this.logger.log('GET /api/settings/api-keys - Retrieving API keys');

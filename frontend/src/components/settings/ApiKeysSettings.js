@@ -53,8 +53,22 @@ const ApiKeysSettings = () => {
 
   const saveMutation = useMutation(
     async (data) => {
-      const response = await api.post('/settings/api-keys', data);
-      return response.data;
+      console.log('Mutation function called with data:', data);
+      try {
+        console.log('Making API call to /settings/api-keys');
+        const response = await api.post('/settings/api-keys', data);
+        console.log('API response received:', response);
+        return response.data;
+      } catch (error) {
+        console.error('API call failed:', error);
+        console.error('Error details:', {
+          message: error.message,
+          response: error.response,
+          status: error.response?.status,
+          data: error.response?.data,
+        });
+        throw error;
+      }
     },
     {
       onSuccess: (data) => {
@@ -89,7 +103,10 @@ const ApiKeysSettings = () => {
       hasUrl: !!formData.woocommerce_url,
       hasKey: !!formData.woocommerce_consumer_key,
       hasSecret: !!formData.woocommerce_consumer_secret,
+      url: formData.woocommerce_url,
     });
+    console.log('Full formData:', formData);
+    console.log('Making POST request to /settings/api-keys');
     saveMutation.mutate(formData);
   };
 

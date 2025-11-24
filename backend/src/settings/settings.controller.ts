@@ -11,7 +11,9 @@ import { SettingsService } from './settings.service';
 export class SettingsController {
   private readonly logger = new Logger(SettingsController.name);
 
-  constructor(private settingsService: SettingsService) {}
+  constructor(private settingsService: SettingsService) {
+    this.logger.log('SettingsController initialized');
+  }
 
   @Get('api-keys')
   async getApiKeys() {
