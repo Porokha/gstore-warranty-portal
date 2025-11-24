@@ -62,13 +62,16 @@ export class WooCommerceService {
 
   private async getApi(): Promise<AxiosInstance> {
     // Always try to get from settings first (in case settings were updated)
+    this.logger.log('🔍 getApi() called - Checking WooCommerce API configuration...');
     try {
       const apiKeys = await this.settingsService.getApiKeys();
-      this.logger.debug('Retrieved API keys from settings:', {
+      this.logger.log('📋 Retrieved API keys from settings:', {
         hasUrl: !!apiKeys.woocommerce_url,
         hasKey: !!apiKeys.woocommerce_consumer_key,
         hasSecret: !!apiKeys.woocommerce_consumer_secret,
-        url: apiKeys.woocommerce_url ? `${apiKeys.woocommerce_url.substring(0, 20)}...` : 'none',
+        url: apiKeys.woocommerce_url || 'MISSING',
+        keyLength: apiKeys.woocommerce_consumer_key?.length || 0,
+        secretLength: apiKeys.woocommerce_consumer_secret?.length || 0,
       });
       
       const baseUrl = apiKeys.woocommerce_url || this.configService.get<string>('WOOCOMMERCE_URL');
@@ -78,9 +81,10 @@ export class WooCommerceService {
       // Create a hash to detect changes
       const currentHash = `${baseUrl || ''}|${consumerKey || ''}|${consumerSecret ? '***' : ''}`;
 
-      this.logger.log(`WooCommerce API check - URL: ${baseUrl ? `set (${baseUrl})` : 'missing'}, Key: ${consumerKey ? 'set' : 'missing'}, Secret: ${consumerSecret ? 'set' : 'missing'}`);
+      this.logger.log(`🔑 WooCommerce API check - URL: ${baseUrl ? `set (${baseUrl})` : 'missing'}, Key: ${consumerKey ? `set (${consumerKey.length} chars)` : 'missing'}, Secret: ${consumerSecret ? `set (${consumerSecret.length} chars)` : 'missing'}`);
 
       if (baseUrl && consumerKey && consumerSecret) {
+        this.logger.log('✅ All WooCommerce API credentials found, initializing API...');
         // Normalize URL (remove trailing slash if present)
         const normalizedUrl = baseUrl.trim().replace(/\/$/, '');
         // Check if we need to reinitialize (credentials changed or not initialized)
@@ -101,7 +105,14 @@ export class WooCommerceService {
         }
         return this.api;
       } else {
-        this.logger.warn('WooCommerce API keys incomplete in settings');
+        this.logger.error('❌ WooCommerce API keys incomplete in settings:', {
+          hasBaseUrl: !!baseUrl,
+          hasConsumerKey: !!consumerKey,
+          hasConsumerSecret: !!consumerSecret,
+          baseUrl: baseUrl || 'MISSING',
+          consumerKey: consumerKey ? `${consumerKey.substring(0, 10)}...` : 'MISSING',
+          consumerSecret: consumerSecret ? '***' : 'MISSING',
+        });
       }
     } catch (error) {
       this.logger.error('Failed to get WooCommerce API from settings:', error);

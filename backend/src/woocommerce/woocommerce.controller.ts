@@ -75,8 +75,8 @@ export class WooCommerceController {
       skipDuplicates?: boolean;
     },
   ) {
-    this.logger.log('POST /api/woocommerce/sync/orders - Starting sync');
-    this.logger.debug('Sync request body:', { 
+    this.logger.log('🚀 POST /api/woocommerce/sync/orders - Starting sync');
+    this.logger.log('📦 Sync request body:', { 
       statuses: body.statuses, 
       limit: body.limit,
       hasDateFrom: !!body.dateFrom,
