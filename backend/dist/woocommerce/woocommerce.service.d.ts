@@ -43,11 +43,11 @@ export declare class WooCommerceService {
     private warrantiesService;
     private settingsService;
     private readonly logger;
-    private readonly api;
-    private readonly baseUrl;
-    private readonly consumerKey;
-    private readonly consumerSecret;
+    private api;
+    private baseUrl;
     constructor(configService: ConfigService, warrantiesRepository: Repository<Warranty>, warrantiesService: WarrantiesService, settingsService: SettingsService);
+    private initializeApi;
+    private getApi;
     getOrder(orderId: number): Promise<WooCommerceOrder>;
     getProduct(productId: number): Promise<WooCommerceProduct>;
     private extractMetaDataValue;

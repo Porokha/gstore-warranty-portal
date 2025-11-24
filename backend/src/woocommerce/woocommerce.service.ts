@@ -46,10 +46,8 @@ export interface WooCommerceProduct {
 @Injectable()
 export class WooCommerceService {
   private readonly logger = new Logger(WooCommerceService.name);
-  private readonly api: AxiosInstance;
-  private readonly baseUrl: string;
-  private readonly consumerKey: string;
-  private readonly consumerSecret: string;
+  private api: AxiosInstance | null = null;
+  private baseUrl: string | null = null;
 
   constructor(
     private configService: ConfigService,
@@ -58,28 +56,70 @@ export class WooCommerceService {
     private warrantiesService: WarrantiesService,
     private settingsService: SettingsService,
   ) {
-    this.baseUrl = this.configService.get<string>('WOOCOMMERCE_URL');
-    this.consumerKey = this.configService.get<string>('WOOCOMMERCE_CONSUMER_KEY');
-    this.consumerSecret = this.configService.get<string>('WOOCOMMERCE_CONSUMER_SECRET');
+    this.initializeApi();
+  }
 
-    if (!this.baseUrl || !this.consumerKey || !this.consumerSecret) {
-      this.logger.warn('WooCommerce credentials not configured');
-      return;
+  private initializeApi() {
+    try {
+      // Try env vars first (for backward compatibility)
+      const baseUrl = this.configService.get<string>('WOOCOMMERCE_URL');
+      const consumerKey = this.configService.get<string>('WOOCOMMERCE_CONSUMER_KEY');
+      const consumerSecret = this.configService.get<string>('WOOCOMMERCE_CONSUMER_SECRET');
+
+      if (baseUrl && consumerKey && consumerSecret) {
+        this.baseUrl = baseUrl;
+        this.api = axios.create({
+          baseURL: `${baseUrl}/wp-json/wc/v3`,
+          auth: {
+            username: consumerKey,
+            password: consumerSecret,
+          },
+          timeout: 30000,
+        });
+        this.logger.log('WooCommerce API initialized from environment variables');
+      }
+    } catch (error) {
+      this.logger.warn('Failed to initialize WooCommerce API from env vars:', error);
+    }
+  }
+
+  private async getApi(): Promise<AxiosInstance> {
+    // If API is already initialized, return it
+    if (this.api) {
+      return this.api;
     }
 
-    this.api = axios.create({
-      baseURL: this.baseUrl,
-      auth: {
-        username: this.consumerKey,
-        password: this.consumerSecret,
-      },
-      timeout: 30000,
-    });
+    // Try to get from settings
+    try {
+      const apiKeys = await this.settingsService.getApiKeys();
+      const baseUrl = apiKeys.woocommerce_url || this.configService.get<string>('WOOCOMMERCE_URL');
+      const consumerKey = apiKeys.woocommerce_consumer_key || this.configService.get<string>('WOOCOMMERCE_CONSUMER_KEY');
+      const consumerSecret = apiKeys.woocommerce_consumer_secret || this.configService.get<string>('WOOCOMMERCE_CONSUMER_SECRET');
+
+      if (baseUrl && consumerKey && consumerSecret) {
+        this.baseUrl = baseUrl;
+        this.api = axios.create({
+          baseURL: `${baseUrl}/wp-json/wc/v3`,
+          auth: {
+            username: consumerKey,
+            password: consumerSecret,
+          },
+          timeout: 30000,
+        });
+        this.logger.log('WooCommerce API initialized from settings');
+        return this.api;
+      }
+    } catch (error) {
+      this.logger.warn('Failed to get WooCommerce API from settings:', error);
+    }
+
+    throw new BadRequestException('WooCommerce API not configured. Please set WooCommerce API keys in Settings > API Keys.');
   }
 
   async getOrder(orderId: number): Promise<WooCommerceOrder> {
+    const api = await this.getApi();
     try {
-      const response = await this.api.get(`/wp-json/wc/v3/orders/${orderId}`);
+      const response = await api.get(`/orders/${orderId}`);
       return response.data;
     } catch (error) {
       this.logger.error(`Failed to fetch order ${orderId}:`, error.message);
@@ -88,8 +128,9 @@ export class WooCommerceService {
   }
 
   async getProduct(productId: number): Promise<WooCommerceProduct> {
+    const api = await this.getApi();
     try {
-      const response = await this.api.get(`/wp-json/wc/v3/products/${productId}`);
+      const response = await api.get(`/products/${productId}`);
       return response.data;
     } catch (error) {
       this.logger.error(`Failed to fetch product ${productId}:`, error.message);
@@ -289,12 +330,7 @@ export class WooCommerceService {
       skipDuplicates?: boolean;
     }
   ) {
-    // Re-initialize API in case settings were updated
-    await this.initializeApi();
-    
-    if (!this.api) {
-      throw new BadRequestException('WooCommerce API not configured. Please set WooCommerce API keys in Settings > API Keys.');
-    }
+    const api = await this.getApi();
 
     if (!statuses || statuses.length === 0) {
       throw new BadRequestException('At least one order status must be specified');
@@ -322,7 +358,7 @@ export class WooCommerceService {
           params.after = dateFrom.toISOString();
         }
 
-        const response = await this.api.get('/wp-json/wc/v3/orders', { params });
+        const response = await api.get('/orders', { params });
         const orders: WooCommerceOrder[] = response.data;
 
         if (orders.length === 0) {

@@ -29,25 +29,64 @@ let WooCommerceService = WooCommerceService_1 = class WooCommerceService {
         this.warrantiesService = warrantiesService;
         this.settingsService = settingsService;
         this.logger = new common_1.Logger(WooCommerceService_1.name);
-        this.baseUrl = this.configService.get('WOOCOMMERCE_URL');
-        this.consumerKey = this.configService.get('WOOCOMMERCE_CONSUMER_KEY');
-        this.consumerSecret = this.configService.get('WOOCOMMERCE_CONSUMER_SECRET');
-        if (!this.baseUrl || !this.consumerKey || !this.consumerSecret) {
-            this.logger.warn('WooCommerce credentials not configured');
-            return;
+        this.api = null;
+        this.baseUrl = null;
+        this.initializeApi();
+    }
+    initializeApi() {
+        try {
+            const baseUrl = this.configService.get('WOOCOMMERCE_URL');
+            const consumerKey = this.configService.get('WOOCOMMERCE_CONSUMER_KEY');
+            const consumerSecret = this.configService.get('WOOCOMMERCE_CONSUMER_SECRET');
+            if (baseUrl && consumerKey && consumerSecret) {
+                this.baseUrl = baseUrl;
+                this.api = axios_1.default.create({
+                    baseURL: `${baseUrl}/wp-json/wc/v3`,
+                    auth: {
+                        username: consumerKey,
+                        password: consumerSecret,
+                    },
+                    timeout: 30000,
+                });
+                this.logger.log('WooCommerce API initialized from environment variables');
+            }
         }
-        this.api = axios_1.default.create({
-            baseURL: this.baseUrl,
-            auth: {
-                username: this.consumerKey,
-                password: this.consumerSecret,
-            },
-            timeout: 30000,
-        });
+        catch (error) {
+            this.logger.warn('Failed to initialize WooCommerce API from env vars:', error);
+        }
+    }
+    async getApi() {
+        if (this.api) {
+            return this.api;
+        }
+        try {
+            const apiKeys = await this.settingsService.getApiKeys();
+            const baseUrl = apiKeys.woocommerce_url || this.configService.get('WOOCOMMERCE_URL');
+            const consumerKey = apiKeys.woocommerce_consumer_key || this.configService.get('WOOCOMMERCE_CONSUMER_KEY');
+            const consumerSecret = apiKeys.woocommerce_consumer_secret || this.configService.get('WOOCOMMERCE_CONSUMER_SECRET');
+            if (baseUrl && consumerKey && consumerSecret) {
+                this.baseUrl = baseUrl;
+                this.api = axios_1.default.create({
+                    baseURL: `${baseUrl}/wp-json/wc/v3`,
+                    auth: {
+                        username: consumerKey,
+                        password: consumerSecret,
+                    },
+                    timeout: 30000,
+                });
+                this.logger.log('WooCommerce API initialized from settings');
+                return this.api;
+            }
+        }
+        catch (error) {
+            this.logger.warn('Failed to get WooCommerce API from settings:', error);
+        }
+        throw new common_1.BadRequestException('WooCommerce API not configured. Please set WooCommerce API keys in Settings > API Keys.');
     }
     async getOrder(orderId) {
+        const api = await this.getApi();
         try {
-            const response = await this.api.get(`/wp-json/wc/v3/orders/${orderId}`);
+            const response = await api.get(`/orders/${orderId}`);
             return response.data;
         }
         catch (error) {
@@ -56,8 +95,9 @@ let WooCommerceService = WooCommerceService_1 = class WooCommerceService {
         }
     }
     async getProduct(productId) {
+        const api = await this.getApi();
         try {
-            const response = await this.api.get(`/wp-json/wc/v3/products/${productId}`);
+            const response = await api.get(`/products/${productId}`);
             return response.data;
         }
         catch (error) {
@@ -205,10 +245,7 @@ let WooCommerceService = WooCommerceService_1 = class WooCommerceService {
         return warranties;
     }
     async syncOrdersByStatus(statuses, options) {
-        await this.initializeApi();
-        if (!this.api) {
-            throw new common_1.BadRequestException('WooCommerce API not configured. Please set WooCommerce API keys in Settings > API Keys.');
-        }
+        const api = await this.getApi();
         if (!statuses || statuses.length === 0) {
             throw new common_1.BadRequestException('At least one order status must be specified');
         }
@@ -231,7 +268,7 @@ let WooCommerceService = WooCommerceService_1 = class WooCommerceService {
                 if (dateFrom) {
                     params.after = dateFrom.toISOString();
                 }
-                const response = await this.api.get('/wp-json/wc/v3/orders', { params });
+                const response = await api.get('/orders', { params });
                 const orders = response.data;
                 if (orders.length === 0) {
                     hasMore = false;
