@@ -53,10 +53,19 @@ const WooCommerceImportPage = () => {
 
   const importMutation = useMutation(
     async () => {
+      console.log('Starting WooCommerce import with:', {
+        statuses: selectedStatuses,
+        limit,
+      });
+      console.log('API base URL:', api.defaults.baseURL);
+      console.log('Making POST request to /woocommerce/sync/orders');
+      
       const response = await api.post('/woocommerce/sync/orders', {
         statuses: selectedStatuses,
         limit,
       });
+      
+      console.log('Import response received:', response);
       return response.data;
     },
     {

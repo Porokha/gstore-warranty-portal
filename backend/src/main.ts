@@ -30,15 +30,24 @@ async function bootstrap() {
   app.enableCors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
+      if (!origin) {
+        console.log('CORS: Allowing request with no origin');
+        return callback(null, true);
+      }
+      
+      console.log(`CORS: Checking origin: ${origin}`);
+      console.log(`CORS: Allowed origins:`, allowedOrigins);
       
       if (allowedOrigins.includes(origin)) {
+        console.log(`CORS: Origin allowed: ${origin}`);
         callback(null, true);
       } else {
         // For development, allow all origins
         if (process.env.NODE_ENV === 'development') {
+          console.log(`CORS: Development mode - allowing origin: ${origin}`);
           callback(null, true);
         } else {
+          console.log(`CORS: Origin NOT allowed: ${origin}`);
           callback(new Error('Not allowed by CORS'));
         }
       }
