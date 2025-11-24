@@ -40,7 +40,7 @@ let WooCommerceService = WooCommerceService_1 = class WooCommerceService {
             const consumerKey = apiKeys.woocommerce_consumer_key || this.configService.get('WOOCOMMERCE_CONSUMER_KEY');
             const consumerSecret = apiKeys.woocommerce_consumer_secret || this.configService.get('WOOCOMMERCE_CONSUMER_SECRET');
             const currentHash = `${baseUrl || ''}|${consumerKey || ''}|${consumerSecret ? '***' : ''}`;
-            this.logger.debug(`WooCommerce API check - URL: ${baseUrl ? 'set' : 'missing'}, Key: ${consumerKey ? 'set' : 'missing'}, Secret: ${consumerSecret ? 'set' : 'missing'}`);
+            this.logger.log(`WooCommerce API check - URL: ${baseUrl ? `set (${baseUrl})` : 'missing'}, Key: ${consumerKey ? 'set' : 'missing'}, Secret: ${consumerSecret ? 'set' : 'missing'}`);
             if (baseUrl && consumerKey && consumerSecret) {
                 const needsReinit = !this.api || this.lastApiKeyHash !== currentHash;
                 if (needsReinit) {

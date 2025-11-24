@@ -71,7 +71,7 @@ export class WooCommerceService {
       // Create a hash to detect changes
       const currentHash = `${baseUrl || ''}|${consumerKey || ''}|${consumerSecret ? '***' : ''}`;
 
-      this.logger.debug(`WooCommerce API check - URL: ${baseUrl ? 'set' : 'missing'}, Key: ${consumerKey ? 'set' : 'missing'}, Secret: ${consumerSecret ? 'set' : 'missing'}`);
+      this.logger.log(`WooCommerce API check - URL: ${baseUrl ? `set (${baseUrl})` : 'missing'}, Key: ${consumerKey ? 'set' : 'missing'}, Secret: ${consumerSecret ? 'set' : 'missing'}`);
 
       if (baseUrl && consumerKey && consumerSecret) {
         // Check if we need to reinitialize (credentials changed or not initialized)
