@@ -70,8 +70,8 @@ let SettingsService = class SettingsService {
             { key: 'SENDER_API_URL', value: keys.sender_api_url },
         ];
         for (const mapping of mappings) {
-            if (mapping.value !== undefined) {
-                await this.set(mapping.key, mapping.value);
+            if (mapping.value !== undefined && mapping.value !== null) {
+                await this.set(mapping.key, String(mapping.value));
             }
         }
     }

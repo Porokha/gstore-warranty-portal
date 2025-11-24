@@ -48,18 +48,34 @@ const ApiKeysSettings = () => {
     }
   }, [apiKeys]);
 
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState('');
+
   const saveMutation = useMutation(
     async (data) => {
       const response = await api.post('/settings/api-keys', data);
       return response.data;
     },
     {
-      onSuccess: () => {
+      onSuccess: (data) => {
         queryClient.invalidateQueries('api-keys');
-        alert(t('common.settingsSaved') || 'Settings saved successfully');
+        setSaveSuccess(true);
+        setSaveError('');
+        console.log('API keys saved successfully:', data);
+        setTimeout(() => setSaveSuccess(false), 5000);
       },
       onError: (error) => {
-        alert(error.response?.data?.message || 'Failed to save API keys');
+        const errorMsg = error.response?.data?.message || 
+                        error.response?.data?.error || 
+                        error.message || 
+                        'Failed to save API keys';
+        setSaveError(errorMsg);
+        setSaveSuccess(false);
+        console.error('Failed to save API keys:', {
+          status: error.response?.status,
+          data: error.response?.data,
+          message: error.message,
+        });
       },
     }
   );
@@ -82,6 +98,16 @@ const ApiKeysSettings = () => {
 
   return (
     <Box>
+      {saveSuccess && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSaveSuccess(false)}>
+          API keys saved successfully!
+        </Alert>
+      )}
+      {saveError && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setSaveError('')}>
+          {saveError}
+        </Alert>
+      )}
       <Grid container spacing={3} component="form" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
         {/* WooCommerce Section */}
         <Grid item xs={12}>

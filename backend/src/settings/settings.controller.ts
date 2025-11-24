@@ -18,18 +18,22 @@ export class SettingsController {
 
   @Post('api-keys')
   async setApiKeys(@Body() keys: any) {
-    await this.settingsService.setApiKeys(keys);
-    // Verify the keys were saved
-    const saved = await this.settingsService.getApiKeys();
-    return { 
-      success: true, 
-      message: 'API keys updated successfully',
-      saved: {
-        hasUrl: !!saved.woocommerce_url,
-        hasKey: !!saved.woocommerce_consumer_key,
-        hasSecret: !!saved.woocommerce_consumer_secret,
-      }
-    };
+    try {
+      await this.settingsService.setApiKeys(keys);
+      // Verify the keys were saved
+      const saved = await this.settingsService.getApiKeys();
+      return { 
+        success: true, 
+        message: 'API keys updated successfully',
+        saved: {
+          hasUrl: !!saved.woocommerce_url,
+          hasKey: !!saved.woocommerce_consumer_key,
+          hasSecret: !!saved.woocommerce_consumer_secret,
+        }
+      };
+    } catch (error) {
+      throw new Error(`Failed to save API keys: ${error.message}`);
+    }
   }
 
   @Get('woocommerce-automation')

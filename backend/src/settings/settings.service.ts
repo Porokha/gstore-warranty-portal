@@ -82,8 +82,9 @@ export class SettingsService {
     ];
 
     for (const mapping of mappings) {
-      if (mapping.value !== undefined) {
-        await this.set(mapping.key, mapping.value);
+      // Save even if value is empty string (to clear it)
+      if (mapping.value !== undefined && mapping.value !== null) {
+        await this.set(mapping.key, String(mapping.value));
       }
     }
   }
