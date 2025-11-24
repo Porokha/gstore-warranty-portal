@@ -90,7 +90,7 @@ export class WooCommerceController {
       skipDuplicates: body.skipDuplicates ?? true,
     });
     
-    this.logger.log(`Sync completed - Imported: ${result.imported}, Skipped: ${result.skipped?.length || 0}`);
+    this.logger.log(`Sync completed - Imported: ${result.imported}, Skipped: ${Array.isArray(result.skipped) ? result.skipped.length : result.skipped || 0}`);
     return result;
   }
 }
