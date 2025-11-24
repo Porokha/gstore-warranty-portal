@@ -174,12 +174,13 @@ let DashboardService = class DashboardService {
         return Math.round(avg * 10) / 10;
     }
     async getCasesByStatus(timeFilter) {
-        let query = this.casesRepository.createQueryBuilder('case');
+        let query = this.casesRepository.createQueryBuilder('case')
+            .andWhere('(case.deleted_at IS NULL OR case.deleted_at = :null)', { null: null });
         if (timeFilter?.start) {
-            query = query.andWhere('case.created_at >= :start', { start: timeFilter.start });
+            query = query.andWhere('case.opened_at >= :start', { start: timeFilter.start });
         }
         if (timeFilter?.end) {
-            query = query.andWhere('case.created_at <= :end', { end: timeFilter.end });
+            query = query.andWhere('case.opened_at <= :end', { end: timeFilter.end });
         }
         const cases = await query.getMany();
         const statusCounts = {
@@ -248,7 +249,8 @@ let DashboardService = class DashboardService {
                 .createQueryBuilder('case')
                 .where('case.status_level = :completed', { completed: service_case_entity_1.CaseStatusLevel.COMPLETED })
                 .andWhere('case.device_type = :deviceType', { deviceType })
-                .andWhere('case.closed_at IS NOT NULL');
+                .andWhere('case.closed_at IS NOT NULL')
+                .andWhere('(case.deleted_at IS NULL OR case.deleted_at = :null)', { null: null });
             if (timeFilter?.start) {
                 query = query.andWhere('case.closed_at >= :start', { start: timeFilter.start });
             }
