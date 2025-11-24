@@ -83,7 +83,7 @@ const WarrantySearchPage = () => {
     pdf.setFillColor(252, 244, 232); // #fcf4e8
     pdf.rect(0, 0, pageWidth, pageHeight, 'F');
 
-    // Load and add logo with compression
+    // Load and add logo with aggressive compression
     try {
       const logoImg = new Image();
       logoImg.crossOrigin = 'anonymous';
@@ -97,10 +97,10 @@ const WarrantySearchPage = () => {
         logoImg.onload = () => {
           clearTimeout(timeout);
           try {
-            // Create canvas to compress image
+            // Create canvas to compress image aggressively
             const canvas = document.createElement('canvas');
-            const maxWidth = 200;
-            const maxHeight = 200;
+            const maxWidth = 150; // Smaller max size
+            const maxHeight = 150;
             let width = logoImg.width;
             let height = logoImg.height;
 
@@ -120,30 +120,43 @@ const WarrantySearchPage = () => {
             canvas.width = width;
             canvas.height = height;
             const ctx = canvas.getContext('2d');
+            
+            // Use better quality settings for smaller file
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'medium';
             ctx.drawImage(logoImg, 0, 0, width, height);
 
-            // Convert to data URL with compression
-            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            // Convert to data URL with aggressive compression (lower quality)
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6); // Reduced from 0.85 to 0.6
             
-            const logoWidth = 60;
+            // Further compress by reducing the actual size in PDF
+            const logoWidth = 50; // Smaller logo in PDF
             const logoHeight = (height / width) * logoWidth;
             const logoX = (pageWidth - logoWidth) / 2;
-            pdf.addImage(compressedDataUrl, 'JPEG', logoX, yPos, logoWidth, logoHeight);
+            
+            // Add image with compression options
+            pdf.addImage(compressedDataUrl, 'JPEG', logoX, yPos, logoWidth, logoHeight, undefined, 'FAST');
             yPos += logoHeight + 15;
             resolve();
           } catch (err) {
             clearTimeout(timeout);
-            reject(err);
+            // If logo fails, just skip it
+            console.warn('Logo compression failed, skipping logo:', err);
+            yPos += 20;
+            resolve();
           }
         };
         logoImg.onerror = (err) => {
           clearTimeout(timeout);
-          reject(err);
+          // If logo fails to load, just skip it
+          console.warn('Logo failed to load, skipping:', err);
+          yPos += 20;
+          resolve();
         };
       });
     } catch (err) {
-      console.error('Error loading logo:', err);
-      yPos += 30;
+      console.warn('Error loading logo, skipping:', err);
+      yPos += 20;
     }
 
     // Title with styling
@@ -237,8 +250,19 @@ const WarrantySearchPage = () => {
     pdf.setFont(undefined, 'italic');
     pdf.text(t('warrantySearch.reportDate') + ': ' + new Date().toLocaleString(), margin, yPos);
 
-    // Save PDF
-    pdf.save(`warranty-${result.warranty_id}.pdf`);
+    // Compress PDF before saving
+    const pdfOutput = pdf.output('arraybuffer');
+    
+    // Save PDF with compression
+    const blob = new Blob([pdfOutput], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `warranty-${result.warranty_id}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const handlePrint = () => {
