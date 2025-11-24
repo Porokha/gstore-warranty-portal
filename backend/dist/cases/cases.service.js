@@ -101,7 +101,6 @@ let CasesService = class CasesService {
                 .leftJoinAndSelect('case.assigned_technician', 'technician')
                 .leftJoinAndSelect('case.warranty', 'warranty')
                 .orderBy('case.opened_at', 'DESC');
-            query.andWhere('(case.deleted_at IS NULL OR case.deleted_at = :null)', { null: null });
             if (filters?.status !== undefined) {
                 if (Array.isArray(filters.status)) {
                     query.andWhere('case.status_level IN (:...statuses)', { statuses: filters.status });

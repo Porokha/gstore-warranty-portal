@@ -125,8 +125,6 @@ export class CasesService {
         .leftJoinAndSelect('case.warranty', 'warranty')
         .orderBy('case.opened_at', 'DESC');
 
-      // Only show non-deleted cases
-      query.andWhere('(case.deleted_at IS NULL OR case.deleted_at = :null)', { null: null });
 
       if (filters?.status !== undefined) {
         if (Array.isArray(filters.status)) {

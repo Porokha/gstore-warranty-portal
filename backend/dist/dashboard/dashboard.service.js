@@ -40,13 +40,11 @@ let DashboardService = class DashboardService {
             .where('case.status_level < :completed', { completed: service_case_entity_1.CaseStatusLevel.COMPLETED })
             .andWhere('case.deadline_at <= :in48Hours', { in48Hours })
             .andWhere('case.deadline_at > :now', { now })
-            .andWhere('(case.deleted_at IS NULL OR case.deleted_at = :null)', { null: null })
             .getCount();
         const dueCases = await this.casesRepository
             .createQueryBuilder('case')
             .where('case.status_level < :completed', { completed: service_case_entity_1.CaseStatusLevel.COMPLETED })
             .andWhere('case.deadline_at < :now', { now })
-            .andWhere('(case.deleted_at IS NULL OR case.deleted_at = :null)', { null: null })
             .getCount();
         let closedCasesQuery = this.casesRepository
             .createQueryBuilder('case')
