@@ -1,6 +1,7 @@
 import { WooCommerceService, WooCommerceOrder, WooCommerceProduct } from './woocommerce.service';
 export declare class WooCommerceController {
     private wooCommerceService;
+    private readonly logger;
     constructor(wooCommerceService: WooCommerceService);
     handleOrderWebhook(body: {
         id: number;

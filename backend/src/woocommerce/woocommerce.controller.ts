@@ -16,6 +16,8 @@ import { WooCommerceService, WooCommerceOrder, WooCommerceProduct } from './wooc
 
 @Controller('woocommerce')
 export class WooCommerceController {
+  private readonly logger = new Logger(WooCommerceController.name);
+
   constructor(private wooCommerceService: WooCommerceService) {}
 
   @Post('webhook/order')

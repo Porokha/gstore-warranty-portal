@@ -11,14 +11,16 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var WooCommerceController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WooCommerceController = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const woocommerce_service_1 = require("./woocommerce.service");
-let WooCommerceController = class WooCommerceController {
+let WooCommerceController = WooCommerceController_1 = class WooCommerceController {
     constructor(wooCommerceService) {
         this.wooCommerceService = wooCommerceService;
+        this.logger = new common_1.Logger(WooCommerceController_1.name);
     }
     async handleOrderWebhook(body) {
         await this.wooCommerceService.processOrderWebhook(body.id, body.status);
@@ -113,7 +115,7 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], WooCommerceController.prototype, "syncOrders", null);
-exports.WooCommerceController = WooCommerceController = __decorate([
+exports.WooCommerceController = WooCommerceController = WooCommerceController_1 = __decorate([
     (0, common_1.Controller)('woocommerce'),
     __metadata("design:paramtypes", [woocommerce_service_1.WooCommerceService])
 ], WooCommerceController);
