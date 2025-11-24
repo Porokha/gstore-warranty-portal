@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var SettingsController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SettingsController = void 0;
 const common_1 = require("@nestjs/common");
@@ -19,17 +20,30 @@ const roles_guard_1 = require("../auth/guards/roles.guard");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 const user_entity_1 = require("../users/entities/user.entity");
 const settings_service_1 = require("./settings.service");
-let SettingsController = class SettingsController {
+let SettingsController = SettingsController_1 = class SettingsController {
     constructor(settingsService) {
         this.settingsService = settingsService;
+        this.logger = new common_1.Logger(SettingsController_1.name);
     }
     async getApiKeys() {
-        return this.settingsService.getApiKeys();
+        this.logger.log('GET /api/settings/api-keys - Retrieving API keys');
+        const keys = await this.settingsService.getApiKeys();
+        this.logger.log(`Retrieved API keys - URL: ${keys.woocommerce_url ? 'set' : 'missing'}, Key: ${keys.woocommerce_consumer_key ? 'set' : 'missing'}, Secret: ${keys.woocommerce_consumer_secret ? 'set' : 'missing'}`);
+        return keys;
     }
     async setApiKeys(keys) {
+        this.logger.log('POST /api/settings/api-keys - Saving API keys');
+        this.logger.debug('Received keys:', {
+            hasUrl: !!keys.woocommerce_url,
+            hasKey: !!keys.woocommerce_consumer_key,
+            hasSecret: !!keys.woocommerce_consumer_secret,
+            url: keys.woocommerce_url ? `${keys.woocommerce_url.substring(0, 20)}...` : 'none',
+        });
         try {
             await this.settingsService.setApiKeys(keys);
+            this.logger.log('API keys saved to database');
             const saved = await this.settingsService.getApiKeys();
+            this.logger.log(`Verified saved keys - URL: ${saved.woocommerce_url ? 'set' : 'missing'}, Key: ${saved.woocommerce_consumer_key ? 'set' : 'missing'}, Secret: ${saved.woocommerce_consumer_secret ? 'set' : 'missing'}`);
             return {
                 success: true,
                 message: 'API keys updated successfully',
@@ -41,6 +55,7 @@ let SettingsController = class SettingsController {
             };
         }
         catch (error) {
+            this.logger.error('Failed to save API keys:', error);
             throw new Error(`Failed to save API keys: ${error.message}`);
         }
     }
@@ -80,7 +95,7 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], SettingsController.prototype, "setWooCommerceAutomation", null);
-exports.SettingsController = SettingsController = __decorate([
+exports.SettingsController = SettingsController = SettingsController_1 = __decorate([
     (0, common_1.Controller)('settings'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(user_entity_1.UserRole.ADMIN),

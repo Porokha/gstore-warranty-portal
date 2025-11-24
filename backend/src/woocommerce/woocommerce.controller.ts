@@ -72,12 +72,22 @@ export class WooCommerceController {
       skipDuplicates?: boolean;
     },
   ) {
+    this.logger.log('POST /api/woocommerce/sync/orders - Starting sync');
+    this.logger.debug('Sync request body:', { 
+      statuses: body.statuses, 
+      limit: body.limit,
+      hasDateFrom: !!body.dateFrom,
+      skipDuplicates: body.skipDuplicates,
+    });
+    
     const statuses = body.statuses || ['completed'];
     const result = await this.wooCommerceService.syncOrdersByStatus(statuses, {
       limit: body.limit,
       dateFrom: body.dateFrom,
       skipDuplicates: body.skipDuplicates ?? true,
     });
+    
+    this.logger.log(`Sync completed - Imported: ${result.imported}, Skipped: ${result.skipped?.length || 0}`);
     return result;
   }
 }

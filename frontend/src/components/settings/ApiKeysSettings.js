@@ -85,6 +85,11 @@ const ApiKeysSettings = () => {
   };
 
   const handleSave = () => {
+    console.log('Saving API keys:', {
+      hasUrl: !!formData.woocommerce_url,
+      hasKey: !!formData.woocommerce_consumer_key,
+      hasSecret: !!formData.woocommerce_consumer_secret,
+    });
     saveMutation.mutate(formData);
   };
 
