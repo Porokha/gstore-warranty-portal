@@ -81,7 +81,7 @@ const ApiKeysSettings = () => {
   }
 
   return (
-    <Box>
+    <Box component="form" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
       <Grid container spacing={3}>
         {/* WooCommerce Section */}
         <Grid item xs={12}>
@@ -188,9 +188,9 @@ const ApiKeysSettings = () => {
 
         <Grid item xs={12}>
           <Button
+            type="submit"
             variant="contained"
             startIcon={saveMutation.isLoading ? <CircularProgress size={20} /> : <SaveIcon />}
-            onClick={handleSave}
             disabled={saveMutation.isLoading}
             size="large"
           >

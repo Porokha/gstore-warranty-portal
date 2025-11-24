@@ -586,24 +586,25 @@ const SettingsPage = () => {
           {editingUser ? t('common.editUser') || 'Edit User' : t('common.createUser') || 'Create User'}
         </DialogTitle>
         <DialogContent>
-          <TextField
-            fullWidth
-            label={t('user.username') || 'Username'}
-            value={userForm.username}
-            onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
-            margin="normal"
-            disabled={!!editingUser}
-            required={!editingUser}
-          />
-          <TextField
-            fullWidth
-            type="password"
-            label={t('user.password') || 'Password'}
-            value={userForm.password}
-            onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
-            margin="normal"
-            required={!editingUser}
-          />
+          <form onSubmit={(e) => { e.preventDefault(); }}>
+            <TextField
+              fullWidth
+              label={t('user.username') || 'Username'}
+              value={userForm.username}
+              onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
+              margin="normal"
+              disabled={!!editingUser}
+              required={!editingUser}
+            />
+            <TextField
+              fullWidth
+              type="password"
+              label={t('user.password') || 'Password'}
+              value={userForm.password}
+              onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+              margin="normal"
+              required={!editingUser}
+            />
           <TextField
             fullWidth
             label={t('user.name') || 'Name'}
@@ -640,6 +641,7 @@ const SettingsPage = () => {
               <MenuItem value="en">English (EN)</MenuItem>
             </Select>
           </FormControl>
+          </form>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setUserDialogOpen(false)}>{t('common.cancel')}</Button>

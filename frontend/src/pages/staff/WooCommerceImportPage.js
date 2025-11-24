@@ -64,12 +64,21 @@ const WooCommerceImportPage = () => {
         setSuccess(data);
       },
       onError: (err) => {
-        const errorMessage = err.response?.data?.message || 
-                            err.response?.data?.error || 
-                            err.message || 
-                            'Failed to import from WooCommerce';
+        let errorMessage = 'Failed to import from WooCommerce';
+        if (err.response?.data) {
+          errorMessage = err.response.data.message || 
+                        err.response.data.error || 
+                        JSON.stringify(err.response.data) ||
+                        errorMessage;
+        } else if (err.message) {
+          errorMessage = err.message;
+        }
         setError(errorMessage);
-        console.error('WooCommerce import error:', err.response?.data || err);
+        console.error('WooCommerce import error:', {
+          status: err.response?.status,
+          data: err.response?.data,
+          message: err.message,
+        });
       },
     }
   );
@@ -109,7 +118,15 @@ const WooCommerceImportPage = () => {
 
           {error && (
             <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
-              {error}
+              <Typography variant="body1" sx={{ fontWeight: 600, mb: 0.5 }}>
+                Import Failed
+              </Typography>
+              <Typography variant="body2">
+                {error}
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 1, fontSize: '12px', color: 'text.secondary' }}>
+                Make sure WooCommerce API keys are configured in Settings > API Keys
+              </Typography>
             </Alert>
           )}
 
