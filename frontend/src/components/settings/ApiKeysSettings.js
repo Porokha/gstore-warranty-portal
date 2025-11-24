@@ -81,8 +81,8 @@ const ApiKeysSettings = () => {
   }
 
   return (
-    <Box component="form" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
-      <Grid container spacing={3}>
+    <Box>
+      <Grid container spacing={3} component="form" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
         {/* WooCommerce Section */}
         <Grid item xs={12}>
           <Typography variant="h6" gutterBottom>

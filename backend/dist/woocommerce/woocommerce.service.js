@@ -31,55 +31,43 @@ let WooCommerceService = WooCommerceService_1 = class WooCommerceService {
         this.logger = new common_1.Logger(WooCommerceService_1.name);
         this.api = null;
         this.baseUrl = null;
-        this.initializeApi();
-    }
-    initializeApi() {
-        try {
-            const baseUrl = this.configService.get('WOOCOMMERCE_URL');
-            const consumerKey = this.configService.get('WOOCOMMERCE_CONSUMER_KEY');
-            const consumerSecret = this.configService.get('WOOCOMMERCE_CONSUMER_SECRET');
-            if (baseUrl && consumerKey && consumerSecret) {
-                this.baseUrl = baseUrl;
-                this.api = axios_1.default.create({
-                    baseURL: `${baseUrl}/wp-json/wc/v3`,
-                    auth: {
-                        username: consumerKey,
-                        password: consumerSecret,
-                    },
-                    timeout: 30000,
-                });
-                this.logger.log('WooCommerce API initialized from environment variables');
-            }
-        }
-        catch (error) {
-            this.logger.warn('Failed to initialize WooCommerce API from env vars:', error);
-        }
+        this.lastApiKeyHash = null;
     }
     async getApi() {
-        if (this.api) {
-            return this.api;
-        }
         try {
             const apiKeys = await this.settingsService.getApiKeys();
             const baseUrl = apiKeys.woocommerce_url || this.configService.get('WOOCOMMERCE_URL');
             const consumerKey = apiKeys.woocommerce_consumer_key || this.configService.get('WOOCOMMERCE_CONSUMER_KEY');
             const consumerSecret = apiKeys.woocommerce_consumer_secret || this.configService.get('WOOCOMMERCE_CONSUMER_SECRET');
+            const currentHash = `${baseUrl || ''}|${consumerKey || ''}|${consumerSecret ? '***' : ''}`;
+            this.logger.debug(`WooCommerce API check - URL: ${baseUrl ? 'set' : 'missing'}, Key: ${consumerKey ? 'set' : 'missing'}, Secret: ${consumerSecret ? 'set' : 'missing'}`);
             if (baseUrl && consumerKey && consumerSecret) {
-                this.baseUrl = baseUrl;
-                this.api = axios_1.default.create({
-                    baseURL: `${baseUrl}/wp-json/wc/v3`,
-                    auth: {
-                        username: consumerKey,
-                        password: consumerSecret,
-                    },
-                    timeout: 30000,
-                });
-                this.logger.log('WooCommerce API initialized from settings');
+                const needsReinit = !this.api || this.lastApiKeyHash !== currentHash;
+                if (needsReinit) {
+                    this.baseUrl = baseUrl;
+                    this.lastApiKeyHash = currentHash;
+                    this.api = axios_1.default.create({
+                        baseURL: `${baseUrl}/wp-json/wc/v3`,
+                        auth: {
+                            username: consumerKey,
+                            password: consumerSecret,
+                        },
+                        timeout: 30000,
+                    });
+                    this.logger.log(`WooCommerce API initialized from settings (URL: ${baseUrl})`);
+                }
                 return this.api;
+            }
+            else {
+                this.logger.warn('WooCommerce API keys incomplete in settings');
             }
         }
         catch (error) {
-            this.logger.warn('Failed to get WooCommerce API from settings:', error);
+            this.logger.error('Failed to get WooCommerce API from settings:', error);
+        }
+        if (this.api) {
+            this.logger.warn('Using cached WooCommerce API instance, but settings check failed');
+            return this.api;
         }
         throw new common_1.BadRequestException('WooCommerce API not configured. Please set WooCommerce API keys in Settings > API Keys.');
     }

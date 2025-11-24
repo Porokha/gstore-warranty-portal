@@ -48,6 +48,7 @@ export class WooCommerceService {
   private readonly logger = new Logger(WooCommerceService.name);
   private api: AxiosInstance | null = null;
   private baseUrl: string | null = null;
+  private lastApiKeyHash: string | null = null;
 
   constructor(
     private configService: ConfigService,
@@ -56,61 +57,51 @@ export class WooCommerceService {
     private warrantiesService: WarrantiesService,
     private settingsService: SettingsService,
   ) {
-    this.initializeApi();
-  }
-
-  private initializeApi() {
-    try {
-      // Try env vars first (for backward compatibility)
-      const baseUrl = this.configService.get<string>('WOOCOMMERCE_URL');
-      const consumerKey = this.configService.get<string>('WOOCOMMERCE_CONSUMER_KEY');
-      const consumerSecret = this.configService.get<string>('WOOCOMMERCE_CONSUMER_SECRET');
-
-      if (baseUrl && consumerKey && consumerSecret) {
-        this.baseUrl = baseUrl;
-        this.api = axios.create({
-          baseURL: `${baseUrl}/wp-json/wc/v3`,
-          auth: {
-            username: consumerKey,
-            password: consumerSecret,
-          },
-          timeout: 30000,
-        });
-        this.logger.log('WooCommerce API initialized from environment variables');
-      }
-    } catch (error) {
-      this.logger.warn('Failed to initialize WooCommerce API from env vars:', error);
-    }
+    // Don't initialize in constructor - wait for first use to check settings
   }
 
   private async getApi(): Promise<AxiosInstance> {
-    // If API is already initialized, return it
-    if (this.api) {
-      return this.api;
-    }
-
-    // Try to get from settings
+    // Always try to get from settings first (in case settings were updated)
     try {
       const apiKeys = await this.settingsService.getApiKeys();
       const baseUrl = apiKeys.woocommerce_url || this.configService.get<string>('WOOCOMMERCE_URL');
       const consumerKey = apiKeys.woocommerce_consumer_key || this.configService.get<string>('WOOCOMMERCE_CONSUMER_KEY');
       const consumerSecret = apiKeys.woocommerce_consumer_secret || this.configService.get<string>('WOOCOMMERCE_CONSUMER_SECRET');
 
+      // Create a hash to detect changes
+      const currentHash = `${baseUrl || ''}|${consumerKey || ''}|${consumerSecret ? '***' : ''}`;
+
+      this.logger.debug(`WooCommerce API check - URL: ${baseUrl ? 'set' : 'missing'}, Key: ${consumerKey ? 'set' : 'missing'}, Secret: ${consumerSecret ? 'set' : 'missing'}`);
+
       if (baseUrl && consumerKey && consumerSecret) {
-        this.baseUrl = baseUrl;
-        this.api = axios.create({
-          baseURL: `${baseUrl}/wp-json/wc/v3`,
-          auth: {
-            username: consumerKey,
-            password: consumerSecret,
-          },
-          timeout: 30000,
-        });
-        this.logger.log('WooCommerce API initialized from settings');
+        // Check if we need to reinitialize (credentials changed or not initialized)
+        const needsReinit = !this.api || this.lastApiKeyHash !== currentHash;
+
+        if (needsReinit) {
+          this.baseUrl = baseUrl;
+          this.lastApiKeyHash = currentHash;
+          this.api = axios.create({
+            baseURL: `${baseUrl}/wp-json/wc/v3`,
+            auth: {
+              username: consumerKey,
+              password: consumerSecret,
+            },
+            timeout: 30000,
+          });
+          this.logger.log(`WooCommerce API initialized from settings (URL: ${baseUrl})`);
+        }
         return this.api;
+      } else {
+        this.logger.warn('WooCommerce API keys incomplete in settings');
       }
     } catch (error) {
-      this.logger.warn('Failed to get WooCommerce API from settings:', error);
+      this.logger.error('Failed to get WooCommerce API from settings:', error);
+    }
+
+    // If API is already initialized from previous call, use it (but log warning)
+    if (this.api) {
+      this.logger.warn('Using cached WooCommerce API instance, but settings check failed');
+      return this.api;
     }
 
     throw new BadRequestException('WooCommerce API not configured. Please set WooCommerce API keys in Settings > API Keys.');

@@ -45,8 +45,8 @@ export declare class WooCommerceService {
     private readonly logger;
     private api;
     private baseUrl;
+    private lastApiKeyHash;
     constructor(configService: ConfigService, warrantiesRepository: Repository<Warranty>, warrantiesService: WarrantiesService, settingsService: SettingsService);
-    private initializeApi;
     private getApi;
     getOrder(orderId: number): Promise<WooCommerceOrder>;
     getProduct(productId: number): Promise<WooCommerceProduct>;
