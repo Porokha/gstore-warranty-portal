@@ -37,6 +37,8 @@ export class CasesController {
     @Query('search') search?: string,
     @Query('start_date') start_date?: string,
     @Query('end_date') end_date?: string,
+    @Query('closeToDeadline') closeToDeadline?: string,
+    @Query('due') due?: string,
   ) {
     const filters: any = {};
     
@@ -45,6 +47,12 @@ export class CasesController {
       const statusNum = parseInt(status, 10);
       if (!isNaN(statusNum) && statusNum >= 1 && statusNum <= 4) {
         filters.status = statusNum as CaseStatusLevel;
+      } else if (status.includes(',')) {
+        // Handle comma-separated statuses
+        const statuses = status.split(',').map(s => parseInt(s.trim(), 10)).filter(s => !isNaN(s) && s >= 1 && s <= 4);
+        if (statuses.length > 0) {
+          filters.status = statuses;
+        }
       }
     }
     
@@ -64,6 +72,8 @@ export class CasesController {
     if (search) filters.search = search;
     if (start_date) filters.start_date = new Date(start_date);
     if (end_date) filters.end_date = new Date(end_date);
+    if (closeToDeadline === 'true') filters.closeToDeadline = true;
+    if (due === 'true') filters.due = true;
 
     return this.casesService.findAll(filters);
   }

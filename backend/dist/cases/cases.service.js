@@ -101,8 +101,26 @@ let CasesService = class CasesService {
                 .leftJoinAndSelect('case.assigned_technician', 'technician')
                 .leftJoinAndSelect('case.warranty', 'warranty')
                 .orderBy('case.opened_at', 'DESC');
+            query.andWhere('(case.deleted_at IS NULL OR case.deleted_at = :null)', { null: null });
             if (filters?.status !== undefined) {
-                query.andWhere('case.status_level = :status', { status: filters.status });
+                if (Array.isArray(filters.status)) {
+                    query.andWhere('case.status_level IN (:...statuses)', { statuses: filters.status });
+                }
+                else {
+                    query.andWhere('case.status_level = :status', { status: filters.status });
+                }
+            }
+            if (filters?.closeToDeadline) {
+                const now = new Date();
+                const in48Hours = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+                query.andWhere('case.status_level < :completed', { completed: service_case_entity_1.CaseStatusLevel.COMPLETED });
+                query.andWhere('case.deadline_at <= :in48Hours', { in48Hours });
+                query.andWhere('case.deadline_at > :now', { now });
+            }
+            if (filters?.due) {
+                const now = new Date();
+                query.andWhere('case.status_level < :completed', { completed: service_case_entity_1.CaseStatusLevel.COMPLETED });
+                query.andWhere('case.deadline_at < :now', { now });
             }
             if (filters?.result) {
                 query.andWhere('case.result_type = :result', { result: filters.result });

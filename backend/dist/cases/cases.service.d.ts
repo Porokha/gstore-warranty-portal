@@ -17,7 +17,7 @@ export declare class CasesService {
     generateCaseNumber(): Promise<string>;
     create(createDto: CreateCaseDto, createdBy: number): Promise<ServiceCase>;
     findAll(filters?: {
-        status?: CaseStatusLevel;
+        status?: CaseStatusLevel | CaseStatusLevel[];
         result?: ResultType;
         priority?: Priority;
         device_type?: string;
@@ -26,6 +26,8 @@ export declare class CasesService {
         search?: string;
         start_date?: Date;
         end_date?: Date;
+        closeToDeadline?: boolean;
+        due?: boolean;
     }): Promise<ServiceCase[]>;
     findOne(id: number): Promise<ServiceCase>;
     update(id: number, updateDto: UpdateCaseDto, userId: number): Promise<ServiceCase>;

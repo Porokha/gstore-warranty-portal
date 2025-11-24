@@ -290,7 +290,11 @@ export class WooCommerceService {
     }
   ) {
     if (!this.api) {
-      throw new BadRequestException('WooCommerce not configured');
+      throw new BadRequestException('WooCommerce API not configured. Please set WooCommerce API keys in Settings.');
+    }
+
+    if (!statuses || statuses.length === 0) {
+      throw new BadRequestException('At least one order status must be specified');
     }
 
     try {

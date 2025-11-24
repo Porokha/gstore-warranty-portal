@@ -107,7 +107,7 @@ export class CasesService {
   }
 
   async findAll(filters?: {
-    status?: CaseStatusLevel;
+    status?: CaseStatusLevel | CaseStatusLevel[];
     result?: ResultType;
     priority?: Priority;
     device_type?: string;
@@ -116,6 +116,8 @@ export class CasesService {
     search?: string;
     start_date?: Date;
     end_date?: Date;
+    closeToDeadline?: boolean;
+    due?: boolean;
   }): Promise<ServiceCase[]> {
     try {
       const query = this.casesRepository.createQueryBuilder('case')
@@ -123,8 +125,31 @@ export class CasesService {
         .leftJoinAndSelect('case.warranty', 'warranty')
         .orderBy('case.opened_at', 'DESC');
 
+      // Only show non-deleted cases
+      query.andWhere('(case.deleted_at IS NULL OR case.deleted_at = :null)', { null: null });
+
       if (filters?.status !== undefined) {
-        query.andWhere('case.status_level = :status', { status: filters.status });
+        if (Array.isArray(filters.status)) {
+          query.andWhere('case.status_level IN (:...statuses)', { statuses: filters.status });
+        } else {
+          query.andWhere('case.status_level = :status', { status: filters.status });
+        }
+      }
+
+      // Filter for cases close to deadline (within 48 hours)
+      if (filters?.closeToDeadline) {
+        const now = new Date();
+        const in48Hours = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+        query.andWhere('case.status_level < :completed', { completed: CaseStatusLevel.COMPLETED });
+        query.andWhere('case.deadline_at <= :in48Hours', { in48Hours });
+        query.andWhere('case.deadline_at > :now', { now });
+      }
+
+      // Filter for overdue cases
+      if (filters?.due) {
+        const now = new Date();
+        query.andWhere('case.status_level < :completed', { completed: CaseStatusLevel.COMPLETED });
+        query.andWhere('case.deadline_at < :now', { now });
       }
 
       if (filters?.result) {

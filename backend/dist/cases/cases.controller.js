@@ -27,12 +27,18 @@ let CasesController = class CasesController {
     constructor(casesService) {
         this.casesService = casesService;
     }
-    findAll(status, result, priority, device_type, technician_id, tags, search, start_date, end_date) {
+    findAll(status, result, priority, device_type, technician_id, tags, search, start_date, end_date, closeToDeadline, due) {
         const filters = {};
         if (status !== undefined && status !== null && status !== '') {
             const statusNum = parseInt(status, 10);
             if (!isNaN(statusNum) && statusNum >= 1 && statusNum <= 4) {
                 filters.status = statusNum;
+            }
+            else if (status.includes(',')) {
+                const statuses = status.split(',').map(s => parseInt(s.trim(), 10)).filter(s => !isNaN(s) && s >= 1 && s <= 4);
+                if (statuses.length > 0) {
+                    filters.status = statuses;
+                }
             }
         }
         if (result)
@@ -55,6 +61,10 @@ let CasesController = class CasesController {
             filters.start_date = new Date(start_date);
         if (end_date)
             filters.end_date = new Date(end_date);
+        if (closeToDeadline === 'true')
+            filters.closeToDeadline = true;
+        if (due === 'true')
+            filters.due = true;
         return this.casesService.findAll(filters);
     }
     findOne(id) {
@@ -89,8 +99,10 @@ __decorate([
     __param(6, (0, common_1.Query)('search')),
     __param(7, (0, common_1.Query)('start_date')),
     __param(8, (0, common_1.Query)('end_date')),
+    __param(9, (0, common_1.Query)('closeToDeadline')),
+    __param(10, (0, common_1.Query)('due')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String, String, String, String, String, String, String]),
+    __metadata("design:paramtypes", [String, String, String, String, String, String, String, String, String, String, String]),
     __metadata("design:returntype", void 0)
 ], CasesController.prototype, "findAll", null);
 __decorate([

@@ -37,13 +37,20 @@ const CasesPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   
+  // Handle dashboard filter params
+  const closeToDeadline = searchParams.get('closeToDeadline');
+  const due = searchParams.get('due');
+  const statusParam = searchParams.get('status');
+  
   const [filters, setFilters] = useState({
-    status: searchParams.get('status') || '',
+    status: statusParam || (closeToDeadline || due ? '' : ''),
     result: searchParams.get('result') || '',
     priority: searchParams.get('priority') || '',
     device_type: searchParams.get('device_type') || '',
     technician_id: searchParams.get('technician_id') || '',
     search: searchParams.get('search') || '',
+    closeToDeadline: closeToDeadline === 'true',
+    due: due === 'true',
   });
 
   const { data: cases, isLoading, refetch } = useQuery(

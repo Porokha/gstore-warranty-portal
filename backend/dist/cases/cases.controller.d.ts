@@ -6,7 +6,7 @@ import { ResultType, Priority } from './entities/service-case.entity';
 export declare class CasesController {
     private casesService;
     constructor(casesService: CasesService);
-    findAll(status?: string, result?: ResultType, priority?: Priority, device_type?: string, technician_id?: string, tags?: string, search?: string, start_date?: string, end_date?: string): Promise<import("./entities/service-case.entity").ServiceCase[]>;
+    findAll(status?: string, result?: ResultType, priority?: Priority, device_type?: string, technician_id?: string, tags?: string, search?: string, start_date?: string, end_date?: string, closeToDeadline?: string, due?: string): Promise<import("./entities/service-case.entity").ServiceCase[]>;
     findOne(id: number): Promise<import("./entities/service-case.entity").ServiceCase>;
     create(createDto: CreateCaseDto, req: any): Promise<import("./entities/service-case.entity").ServiceCase>;
     update(id: number, updateDto: UpdateCaseDto, req: any): Promise<import("./entities/service-case.entity").ServiceCase>;

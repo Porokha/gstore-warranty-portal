@@ -206,7 +206,10 @@ let WooCommerceService = WooCommerceService_1 = class WooCommerceService {
     }
     async syncOrdersByStatus(statuses, options) {
         if (!this.api) {
-            throw new common_1.BadRequestException('WooCommerce not configured');
+            throw new common_1.BadRequestException('WooCommerce API not configured. Please set WooCommerce API keys in Settings.');
+        }
+        if (!statuses || statuses.length === 0) {
+            throw new common_1.BadRequestException('At least one order status must be specified');
         }
         try {
             const allWarranties = [];

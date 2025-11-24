@@ -25,6 +25,11 @@ export class DashboardService {
       .where('case.status_level < :completed', { completed: CaseStatusLevel.COMPLETED })
       .andWhere('(case.deleted_at IS NULL OR case.deleted_at = :null)', { null: null })
       .getCount();
+    
+    // Ensure we return at least 0 if query fails
+    if (isNaN(openCases)) {
+      console.warn('openCases count is NaN, defaulting to 0');
+    }
 
     const closeToDeadline = await this.casesRepository
       .createQueryBuilder('case')
