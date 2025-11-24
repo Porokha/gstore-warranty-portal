@@ -31,7 +31,6 @@ let DashboardService = class DashboardService {
         const openCases = await this.casesRepository
             .createQueryBuilder('case')
             .where('case.status_level < :completed', { completed: service_case_entity_1.CaseStatusLevel.COMPLETED })
-            .andWhere('(case.deleted_at IS NULL OR case.deleted_at = :null)', { null: null })
             .getCount();
         if (isNaN(openCases)) {
             console.warn('openCases count is NaN, defaulting to 0');
@@ -174,8 +173,7 @@ let DashboardService = class DashboardService {
         return Math.round(avg * 10) / 10;
     }
     async getCasesByStatus(timeFilter) {
-        let query = this.casesRepository.createQueryBuilder('case')
-            .andWhere('(case.deleted_at IS NULL OR case.deleted_at = :null)', { null: null });
+        let query = this.casesRepository.createQueryBuilder('case');
         if (timeFilter?.start) {
             query = query.andWhere('case.opened_at >= :start', { start: timeFilter.start });
         }
@@ -249,8 +247,7 @@ let DashboardService = class DashboardService {
                 .createQueryBuilder('case')
                 .where('case.status_level = :completed', { completed: service_case_entity_1.CaseStatusLevel.COMPLETED })
                 .andWhere('case.device_type = :deviceType', { deviceType })
-                .andWhere('case.closed_at IS NOT NULL')
-                .andWhere('(case.deleted_at IS NULL OR case.deleted_at = :null)', { null: null });
+                .andWhere('case.closed_at IS NOT NULL');
             if (timeFilter?.start) {
                 query = query.andWhere('case.closed_at >= :start', { start: timeFilter.start });
             }

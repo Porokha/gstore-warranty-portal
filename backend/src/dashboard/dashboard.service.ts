@@ -23,7 +23,6 @@ export class DashboardService {
     const openCases = await this.casesRepository
       .createQueryBuilder('case')
       .where('case.status_level < :completed', { completed: CaseStatusLevel.COMPLETED })
-      .andWhere('(case.deleted_at IS NULL OR case.deleted_at = :null)', { null: null })
       .getCount();
     
     // Ensure we return at least 0 if query fails
@@ -203,8 +202,7 @@ export class DashboardService {
   }
 
   async getCasesByStatus(timeFilter?: { start?: Date; end?: Date }) {
-    let query = this.casesRepository.createQueryBuilder('case')
-      .andWhere('(case.deleted_at IS NULL OR case.deleted_at = :null)', { null: null });
+    let query = this.casesRepository.createQueryBuilder('case');
     
     if (timeFilter?.start) {
       query = query.andWhere('case.opened_at >= :start', { start: timeFilter.start });
@@ -287,8 +285,7 @@ export class DashboardService {
         .createQueryBuilder('case')
         .where('case.status_level = :completed', { completed: CaseStatusLevel.COMPLETED })
         .andWhere('case.device_type = :deviceType', { deviceType })
-        .andWhere('case.closed_at IS NOT NULL')
-        .andWhere('(case.deleted_at IS NULL OR case.deleted_at = :null)', { null: null });
+        .andWhere('case.closed_at IS NOT NULL');
 
       if (timeFilter?.start) {
         query = query.andWhere('case.closed_at >= :start', { start: timeFilter.start });
