@@ -84,7 +84,8 @@ export class SettingsService {
     for (const mapping of mappings) {
       // Save even if value is empty string (to clear it)
       if (mapping.value !== undefined && mapping.value !== null) {
-        await this.set(mapping.key, String(mapping.value));
+        const saved = await this.set(mapping.key, String(mapping.value));
+        console.log(`💾 Saved ${mapping.key}: ${saved.value ? `${saved.value.substring(0, 20)}...` : 'empty'}`);
       }
     }
   }
