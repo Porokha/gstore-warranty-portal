@@ -13,6 +13,7 @@ import CaseDetailPage from './pages/staff/CaseDetailPage';
 import CreateCasePage from './pages/staff/CreateCasePage';
 import WarrantiesPage from './pages/staff/WarrantiesPage';
 import WarrantyDetailPage from './pages/staff/WarrantyDetailPage';
+import WarrantyEditPage from './pages/staff/WarrantyEditPage';
 import CreateWarrantyPage from './pages/staff/CreateWarrantyPage';
 import FinancePage from './pages/staff/FinancePage';
 import SettingsPage from './pages/staff/SettingsPage';
@@ -64,6 +65,7 @@ function App() {
                   <Route path="cases/:id" element={<CaseDetailPage />} />
                   <Route path="warranties" element={<WarrantiesPage />} />
                   <Route path="warranties/:id" element={<WarrantyDetailPage />} />
+                  <Route path="warranties/:id/edit" element={<WarrantyEditPage />} />
                   <Route path="warranties/new" element={<CreateWarrantyPage />} />
                   <Route path="import" element={<ImportPage />} />
                   <Route path="finance" element={<FinancePage />} />

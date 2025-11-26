@@ -13,13 +13,16 @@ import {
   Alert,
   Divider,
 } from '@mui/material';
-import { ArrowBack } from '@mui/icons-material';
+import { ArrowBack, Edit } from '@mui/icons-material';
 import { warrantiesService } from '../../services/warrantiesService';
+import { useAuth } from '../../contexts/AuthContext';
 
 const WarrantyDetailPage = () => {
   const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
   const { data: warranty, isLoading, error } = useQuery(
     ['warranty', id],
@@ -82,15 +85,27 @@ const WarrantyDetailPage = () => {
 
   return (
     <Box>
-      <Box display="flex" alignItems="center" gap={2} mb={3}>
-        <Button
-          startIcon={<ArrowBack />}
-          onClick={() => navigate('/staff/warranties')}
-          sx={{ textTransform: 'none' }}
-        >
-          {t('common.back') || 'Back'}
-        </Button>
-        <Typography variant="h4">{t('warranty.warrantyDetails') || 'Warranty Details'}</Typography>
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+        <Box display="flex" alignItems="center" gap={2}>
+          <Button
+            startIcon={<ArrowBack />}
+            onClick={() => navigate('/staff/warranties')}
+            sx={{ textTransform: 'none' }}
+          >
+            {t('common.back') || 'Back'}
+          </Button>
+          <Typography variant="h4">{t('warranty.warrantyDetails') || 'Warranty Details'}</Typography>
+        </Box>
+        {isAdmin && (
+          <Button
+            variant="contained"
+            startIcon={<Edit />}
+            onClick={() => navigate(`/staff/warranties/${id}/edit`)}
+            sx={{ textTransform: 'none' }}
+          >
+            {t('warranty.editWarranty') || 'Edit Warranty'}
+          </Button>
+        )}
       </Box>
 
       <Paper sx={{ p: 4 }}>
@@ -196,6 +211,72 @@ const WarrantyDetailPage = () => {
                 sx={{ mb: 2 }}
               />
             </Grid>
+          )}
+
+          {isAdmin && (
+            <>
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="h6" sx={{ mb: 2, color: '#64748b' }}>
+                  Admin Only Information
+                </Typography>
+              </Grid>
+
+              {warranty.brand && (
+                <Grid item xs={12} md={6}>
+                  <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5 }}>
+                    {t('warranty.brand') || 'Brand'}
+                  </Typography>
+                  <Typography variant="body1" sx={{ mb: 2 }}>
+                    {warranty.brand}
+                  </Typography>
+                </Grid>
+              )}
+
+              {warranty.model && (
+                <Grid item xs={12} md={6}>
+                  <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5 }}>
+                    {t('warranty.model') || 'Model'}
+                  </Typography>
+                  <Typography variant="body1" sx={{ mb: 2 }}>
+                    {warranty.model}
+                  </Typography>
+                </Grid>
+              )}
+
+              {warranty.condition && (
+                <Grid item xs={12} md={6}>
+                  <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5 }}>
+                    {t('warranty.condition') || 'Condition'}
+                  </Typography>
+                  <Typography variant="body1" sx={{ mb: 2 }}>
+                    {warranty.condition}
+                  </Typography>
+                </Grid>
+              )}
+
+              {warranty.personal_identification_number && (
+                <Grid item xs={12} md={6}>
+                  <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5 }}>
+                    {t('warranty.personalIdentificationNumber') || 'P/N'}
+                  </Typography>
+                  <Typography variant="body1" sx={{ mb: 2 }}>
+                    {warranty.personal_identification_number}
+                  </Typography>
+                </Grid>
+              )}
+
+              {warranty.admin_notes && (
+                <Grid item xs={12}>
+                  <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5 }}>
+                    {t('warranty.adminNotes') || 'Admin Notes'}
+                  </Typography>
+                  <Typography variant="body1" sx={{ mb: 2, whiteSpace: 'pre-wrap' }}>
+                    {warranty.admin_notes}
+                  </Typography>
+                </Grid>
+              )}
+            </>
           )}
         </Grid>
       </Paper>

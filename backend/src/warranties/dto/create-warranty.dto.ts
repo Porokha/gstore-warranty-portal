@@ -51,6 +51,26 @@ export class CreateWarrantyDto {
   @IsNotEmpty()
   price: number;
 
+  @IsOptional()
+  @IsString()
+  brand?: string;
+
+  @IsOptional()
+  @IsString()
+  model?: string;
+
+  @IsOptional()
+  @IsString()
+  condition?: string;
+
+  @IsOptional()
+  @IsString()
+  personal_identification_number?: string;
+
+  @IsOptional()
+  @IsString()
+  admin_notes?: string;
+
   @IsString()
   @IsNotEmpty()
   customer_name: string;

@@ -135,6 +135,13 @@ export class ImportService {
               order_id: row.order_id ? parseInt(row.order_id) : undefined,
               product_id: row.product_id ? parseInt(row.product_id) : undefined,
               created_source: row.created_source === 'woocommerce' ? CreatedSource.AUTO_WOO : CreatedSource.MANUAL,
+              price: row.price ? parseFloat(row.price) : 0,
+              // New admin-only fields
+              brand: row.brand || undefined,
+              model: row.model || undefined,
+              condition: row.condition || undefined,
+              personal_identification_number: row.personal_identification_number || row.pn || undefined,
+              admin_notes: row.admin_notes || undefined,
             };
 
             // Validate required fields
@@ -258,6 +265,12 @@ export class ImportService {
       'order_id',
       'product_id',
       'created_source',
+      'price',
+      'brand',
+      'model',
+      'condition',
+      'personal_identification_number',
+      'admin_notes',
     ];
 
     const exampleRow = [
@@ -277,6 +290,12 @@ export class ImportService {
       '12345',
       '67890',
       'manual',
+      '999.99',
+      'Apple',
+      'iPhone 15 Pro',
+      'New',
+      'PN-12345',
+      'Internal note for admin',
     ];
 
     return [headers.join(','), exampleRow.join(',')].join('\n');

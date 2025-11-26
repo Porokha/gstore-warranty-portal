@@ -53,16 +53,27 @@ let WooCommerceController = WooCommerceController_1 = class WooCommerceControlle
             hasDateFrom: !!body.dateFrom,
             skipDuplicates: body.skipDuplicates,
         });
+        const jobId = `sync-${Date.now()}`;
         const startTime = Date.now();
         const statuses = body.statuses || ['completed'];
-        const result = await this.wooCommerceService.syncOrdersByStatus(statuses, {
+        this.wooCommerceService.syncOrdersByStatus(statuses, {
             limit: body.limit,
             dateFrom: body.dateFrom,
             skipDuplicates: body.skipDuplicates ?? true,
+        }, jobId).then((result) => {
+            const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+            this.logger.log(`✅ Sync completed in ${duration}s - Imported: ${result.imported}, Skipped: ${Array.isArray(result.skipped) ? result.skipped.length : result.skipped || 0}`);
+        }).catch((error) => {
+            this.logger.error(`❌ Sync failed: ${error.message}`);
         });
-        const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-        this.logger.log(`✅ Sync completed in ${duration}s - Imported: ${result.imported}, Skipped: ${Array.isArray(result.skipped) ? result.skipped.length : result.skipped || 0}`);
-        return result;
+        return {
+            success: true,
+            jobId,
+            message: 'Import started. Use the progress endpoint to track status.',
+        };
+    }
+    getSyncProgress(jobId) {
+        return this.wooCommerceService.getSyncProgress(jobId);
     }
 };
 exports.WooCommerceController = WooCommerceController;
@@ -117,6 +128,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], WooCommerceController.prototype, "syncOrders", null);
+__decorate([
+    (0, common_1.Get)('sync/progress/:jobId'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Param)('jobId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], WooCommerceController.prototype, "getSyncProgress", null);
 exports.WooCommerceController = WooCommerceController = WooCommerceController_1 = __decorate([
     (0, common_1.Controller)('woocommerce'),
     __metadata("design:paramtypes", [woocommerce_service_1.WooCommerceService])

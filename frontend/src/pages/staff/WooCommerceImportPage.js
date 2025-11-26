@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation } from 'react-query';
 import { useNavigate } from 'react-router-dom';
@@ -32,6 +32,8 @@ const WooCommerceImportPage = () => {
   const [limit, setLimit] = useState(100);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(null);
+  const [progress, setProgress] = useState(null);
+  const [jobId, setJobId] = useState(null);
 
   const availableStatuses = [
     'pending',
@@ -66,11 +68,21 @@ const WooCommerceImportPage = () => {
       });
       
       console.log('Import response received:', response);
+      
+      // If we got a jobId, start polling for progress
+      if (response.data.jobId) {
+        setJobId(response.data.jobId);
+        startProgressPolling(response.data.jobId);
+        return { ...response.data, polling: true };
+      }
+      
       return response.data;
     },
     {
       onSuccess: (data) => {
-        setSuccess(data);
+        if (!data.polling) {
+          setSuccess(data);
+        }
       },
       onError: (err) => {
         console.error('WooCommerce import error - Full error object:', err);
@@ -98,6 +110,46 @@ const WooCommerceImportPage = () => {
     }
   );
 
+  const progressIntervalRef = useRef(null);
+
+  const startProgressPolling = (jobId) => {
+    // Clear any existing interval
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+    }
+
+    // Poll every 2 seconds
+    progressIntervalRef.current = setInterval(async () => {
+      try {
+        const response = await api.get(`/woocommerce/sync/progress/${jobId}`);
+        const progressData = response.data;
+        
+        setProgress(progressData);
+
+        if (progressData.status === 'completed') {
+          clearInterval(progressIntervalRef.current);
+          setSuccess(progressData.result || { imported: progressData.imported, skipped: progressData.skipped });
+          setJobId(null);
+        } else if (progressData.status === 'error') {
+          clearInterval(progressIntervalRef.current);
+          setError(progressData.error || 'Import failed');
+          setJobId(null);
+        }
+      } catch (err) {
+        console.error('Failed to fetch progress:', err);
+        // Continue polling even if one request fails
+      }
+    }, 2000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+    };
+  }, []);
+
   const handleImport = () => {
     if (selectedStatuses.length === 0) {
       setError('Please select at least one order status');
@@ -105,6 +157,11 @@ const WooCommerceImportPage = () => {
     }
     setError('');
     setSuccess(null);
+    setProgress(null);
+    setJobId(null);
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+    }
     importMutation.mutate();
   };
 
@@ -188,18 +245,42 @@ const WooCommerceImportPage = () => {
             </FormControl>
           </Box>
 
-          {importMutation.isLoading && (
+          {(importMutation.isLoading || progress) && (
             <Box sx={{ mt: 2 }}>
-              <LinearProgress />
-              <Typography variant="body2" sx={{ mt: 1 }} align="center">
-                Importing warranties from WooCommerce...
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 1 }} align="center" color="text.secondary">
-                This may take several minutes depending on the number of orders. Please wait...
-              </Typography>
-              <Typography variant="caption" sx={{ mt: 1, display: 'block' }} align="center" color="text.secondary">
-                Check backend logs for detailed progress
-              </Typography>
+              <LinearProgress 
+                variant={progress?.percentage !== undefined ? "determinate" : "indeterminate"}
+                value={progress?.percentage || 0}
+              />
+              <Box sx={{ mt: 2 }}>
+                {progress && (
+                  <>
+                    <Typography variant="body1" sx={{ fontWeight: 600, mb: 1 }} align="center">
+                      Importing warranties from WooCommerce...
+                    </Typography>
+                    <Typography variant="body2" align="center" color="text.secondary">
+                      Progress: {progress.processed || 0} / {progress.total || '?'} orders processed
+                    </Typography>
+                    <Typography variant="body2" align="center" color="text.secondary">
+                      Imported: {progress.imported || 0} warranties | Skipped: {progress.skipped || 0}
+                    </Typography>
+                    {progress.percentage !== undefined && (
+                      <Typography variant="h6" align="center" sx={{ mt: 1, color: 'primary.main' }}>
+                        {progress.percentage}%
+                      </Typography>
+                    )}
+                  </>
+                )}
+                {!progress && (
+                  <>
+                    <Typography variant="body2" sx={{ mt: 1 }} align="center">
+                      Starting import...
+                    </Typography>
+                    <Typography variant="body2" sx={{ mt: 1 }} align="center" color="text.secondary">
+                      This may take several minutes depending on the number of orders. Please wait...
+                    </Typography>
+                  </>
+                )}
+              </Box>
             </Box>
           )}
 

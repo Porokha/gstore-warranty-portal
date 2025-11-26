@@ -49,6 +49,7 @@ export class WooCommerceService {
   private api: AxiosInstance | null = null;
   private baseUrl: string | null = null;
   private lastApiKeyHash: string | null = null;
+  private syncProgress: Map<string, { total: number; processed: number; imported: number; skipped: number; status: 'running' | 'completed' | 'error'; error?: string; result?: any }> = new Map();
 
   constructor(
     private configService: ConfigService,
@@ -356,13 +357,25 @@ export class WooCommerceService {
     return warranties;
   }
 
+  getSyncProgress(jobId: string) {
+    const progress = this.syncProgress.get(jobId);
+    if (!progress) {
+      return { status: 'not_found' };
+    }
+    return {
+      ...progress,
+      percentage: progress.total > 0 ? Math.round((progress.processed / progress.total) * 100) : 0,
+    };
+  }
+
   async syncOrdersByStatus(
     statuses: string[], 
     options?: { 
       limit?: number; 
       dateFrom?: string; 
       skipDuplicates?: boolean;
-    }
+    },
+    jobId?: string
   ) {
     const api = await this.getApi();
 
@@ -380,6 +393,18 @@ export class WooCommerceService {
       const skipDuplicates = options?.skipDuplicates ?? true;
 
       let totalProcessed = 0;
+      let totalOrders = 0; // Will be updated as we fetch
+
+      // Initialize progress tracking
+      if (jobId) {
+        this.syncProgress.set(jobId, {
+          total: 0,
+          processed: 0,
+          imported: 0,
+          skipped: 0,
+          status: 'running',
+        });
+      }
       while (hasMore && (!limit || allWarranties.length < limit)) {
         const params: any = {
           status: statuses.join(','),
@@ -404,10 +429,30 @@ export class WooCommerceService {
 
         this.logger.log(`📦 Fetched ${orders.length} orders from page ${page}. Processing...`);
 
+        // Update total if this is first page or we got a full page
+        if (page === 1 || orders.length === 100) {
+          totalOrders += orders.length;
+          if (jobId) {
+            const progress = this.syncProgress.get(jobId);
+            if (progress) {
+              progress.total = totalOrders;
+            }
+          }
+        }
+
         for (const order of orders) {
           totalProcessed++;
           if (totalProcessed % 10 === 0) {
             this.logger.log(`⏳ Progress: Processed ${totalProcessed} orders, imported ${allWarranties.length} warranties, skipped ${skipped.length}`);
+            // Update progress
+            if (jobId) {
+              const progress = this.syncProgress.get(jobId);
+              if (progress) {
+                progress.processed = totalProcessed;
+                progress.imported = allWarranties.length;
+                progress.skipped = skipped.length;
+              }
+            }
           }
           // Check date limit if set
           if (dateFrom) {
@@ -418,7 +463,8 @@ export class WooCommerceService {
           }
 
           try {
-            for (let i = 0; i < order.line_items.length; i++) {
+            // Process line items in parallel for better performance
+            const lineItemPromises = order.line_items.map(async (lineItem, i) => {
               // Check if duplicate should be skipped
               if (skipDuplicates) {
                 const existing = await this.warrantiesRepository.findOne({
@@ -429,17 +475,29 @@ export class WooCommerceService {
                 });
                 if (existing) {
                   skipped.push({ orderId: order.id, lineIndex: i });
-                  continue;
+                  return null;
                 }
               }
 
-              const warranty = await this.createWarrantyFromOrder(order.id, i, statuses);
-              allWarranties.push(warranty);
-              
-              if (limit && allWarranties.length >= limit) {
-                hasMore = false;
-                break;
+              try {
+                const warranty = await this.createWarrantyFromOrder(order.id, i, statuses);
+                return warranty;
+              } catch (error) {
+                if (error.message?.includes('already exists')) {
+                  skipped.push({ orderId: order.id, lineIndex: i });
+                  return null;
+                }
+                throw error;
               }
+            });
+
+            const results = await Promise.all(lineItemPromises);
+            const successfulWarranties = results.filter(w => w !== null);
+            allWarranties.push(...successfulWarranties);
+            
+            if (limit && allWarranties.length >= limit) {
+              hasMore = false;
+              break;
             }
           } catch (error) {
             // If it's a duplicate error, skip it
@@ -464,14 +522,38 @@ export class WooCommerceService {
 
       this.logger.log(`✅ Import complete! Total processed: ${totalProcessed} orders, Imported: ${allWarranties.length} warranties, Skipped: ${skipped.length}`);
 
-      return {
+      const result = {
         success: true,
         imported: allWarranties.length,
         skipped: skipped.length,
         warranties: allWarranties,
       };
+
+      // Update final progress
+      if (jobId) {
+        const progress = this.syncProgress.get(jobId);
+        if (progress) {
+          progress.status = 'completed';
+          progress.processed = totalProcessed;
+          progress.imported = allWarranties.length;
+          progress.skipped = skipped.length;
+          progress.result = result;
+        }
+      }
+
+      return result;
     } catch (error) {
       this.logger.error('Failed to sync orders:', error.message);
+      
+      // Update progress with error
+      if (jobId) {
+        const progress = this.syncProgress.get(jobId);
+        if (progress) {
+          progress.status = 'error';
+          progress.error = error.message;
+        }
+      }
+      
       throw new BadRequestException(`Failed to sync orders: ${error.message}`);
     }
   }

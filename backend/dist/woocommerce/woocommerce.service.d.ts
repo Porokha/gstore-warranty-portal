@@ -46,6 +46,7 @@ export declare class WooCommerceService {
     private api;
     private baseUrl;
     private lastApiKeyHash;
+    private syncProgress;
     constructor(configService: ConfigService, warrantiesRepository: Repository<Warranty>, warrantiesService: WarrantiesService, settingsService: SettingsService);
     private getApi;
     getOrder(orderId: number): Promise<WooCommerceOrder>;
@@ -55,11 +56,23 @@ export declare class WooCommerceService {
     createWarrantyFromOrder(orderId: number, lineItemIndex?: number, allowedStatuses?: string[]): Promise<Warranty>;
     processOrderWebhook(orderId: number, status: string): Promise<void>;
     syncOrder(orderId: number, allowedStatuses?: string[]): Promise<Warranty[]>;
+    getSyncProgress(jobId: string): {
+        status: string;
+    } | {
+        percentage: number;
+        total: number;
+        processed: number;
+        imported: number;
+        skipped: number;
+        status: "running" | "completed" | "error";
+        error?: string;
+        result?: any;
+    };
     syncOrdersByStatus(statuses: string[], options?: {
         limit?: number;
         dateFrom?: string;
         skipDuplicates?: boolean;
-    }): Promise<{
+    }, jobId?: string): Promise<{
         success: boolean;
         imported: number;
         skipped: number;

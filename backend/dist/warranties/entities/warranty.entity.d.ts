@@ -16,6 +16,11 @@ export declare class Warranty {
     title: string;
     thumbnail_url: string;
     price: number;
+    brand: string;
+    model: string;
+    condition: string;
+    personal_identification_number: string;
+    admin_notes: string;
     customer_name: string;
     customer_last_name: string;
     customer_phone: string;

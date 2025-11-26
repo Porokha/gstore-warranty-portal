@@ -83,17 +83,35 @@ export class WooCommerceController {
       skipDuplicates: body.skipDuplicates,
     });
     
+    // Store sync job ID for progress tracking
+    const jobId = `sync-${Date.now()}`;
+    
     const startTime = Date.now();
     const statuses = body.statuses || ['completed'];
-    const result = await this.wooCommerceService.syncOrdersByStatus(statuses, {
+    
+    // Run sync in background and return immediately with job ID
+    this.wooCommerceService.syncOrdersByStatus(statuses, {
       limit: body.limit,
       dateFrom: body.dateFrom,
       skipDuplicates: body.skipDuplicates ?? true,
+    }, jobId).then((result) => {
+      const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+      this.logger.log(`✅ Sync completed in ${duration}s - Imported: ${result.imported}, Skipped: ${Array.isArray(result.skipped) ? result.skipped.length : result.skipped || 0}`);
+    }).catch((error) => {
+      this.logger.error(`❌ Sync failed: ${error.message}`);
     });
     
-    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-    this.logger.log(`✅ Sync completed in ${duration}s - Imported: ${result.imported}, Skipped: ${Array.isArray(result.skipped) ? result.skipped.length : result.skipped || 0}`);
-    return result;
+    return { 
+      success: true, 
+      jobId,
+      message: 'Import started. Use the progress endpoint to track status.',
+    };
+  }
+
+  @Get('sync/progress/:jobId')
+  @UseGuards(JwtAuthGuard)
+  getSyncProgress(@Param('jobId') jobId: string) {
+    return this.wooCommerceService.getSyncProgress(jobId);
   }
 }
 

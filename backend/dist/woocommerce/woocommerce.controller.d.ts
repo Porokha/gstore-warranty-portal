@@ -24,8 +24,19 @@ export declare class WooCommerceController {
         skipDuplicates?: boolean;
     }): Promise<{
         success: boolean;
+        jobId: string;
+        message: string;
+    }>;
+    getSyncProgress(jobId: string): {
+        status: string;
+    } | {
+        percentage: number;
+        total: number;
+        processed: number;
         imported: number;
         skipped: number;
-        warranties: any[];
-    }>;
+        status: "running" | "completed" | "error";
+        error?: string;
+        result?: any;
+    };
 }

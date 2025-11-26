@@ -51,6 +51,21 @@ export class Warranty {
   @Column('decimal', { precision: 10, scale: 2 })
   price: number;
 
+  @Column({ nullable: true })
+  brand: string;
+
+  @Column({ nullable: true })
+  model: string;
+
+  @Column({ nullable: true })
+  condition: string;
+
+  @Column({ nullable: true })
+  personal_identification_number: string; // P/N
+
+  @Column('text', { nullable: true })
+  admin_notes: string; // Admin-only notes, not visible to customers
+
   @Column()
   customer_name: string;
 
