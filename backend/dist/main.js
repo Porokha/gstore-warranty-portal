@@ -53,12 +53,12 @@ async function bootstrap() {
         transform: true,
     }));
     app.use((req, res, next) => {
-        if (req.path.startsWith('/api/settings') || req.path.startsWith('/api/woocommerce')) {
-            console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`, {
-                hasAuth: !!req.headers.authorization,
-                contentType: req.headers['content-type'],
-            });
-        }
+        console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`, {
+            origin: req.headers.origin,
+            hasAuth: !!req.headers.authorization,
+            contentType: req.headers['content-type'],
+            userAgent: req.headers['user-agent']?.substring(0, 50),
+        });
         next();
     });
     app.setGlobalPrefix('api');

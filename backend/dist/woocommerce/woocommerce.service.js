@@ -34,20 +34,24 @@ let WooCommerceService = WooCommerceService_1 = class WooCommerceService {
         this.lastApiKeyHash = null;
     }
     async getApi() {
+        this.logger.log('🔍 getApi() called - Checking WooCommerce API configuration...');
         try {
             const apiKeys = await this.settingsService.getApiKeys();
-            this.logger.debug('Retrieved API keys from settings:', {
+            this.logger.log('📋 Retrieved API keys from settings:', {
                 hasUrl: !!apiKeys.woocommerce_url,
                 hasKey: !!apiKeys.woocommerce_consumer_key,
                 hasSecret: !!apiKeys.woocommerce_consumer_secret,
-                url: apiKeys.woocommerce_url ? `${apiKeys.woocommerce_url.substring(0, 20)}...` : 'none',
+                url: apiKeys.woocommerce_url || 'MISSING',
+                keyLength: apiKeys.woocommerce_consumer_key?.length || 0,
+                secretLength: apiKeys.woocommerce_consumer_secret?.length || 0,
             });
             const baseUrl = apiKeys.woocommerce_url || this.configService.get('WOOCOMMERCE_URL');
             const consumerKey = apiKeys.woocommerce_consumer_key || this.configService.get('WOOCOMMERCE_CONSUMER_KEY');
             const consumerSecret = apiKeys.woocommerce_consumer_secret || this.configService.get('WOOCOMMERCE_CONSUMER_SECRET');
             const currentHash = `${baseUrl || ''}|${consumerKey || ''}|${consumerSecret ? '***' : ''}`;
-            this.logger.log(`WooCommerce API check - URL: ${baseUrl ? `set (${baseUrl})` : 'missing'}, Key: ${consumerKey ? 'set' : 'missing'}, Secret: ${consumerSecret ? 'set' : 'missing'}`);
+            this.logger.log(`🔑 WooCommerce API check - URL: ${baseUrl ? `set (${baseUrl})` : 'missing'}, Key: ${consumerKey ? `set (${consumerKey.length} chars)` : 'missing'}, Secret: ${consumerSecret ? `set (${consumerSecret.length} chars)` : 'missing'}`);
             if (baseUrl && consumerKey && consumerSecret) {
+                this.logger.log('✅ All WooCommerce API credentials found, initializing API...');
                 const normalizedUrl = baseUrl.trim().replace(/\/$/, '');
                 const needsReinit = !this.api || this.lastApiKeyHash !== currentHash;
                 if (needsReinit) {
@@ -66,7 +70,14 @@ let WooCommerceService = WooCommerceService_1 = class WooCommerceService {
                 return this.api;
             }
             else {
-                this.logger.warn('WooCommerce API keys incomplete in settings');
+                this.logger.error('❌ WooCommerce API keys incomplete in settings:', {
+                    hasBaseUrl: !!baseUrl,
+                    hasConsumerKey: !!consumerKey,
+                    hasConsumerSecret: !!consumerSecret,
+                    baseUrl: baseUrl || 'MISSING',
+                    consumerKey: consumerKey ? `${consumerKey.substring(0, 10)}...` : 'MISSING',
+                    consumerSecret: consumerSecret ? '***' : 'MISSING',
+                });
             }
         }
         catch (error) {
