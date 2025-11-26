@@ -194,6 +194,12 @@ const WooCommerceImportPage = () => {
               <Typography variant="body2" sx={{ mt: 1 }} align="center">
                 Importing warranties from WooCommerce...
               </Typography>
+              <Typography variant="body2" sx={{ mt: 1 }} align="center" color="text.secondary">
+                This may take several minutes depending on the number of orders. Please wait...
+              </Typography>
+              <Typography variant="caption" sx={{ mt: 1, display: 'block' }} align="center" color="text.secondary">
+                Check backend logs for detailed progress
+              </Typography>
             </Box>
           )}
 

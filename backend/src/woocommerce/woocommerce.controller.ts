@@ -83,6 +83,7 @@ export class WooCommerceController {
       skipDuplicates: body.skipDuplicates,
     });
     
+    const startTime = Date.now();
     const statuses = body.statuses || ['completed'];
     const result = await this.wooCommerceService.syncOrdersByStatus(statuses, {
       limit: body.limit,
@@ -90,7 +91,8 @@ export class WooCommerceController {
       skipDuplicates: body.skipDuplicates ?? true,
     });
     
-    this.logger.log(`Sync completed - Imported: ${result.imported}, Skipped: ${Array.isArray(result.skipped) ? result.skipped.length : result.skipped || 0}`);
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+    this.logger.log(`✅ Sync completed in ${duration}s - Imported: ${result.imported}, Skipped: ${Array.isArray(result.skipped) ? result.skipped.length : result.skipped || 0}`);
     return result;
   }
 }

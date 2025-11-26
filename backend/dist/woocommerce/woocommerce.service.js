@@ -282,6 +282,7 @@ let WooCommerceService = WooCommerceService_1 = class WooCommerceService {
             const limit = options?.limit;
             const dateFrom = options?.dateFrom ? new Date(options.dateFrom) : null;
             const skipDuplicates = options?.skipDuplicates ?? true;
+            let totalProcessed = 0;
             while (hasMore && (!limit || allWarranties.length < limit)) {
                 const params = {
                     status: statuses.join(','),
@@ -293,13 +294,19 @@ let WooCommerceService = WooCommerceService_1 = class WooCommerceService {
                 if (dateFrom) {
                     params.after = dateFrom.toISOString();
                 }
+                this.logger.log(`📦 Fetching WooCommerce orders - Page ${page}...`);
                 const response = await api.get('/orders', { params });
                 const orders = response.data;
                 if (orders.length === 0) {
                     hasMore = false;
                     break;
                 }
+                this.logger.log(`📦 Fetched ${orders.length} orders from page ${page}. Processing...`);
                 for (const order of orders) {
+                    totalProcessed++;
+                    if (totalProcessed % 10 === 0) {
+                        this.logger.log(`⏳ Progress: Processed ${totalProcessed} orders, imported ${allWarranties.length} warranties, skipped ${skipped.length}`);
+                    }
                     if (dateFrom) {
                         const orderDate = new Date(order.date_created);
                         if (orderDate < dateFrom) {
@@ -346,6 +353,7 @@ let WooCommerceService = WooCommerceService_1 = class WooCommerceService {
                     hasMore = false;
                 }
             }
+            this.logger.log(`✅ Import complete! Total processed: ${totalProcessed} orders, Imported: ${allWarranties.length} warranties, Skipped: ${skipped.length}`);
             return {
                 success: true,
                 imported: allWarranties.length,

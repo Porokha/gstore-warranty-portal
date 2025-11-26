@@ -379,6 +379,7 @@ export class WooCommerceService {
       const dateFrom = options?.dateFrom ? new Date(options.dateFrom) : null;
       const skipDuplicates = options?.skipDuplicates ?? true;
 
+      let totalProcessed = 0;
       while (hasMore && (!limit || allWarranties.length < limit)) {
         const params: any = {
           status: statuses.join(','),
@@ -392,6 +393,7 @@ export class WooCommerceService {
           params.after = dateFrom.toISOString();
         }
 
+        this.logger.log(`📦 Fetching WooCommerce orders - Page ${page}...`);
         const response = await api.get('/orders', { params });
         const orders: WooCommerceOrder[] = response.data;
 
@@ -400,7 +402,13 @@ export class WooCommerceService {
           break;
         }
 
+        this.logger.log(`📦 Fetched ${orders.length} orders from page ${page}. Processing...`);
+
         for (const order of orders) {
+          totalProcessed++;
+          if (totalProcessed % 10 === 0) {
+            this.logger.log(`⏳ Progress: Processed ${totalProcessed} orders, imported ${allWarranties.length} warranties, skipped ${skipped.length}`);
+          }
           // Check date limit if set
           if (dateFrom) {
             const orderDate = new Date(order.date_created);
@@ -453,6 +461,8 @@ export class WooCommerceService {
           hasMore = false;
         }
       }
+
+      this.logger.log(`✅ Import complete! Total processed: ${totalProcessed} orders, Imported: ${allWarranties.length} warranties, Skipped: ${skipped.length}`);
 
       return {
         success: true,
