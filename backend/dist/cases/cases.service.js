@@ -97,47 +97,47 @@ let CasesService = class CasesService {
     }
     async findAll(filters) {
         try {
-            const query = this.casesRepository.createQueryBuilder('case')
-                .leftJoinAndSelect('case.assigned_technician', 'technician')
-                .leftJoinAndSelect('case.warranty', 'warranty')
-                .orderBy('case.opened_at', 'DESC');
+            const query = this.casesRepository.createQueryBuilder('sc')
+                .leftJoinAndSelect('sc.assigned_technician', 'technician')
+                .leftJoinAndSelect('sc.warranty', 'warranty')
+                .orderBy('sc.opened_at', 'DESC');
             if (filters?.status !== undefined) {
                 if (Array.isArray(filters.status)) {
-                    query.andWhere('case.status_level IN (:...statuses)', { statuses: filters.status });
+                    query.andWhere('sc.status_level IN (:...statuses)', { statuses: filters.status });
                 }
                 else {
-                    query.andWhere('case.status_level = :status', { status: filters.status });
+                    query.andWhere('sc.status_level = :status', { status: filters.status });
                 }
             }
             if (filters?.closeToDeadline) {
                 const now = new Date();
                 const in48Hours = new Date(now.getTime() + 48 * 60 * 60 * 1000);
-                query.andWhere('case.status_level < :completed', { completed: service_case_entity_1.CaseStatusLevel.COMPLETED });
-                query.andWhere('case.deadline_at <= :in48Hours', { in48Hours });
-                query.andWhere('case.deadline_at > :now', { now });
+                query.andWhere('sc.status_level < :completed', { completed: service_case_entity_1.CaseStatusLevel.COMPLETED });
+                query.andWhere('sc.deadline_at <= :in48Hours', { in48Hours });
+                query.andWhere('sc.deadline_at > :now', { now });
             }
             if (filters?.due) {
                 const now = new Date();
-                query.andWhere('case.status_level < :completed', { completed: service_case_entity_1.CaseStatusLevel.COMPLETED });
-                query.andWhere('case.deadline_at < :now', { now });
+                query.andWhere('sc.status_level < :completed', { completed: service_case_entity_1.CaseStatusLevel.COMPLETED });
+                query.andWhere('sc.deadline_at < :now', { now });
             }
             if (filters?.result) {
-                query.andWhere('case.result_type = :result', { result: filters.result });
+                query.andWhere('sc.result_type = :result', { result: filters.result });
             }
             if (filters?.priority) {
-                query.andWhere('case.priority = :priority', { priority: filters.priority });
+                query.andWhere('sc.priority = :priority', { priority: filters.priority });
             }
             if (filters?.device_type) {
-                query.andWhere('case.device_type = :device_type', { device_type: filters.device_type });
+                query.andWhere('sc.device_type = :device_type', { device_type: filters.device_type });
             }
             if (filters?.technician_id) {
-                query.andWhere('case.assigned_technician_id = :technician_id', {
+                query.andWhere('sc.assigned_technician_id = :technician_id', {
                     technician_id: filters.technician_id,
                 });
             }
             if (filters?.tags && filters.tags.length > 0) {
                 const tagConditions = filters.tags.map((tag, index) => {
-                    return `JSON_SEARCH(case.tags, 'one', :tag${index}) IS NOT NULL`;
+                    return `JSON_SEARCH(sc.tags, 'one', :tag${index}) IS NOT NULL`;
                 });
                 filters.tags.forEach((tag, index) => {
                     query.setParameter(`tag${index}`, tag);
@@ -145,13 +145,13 @@ let CasesService = class CasesService {
                 query.andWhere(`(${tagConditions.join(' OR ')})`);
             }
             if (filters?.search) {
-                query.andWhere('(case.case_number LIKE :search OR case.product_title LIKE :search OR case.customer_name LIKE :search OR case.customer_phone LIKE :search)', { search: `%${filters.search}%` });
+                query.andWhere('(sc.case_number LIKE :search OR sc.product_title LIKE :search OR sc.customer_name LIKE :search OR sc.customer_phone LIKE :search)', { search: `%${filters.search}%` });
             }
             if (filters?.start_date) {
-                query.andWhere('case.opened_at >= :start_date', { start_date: filters.start_date });
+                query.andWhere('sc.opened_at >= :start_date', { start_date: filters.start_date });
             }
             if (filters?.end_date) {
-                query.andWhere('case.opened_at <= :end_date', { end_date: filters.end_date });
+                query.andWhere('sc.opened_at <= :end_date', { end_date: filters.end_date });
             }
             return await query.getMany();
         }
