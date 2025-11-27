@@ -50,6 +50,9 @@ const ImportPage = () => {
   const [wooError, setWooError] = useState('');
   const [wooSuccess, setWooSuccess] = useState(null);
   const [wooProgress, setWooProgress] = useState(null);
+  const [currentWooJobId, setCurrentWooJobId] = useState(null);
+  const [isWooImportRunning, setIsWooImportRunning] = useState(false);
+  const [isWooStopping, setIsWooStopping] = useState(false);
   const wooProgressIntervalRef = useRef(null);
 
   useEffect(() => {
@@ -192,15 +195,24 @@ const ImportPage = () => {
     warrantiesUploadMutation.mutate(warrantiesFile);
   };
 
-  const stopWooProgressPolling = () => {
+  const stopWooProgressPolling = (resetState = false) => {
     if (wooProgressIntervalRef.current) {
       clearInterval(wooProgressIntervalRef.current);
       wooProgressIntervalRef.current = null;
+    }
+    if (resetState) {
+      setWooProgress(null);
+      setIsWooImportRunning(false);
+      setIsWooStopping(false);
+      setCurrentWooJobId(null);
     }
   };
 
     const startWooProgressPolling = (jobId) => {
     stopWooProgressPolling();
+    setCurrentWooJobId(jobId);
+    setIsWooImportRunning(true);
+    setIsWooStopping(false);
     wooProgressIntervalRef.current = setInterval(async () => {
       try {
         const response = await api.get(`/woocommerce/sync/progress/${jobId}`);
@@ -208,21 +220,26 @@ const ImportPage = () => {
         setWooProgress(progressData);
 
         if (progressData.status === 'completed') {
-          stopWooProgressPolling();
-          setWooProgress(null);
-          setWooSuccess(progressData.result || { imported: progressData.imported, skipped: progressData.skipped });
+          stopWooProgressPolling(true);
+          setWooSuccess(
+            progressData.result || { imported: progressData.imported, skipped: progressData.skipped }
+          );
+          setWooError('');
         } else if (progressData.status === 'error') {
-          stopWooProgressPolling();
-          setWooProgress(null);
+          stopWooProgressPolling(true);
           setWooError(progressData.error || t('importPage.woocommerce.errorGeneric'));
+          setWooSuccess(null);
+        } else if (progressData.status === 'cancelled') {
+          stopWooProgressPolling(true);
+          setWooSuccess(null);
+          setWooError(t('importPage.progress.cancelled'));
         } else if (progressData.status === 'not_found') {
-          stopWooProgressPolling();
-          setWooProgress(null);
+          stopWooProgressPolling(true);
         }
       } catch (error) {
-        stopWooProgressPolling();
-        setWooProgress(null);
+        stopWooProgressPolling(true);
         setWooError(t('importPage.woocommerce.errorGeneric'));
+        setWooSuccess(null);
       }
     }, 2000);
   };
@@ -259,15 +276,22 @@ const ImportPage = () => {
           startWooProgressPolling(data.jobId);
         } else {
           setWooSuccess(data);
+          setIsWooImportRunning(false);
         }
       },
       onError: (err) => {
         setWooError(err.response?.data?.message || 'Failed to import from WooCommerce');
+         setIsWooImportRunning(false);
+         setIsWooStopping(false);
+         stopWooProgressPolling(true);
       },
     }
   );
 
   const handleWooImport = () => {
+    if (isWooImportRunning) {
+      return;
+    }
     if (selectedStatuses.length === 0) {
       setWooError(t('importPage.woocommerce.errorSelectStatus'));
       return;
@@ -279,8 +303,27 @@ const ImportPage = () => {
     setWooError('');
     setWooSuccess(null);
     setWooProgress(null);
+    setWooSuccess(null);
+    setCurrentWooJobId(null);
+    setWooError('');
+    setIsWooStopping(false);
     stopWooProgressPolling();
+    setIsWooImportRunning(true);
     wooImportMutation.mutate();
+  };
+
+  const handleWooStop = async () => {
+    if (!currentWooJobId || isWooStopping) {
+      return;
+    }
+    try {
+      setIsWooStopping(true);
+      await api.post(`/woocommerce/sync/cancel/${currentWooJobId}`);
+      setWooError(t('importPage.woocommerce.cancelRequested'));
+    } catch (err) {
+      setIsWooStopping(false);
+      setWooError(err.response?.data?.message || t('importPage.woocommerce.errorGeneric'));
+    }
   };
 
   return (
@@ -583,7 +626,7 @@ const ImportPage = () => {
                 </Box>
               )}
 
-              {(wooImportMutation.isLoading || wooProgress) && (
+              {(wooImportMutation.isLoading || wooProgress || isWooImportRunning) && (
                 <Box sx={{ mt: 2 }}>
                   <LinearProgress
                     variant={wooProgress?.percentage !== undefined ? 'determinate' : 'indeterminate'}
@@ -607,6 +650,16 @@ const ImportPage = () => {
                             skipped: wooProgress.skipped || 0,
                           })}
                         </Typography>
+                        {wooProgress.status && (
+                          <Typography variant="body2" color="text.secondary">
+                            {t('importPage.progress.status', { status: wooProgress.status })}
+                          </Typography>
+                        )}
+                        {wooProgress.message && (
+                          <Typography variant="body2" color="text.secondary">
+                            {wooProgress.message}
+                          </Typography>
+                        )}
                         {typeof wooProgress.percentage === 'number' && (
                           <Typography variant="h6" sx={{ mt: 1 }}>
                             {wooProgress.percentage}%
@@ -622,11 +675,23 @@ const ImportPage = () => {
                 <Button
                   variant="contained"
                   onClick={handleWooImport}
-                  disabled={selectedStatuses.length === 0 || wooImportMutation.isLoading}
-                  startIcon={wooImportMutation.isLoading ? <CircularProgress size={20} /> : <SyncIcon />}
+                  disabled={selectedStatuses.length === 0 || wooImportMutation.isLoading || isWooImportRunning}
+                  startIcon={(wooImportMutation.isLoading || isWooImportRunning) ? <CircularProgress size={20} /> : <SyncIcon />}
                 >
-                  {wooImportMutation.isLoading ? t('importPage.woocommerce.importing') : t('importPage.woocommerce.importButton')}
+                  {(wooImportMutation.isLoading || isWooImportRunning)
+                    ? t('importPage.woocommerce.importing')
+                    : t('importPage.woocommerce.importButton')}
                 </Button>
+                {isWooImportRunning && (
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={handleWooStop}
+                    disabled={isWooStopping}
+                  >
+                    {isWooStopping ? t('importPage.woocommerce.stopping') : t('importPage.woocommerce.stopButton')}
+                  </Button>
+                )}
               </Box>
             </Box>
           )}

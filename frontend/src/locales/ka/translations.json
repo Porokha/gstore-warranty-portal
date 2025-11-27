@@ -34,6 +34,8 @@
     "myStatistics": "ჩემი სტატისტიკა",
     "importCSV": "CSV-დან იმპორტი",
     "importWooCommerce": "WooCommerce-დან იმპორტი",
+    "collapseSidebar": "მენიუს შეკუმშვა",
+    "expandSidebar": "მენიუს გაშლა",
     "days": "დღე",
     "avgCompletionTime": "დასრულების საშუალო დრო",
     "onTimeCases": "ვადამდე შესრულებული",
@@ -91,6 +93,7 @@
     "files": "ფაილები",
     "serviceCases": "სერვისის შემთხვევები",
     "importData": "მონაცემების იმპორტი",
+    "noData": "მონაცემები არ არის",
     "saving": "შენახვა..."
   },
   "replacement": {
@@ -229,7 +232,8 @@
     "editWarranty": "გარანტიის რედაქტირება",
     "saveChanges": "ცვლილებების შენახვა",
     "warrantyUpdated": "გარანტია წარმატებით განახლდა",
-    "adminOnlyInfo": "მხოლოდ ადმინისტრატორისთვის"
+    "adminOnlyInfo": "მხოლოდ ადმინისტრატორისთვის",
+    "price": "ფასი"
   },
   "public": {
     "checkWarrantyStatus": "შეამოწმეთ თქვენი გარანტიის სტატუსი და სერვისის შემთხვევები",
@@ -351,6 +355,12 @@
       "overdue": "ვადაგადაცილებული"
     }
   },
+  "table": {
+    "customize": "სვეტების მორგება",
+    "reset": "ნაგულისხმების დაბრუნება",
+    "showHide": "სვეტების ჩვენება/დამალვა",
+    "density": "სიმჭიდროვე"
+  },
   "importPage": {
     "title": "მონაცემების იმპორტი",
     "tabs": {
@@ -399,6 +409,10 @@
       "dateLabel": "შეკვეთების იმპორტი ამ თარიღიდან",
       "importButton": "იმპორტი WooCommerce-დან",
       "importing": "მიმდინარეობს WooCommerce იმპორტი...",
+      "stopButton": "იმპორტის შეჩერება",
+      "stopping": "შეჩერება...",
+      "cancelled": "იმპორტი გაუქმდა",
+      "cancelRequested": "შეჩერება მიმდინარეობს...",
       "errorSelectStatus": "გთხოვთ აირჩიოთ მინიმუმ ერთი სტატუსი",
       "errorSelectDate": "გთხოვთ აირჩიოთ თარიღი",
       "errorGeneric": "WooCommerce-დან იმპორტი ვერ შესრულდა",
@@ -407,7 +421,10 @@
     "progress": {
       "title": "იმპორტი მიმდინარეობს WooCommerce-დან...",
       "ordersProcessed": "დამუშავდა {{processed}} / {{total}} შეკვეთა",
-      "summary": "შემოიტანეს: {{imported}} | გამოტოვდა: {{skipped}}"
+      "summary": "შემოიტანეს: {{imported}} | გამოტოვდა: {{skipped}}",
+      "status": "სტატუსი: {{status}}",
+      "cancelled": "იმპორტი გაუქმდა",
+      "error": "იმპორტი ვერ შესრულდა: {{message}}"
     },
     "statuses": {
       "pending": "დასამუშავებელი",

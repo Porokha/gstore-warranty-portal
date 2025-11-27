@@ -40,6 +40,7 @@ const WarrantyEditPage = () => {
     customer_last_name: '',
     customer_phone: '',
     customer_email: '',
+    price: '',
     brand: '',
     model: '',
     condition: '',
@@ -54,6 +55,7 @@ const WarrantyEditPage = () => {
         customer_last_name: warranty.customer_last_name || '',
         customer_phone: warranty.customer_phone || '',
         customer_email: warranty.customer_email || '',
+        price: warranty.price ?? '',
         brand: warranty.brand || '',
         model: warranty.model || '',
         condition: warranty.condition || '',
@@ -88,7 +90,13 @@ const WarrantyEditPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    updateMutation.mutate(formData);
+    const payload = { ...formData };
+    if (payload.price === '' || payload.price === null || payload.price === undefined) {
+      delete payload.price;
+    } else {
+      payload.price = Number(payload.price);
+    }
+    updateMutation.mutate(payload);
   };
 
   if (isLoading) {
@@ -184,6 +192,17 @@ const WarrantyEditPage = () => {
                 label={t('warranty.brand') || 'Brand'}
                 value={formData.brand}
                 onChange={handleChange('brand')}
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                type="number"
+                label={t('warranty.price') || 'Price'}
+                value={formData.price}
+                onChange={handleChange('price')}
+                inputProps={{ min: 0, step: 0.01 }}
               />
             </Grid>
 

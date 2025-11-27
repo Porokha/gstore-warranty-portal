@@ -43,13 +43,25 @@ export interface WooCommerceProduct {
   }>;
 }
 
+interface SyncProgressState {
+  total: number;
+  processed: number;
+  imported: number;
+  skipped: number;
+  status: 'pending' | 'running' | 'completed' | 'error' | 'cancelled';
+  message?: string;
+  error?: string;
+  result?: any;
+  cancelRequested?: boolean;
+}
+
 @Injectable()
 export class WooCommerceService {
   private readonly logger = new Logger(WooCommerceService.name);
   private api: AxiosInstance | null = null;
   private baseUrl: string | null = null;
   private lastApiKeyHash: string | null = null;
-  private syncProgress: Map<string, { total: number; processed: number; imported: number; skipped: number; status: 'running' | 'completed' | 'error'; error?: string; result?: any }> = new Map();
+  private syncProgress: Map<string, SyncProgressState> = new Map();
 
   constructor(
     private configService: ConfigService,
@@ -368,14 +380,31 @@ export class WooCommerceService {
     };
   }
 
+  async cancelSync(jobId: string) {
+    const progress = this.syncProgress.get(jobId);
+    if (!progress) {
+      throw new BadRequestException('Sync job not found');
+    }
+
+    if (['completed', 'error', 'cancelled'].includes(progress.status)) {
+      return { success: false, message: 'Job already finished' };
+    }
+
+    progress.cancelRequested = true;
+    progress.message = 'Cancellation requested...';
+    this.syncProgress.set(jobId, progress);
+
+    return { success: true };
+  }
+
   async syncOrdersByStatus(
-    statuses: string[], 
-    options?: { 
-      limit?: number; 
-      dateFrom?: string; 
+    statuses: string[],
+    options?: {
+      limit?: number;
+      dateFrom?: string;
       skipDuplicates?: boolean;
     },
-    jobId?: string
+    jobId?: string,
   ) {
     const api = await this.getApi();
 
@@ -383,32 +412,53 @@ export class WooCommerceService {
       throw new BadRequestException('At least one order status must be specified');
     }
 
-    try {
-      const allWarranties = [];
-      const skipped = [];
-      let page = 1;
-      let hasMore = true;
-      const limit = options?.limit;
-      const dateFrom = options?.dateFrom ? new Date(options.dateFrom) : null;
-      const skipDuplicates = options?.skipDuplicates ?? true;
+    const limit = options?.limit;
+    const dateFrom = options?.dateFrom ? new Date(options.dateFrom) : null;
+    const skipDuplicates = options?.skipDuplicates ?? true;
 
-      let totalProcessed = 0;
-      let totalOrders = 0; // Will be updated as we fetch
+    const allWarranties: Warranty[] = [];
+    const skipped: Array<{ orderId: number; lineIndex?: number }> = [];
+    let page = 1;
+    let hasMore = true;
+    let processedOrders = 0;
 
-      // Initialize progress tracking
-      if (jobId) {
-        this.syncProgress.set(jobId, {
-          total: 0,
-          processed: 0,
-          imported: 0,
-          skipped: 0,
-          status: 'running',
-        });
+    if (jobId) {
+      this.syncProgress.set(jobId, {
+        total: limit || 0,
+        processed: 0,
+        imported: 0,
+        skipped: 0,
+        status: 'running',
+        message: 'Import started',
+        cancelRequested: false,
+      });
+    }
+
+    const checkCancellation = () => {
+      if (!jobId) return false;
+      const progress = this.syncProgress.get(jobId);
+      if (progress?.cancelRequested) {
+        progress.status = 'cancelled';
+        progress.message = 'Import cancelled by user';
+        progress.result = {
+          success: false,
+          cancelled: true,
+          imported: allWarranties.length,
+          skipped: skipped.length,
+        };
+        this.syncProgress.set(jobId, progress);
+        return true;
       }
-      while (hasMore && (!limit || allWarranties.length < limit)) {
+      return false;
+    };
+
+    try {
+      while (hasMore && (!limit || processedOrders < limit)) {
+        const remaining = limit ? Math.max(limit - processedOrders, 0) : undefined;
+        const perPage = remaining ? Math.min(remaining, 100) : 100;
         const params: any = {
           status: statuses.join(','),
-          per_page: 100,
+          per_page: perPage,
           page,
           orderby: 'date',
           order: 'desc',
@@ -427,34 +477,34 @@ export class WooCommerceService {
           break;
         }
 
-        this.logger.log(`📦 Fetched ${orders.length} orders from page ${page}. Processing...`);
-
-        // Update total if this is first page or we got a full page
-        if (page === 1 || orders.length === 100) {
-          totalOrders += orders.length;
-          if (jobId) {
+        if (jobId && !limit) {
+          const headerTotal = Number(response.headers['x-wp-total']);
+          if (headerTotal) {
             const progress = this.syncProgress.get(jobId);
-            if (progress) {
-              progress.total = totalOrders;
+            if (progress && progress.total === 0) {
+              progress.total = headerTotal;
+              this.syncProgress.set(jobId, progress);
             }
           }
         }
 
         for (const order of orders) {
-          totalProcessed++;
-          if (totalProcessed % 10 === 0) {
-            this.logger.log(`⏳ Progress: Processed ${totalProcessed} orders, imported ${allWarranties.length} warranties, skipped ${skipped.length}`);
-            // Update progress
-            if (jobId) {
-              const progress = this.syncProgress.get(jobId);
-              if (progress) {
-                progress.processed = totalProcessed;
-                progress.imported = allWarranties.length;
-                progress.skipped = skipped.length;
-              }
-            }
+          if (limit && processedOrders >= limit) {
+            hasMore = false;
+            break;
           }
-          // Check date limit if set
+
+          processedOrders++;
+
+          if (checkCancellation()) {
+            return {
+              success: false,
+              cancelled: true,
+              imported: allWarranties.length,
+              skipped: skipped.length,
+            };
+          }
+
           if (dateFrom) {
             const orderDate = new Date(order.date_created);
             if (orderDate < dateFrom) {
@@ -462,98 +512,105 @@ export class WooCommerceService {
             }
           }
 
-          try {
-            // Process line items in parallel for better performance
-            const lineItemPromises = order.line_items.map(async (lineItem, i) => {
-              // Check if duplicate should be skipped
-              if (skipDuplicates) {
-                const existing = await this.warrantiesRepository.findOne({
-                  where: {
-                    order_id: order.id,
-                    order_line_index: i,
-                  },
-                });
-                if (existing) {
-                  skipped.push({ orderId: order.id, lineIndex: i });
-                  return null;
-                }
-              }
-
-              try {
-                const warranty = await this.createWarrantyFromOrder(order.id, i, statuses);
-                return warranty;
-              } catch (error) {
-                if (error.message?.includes('already exists')) {
-                  skipped.push({ orderId: order.id, lineIndex: i });
-                  return null;
-                }
-                throw error;
-              }
-            });
-
-            const results = await Promise.all(lineItemPromises);
-            const successfulWarranties = results.filter(w => w !== null);
-            allWarranties.push(...successfulWarranties);
-            
-            if (limit && allWarranties.length >= limit) {
-              hasMore = false;
-              break;
-            }
-          } catch (error) {
-            // If it's a duplicate error, skip it
-            if (error.message?.includes('already exists')) {
-              skipped.push({ orderId: order.id });
-            } else {
-              this.logger.error(`Failed to process order ${order.id}:`, error.message);
-            }
+          if (processedOrders % 10 === 0) {
+            this.logger.log(
+              `⏳ Progress: ${processedOrders} orders processed, ${allWarranties.length} warranties imported`,
+            );
           }
 
-          if (limit && allWarranties.length >= limit) {
-            hasMore = false;
-            break;
+          try {
+            const lineItemResults = await Promise.all(
+              order.line_items.map(async (lineItem, i) => {
+                if (skipDuplicates) {
+                  const existing = await this.warrantiesRepository.findOne({
+                    where: {
+                      order_id: order.id,
+                      order_line_index: i,
+                    },
+                  });
+                  if (existing) {
+                    skipped.push({ orderId: order.id, lineIndex: i });
+                    return null;
+                  }
+                }
+
+                try {
+                  const warranty = await this.createWarrantyFromOrder(order.id, i, statuses);
+                  return warranty;
+                } catch (error) {
+                  if (error.message?.includes('already exists')) {
+                    skipped.push({ orderId: order.id, lineIndex: i });
+                    return null;
+                  }
+                  throw error;
+                }
+              }),
+            );
+
+            const successfulWarranties = lineItemResults.filter(
+              (warranty): warranty is Warranty => Boolean(warranty),
+            );
+            allWarranties.push(...successfulWarranties);
+          } catch (error) {
+            this.logger.error(`Failed to process order ${order.id}:`, error.message);
+          }
+
+          if (jobId) {
+            const progress = this.syncProgress.get(jobId);
+            if (progress) {
+              progress.processed = processedOrders;
+              progress.imported = allWarranties.length;
+              progress.skipped = skipped.length;
+              progress.message = `Processing order #${order.id}`;
+              this.syncProgress.set(jobId, progress);
+            }
           }
         }
 
         page++;
-        if (orders.length < 100) {
+        if (orders.length < perPage) {
           hasMore = false;
         }
       }
 
-      this.logger.log(`✅ Import complete! Total processed: ${totalProcessed} orders, Imported: ${allWarranties.length} warranties, Skipped: ${skipped.length}`);
+      this.logger.log(
+        `✅ Import complete! Processed: ${processedOrders} orders, Imported: ${allWarranties.length} warranties, Skipped: ${skipped.length}`,
+      );
 
-      const result = {
+      const finalResult = {
         success: true,
         imported: allWarranties.length,
         skipped: skipped.length,
         warranties: allWarranties,
       };
 
-      // Update final progress
       if (jobId) {
         const progress = this.syncProgress.get(jobId);
         if (progress) {
           progress.status = 'completed';
-          progress.processed = totalProcessed;
+          progress.processed = processedOrders;
           progress.imported = allWarranties.length;
           progress.skipped = skipped.length;
-          progress.result = result;
+          progress.result = finalResult;
+          progress.message = 'Import completed';
+          this.syncProgress.set(jobId, progress);
         }
       }
 
-      return result;
+      return finalResult;
     } catch (error) {
       this.logger.error('Failed to sync orders:', error.message);
-      
-      // Update progress with error
+
       if (jobId) {
         const progress = this.syncProgress.get(jobId);
         if (progress) {
           progress.status = 'error';
           progress.error = error.message;
+          progress.message = 'Import failed';
+          this.syncProgress.set(jobId, progress);
         }
       }
-      
+
       throw new BadRequestException(`Failed to sync orders: ${error.message}`);
     }
   }

@@ -34,6 +34,8 @@
     "myStatistics": "My Statistics",
     "importCSV": "Import CSV",
     "importWooCommerce": "Import from WooCommerce",
+    "collapseSidebar": "Collapse menu",
+    "expandSidebar": "Expand menu",
     "days": "days",
     "avgCompletionTime": "Avg. Completion Time",
     "onTimeCases": "On-time Cases",
@@ -91,7 +93,8 @@
     "files": "Files",
     "serviceCases": "Service Cases",
     "importData": "Import Data",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "noData": "No data available"
   },
   "replacement": {
     "details": "Replacement Details",
@@ -223,7 +226,8 @@
     "editWarranty": "Edit Warranty",
     "saveChanges": "Save Changes",
     "warrantyUpdated": "Warranty updated successfully",
-    "adminOnlyInfo": "Admin Only Information"
+    "adminOnlyInfo": "Admin Only Information",
+    "price": "Price"
   },
   "public": {
     "checkWarrantyStatus": "Check your warranty status and service cases",
@@ -345,6 +349,12 @@
       "overdue": "Overdue"
     }
   },
+  "table": {
+    "customize": "Customize columns",
+    "reset": "Reset layout",
+    "showHide": "Show / hide columns",
+    "density": "Density"
+  },
   "importPage": {
     "title": "Import Data",
     "tabs": {
@@ -393,6 +403,10 @@
       "dateLabel": "Import Orders From Date",
       "importButton": "Import from WooCommerce",
       "importing": "Importing warranties from WooCommerce...",
+      "stopButton": "Stop Import",
+      "stopping": "Stopping...",
+      "cancelled": "Import cancelled",
+      "cancelRequested": "Stopping in progress...",
       "errorSelectStatus": "Please select at least one order status",
       "errorSelectDate": "Please select a date",
       "errorGeneric": "Failed to import from WooCommerce",
@@ -401,7 +415,10 @@
     "progress": {
       "title": "Importing warranties from WooCommerce...",
       "ordersProcessed": "Progress: {{processed}} / {{total}} orders processed",
-      "summary": "Imported: {{imported}} warranties | Skipped: {{skipped}}"
+      "summary": "Imported: {{imported}} warranties | Skipped: {{skipped}}",
+      "status": "Status: {{status}}",
+      "cancelled": "Import cancelled",
+      "error": "Import failed: {{message}}"
     },
     "statuses": {
       "pending": "Pending",

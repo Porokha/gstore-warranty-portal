@@ -113,5 +113,11 @@ export class WooCommerceController {
   getSyncProgress(@Param('jobId') jobId: string) {
     return this.wooCommerceService.getSyncProgress(jobId);
   }
+
+  @Post('sync/cancel/:jobId')
+  @UseGuards(JwtAuthGuard)
+  cancelSync(@Param('jobId') jobId: string) {
+    return this.wooCommerceService.cancelSync(jobId);
+  }
 }
 

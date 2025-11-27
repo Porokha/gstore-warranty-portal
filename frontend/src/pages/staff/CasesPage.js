@@ -6,12 +6,6 @@ import {
   Typography,
   Box,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Chip,
   IconButton,
   TextField,
@@ -20,17 +14,16 @@ import {
   FormControl,
   InputLabel,
   Button,
-  CircularProgress,
   Tooltip,
 } from '@mui/material';
 import {
   Visibility as ViewIcon,
-  Edit as EditIcon,
   Add as AddIcon,
 } from '@mui/icons-material';
 import { casesService } from '../../services/casesService';
 import StatusBar from '../../components/cases/StatusBar';
 import ResultBar from '../../components/cases/ResultBar';
+import SmartDataGrid from '../../components/common/SmartDataGrid';
 
 const CasesPage = () => {
   const { t } = useTranslation();
@@ -53,12 +46,154 @@ const CasesPage = () => {
     due: due === 'true',
   });
 
-  const { data: cases, isLoading, refetch } = useQuery(
+  const { data: cases, isLoading } = useQuery(
     ['cases', filters],
     () => casesService.getAll(filters),
     {
       keepPreviousData: true,
     }
+  );
+
+  const rawCases = React.useMemo(() => {
+    if (!cases) return [];
+    if (Array.isArray(cases)) return cases;
+    if (Array.isArray(cases?.data)) return cases.data;
+    if (Array.isArray(cases?.data?.data)) return cases.data.data;
+    return [];
+  }, [cases]);
+
+  const rows = React.useMemo(
+    () =>
+      rawCases.map((case_) => ({
+        ...case_,
+        id: case_.id,
+        customerFullName: `${case_.customer_name || ''} ${case_.customer_last_name || ''}`.trim(),
+      })),
+    [rawCases]
+  );
+
+  const columns = React.useMemo(
+    () => [
+      {
+        field: 'case_number',
+        headerName: t('case.caseNumber'),
+        minWidth: 180,
+      },
+      {
+        field: 'order_id',
+        headerName: t('case.orderId'),
+        minWidth: 140,
+        valueGetter: (params) => params.value || '-',
+      },
+      {
+        field: 'product_title',
+        headerName: t('case.productTitle'),
+        flex: 1.2,
+        minWidth: 220,
+      },
+      {
+        field: 'product_id',
+        headerName: t('case.productId'),
+        minWidth: 140,
+        valueGetter: (params) => params.value || '-',
+      },
+      {
+        field: 'opened_at',
+        headerName: t('case.openDate'),
+        minWidth: 150,
+        valueGetter: (params) => new Date(params.value).toLocaleDateString(),
+      },
+      {
+        field: 'deadline_at',
+        headerName: t('case.deadline'),
+        minWidth: 160,
+        valueGetter: (params) => new Date(params.value).toLocaleDateString(),
+      },
+      {
+        field: 'customerFullName',
+        headerName: t('case.customerName'),
+        minWidth: 200,
+      },
+      {
+        field: 'customer_phone',
+        headerName: t('case.phone'),
+        minWidth: 150,
+      },
+      {
+        field: 'customer_email',
+        headerName: t('case.email'),
+        minWidth: 200,
+        valueGetter: (params) => params.value || '-',
+      },
+      {
+        field: 'status_level',
+        headerName: t('common.status'),
+        minWidth: 160,
+        renderCell: (params) => (
+          <StatusBar statusLevel={params.value} size="small" />
+        ),
+      },
+      {
+        field: 'result_type',
+        headerName: t('common.result'),
+        minWidth: 160,
+        renderCell: (params) => (
+          <ResultBar resultType={params.value} size="small" />
+        ),
+      },
+      {
+        field: 'priority',
+        headerName: t('common.priority') || 'Priority',
+        minWidth: 140,
+        renderCell: (params) => (
+          <Chip
+            label={params.value}
+            color={getPriorityColor(params.value)}
+            size="small"
+            sx={{ textTransform: 'capitalize' }}
+          />
+        ),
+      },
+      {
+        field: 'tags',
+        headerName: t('common.tags'),
+        minWidth: 200,
+        renderCell: (params) =>
+          params.value && params.value.length > 0 ? (
+            <Box display="flex" gap={0.5} flexWrap="wrap">
+              {params.value.map((tag, idx) => (
+                <Chip key={`${params.row.id}-tag-${idx}`} label={tag} size="small" variant="outlined" />
+              ))}
+            </Box>
+          ) : (
+            '-'
+          ),
+      },
+      {
+        field: 'technician',
+        headerName: t('case.technician'),
+        minWidth: 200,
+        valueGetter: (params) =>
+          params.row.assigned_technician
+            ? `${params.row.assigned_technician.name || ''} ${params.row.assigned_technician.last_name || ''}`.trim()
+            : '-',
+      },
+      {
+        field: 'actions',
+        headerName: t('common.actions') || 'Actions',
+        sortable: false,
+        filterable: false,
+        minWidth: 120,
+        renderCell: (params) => (
+          <Tooltip title={t('common.view')}>
+            <IconButton size="small" onClick={() => navigate(`/staff/cases/${params.row.id}`)}>
+              <ViewIcon />
+            </IconButton>
+          </Tooltip>
+        ),
+      },
+    ],
+    [t, navigate]
   );
 
   const handleFilterChange = (key, value) => {
@@ -82,14 +217,6 @@ const CasesPage = () => {
     };
     return colors[priority] || 'default';
   };
-
-  if (isLoading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
-    );
-  }
 
   return (
     <div>
@@ -167,101 +294,13 @@ const CasesPage = () => {
         </Box>
       </Paper>
 
-      {/* Cases Table */}
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>{t('case.caseNumber')}</TableCell>
-              <TableCell>{t('case.orderId')}</TableCell>
-              <TableCell>{t('case.productTitle')}</TableCell>
-              <TableCell>{t('case.productId')}</TableCell>
-              <TableCell>{t('case.openDate')}</TableCell>
-              <TableCell>{t('case.deadline')}</TableCell>
-              <TableCell>{t('case.customerName')}</TableCell>
-              <TableCell>{t('case.phone')}</TableCell>
-              <TableCell>{t('case.email')}</TableCell>
-              <TableCell>{t('common.status')}</TableCell>
-              <TableCell>{t('common.result')}</TableCell>
-              <TableCell>{t('common.priority') || 'Priority'}</TableCell>
-              <TableCell>{t('common.tags')}</TableCell>
-              <TableCell>{t('case.technician')}</TableCell>
-              <TableCell>{t('common.actions') || 'Actions'}</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {cases && cases.length > 0 ? (
-              cases.map((case_) => (
-                <TableRow key={case_.id} hover>
-                  <TableCell>{case_.case_number}</TableCell>
-                  <TableCell>{case_.order_id || '-'}</TableCell>
-                  <TableCell>{case_.product_title}</TableCell>
-                  <TableCell>{case_.product_id || '-'}</TableCell>
-                  <TableCell>
-                    {new Date(case_.opened_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    {new Date(case_.deadline_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    {case_.customer_name} {case_.customer_last_name}
-                  </TableCell>
-                  <TableCell>{case_.customer_phone}</TableCell>
-                  <TableCell>{case_.customer_email || '-'}</TableCell>
-                  <TableCell>
-                    <StatusBar statusLevel={case_.status_level} size="small" />
-                  </TableCell>
-                  <TableCell>
-                    <ResultBar resultType={case_.result_type} size="small" />
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={case_.priority}
-                      color={getPriorityColor(case_.priority)}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {case_.tags && case_.tags.length > 0 ? (
-                      <Box display="flex" gap={0.5} flexWrap="wrap">
-                        {case_.tags.slice(0, 2).map((tag, idx) => (
-                          <Chip key={idx} label={tag} size="small" variant="outlined" />
-                        ))}
-                        {case_.tags.length > 2 && (
-                          <Chip label={`+${case_.tags.length - 2}`} size="small" />
-                        )}
-                      </Box>
-                    ) : (
-                      '-'
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {case_.assigned_technician
-                      ? `${case_.assigned_technician.name} ${case_.assigned_technician.last_name}`
-                      : '-'}
-                  </TableCell>
-                  <TableCell>
-                    <Tooltip title={t('common.view')}>
-                      <IconButton
-                        size="small"
-                        onClick={() => navigate(`/staff/cases/${case_.id}`)}
-                      >
-                        <ViewIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={15} align="center">
-                  {t('common.noCases') || 'No cases found'}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <SmartDataGrid
+        rows={rows}
+        columns={columns}
+        tableKey="cases-table"
+        loading={isLoading}
+        rowHeight={64}
+      />
     </div>
   );
 };

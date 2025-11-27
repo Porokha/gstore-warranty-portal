@@ -6,12 +6,6 @@ import {
   Typography,
   Box,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Chip,
   IconButton,
   TextField,
@@ -34,6 +28,7 @@ import {
 import { warrantiesService } from '../../services/warrantiesService';
 import { useQueryClient } from 'react-query';
 import { useAuth } from '../../contexts/AuthContext';
+import SmartDataGrid from '../../components/common/SmartDataGrid';
 
 const WarrantiesPage = () => {
   const { t } = useTranslation();
@@ -85,21 +80,152 @@ const WarrantiesPage = () => {
     return diffDays;
   };
 
-  if (isLoading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
-    );
-  }
+  const rawData = React.useMemo(() => {
+    if (!warranties) return [];
+    if (Array.isArray(warranties)) return warranties;
+    if (Array.isArray(warranties?.data)) return warranties.data;
+    if (Array.isArray(warranties?.data?.data)) return warranties.data.data;
+    return [];
+  }, [warranties]);
 
-  if (error) {
-    return (
-      <Alert severity="error">
-        {t('common.errorLoading') || 'Error loading warranties'}
-      </Alert>
-    );
-  }
+  const rows = React.useMemo(() => rawData.map((warranty) => ({
+    ...warranty,
+    id: warranty.id,
+    isActive: isWarrantyActive(warranty.warranty_end),
+    daysLeft: getDaysLeft(warranty.warranty_end),
+  })), [rawData]);
+
+  const columns = React.useMemo(() => [
+    {
+      field: 'warranty_id',
+      headerName: t('warranty.warrantyId'),
+      minWidth: 160,
+      flex: 1,
+    },
+    {
+      field: 'title',
+      headerName: t('case.productTitle'),
+      flex: 1.4,
+      minWidth: 200,
+    },
+    {
+      field: 'sku',
+      headerName: t('case.sku'),
+      minWidth: 140,
+    },
+    {
+      field: 'serial_number',
+      headerName: t('case.serialNumber'),
+      minWidth: 160,
+    },
+    {
+      field: 'customer',
+      headerName: t('case.customerName'),
+      flex: 1.2,
+      minWidth: 180,
+      valueGetter: (params) =>
+        `${params.row.customer_name || ''} ${params.row.customer_last_name || ''}`.trim(),
+    },
+    {
+      field: 'customer_phone',
+      headerName: t('case.phone'),
+      minWidth: 160,
+    },
+    {
+      field: 'purchase_date',
+      headerName: t('warranty.purchaseDate'),
+      minWidth: 150,
+      valueGetter: (params) => new Date(params.value).toLocaleDateString(),
+    },
+    {
+      field: 'warranty_end',
+      headerName: t('warranty.warrantyEndDate'),
+      minWidth: 170,
+      valueGetter: (params) => new Date(params.value).toLocaleDateString(),
+    },
+    {
+      field: 'daysLeft',
+      headerName: t('warranty.daysLeft'),
+      minWidth: 150,
+      renderCell: (params) => {
+        const active = params.row.isActive;
+        const days = params.value;
+        return (
+          <Chip
+            label={
+              active
+                ? `${days} ${t('warranty.daysLeft')}`
+                : `${Math.abs(days)} ${t('warranty.daysAfterWarranty')}`
+            }
+            color={active ? (days <= 30 ? 'warning' : 'success') : 'default'}
+            size="small"
+          />
+        );
+      },
+    },
+    {
+      field: 'status',
+      headerName: t('common.status'),
+      minWidth: 140,
+      renderCell: (params) => (
+        <Chip
+          label={params.row.isActive ? (t('common.active') || 'Active') : (t('common.expired') || 'Expired')}
+          color={params.row.isActive ? 'success' : 'default'}
+          size="small"
+        />
+      ),
+    },
+    {
+      field: 'actions',
+      headerName: t('common.actions'),
+      sortable: false,
+      filterable: false,
+      disableColumnMenu: true,
+      minWidth: 180,
+      renderCell: (params) => (
+        <Box display="flex" gap={0.5}>
+          <Tooltip title={t('common.view')}>
+            <IconButton
+              size="small"
+              onClick={() => navigate(`/staff/warranties/${params.row.id}`)}
+            >
+              <ViewIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={t('common.createCase')}>
+            <IconButton
+              size="small"
+              color="primary"
+              onClick={() => navigate(`/staff/cases/new?warranty_id=${params.row.id}`)}
+            >
+              <BuildIcon />
+            </IconButton>
+          </Tooltip>
+          {isAdmin && (
+            <Tooltip title={t('warranty.deleteWarranty')}>
+              <IconButton
+                size="small"
+                color="error"
+                onClick={async () => {
+                  if (window.confirm(t('warranty.deleteWarrantyConfirm'))) {
+                    try {
+                      await warrantiesService.delete(params.row.id);
+                      queryClient.invalidateQueries('warranties');
+                      alert(t('warranty.warrantyDeleted'));
+                    } catch (err) {
+                      alert(err.response?.data?.message || t('common.errorLoading'));
+                    }
+                  }
+                }}
+              >
+                <DeleteIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
+      ),
+    },
+  ], [t, isAdmin, navigate, queryClient]);
 
   return (
     <div>
@@ -186,127 +312,12 @@ const WarrantiesPage = () => {
         </Box>
       </Paper>
 
-      {/* Warranties Table */}
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>{t('warranty.warrantyId')}</TableCell>
-              <TableCell>{t('case.productTitle')}</TableCell>
-              <TableCell>{t('case.sku')}</TableCell>
-              <TableCell>{t('case.serialNumber')}</TableCell>
-              <TableCell>{t('case.customerName')}</TableCell>
-              <TableCell>{t('case.phone')}</TableCell>
-              <TableCell>{t('warranty.purchaseDate')}</TableCell>
-              <TableCell>{t('warranty.warrantyEndDate')}</TableCell>
-              <TableCell>{t('warranty.daysLeft')}</TableCell>
-              <TableCell>{t('common.status')}</TableCell>
-              <TableCell>{t('common.actions')}</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {warranties && warranties.length > 0 ? (
-              warranties.map((warranty) => {
-                const active = isWarrantyActive(warranty.warranty_end);
-                const daysLeft = getDaysLeft(warranty.warranty_end);
-                
-                return (
-                  <TableRow key={warranty.id} hover>
-                    <TableCell>
-                      <Typography variant="body2" fontWeight="bold">
-                        {warranty.warranty_id}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>{warranty.title}</TableCell>
-                    <TableCell>{warranty.sku}</TableCell>
-                    <TableCell>{warranty.serial_number}</TableCell>
-                    <TableCell>
-                      {warranty.customer_name} {warranty.customer_last_name}
-                    </TableCell>
-                    <TableCell>{warranty.customer_phone}</TableCell>
-                    <TableCell>
-                      {new Date(warranty.purchase_date).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(warranty.warranty_end).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      {active ? (
-                        <Chip
-                          label={`${daysLeft} ${t('warranty.daysLeft')}`}
-                          color={daysLeft <= 30 ? 'warning' : 'success'}
-                          size="small"
-                        />
-                      ) : (
-                        <Chip
-                          label={`${Math.abs(daysLeft)} ${t('warranty.daysAfterWarranty')}`}
-                          color="default"
-                          size="small"
-                        />
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={active ? (t('common.active') || 'Active') : (t('common.expired') || 'Expired')}
-                        color={active ? 'success' : 'default'}
-                        size="small"
-                      />
-                    </TableCell>
-                      <TableCell>
-                        <Box display="flex" gap={0.5}>
-                          <Tooltip title={t('common.view')}>
-                            <IconButton
-                              size="small"
-                              onClick={() => navigate(`/staff/warranties/${warranty.id}`)}
-                            >
-                              <ViewIcon />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title={t('common.createCase')}>
-                            <IconButton
-                              size="small"
-                              color="primary"
-                              onClick={() => navigate(`/staff/cases/new?warranty_id=${warranty.id}`)}
-                            >
-                              <BuildIcon />
-                            </IconButton>
-                          </Tooltip>
-                          {isAdmin && (
-                            <Tooltip title={t('warranty.deleteWarranty')}>
-                              <IconButton
-                                size="small"
-                                color="error"
-                                onClick={async () => {
-                                  if (window.confirm(t('warranty.deleteWarrantyConfirm'))) {
-                                    try {
-                                      await warrantiesService.delete(warranty.id);
-                                      queryClient.invalidateQueries('warranties');
-                                      alert(t('warranty.warrantyDeleted'));
-                                    } catch (error) {
-                                      alert(error.response?.data?.message || t('common.errorLoading'));
-                                    }
-                                  }
-                                }}
-                              >
-                                <DeleteIcon />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                        </Box>
-                      </TableCell>
-                  </TableRow>
-                );
-              })
-            ) : (
-              <TableRow>
-                <TableCell colSpan={11} align="center">
-                  {t('common.noWarranties') || 'No warranties found'}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <SmartDataGrid
+        rows={rows}
+        columns={columns}
+        tableKey="warranties-table"
+        loading={isLoading}
+      />
     </div>
   );
 };

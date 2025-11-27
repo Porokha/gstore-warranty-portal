@@ -32,13 +32,16 @@ import {
   Notifications as NotificationsIcon,
   ExpandMore as ExpandMoreIcon,
   Person as PersonIcon,
+  ChevronLeft,
+  ChevronRight,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { useQuery } from 'react-query';
 import { casesService } from '../../services/casesService';
 import ZevaLogo from './ZevaLogo';
 
-const drawerWidth = 280;
+const EXPANDED_DRAWER_WIDTH = 280;
+const COLLAPSED_DRAWER_WIDTH = 88;
 
 const StaffLayout = () => {
   const { t, i18n } = useTranslation();
@@ -46,6 +49,21 @@ const StaffLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [userMenuAnchor, setUserMenuAnchor] = React.useState(null);
+  const [isCollapsed, setIsCollapsed] = React.useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('zezva.sidebar.collapsed') === 'true';
+  });
+  const drawerWidth = isCollapsed ? COLLAPSED_DRAWER_WIDTH : EXPANDED_DRAWER_WIDTH;
+
+  const toggleSidebar = () => {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('zezva.sidebar.collapsed', String(next));
+      }
+      return next;
+    });
+  };
 
   // Get urgent cases count for badge
   const { data: urgentCasesCount } = useQuery(
@@ -101,16 +119,38 @@ const StaffLayout = () => {
           '& .MuiDrawer-paper': {
             width: drawerWidth,
             boxSizing: 'border-box',
-            bgcolor: '#f4e7d3',
+            bgcolor: '#e5e7eb',
             color: '#1f2937',
-            borderRight: 'none',
+            borderRight: '1px solid #d1d5db',
+            transition: 'width 0.2s ease',
           },
         }}
       >
-        <Toolbar sx={{ bgcolor: '#f4e7d3', minHeight: '80px !important' }}>
+        <Toolbar
+          sx={{
+            bgcolor: '#e5e7eb',
+            minHeight: '80px !important',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: isCollapsed ? 1 : 2,
+          }}
+        >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <ZevaLogo size="medium" variant="default" showSubtitle />
+            {isCollapsed ? (
+              <Box
+                component="img"
+                src="/zezva-mini.png"
+                alt="ZEZVA mini logo"
+                sx={{ width: 36, height: 36 }}
+              />
+            ) : (
+              <ZevaLogo size="medium" variant="default" showSubtitle />
+            )}
           </Box>
+          <IconButton onClick={toggleSidebar} size="small" sx={{ color: '#1f2937' }}>
+            {isCollapsed ? <ChevronRight fontSize="small" /> : <ChevronLeft fontSize="small" />}
+          </IconButton>
         </Toolbar>
         
         <Box sx={{ overflow: 'auto', flex: 1 }}>
@@ -128,22 +168,28 @@ const StaffLayout = () => {
                     sx={{
                       borderRadius: 2,
                       py: 1.5,
+                      justifyContent: isCollapsed ? 'center' : 'flex-start',
+                      px: isCollapsed ? 1.5 : 2,
                       '&.Mui-selected': {
-                        bgcolor: '#1e293b',
+                        bgcolor: '#1f2937',
                         color: '#ffffff',
                         '&:hover': {
-                          bgcolor: '#1e293b',
-                        },
-                        '& .MuiListItemText-primary': {
-                          fontWeight: 600,
+                          bgcolor: '#111827',
                         },
                       },
                       '&:hover': {
-                        bgcolor: 'rgba(0, 0, 0, 0.05)',
+                        bgcolor: '#d1d5db',
                       },
                     }}
                   >
-                    <Box sx={{ mr: 2, display: 'flex', alignItems: 'center', color: isActive ? '#ffffff' : '#8a5a2b' }}>
+                    <Box
+                      sx={{
+                        mr: isCollapsed ? 0 : 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        color: isActive ? '#ffffff' : '#4b5563',
+                      }}
+                    >
                       {item.icon}
                     </Box>
                     <ListItemText 
@@ -152,12 +198,18 @@ const StaffLayout = () => {
                         fontSize: '14px',
                         fontWeight: isActive ? 600 : 400,
                       }}
+                      sx={{
+                        opacity: isCollapsed ? 0 : 1,
+                        maxWidth: isCollapsed ? 0 : '100%',
+                        transition: 'opacity 0.2s ease',
+                      }}
                     />
                     {item.badge && item.badge > 0 && (
                       <Badge 
                         badgeContent={item.badge} 
                         color="error"
                         sx={{
+                          display: isCollapsed ? 'none' : 'inline-flex',
                           '& .MuiBadge-badge': {
                             bgcolor: '#ef4444',
                             fontSize: '11px',
@@ -173,7 +225,7 @@ const StaffLayout = () => {
             })}
           </List>
 
-          <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.1)', my: 2, mx: 2 }} />
+          <Divider sx={{ borderColor: '#d1d5db', my: 2, mx: 2 }} />
 
           <List sx={{ px: 2, py: 1 }}>
             {bottomMenuItems.map((item) => {
@@ -186,23 +238,29 @@ const StaffLayout = () => {
                     selected={isActive}
                     sx={{
                       borderRadius: 2,
-                      py: 1.5,
+                    py: 1.5,
+                    justifyContent: isCollapsed ? 'center' : 'flex-start',
+                    px: isCollapsed ? 1.5 : 2,
                       '&.Mui-selected': {
-                        bgcolor: '#3b82f6',
+                      bgcolor: '#1f2937',
                         color: '#ffffff',
                         '&:hover': {
-                          bgcolor: '#3b82f6',
-                        },
-                        '& .MuiListItemText-primary': {
-                          fontWeight: 600,
+                        bgcolor: '#111827',
                         },
                       },
                       '&:hover': {
-                        bgcolor: 'rgba(255, 255, 255, 0.1)',
+                      bgcolor: '#d1d5db',
                       },
                     }}
                   >
-                    <Box sx={{ mr: 2, display: 'flex', alignItems: 'center', color: isActive ? '#ffffff' : '#cbd5e1' }}>
+                    <Box
+                      sx={{
+                        mr: isCollapsed ? 0 : 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        color: isActive ? '#ffffff' : '#4b5563',
+                      }}
+                    >
                       {item.icon}
                     </Box>
                     <ListItemText 
@@ -210,6 +268,11 @@ const StaffLayout = () => {
                       primaryTypographyProps={{
                         fontSize: '14px',
                         fontWeight: isActive ? 600 : 400,
+                      }}
+                      sx={{
+                        opacity: isCollapsed ? 0 : 1,
+                        maxWidth: isCollapsed ? 0 : '100%',
+                        transition: 'opacity 0.2s ease',
                       }}
                     />
                   </ListItemButton>
@@ -223,54 +286,67 @@ const StaffLayout = () => {
         <Box
           sx={{
             p: 2,
-            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-            bgcolor: '#1e293b',
+            borderTop: '1px solid #d1d5db',
+            bgcolor: '#d1d5db',
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: isCollapsed ? 0 : 1.5,
+              justifyContent: isCollapsed ? 'center' : 'flex-start',
+            }}
+          >
             <Avatar
+              onClick={(e) => setUserMenuAnchor(e.currentTarget)}
               sx={{
-                bgcolor: '#3b82f6',
+                bgcolor: '#1f2937',
                 width: 40,
                 height: 40,
                 fontSize: '14px',
                 fontWeight: 600,
+                cursor: 'pointer',
               }}
             >
               {getInitials(user?.name || 'User')}
             </Avatar>
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography
-                variant="body2"
-                sx={{
-                  fontWeight: 600,
-                  color: '#ffffff',
-                  fontSize: '13px',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {user?.name || 'User'} {user?.last_name || ''}
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{
-                  color: '#94a3b8',
-                  fontSize: '11px',
-                  textTransform: 'capitalize',
-                }}
-              >
-                {user?.role || 'User'}
-              </Typography>
-            </Box>
-            <IconButton
-              size="small"
-              sx={{ color: '#cbd5e1' }}
-              onClick={(e) => setUserMenuAnchor(e.currentTarget)}
-            >
-              <ExpandMoreIcon />
-            </IconButton>
+            {!isCollapsed && (
+              <>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: 600,
+                      color: '#1f2937',
+                      fontSize: '13px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {user?.name || 'User'} {user?.last_name || ''}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: '#4b5563',
+                      fontSize: '11px',
+                      textTransform: 'capitalize',
+                    }}
+                  >
+                    {user?.role || 'User'}
+                  </Typography>
+                </Box>
+                <IconButton
+                  size="small"
+                  sx={{ color: '#4b5563' }}
+                  onClick={(e) => setUserMenuAnchor(e.currentTarget)}
+                >
+                  <ExpandMoreIcon />
+                </IconButton>
+              </>
+            )}
           </Box>
         </Box>
 

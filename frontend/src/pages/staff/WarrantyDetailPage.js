@@ -32,6 +32,17 @@ const WarrantyDetailPage = () => {
     }
   );
 
+  const formatCurrency = (value) => {
+    if (value === null || value === undefined) {
+      return 'N/A';
+    }
+    const numeric = Number(value);
+    if (Number.isNaN(numeric)) {
+      return value;
+    }
+    return `₾${numeric.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
   if (isLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -142,6 +153,14 @@ const WarrantyDetailPage = () => {
             </Typography>
             <Typography variant="body1" sx={{ mb: 2 }}>
               {warranty.sku || 'N/A'}
+            </Typography>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5 }}>
+              {t('warranty.price')}
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              {formatCurrency(warranty.price)}
             </Typography>
           </Grid>
           <Grid item xs={12} md={6}>
