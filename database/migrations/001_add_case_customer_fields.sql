@@ -4,11 +4,11 @@
 
 -- Add customer_last_name column (nullable, for backward compatibility)
 ALTER TABLE service_cases 
-ADD COLUMN IF NOT EXISTS customer_last_name VARCHAR(255) NULL AFTER customer_name;
+ADD COLUMN IF NOT EXISTS `customer_last_name` VARCHAR(255) NULL AFTER customer_name;
 
 -- Add customer_initial_note column (nullable TEXT field for customer's problem description)
 ALTER TABLE service_cases 
-ADD COLUMN IF NOT EXISTS customer_initial_note TEXT NULL AFTER customer_email;
+ADD COLUMN IF NOT EXISTS `customer_initial_note` TEXT NULL AFTER customer_email;
 
 -- Optional: Add index on customer_last_name if you plan to search by it
 -- ALTER TABLE service_cases ADD INDEX idx_customer_last_name (customer_last_name);
