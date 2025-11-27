@@ -251,15 +251,10 @@ docker-compose -f docker-compose.prod.yml logs db
 
 ### 7.3 Run Database Migrations
 ```bash
-# Enter backend container
-docker-compose -f docker-compose.prod.yml exec backend sh
+# From the project root on your Lightsail server
+./scripts/run-db-migrations.sh docker-compose.prod.yml
 
-# Inside container, run migrations
-npm run migration:run
-
-# Or if using synchronize (development only)
-# Just restart the backend container
-exit
+# (The script records applied migrations in schema_migrations so it can be rerun safely)
 ```
 
 ## Step 8: Configure Firewall (Ports)

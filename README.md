@@ -54,6 +54,10 @@ A comprehensive warranty and service management platform for Gstore with separat
 
 3. **Run database migrations:**
    ```bash
+   # If you're using Docker / Lightsail (recommended)
+   ./scripts/run-db-migrations.sh
+
+   # OR run TypeORM migrations directly when developing without Docker
    cd backend && npm run migration:run
    ```
 

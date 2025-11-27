@@ -104,7 +104,10 @@ curl http://localhost:3000/api/dashboard/stats
 
 If new entities were added, you may need to:
 ```bash
-# Run migrations (if using TypeORM migrations)
+# Run the Docker-based SQL migrations (recommended for Lightsail)
+./scripts/run-db-migrations.sh
+
+# Or run the TypeORM migrations directly when developing locally
 npm run migration:run
 
 # Or restart the backend (it will sync schema automatically in dev mode)
