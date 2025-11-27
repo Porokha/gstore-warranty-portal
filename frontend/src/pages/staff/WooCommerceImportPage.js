@@ -55,19 +55,15 @@ const WooCommerceImportPage = () => {
 
   const importMutation = useMutation(
     async () => {
-      console.log('Starting WooCommerce import with:', {
         statuses: selectedStatuses,
         limit,
       });
-      console.log('API base URL:', api.defaults.baseURL);
-      console.log('Making POST request to /woocommerce/sync/orders');
       
       const response = await api.post('/woocommerce/sync/orders', {
         statuses: selectedStatuses,
         limit,
       });
       
-      console.log('Import response received:', response);
       
       // If we got a jobId, start polling for progress
       if (response.data.jobId) {
@@ -85,9 +81,6 @@ const WooCommerceImportPage = () => {
         }
       },
       onError: (err) => {
-        console.error('WooCommerce import error - Full error object:', err);
-        console.error('Error response:', err.response);
-        console.error('Error response data:', err.response?.data);
         
         let errorMessage = 'Failed to import from WooCommerce';
         if (err.response?.data) {
@@ -100,7 +93,6 @@ const WooCommerceImportPage = () => {
           errorMessage = err.message;
         }
         setError(errorMessage);
-        console.error('WooCommerce import error summary:', {
           status: err.response?.status,
           statusText: err.response?.statusText,
           data: err.response?.data,
@@ -136,7 +128,6 @@ const WooCommerceImportPage = () => {
           setJobId(null);
         }
       } catch (err) {
-        console.error('Failed to fetch progress:', err);
         // Continue polling even if one request fails
       }
     }, 2000);

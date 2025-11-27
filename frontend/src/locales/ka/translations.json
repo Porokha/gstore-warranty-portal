@@ -1,7 +1,7 @@
 {
   "common": {
     "dashboard": "დაფა",
-      "openCases": "მიმდინარე შემთხვევები",
+    "openCases": "მიმდინარე შემთხვევები",
     "closeToDeadline": "ვადასთან ახლოს",
     "dueCases": "ვადაგადაცილებული",
     "closedCases": "დასრულებული შემთხვევები",
@@ -24,16 +24,16 @@
     "view": "ნახვა",
     "status": "სტატუსი",
     "result": "შედეგი",
-      "timeFilter": "დროის პერიოდი",
-      "allTime": "მთელი დრო",
-      "lastWeek": "ბოლო კვირა",
-      "lastMonth": "ბოლო თვე",
-      "custom": "მორგებული",
-      "statistics": "სტატისტიკა",
-      "technicianStatistics": "ტექნიკოსის სტატისტიკა",
-      "myStatistics": "ჩემი სტატისტიკა",
-      "importCSV": "CSV-დან იმპორტი",
-      "importWooCommerce": "WooCommerce-დან იმპორტი",
+    "timeFilter": "დროის პერიოდი",
+    "allTime": "მთელი დრო",
+    "lastWeek": "ბოლო კვირა",
+    "lastMonth": "ბოლო თვე",
+    "custom": "მორგებული",
+    "statistics": "სტატისტიკა",
+    "technicianStatistics": "ტექნიკოსის სტატისტიკა",
+    "myStatistics": "ჩემი სტატისტიკა",
+    "importCSV": "CSV-დან იმპორტი",
+    "importWooCommerce": "WooCommerce-დან იმპორტი",
     "days": "დღე",
     "avgCompletionTime": "დასრულების საშუალო დრო",
     "onTimeCases": "ვადამდე შესრულებული",
@@ -75,7 +75,6 @@
     "amount": "თანხა",
     "startDate": "დაწყების თარიღი",
     "endDate": "დასრულების თარიღი",
-    "custom": "მორგებული",
     "warrantyId": "გარანტიის ID",
     "closeDate": "დახურვის თარიღი",
     "quickActions": "სწრაფი მოქმედებები",
@@ -87,7 +86,12 @@
     "createUser": "მომხმარებლის შექმნა",
     "editUser": "მომხმარებლის რედაქტირება",
     "noTemplates": "შაბლონები არ მოიძებნა",
-    "noUsers": "მომხმარებლები არ მოიძებნა"
+    "noUsers": "მომხმარებლები არ მოიძებნა",
+    "back": "უკან",
+    "files": "ფაილები",
+    "serviceCases": "სერვისის შემთხვევები",
+    "importData": "მონაცემების იმპორტი",
+    "saving": "შენახვა..."
   },
   "replacement": {
     "details": "შეცვლის დეტალები",
@@ -118,10 +122,10 @@
     "sendOnCaseCompleted": "გაგზავნა შემთხვევის დასრულებისას",
     "sendOnSlaDue": "გაგზავნა SLA-ს ვადის ამოწურვისას",
     "sendOnSlaStalled": "გაგზავნა SLA-ს შეჩერებისას",
-      "sendOnSlaDeadline1day": "გაგზავნა 1 დღით ადრე ვადამდე",
-      "smsTemplates": "SMS შაბლონები",
-      "userManagement": "მომხმარებლების მართვა",
-      "apiKeys": "API გასაღებები"
+    "sendOnSlaDeadline1day": "გაგზავნა 1 დღით ადრე ვადამდე",
+    "smsTemplates": "SMS შაბლონები",
+    "userManagement": "მომხმარებლების მართვა",
+    "apiKeys": "API გასაღებები"
   },
   "template": {
     "key": "გასაღები",
@@ -193,7 +197,8 @@
     "phoneRequired": "ტელეფონის ნომერი სავალდებულოა",
     "deleteCase": "შემთხვევის წაშლა",
     "deleteCaseConfirm": "დარწმუნებული ხართ რომ გსურთ ამ შემთხვევის წაშლა? ეს მოქმედება შეუქცევადია. შემთხვევის ისტორია შენარჩუნდება აუდიტის ლოგებში.",
-    "caseDeleted": "შემთხვევა წარმატებით წაიშალა"
+    "caseDeleted": "შემთხვევა წარმატებით წაიშალა",
+    "pressEnterToAddTag": "ტეგის დამატებისთვის დააჭირეთ Enter-ს"
   },
   "warranty": {
     "warrantyId": "გარანტიის ID",
@@ -223,7 +228,8 @@
     "adminNotesPlaceholder": "შიდა შენიშვნები (მომხმარებლებისთვის არ ჩანს)",
     "editWarranty": "გარანტიის რედაქტირება",
     "saveChanges": "ცვლილებების შენახვა",
-    "warrantyUpdated": "გარანტია წარმატებით განახლდა"
+    "warrantyUpdated": "გარანტია წარმატებით განახლდა",
+    "adminOnlyInfo": "მხოლოდ ადმინისტრატორისთვის"
   },
   "public": {
     "checkWarrantyStatus": "შეამოწმეთ თქვენი გარანტიის სტატუსი და სერვისის შემთხვევები",
@@ -287,6 +293,156 @@
     "result": "შედეგი",
     "assignedTechnician": "დანიშნული ტექნიკოსი",
     "statusUpdates": "სტატუსის განახლებები"
+  },
+  "dashboard": {
+    "title": "დაფა",
+    "welcome": "კეთილი იყოს თქვენი დაბრუნება, იხილეთ დღევანდელი სტატუსი.",
+    "filters": {
+      "last7": "ბოლო 7 დღე",
+      "last30": "ბოლო 30 დღე",
+      "last90": "ბოლო 90 დღე",
+      "customRange": "მორგებული დიაპაზონი",
+      "customDateRange": "მორგებული თარიღები",
+      "startDate": "დაწყების თარიღი",
+      "endDate": "დასრულების თარიღი",
+      "apply": "ფილტრის გამოყენება"
+    },
+    "cards": {
+      "openCases": "გახსნილი შემთხვევები",
+      "closeToDeadline": "ვადასთან ახლოს",
+      "dueCases": "ვადაგადაცილებული",
+      "closedThisMonth": "დასრულებული (ეს თვე)",
+      "activeWarranties": "აქტიური გარანტიები",
+      "expiredWarranties": "ვადაგასული გარანტიები",
+      "payments": "ჯამური გადახდები (ეს თვე)"
+    },
+    "badges": {
+      "active": "აქტიური",
+      "dueSoon": "ახლო ვადა",
+      "urgent": "სასწრაფო",
+      "completed": "დასრულებული",
+      "revenue": "შემოსავალი"
+    },
+    "charts": {
+      "completionTime": "სერვისის დასრულების დრო",
+      "casesByStatus": "შემთხვევები სტატუსების მიხედვით",
+      "noData": "მონაცემები არ არის"
+    },
+    "kpi": {
+      "avgServiceTime": "სამუშაოს საშუალო დრო",
+      "onTimePerformance": "დროის დაცვა",
+      "customerSatisfaction": "კლიენტის დაკმაყოფილება",
+      "faster": "12% უფრო სწრაფად",
+      "vsLastMonth": "წინა თვესთან შედარებით",
+      "ratingChange": "0.3 ქულა"
+    },
+    "table": {
+      "recentCases": "ბოლო სერვისის შემთხვევები",
+      "viewAll": "ყველას ნახვა",
+      "caseId": "შემთხვევის ID",
+      "customer": "კლიენტი",
+      "product": "პროდუქტი",
+      "status": "სტატუსი",
+      "priority": "პრიორიტეტი",
+      "technician": "ტექნიკოსი",
+      "deadline": "ვადა",
+      "actions": "მოქმედებები",
+      "unassigned": "დანიშნული არაა",
+      "overdue": "ვადაგადაცილებული"
+    }
+  },
+  "importPage": {
+    "title": "მონაცემების იმპორტი",
+    "tabs": {
+      "cases": "შემთხვევების იმპორტი (CSV)",
+      "warranties": "გარანტიების იმპორტი (CSV)",
+      "woocommerce": "იმპორტი WooCommerce-დან"
+    },
+    "cases": {
+      "description": "ატვირთეთ CSV ფაილი მრავალი შემთხვევის ერთიანად შესატანად. დუბლიკატები გამოტოვდება.",
+      "downloadExample": "მაგალითი CSV-ის ჩამოტვირთვა",
+      "selectFile": "აირჩიეთ CSV ფაილი",
+      "selected": "არჩეული",
+      "size": "ზომა",
+      "importButton": "შემთხვევების იმპორტი",
+      "importing": "მიმდინარეობს შემთხვევების იმპორტი...",
+      "successTitle": "იმპორტი დასრულდა!",
+      "successImported": "წარმატებით შემოტანილია: {{count}} შემთხვევა",
+      "errors": "შეცდომები: {{count}} ხაზი",
+      "skipped": "დუბლიკატები გამოტოვდა: {{count}}",
+      "selectFileError": "გთხოვთ აირჩიოთ CSV ფაილი",
+      "downloadError": "მაგალითი CSV-ის ჩამოტვირთვა ვერ მოხერხდა"
+    },
+    "warranties": {
+      "description": "ატვირთეთ CSV ფაილი მრავალი გარანტიის ერთიანად შესატანად. დუბლიკატები გამოტოვდება.",
+      "downloadExample": "მაგალითი CSV-ის ჩამოტვირთვა",
+      "selectFile": "აირჩიეთ CSV ფაილი",
+      "selected": "არჩეული",
+      "size": "ზომა",
+      "importButton": "გარანტიების იმპორტი",
+      "importing": "მიმდინარდება გარანტიების იმპორტი...",
+      "successImported": "წარმატებით შემოტანილია: {{count}} გარანტია",
+      "errors": "შეცდომები: {{count}} ხაზი",
+      "skipped": "დუბლიკატები გამოტოვდა: {{count}}",
+      "selectFileError": "გთხოვთ აირჩიოთ CSV ფაილი",
+      "downloadError": "მაგალითი CSV-ის ჩამოტვირთვა ვერ მოხერხდა"
+    },
+    "woocommerce": {
+      "description": "შემოიტანეთ გარანტიები WooCommerce შეკვეთებიდან. უკვე შემოტანილი შეკვეთები გამოტოვდება.",
+      "note": "ავტომატური ვებჰუქი ამუშავებს მხოლოდ \"completed\" სტატუსს. ეს მოდული საშუალებას გაძლევთ შეიტანოთ სხვა სტატუსებიც.",
+      "selectStatuses": "აირჩიეთ შეკვეთის სტატუსები",
+      "limitType": "ლიმიტის ტიპი",
+      "limitNone": "ლიმიტის გარეშე",
+      "limitCount": "შეკვეთების რაოდენობა",
+      "limitDate": "საწყისი თარიღი",
+      "importLimit": "იმპორტის ლიმიტი",
+      "dateLabel": "შეკვეთების იმპორტი ამ თარიღიდან",
+      "importButton": "იმპორტი WooCommerce-დან",
+      "importing": "მიმდინარეობს WooCommerce იმპორტი...",
+      "errorSelectStatus": "გთხოვთ აირჩიოთ მინიმუმ ერთი სტატუსი",
+      "errorSelectDate": "გთხოვთ აირჩიოთ თარიღი",
+      "errorGeneric": "WooCommerce-დან იმპორტი ვერ შესრულდა",
+      "ordersCount": "{{count}} შეკვეთა"
+    },
+    "progress": {
+      "title": "იმპორტი მიმდინარეობს WooCommerce-დან...",
+      "ordersProcessed": "დამუშავდა {{processed}} / {{total}} შეკვეთა",
+      "summary": "შემოიტანეს: {{imported}} | გამოტოვდა: {{skipped}}"
+    },
+    "statuses": {
+      "pending": "დასამუშავებელი",
+      "processing": "დამუშავება",
+      "on-hold": "შეჩერებული",
+      "completed": "დასრულებული",
+      "cancelled": "გაუქმებული",
+      "refunded": "დაბრუნებული",
+      "failed": "წარუმატებელი"
+    }
+  },
+  "apiKeys": {
+    "title": "API გასაღებები",
+    "wooSection": "WooCommerce ინტეგრაცია",
+    "wooUrl": "WooCommerce URL",
+    "wooUrlHint": "თქვენი WooCommerce მაღაზიის მისამართი",
+    "wooUrlPlaceholder": "https://yourstore.com",
+    "consumerKey": "Consumer Key",
+    "consumerKeyHint": "WooCommerce REST API Consumer Key",
+    "consumerSecret": "Consumer Secret",
+    "consumerSecretHint": "WooCommerce REST API Consumer Secret",
+    "bogSection": "BOG გადახდის გეითვეი",
+    "bogApiUrl": "BOG API URL",
+    "bogApiUrlHint": "BOG გადახდების API მისამართი",
+    "bogMerchantId": "Merchant ID",
+    "bogMerchantIdHint": "BOG Merchant ID",
+    "bogSecretKey": "საიდუმლო გასაღები",
+    "bogSecretKeyHint": "BOG Secret Key",
+    "senderSection": "Sender API",
+    "senderApiUrl": "Sender API URL",
+    "senderApiUrlHint": "Sender API მისამართი",
+    "senderApiKey": "Sender API Key",
+    "senderApiKeyHint": "Sender API access key",
+    "saveSuccess": "API გასაღებები წარმატებით შენახულია!",
+    "saveError": "API გასაღებების შენახვა ვერ მოხერხდა",
+    "saveButton": "გასაღებების შენახვა"
   }
 }
-

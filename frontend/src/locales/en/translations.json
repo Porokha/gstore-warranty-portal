@@ -1,7 +1,7 @@
 {
   "common": {
     "dashboard": "Dashboard",
-      "openCases": "Running Service Cases",
+    "openCases": "Running Service Cases",
     "closeToDeadline": "Close to deadline cases",
     "dueCases": "Due Service Cases",
     "closedCases": "Closed Service Cases",
@@ -24,16 +24,16 @@
     "view": "View",
     "status": "Status",
     "result": "Result",
-      "timeFilter": "Time Period",
-      "allTime": "All Time",
-      "lastWeek": "Last Week",
-      "lastMonth": "Last Month",
-      "custom": "Custom",
-      "statistics": "Statistics",
-      "technicianStatistics": "Technician Statistics",
-      "myStatistics": "My Statistics",
-      "importCSV": "Import CSV",
-      "importWooCommerce": "Import from WooCommerce",
+    "timeFilter": "Time Period",
+    "allTime": "All Time",
+    "lastWeek": "Last Week",
+    "lastMonth": "Last Month",
+    "custom": "Custom",
+    "statistics": "Statistics",
+    "technicianStatistics": "Technician Statistics",
+    "myStatistics": "My Statistics",
+    "importCSV": "Import CSV",
+    "importWooCommerce": "Import from WooCommerce",
     "days": "days",
     "avgCompletionTime": "Avg. Completion Time",
     "onTimeCases": "On-time Cases",
@@ -75,7 +75,6 @@
     "amount": "Amount",
     "startDate": "Start Date",
     "endDate": "End Date",
-    "custom": "Custom",
     "warrantyId": "Warranty ID",
     "closeDate": "Close Date",
     "quickActions": "Quick Actions",
@@ -87,23 +86,17 @@
     "createUser": "Create User",
     "editUser": "Edit User",
     "noTemplates": "No templates found",
-    "noUsers": "No users found"
+    "noUsers": "No users found",
+    "back": "Back",
+    "files": "Files",
+    "serviceCases": "Service Cases",
+    "importData": "Import Data",
+    "saving": "Saving..."
   },
   "replacement": {
     "details": "Replacement Details",
     "productTitle": "Replacement Product Title",
     "internalPrice": "Internal Price"
-  },
-  "payment": {
-    "status": "Payment Status",
-    "method": "Payment Method",
-    "type": "Type",
-    "code": "Code",
-    "offersAndPayments": "Offers & Payments",
-    "estimatedDays": "Estimated Days After Payment",
-    "allowedMethods": "Allowed Payment Methods",
-    "online": "Online",
-    "onsite": "Onsite"
   },
   "payment": {
     "status": "Payment Status",
@@ -198,7 +191,8 @@
     "phoneRequired": "Phone number is required",
     "deleteCase": "Delete Case",
     "deleteCaseConfirm": "Are you sure you want to delete this case? This action cannot be undone. Case history will be preserved in audit logs.",
-    "caseDeleted": "Case deleted successfully"
+    "caseDeleted": "Case deleted successfully",
+    "pressEnterToAddTag": "Press Enter to add tag"
   },
   "warranty": {
     "warrantyId": "Warranty ID",
@@ -228,7 +222,8 @@
     "adminNotesPlaceholder": "Internal notes (not visible to customers)",
     "editWarranty": "Edit Warranty",
     "saveChanges": "Save Changes",
-    "warrantyUpdated": "Warranty updated successfully"
+    "warrantyUpdated": "Warranty updated successfully",
+    "adminOnlyInfo": "Admin Only Information"
   },
   "public": {
     "checkWarrantyStatus": "Check your warranty status and service cases",
@@ -292,6 +287,156 @@
     "result": "Result",
     "assignedTechnician": "Assigned Technician",
     "statusUpdates": "Status Updates"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back, here's what's happening today.",
+    "filters": {
+      "last7": "Last 7 Days",
+      "last30": "Last 30 Days",
+      "last90": "Last 90 Days",
+      "customRange": "Custom Range",
+      "customDateRange": "Custom Date Range",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "apply": "Apply Filter"
+    },
+    "cards": {
+      "openCases": "Open Service Cases",
+      "closeToDeadline": "Cases Close to Deadline",
+      "dueCases": "Overdue Cases",
+      "closedThisMonth": "Closed This Month",
+      "activeWarranties": "Active Warranties",
+      "expiredWarranties": "Expired Warranties",
+      "payments": "Total Payments This Month"
+    },
+    "badges": {
+      "active": "Active",
+      "dueSoon": "Due Soon",
+      "urgent": "Urgent",
+      "completed": "Completed",
+      "revenue": "Revenue"
+    },
+    "charts": {
+      "completionTime": "Service Completion Time",
+      "casesByStatus": "Cases by Status",
+      "noData": "No data available"
+    },
+    "kpi": {
+      "avgServiceTime": "Average Service Time",
+      "onTimePerformance": "On-Time Performance",
+      "customerSatisfaction": "Customer Satisfaction",
+      "faster": "12% faster",
+      "vsLastMonth": "vs last month",
+      "ratingChange": "0.3 points"
+    },
+    "table": {
+      "recentCases": "Recent Service Cases",
+      "viewAll": "View All",
+      "caseId": "Case ID",
+      "customer": "Customer",
+      "product": "Product",
+      "status": "Status",
+      "priority": "Priority",
+      "technician": "Technician",
+      "deadline": "Deadline",
+      "actions": "Actions",
+      "unassigned": "Unassigned",
+      "overdue": "Overdue"
+    }
+  },
+  "importPage": {
+    "title": "Import Data",
+    "tabs": {
+      "cases": "Import Cases (CSV)",
+      "warranties": "Import Warranties (CSV)",
+      "woocommerce": "Import from WooCommerce"
+    },
+    "cases": {
+      "description": "Upload a CSV file to import multiple service cases at once. Duplicate cases will be skipped.",
+      "downloadExample": "Download Example CSV",
+      "selectFile": "Select CSV File",
+      "selected": "Selected",
+      "size": "Size",
+      "importButton": "Import Cases",
+      "importing": "Importing cases...",
+      "successTitle": "Import Complete!",
+      "successImported": "Successfully imported: {{count}} cases",
+      "errors": "Errors: {{count}} rows failed",
+      "skipped": "Skipped duplicates: {{count}}",
+      "selectFileError": "Please select a CSV file",
+      "downloadError": "Failed to download example CSV"
+    },
+    "warranties": {
+      "description": "Upload a CSV file to import multiple warranty products at once. Duplicate warranties will be skipped.",
+      "downloadExample": "Download Example CSV",
+      "selectFile": "Select CSV File",
+      "selected": "Selected",
+      "size": "Size",
+      "importButton": "Import Warranties",
+      "importing": "Importing warranties...",
+      "successImported": "Successfully imported: {{count}} warranties",
+      "errors": "Errors: {{count}} rows failed",
+      "skipped": "Skipped duplicates: {{count}}",
+      "selectFileError": "Please select a CSV file",
+      "downloadError": "Failed to download example CSV"
+    },
+    "woocommerce": {
+      "description": "Import warranties from WooCommerce orders. Already imported orders will be skipped.",
+      "note": "Automatic webhooks only process \"completed\" orders. This manual import allows you to import from other statuses as well.",
+      "selectStatuses": "Select Order Statuses",
+      "limitType": "Limit Type",
+      "limitNone": "No Limit",
+      "limitCount": "Order Count",
+      "limitDate": "Date From",
+      "importLimit": "Import Limit",
+      "dateLabel": "Import Orders From Date",
+      "importButton": "Import from WooCommerce",
+      "importing": "Importing warranties from WooCommerce...",
+      "errorSelectStatus": "Please select at least one order status",
+      "errorSelectDate": "Please select a date",
+      "errorGeneric": "Failed to import from WooCommerce",
+      "ordersCount": "{{count}} orders"
+    },
+    "progress": {
+      "title": "Importing warranties from WooCommerce...",
+      "ordersProcessed": "Progress: {{processed}} / {{total}} orders processed",
+      "summary": "Imported: {{imported}} warranties | Skipped: {{skipped}}"
+    },
+    "statuses": {
+      "pending": "Pending",
+      "processing": "Processing",
+      "on-hold": "On hold",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "refunded": "Refunded",
+      "failed": "Failed"
+    }
+  },
+  "apiKeys": {
+    "title": "API Keys",
+    "wooSection": "WooCommerce Integration",
+    "wooUrl": "WooCommerce URL",
+    "wooUrlHint": "Your WooCommerce store URL",
+    "wooUrlPlaceholder": "https://yourstore.com",
+    "consumerKey": "Consumer Key",
+    "consumerKeyHint": "WooCommerce REST API Consumer Key",
+    "consumerSecret": "Consumer Secret",
+    "consumerSecretHint": "WooCommerce REST API Consumer Secret",
+    "bogSection": "BOG Payment Gateway",
+    "bogApiUrl": "BOG API URL",
+    "bogApiUrlHint": "BOG Payment Gateway API URL",
+    "bogMerchantId": "Merchant ID",
+    "bogMerchantIdHint": "BOG Merchant ID",
+    "bogSecretKey": "Secret Key",
+    "bogSecretKeyHint": "BOG Secret Key",
+    "senderSection": "Sender API",
+    "senderApiUrl": "Sender API URL",
+    "senderApiUrlHint": "Sender API endpoint",
+    "senderApiKey": "Sender API Key",
+    "senderApiKeyHint": "Sender API access key",
+    "saveSuccess": "API keys saved successfully!",
+    "saveError": "Failed to save API keys",
+    "saveButton": "Save API Keys"
   }
 }
-

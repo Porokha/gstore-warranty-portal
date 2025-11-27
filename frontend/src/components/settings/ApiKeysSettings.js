@@ -53,11 +53,8 @@ const ApiKeysSettings = () => {
 
   const saveMutation = useMutation(
     async (data) => {
-      console.log('Mutation function called with data:', data);
       try {
-        console.log('Making API call to /settings/api-keys');
         const response = await api.post('/settings/api-keys', data);
-        console.log('API response received:', response);
         return response.data;
       } catch (error) {
         console.error('API call failed:', error);
@@ -75,17 +72,17 @@ const ApiKeysSettings = () => {
         queryClient.invalidateQueries('api-keys');
         setSaveSuccess(true);
         setSaveError('');
-        console.log('API keys saved successfully:', data);
         setTimeout(() => setSaveSuccess(false), 5000);
       },
       onError: (error) => {
-        const errorMsg = error.response?.data?.message || 
-                        error.response?.data?.error || 
-                        error.message || 
-                        'Failed to save API keys';
+        const errorMsg =
+          error.response?.data?.message ||
+          error.response?.data?.error ||
+          error.message ||
+          t('apiKeys.saveError');
         setSaveError(errorMsg);
         setSaveSuccess(false);
-        console.error('Failed to save API keys:', {
+        console.error(`${t('apiKeys.saveError')}:`, {
           status: error.response?.status,
           data: error.response?.data,
           message: error.message,
@@ -99,14 +96,6 @@ const ApiKeysSettings = () => {
   };
 
   const handleSave = () => {
-    console.log('Saving API keys:', {
-      hasUrl: !!formData.woocommerce_url,
-      hasKey: !!formData.woocommerce_consumer_key,
-      hasSecret: !!formData.woocommerce_consumer_secret,
-      url: formData.woocommerce_url,
-    });
-    console.log('Full formData:', formData);
-    console.log('Making POST request to /settings/api-keys');
     saveMutation.mutate(formData);
   };
 
@@ -122,115 +111,115 @@ const ApiKeysSettings = () => {
     <Box>
       {saveSuccess && (
         <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSaveSuccess(false)}>
-          API keys saved successfully!
+          {t('apiKeys.saveSuccess')}
         </Alert>
       )}
       {saveError && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setSaveError('')}>
-          {saveError}
+          {saveError || t('apiKeys.saveError')}
         </Alert>
       )}
       <Grid container spacing={3} component="form" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
         {/* WooCommerce Section */}
         <Grid item xs={12}>
           <Typography variant="h6" gutterBottom>
-            WooCommerce Integration
+            {t('apiKeys.wooSection')}
           </Typography>
           <Divider sx={{ mb: 2 }} />
         </Grid>
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
-            label="WooCommerce URL"
+            label={t('apiKeys.wooUrl')}
             value={formData.woocommerce_url}
             onChange={(e) => handleChange('woocommerce_url', e.target.value)}
-            placeholder="https://yourstore.com"
-            helperText="Your WooCommerce store URL"
+            placeholder={t('apiKeys.wooUrlPlaceholder')}
+            helperText={t('apiKeys.wooUrlHint')}
           />
         </Grid>
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
-            label="Consumer Key"
+            label={t('apiKeys.consumerKey')}
             value={formData.woocommerce_consumer_key}
             onChange={(e) => handleChange('woocommerce_consumer_key', e.target.value)}
             type="password"
-            helperText="WooCommerce REST API Consumer Key"
+            helperText={t('apiKeys.consumerKeyHint')}
           />
         </Grid>
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
-            label="Consumer Secret"
+            label={t('apiKeys.consumerSecret')}
             value={formData.woocommerce_consumer_secret}
             onChange={(e) => handleChange('woocommerce_consumer_secret', e.target.value)}
             type="password"
-            helperText="WooCommerce REST API Consumer Secret"
+            helperText={t('apiKeys.consumerSecretHint')}
           />
         </Grid>
 
-        {/* BOG Payment Gateway Section */}
+        {/* {t('apiKeys.bogSection')} Section */}
         <Grid item xs={12} sx={{ mt: 2 }}>
           <Typography variant="h6" gutterBottom>
-            BOG Payment Gateway
+            {t('apiKeys.bogSection')}
           </Typography>
           <Divider sx={{ mb: 2 }} />
         </Grid>
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
-            label="BOG API URL"
+            label={t('apiKeys.bogApiUrl')}
             value={formData.bog_api_url}
             onChange={(e) => handleChange('bog_api_url', e.target.value)}
-            placeholder="https://api.bog.ge"
-            helperText="BOG Payment Gateway API URL"
+            placeholder={t('apiKeys.bogApiUrlHint')}
+            helperText={t('apiKeys.bogApiUrlHint')}
           />
         </Grid>
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
-            label="Merchant ID"
+            label={t('apiKeys.bogMerchantId')}
             value={formData.bog_merchant_id}
             onChange={(e) => handleChange('bog_merchant_id', e.target.value)}
-            helperText="BOG Merchant ID"
+            helperText={t('apiKeys.bogMerchantIdHint')}
           />
         </Grid>
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
-            label="Secret Key"
+            label={t('apiKeys.bogSecretKey')}
             value={formData.bog_secret_key}
             onChange={(e) => handleChange('bog_secret_key', e.target.value)}
             type="password"
-            helperText="BOG Secret Key for signature generation"
+            helperText={t('apiKeys.bogSecretKeyHint')}
           />
         </Grid>
 
         {/* Sender SMS Section */}
         <Grid item xs={12} sx={{ mt: 2 }}>
           <Typography variant="h6" gutterBottom>
-            Sender SMS Service
+            {t('apiKeys.senderSection')}
           </Typography>
           <Divider sx={{ mb: 2 }} />
         </Grid>
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
-            label="Sender API URL"
+            label={t('apiKeys.senderApiUrl')}
             value={formData.sender_api_url}
             onChange={(e) => handleChange('sender_api_url', e.target.value)}
-            placeholder="https://api.sender.ge"
-            helperText="Sender SMS API URL"
+            placeholder={t('apiKeys.senderApiUrlHint')}
+            helperText={t('apiKeys.senderApiUrlHint')}
           />
         </Grid>
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
-            label="API Key"
+            label={t('apiKeys.senderApiKey')}
             value={formData.sender_api_key}
             onChange={(e) => handleChange('sender_api_key', e.target.value)}
             type="password"
-            helperText="Sender SMS API Key"
+            helperText={t('apiKeys.senderApiKeyHint')}
           />
         </Grid>
 
@@ -242,7 +231,7 @@ const ApiKeysSettings = () => {
             disabled={saveMutation.isLoading}
             size="large"
           >
-            {saveMutation.isLoading ? 'Saving...' : t('common.save')}
+            {saveMutation.isLoading ? (t('common.saving') || t('common.save')) : t('apiKeys.saveButton')}
           </Button>
         </Grid>
       </Grid>

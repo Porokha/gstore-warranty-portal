@@ -218,7 +218,7 @@ const WarrantyDetailPage = () => {
               <Grid item xs={12}>
                 <Divider sx={{ my: 2 }} />
                 <Typography variant="h6" sx={{ mb: 2, color: '#64748b' }}>
-                  Admin Only Information
+                  {t('warranty.adminOnlyInfo')}
                 </Typography>
               </Grid>
 

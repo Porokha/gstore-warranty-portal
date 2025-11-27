@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation } from 'react-query';
 import {
@@ -49,6 +49,16 @@ const ImportPage = () => {
   const [dateLimit, setDateLimit] = useState('');
   const [wooError, setWooError] = useState('');
   const [wooSuccess, setWooSuccess] = useState(null);
+  const [wooProgress, setWooProgress] = useState(null);
+  const wooProgressIntervalRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (wooProgressIntervalRef.current) {
+        clearInterval(wooProgressIntervalRef.current);
+      }
+    };
+  }, []);
 
   const availableStatuses = [
     'pending',
@@ -74,7 +84,7 @@ const ImportPage = () => {
       link.click();
       document.body.removeChild(link);
     } catch (err) {
-      setCasesError('Failed to download example CSV');
+      setCasesError(t('importPage.cases.downloadError'));
     }
   };
 
@@ -95,7 +105,7 @@ const ImportPage = () => {
         setCasesFile(null);
       },
       onError: (err) => {
-        setCasesError(err.response?.data?.message || 'Failed to import cases');
+        setCasesError(err.response?.data?.message || t('common.errorLoading'));
       },
     }
   );
@@ -104,7 +114,7 @@ const ImportPage = () => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
       if (!selectedFile.name.endsWith('.csv')) {
-        setCasesError('Please select a CSV file');
+        setCasesError(t('importPage.cases.selectFileError'));
         return;
       }
       setCasesFile(selectedFile);
@@ -115,7 +125,7 @@ const ImportPage = () => {
 
   const handleCasesUpload = () => {
     if (!casesFile) {
-      setCasesError('Please select a file');
+      setCasesError(t('importPage.cases.selectFileError'));
       return;
     }
     casesUploadMutation.mutate(casesFile);
@@ -135,7 +145,7 @@ const ImportPage = () => {
       link.click();
       document.body.removeChild(link);
     } catch (err) {
-      setWarrantiesError('Failed to download example CSV');
+      setWarrantiesError(t('importPage.warranties.downloadError'));
     }
   };
 
@@ -156,7 +166,7 @@ const ImportPage = () => {
         setWarrantiesFile(null);
       },
       onError: (err) => {
-        setWarrantiesError(err.response?.data?.message || 'Failed to import warranties');
+        setWarrantiesError(err.response?.data?.message || t('common.errorLoading'));
       },
     }
   );
@@ -165,7 +175,7 @@ const ImportPage = () => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
       if (!selectedFile.name.endsWith('.csv')) {
-        setWarrantiesError('Please select a CSV file');
+        setWarrantiesError(t('importPage.warranties.selectFileError'));
         return;
       }
       setWarrantiesFile(selectedFile);
@@ -176,10 +186,45 @@ const ImportPage = () => {
 
   const handleWarrantiesUpload = () => {
     if (!warrantiesFile) {
-      setWarrantiesError('Please select a file');
+      setWarrantiesError(t('importPage.warranties.selectFileError'));
       return;
     }
     warrantiesUploadMutation.mutate(warrantiesFile);
+  };
+
+  const stopWooProgressPolling = () => {
+    if (wooProgressIntervalRef.current) {
+      clearInterval(wooProgressIntervalRef.current);
+      wooProgressIntervalRef.current = null;
+    }
+  };
+
+    const startWooProgressPolling = (jobId) => {
+    stopWooProgressPolling();
+    wooProgressIntervalRef.current = setInterval(async () => {
+      try {
+        const response = await api.get(`/woocommerce/sync/progress/${jobId}`);
+        const progressData = response.data;
+        setWooProgress(progressData);
+
+        if (progressData.status === 'completed') {
+          stopWooProgressPolling();
+          setWooProgress(null);
+          setWooSuccess(progressData.result || { imported: progressData.imported, skipped: progressData.skipped });
+        } else if (progressData.status === 'error') {
+          stopWooProgressPolling();
+          setWooProgress(null);
+          setWooError(progressData.error || t('importPage.woocommerce.errorGeneric'));
+        } else if (progressData.status === 'not_found') {
+          stopWooProgressPolling();
+          setWooProgress(null);
+        }
+      } catch (error) {
+        stopWooProgressPolling();
+        setWooProgress(null);
+        setWooError(t('importPage.woocommerce.errorGeneric'));
+      }
+    }, 2000);
   };
 
   // WooCommerce handlers
@@ -200,17 +245,21 @@ const ImportPage = () => {
       
       if (limitType === 'count') {
         body.limit = orderLimit;
-      } else if (limitType === 'date') {
+      } else if (limitType === 'date' && dateLimit) {
         body.dateFrom = dateLimit;
       }
-      // If limitType === 'none', don't add any limit
       
       const response = await api.post('/woocommerce/sync/orders', body);
       return response.data;
     },
     {
       onSuccess: (data) => {
-        setWooSuccess(data);
+        setWooError('');
+        if (data.jobId) {
+          startWooProgressPolling(data.jobId);
+        } else {
+          setWooSuccess(data);
+        }
       },
       onError: (err) => {
         setWooError(err.response?.data?.message || 'Failed to import from WooCommerce');
@@ -220,15 +269,17 @@ const ImportPage = () => {
 
   const handleWooImport = () => {
     if (selectedStatuses.length === 0) {
-      setWooError('Please select at least one order status');
+      setWooError(t('importPage.woocommerce.errorSelectStatus'));
       return;
     }
     if (limitType === 'date' && !dateLimit) {
-      setWooError('Please select a date');
+      setWooError(t('importPage.woocommerce.errorSelectDate'));
       return;
     }
     setWooError('');
     setWooSuccess(null);
+    setWooProgress(null);
+    stopWooProgressPolling();
     wooImportMutation.mutate();
   };
 
@@ -236,14 +287,14 @@ const ImportPage = () => {
     <Container maxWidth="md">
       <Box sx={{ mt: 4, mb: 4 }}>
         <Typography variant="h4" gutterBottom>
-          {t('common.importCSV') || 'Import Data'}
+          {t('importPage.title')}
         </Typography>
 
         <Paper sx={{ p: 3 }}>
           <Tabs value={tab} onChange={(e, newValue) => setTab(newValue)} sx={{ mb: 3 }}>
-            <Tab label={t('common.importCSV') + ' - Cases'} />
-            <Tab label={t('common.importCSV') + ' - ' + t('common.warranties')} />
-            <Tab label={t('common.importWooCommerce')} />
+            <Tab label={t('importPage.tabs.cases')} />
+            <Tab label={t('importPage.tabs.warranties')} />
+            <Tab label={t('importPage.tabs.woocommerce')} />
           </Tabs>
 
           {/* Tab 1: Import Cases CSV */}
@@ -251,7 +302,7 @@ const ImportPage = () => {
             <Box>
               <Box mb={3}>
                 <Typography variant="body1" gutterBottom>
-                  Upload a CSV file to import multiple service cases at once. Duplicate cases will be skipped.
+                  {t('importPage.cases.description')}
                 </Typography>
                 <Button
                   variant="outlined"
@@ -259,7 +310,7 @@ const ImportPage = () => {
                   onClick={downloadCasesExample}
                   sx={{ mt: 2 }}
                 >
-                  Download Example CSV
+                  {t('importPage.cases.downloadExample')}
                 </Button>
               </Box>
 
@@ -271,14 +322,18 @@ const ImportPage = () => {
 
               {casesSuccess && (
                 <Alert severity="success" sx={{ mb: 2 }}>
-                  <Typography variant="h6">Import Complete!</Typography>
-                  <Typography>Successfully imported: {casesSuccess.imported} cases</Typography>
+                  <Typography variant="h6">{t('importPage.cases.successTitle')}</Typography>
+                  <Typography>
+                    {t('importPage.cases.successImported', { count: casesSuccess.imported })}
+                  </Typography>
                   {casesSuccess.skipped > 0 && (
-                    <Typography>Skipped duplicates: {casesSuccess.skipped}</Typography>
+                    <Typography>
+                      {t('importPage.cases.skipped', { count: casesSuccess.skipped })}
+                    </Typography>
                   )}
                   {casesSuccess.errors > 0 && (
                     <Typography color="warning.main">
-                      Errors: {casesSuccess.errors} rows failed
+                      {t('importPage.cases.errors', { count: casesSuccess.errors })}
                     </Typography>
                   )}
                 </Alert>
@@ -299,14 +354,14 @@ const ImportPage = () => {
                     startIcon={<UploadIcon />}
                     size="large"
                   >
-                    Select CSV File
+                    {t('importPage.cases.selectFile')}
                   </Button>
                 </label>
                 {casesFile && (
                   <Box mt={2}>
-                    <Typography variant="body1">Selected: {casesFile.name}</Typography>
+                    <Typography variant="body1">{t('importPage.cases.selected')}: {casesFile.name}</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Size: {(casesFile.size / 1024).toFixed(2)} KB
+                      {t('importPage.cases.size')}: {(casesFile.size / 1024).toFixed(2)} KB
                     </Typography>
                   </Box>
                 )}
@@ -316,7 +371,7 @@ const ImportPage = () => {
                 <Box sx={{ mt: 2 }}>
                   <LinearProgress />
                   <Typography variant="body2" sx={{ mt: 1 }} align="center">
-                    Importing cases...
+                    {t('importPage.cases.importing')}
                   </Typography>
                 </Box>
               )}
@@ -328,7 +383,7 @@ const ImportPage = () => {
                   disabled={!casesFile || casesUploadMutation.isLoading}
                   startIcon={casesUploadMutation.isLoading ? <CircularProgress size={20} /> : <UploadIcon />}
                 >
-                  {casesUploadMutation.isLoading ? 'Importing...' : 'Import Cases'}
+                  {casesUploadMutation.isLoading ? t('importPage.cases.importing') : t('importPage.cases.importButton')}
                 </Button>
               </Box>
             </Box>
@@ -339,7 +394,7 @@ const ImportPage = () => {
             <Box>
               <Box mb={3}>
                 <Typography variant="body1" gutterBottom>
-                  Upload a CSV file to import multiple warranties at once. Duplicate warranties will be skipped.
+                  {t('importPage.warranties.description')}
                 </Typography>
                 <Button
                   variant="outlined"
@@ -347,7 +402,7 @@ const ImportPage = () => {
                   onClick={downloadWarrantiesExample}
                   sx={{ mt: 2 }}
                 >
-                  Download Example CSV
+                  {t('importPage.warranties.downloadExample')}
                 </Button>
               </Box>
 
@@ -359,14 +414,18 @@ const ImportPage = () => {
 
               {warrantiesSuccess && (
                 <Alert severity="success" sx={{ mb: 2 }}>
-                  <Typography variant="h6">Import Complete!</Typography>
-                  <Typography>Successfully imported: {warrantiesSuccess.imported} warranties</Typography>
+                  <Typography variant="h6">{t('importPage.cases.successTitle')}</Typography>
+                  <Typography>
+                    {t('importPage.warranties.successImported', { count: warrantiesSuccess.imported })}
+                  </Typography>
                   {warrantiesSuccess.skipped > 0 && (
-                    <Typography>Skipped duplicates: {warrantiesSuccess.skipped}</Typography>
+                    <Typography>
+                      {t('importPage.warranties.skipped', { count: warrantiesSuccess.skipped })}
+                    </Typography>
                   )}
                   {warrantiesSuccess.errors > 0 && (
                     <Typography color="warning.main">
-                      Errors: {warrantiesSuccess.errors} rows failed
+                      {t('importPage.warranties.errors', { count: warrantiesSuccess.errors })}
                     </Typography>
                   )}
                 </Alert>
@@ -387,14 +446,14 @@ const ImportPage = () => {
                     startIcon={<UploadIcon />}
                     size="large"
                   >
-                    Select CSV File
+                    {t('importPage.warranties.selectFile')}
                   </Button>
                 </label>
                 {warrantiesFile && (
                   <Box mt={2}>
-                    <Typography variant="body1">Selected: {warrantiesFile.name}</Typography>
+                    <Typography variant="body1">{t('importPage.warranties.selected')}: {warrantiesFile.name}</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Size: {(warrantiesFile.size / 1024).toFixed(2)} KB
+                      {t('importPage.warranties.size')}: {(warrantiesFile.size / 1024).toFixed(2)} KB
                     </Typography>
                   </Box>
                 )}
@@ -404,7 +463,7 @@ const ImportPage = () => {
                 <Box sx={{ mt: 2 }}>
                   <LinearProgress />
                   <Typography variant="body2" sx={{ mt: 1 }} align="center">
-                    Importing warranties...
+                    {t('importPage.warranties.importing')}
                   </Typography>
                 </Box>
               )}
@@ -416,7 +475,7 @@ const ImportPage = () => {
                   disabled={!warrantiesFile || warrantiesUploadMutation.isLoading}
                   startIcon={warrantiesUploadMutation.isLoading ? <CircularProgress size={20} /> : <UploadIcon />}
                 >
-                  {warrantiesUploadMutation.isLoading ? 'Importing...' : 'Import Warranties'}
+                  {warrantiesUploadMutation.isLoading ? t('importPage.warranties.importing') : t('importPage.warranties.importButton')}
                 </Button>
               </Box>
             </Box>
@@ -427,12 +486,10 @@ const ImportPage = () => {
             <Box>
               <Box mb={3}>
                 <Typography variant="body1" gutterBottom>
-                  Import warranties from WooCommerce orders. Already imported orders will be skipped.
+                  {t('importPage.woocommerce.description')}
                 </Typography>
-                <Alert severity="info" sx={{ mt: 2 }}>
-                  <Typography variant="body2">
-                    <strong>Note:</strong> Automatic webhooks only process "completed" orders. 
-                    This manual import allows you to import from other statuses as well.
+                <Alert severity="info" sx={{ mt: 2 }}>                  <Typography variant="body2">
+                    {t('importPage.woocommerce.note')}
                   </Typography>
                 </Alert>
               </Box>
@@ -445,17 +502,21 @@ const ImportPage = () => {
 
               {wooSuccess && (
                 <Alert severity="success" sx={{ mb: 2 }}>
-                  <Typography variant="h6">Import Complete!</Typography>
-                  <Typography>Successfully imported: {wooSuccess.imported} warranties</Typography>
+                  <Typography variant="h6">{t('importPage.cases.successTitle')}</Typography>
+                  <Typography>
+                    {t('importPage.warranties.successImported', { count: wooSuccess.imported })}
+                  </Typography>
                   {wooSuccess.skipped > 0 && (
-                    <Typography>Skipped duplicates: {wooSuccess.skipped}</Typography>
+                    <Typography>
+                      {t('importPage.warranties.skipped', { count: wooSuccess.skipped })}
+                    </Typography>
                   )}
                 </Alert>
               )}
 
               <Box mb={3}>
                 <Typography variant="h6" gutterBottom>
-                  Select Order Statuses
+                  {t('importPage.woocommerce.selectStatuses')}
                 </Typography>
                 <FormGroup>
                   {availableStatuses.map((status) => (
@@ -467,7 +528,7 @@ const ImportPage = () => {
                           onChange={() => handleStatusToggle(status)}
                         />
                       }
-                      label={status.charAt(0).toUpperCase() + status.slice(1)}
+                      label={t(`importPage.statuses.${status}`)}
                     />
                   ))}
                 </FormGroup>
@@ -475,15 +536,15 @@ const ImportPage = () => {
 
               <Box mb={3}>
                 <FormControl fullWidth>
-                  <InputLabel>Limit Type</InputLabel>
+                  <InputLabel>{t('importPage.woocommerce.limitType')}</InputLabel>
                   <Select
                     value={limitType}
-                    label="Limit Type"
+                    label={t('importPage.woocommerce.limitType')}
                     onChange={(e) => setLimitType(e.target.value)}
                   >
-                    <MenuItem value="none">No Limit</MenuItem>
-                    <MenuItem value="count">Order Count</MenuItem>
-                    <MenuItem value="date">Date From</MenuItem>
+                    <MenuItem value="none">{t('importPage.woocommerce.limitNone')}</MenuItem>
+                    <MenuItem value="count">{t('importPage.woocommerce.limitCount')}</MenuItem>
+                    <MenuItem value="date">{t('importPage.woocommerce.limitDate')}</MenuItem>
                   </Select>
                 </FormControl>
               </Box>
@@ -491,17 +552,17 @@ const ImportPage = () => {
               {limitType === 'count' && (
                 <Box mb={3}>
                   <FormControl fullWidth>
-                    <InputLabel>Import Limit</InputLabel>
+                    <InputLabel>{t('importPage.woocommerce.importLimit')}</InputLabel>
                     <Select
                       value={orderLimit}
-                      label="Import Limit"
+                      label={t('importPage.woocommerce.importLimit')}
                       onChange={(e) => setOrderLimit(e.target.value)}
                     >
-                      <MenuItem value={50}>50 orders</MenuItem>
-                      <MenuItem value={100}>100 orders</MenuItem>
-                      <MenuItem value={200}>200 orders</MenuItem>
-                      <MenuItem value={500}>500 orders</MenuItem>
-                      <MenuItem value={1000}>1000 orders</MenuItem>
+                      <MenuItem value={50}>{t('importPage.woocommerce.ordersCount', { count: 50 })}</MenuItem>
+                      <MenuItem value={100}>{t('importPage.woocommerce.ordersCount', { count: 100 })}</MenuItem>
+                      <MenuItem value={200}>{t('importPage.woocommerce.ordersCount', { count: 200 })}</MenuItem>
+                      <MenuItem value={500}>{t('importPage.woocommerce.ordersCount', { count: 500 })}</MenuItem>
+                      <MenuItem value={1000}>{t('importPage.woocommerce.ordersCount', { count: 1000 })}</MenuItem>
                     </Select>
                   </FormControl>
                 </Box>
@@ -512,7 +573,7 @@ const ImportPage = () => {
                   <TextField
                     fullWidth
                     type="date"
-                    label="Import Orders From Date"
+                    label={t('importPage.woocommerce.dateLabel')}
                     value={dateLimit}
                     onChange={(e) => setDateLimit(e.target.value)}
                     InputLabelProps={{
@@ -522,12 +583,38 @@ const ImportPage = () => {
                 </Box>
               )}
 
-              {wooImportMutation.isLoading && (
+              {(wooImportMutation.isLoading || wooProgress) && (
                 <Box sx={{ mt: 2 }}>
-                  <LinearProgress />
-                  <Typography variant="body2" sx={{ mt: 1 }} align="center">
-                    Importing warranties from WooCommerce...
-                  </Typography>
+                  <LinearProgress
+                    variant={wooProgress?.percentage !== undefined ? 'determinate' : 'indeterminate'}
+                    value={wooProgress?.percentage || 0}
+                  />
+                  <Box sx={{ mt: 1 }} textAlign="center">
+                    <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                      {wooProgress ? t('importPage.progress.title') : t('importPage.woocommerce.importing')}
+                    </Typography>
+                    {wooProgress && (
+                      <>
+                        <Typography variant="body2" color="text.secondary">
+                          {t('importPage.progress.ordersProcessed', {
+                            processed: wooProgress.processed || 0,
+                            total: wooProgress.total || '?',
+                          })}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {t('importPage.progress.summary', {
+                            imported: wooProgress.imported || 0,
+                            skipped: wooProgress.skipped || 0,
+                          })}
+                        </Typography>
+                        {typeof wooProgress.percentage === 'number' && (
+                          <Typography variant="h6" sx={{ mt: 1 }}>
+                            {wooProgress.percentage}%
+                          </Typography>
+                        )}
+                      </>
+                    )}
+                  </Box>
                 </Box>
               )}
 
@@ -538,7 +625,7 @@ const ImportPage = () => {
                   disabled={selectedStatuses.length === 0 || wooImportMutation.isLoading}
                   startIcon={wooImportMutation.isLoading ? <CircularProgress size={20} /> : <SyncIcon />}
                 >
-                  {wooImportMutation.isLoading ? 'Importing...' : 'Import from WooCommerce'}
+                  {wooImportMutation.isLoading ? t('importPage.woocommerce.importing') : t('importPage.woocommerce.importButton')}
                 </Button>
               </Box>
             </Box>

@@ -194,7 +194,6 @@ const CreateCasePage = () => {
     });
 
     // Debug: log what we're sending
-    console.log('Submitting case data:', JSON.stringify(submitData, null, 2));
     
     createMutation.mutate(submitData);
   };
@@ -507,7 +506,7 @@ const CreateCasePage = () => {
                       }
                     }}
                     margin="normal"
-                    helperText="Press Enter to add tag"
+                    helperText={t('case.pressEnterToAddTag')}
                   />
                   <Box display="flex" gap={1} flexWrap="wrap" mt={1}>
                     {tags.map((tag) => (

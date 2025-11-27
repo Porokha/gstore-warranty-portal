@@ -130,7 +130,7 @@ const WarrantySearchPage = () => {
             // Check data URL size - if still too large, skip
             const dataSize = compressedDataUrl.length;
             if (dataSize > 50000) { // If compressed > 50KB, skip image
-              console.warn('Compressed logo still too large, using text instead');
+              // console.warn('Compressed logo still too large, using text instead');
               pdf.setFontSize(28);
               pdf.setTextColor(30, 41, 59);
               pdf.setFont(undefined, 'bold');

@@ -193,10 +193,10 @@ const DashboardPage = () => {
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Box>
             <Typography variant="h4" sx={{ fontWeight: 700, color: '#1e293b', mb: 1 }}>
-              Dashboard
+              {t('dashboard.title')}
             </Typography>
             <Typography variant="body1" sx={{ color: '#64748b' }}>
-              Welcome back, here's what's happening today.
+              {t('dashboard.welcome')}
             </Typography>
           </Box>
           <Box display="flex" gap={1} alignItems="center">
@@ -211,10 +211,10 @@ const DashboardPage = () => {
                 IconComponent={ArrowDropDownIcon}
                 sx={{ fontSize: '14px', bgcolor: '#ffffff' }}
               >
-                <MenuItem value="7">Last 7 Days</MenuItem>
-                <MenuItem value="30">Last 30 Days</MenuItem>
-                <MenuItem value="90">Last 90 Days</MenuItem>
-                <MenuItem value="custom">Custom Range</MenuItem>
+                <MenuItem value="7">{t('dashboard.filters.last7')}</MenuItem>
+                <MenuItem value="30">{t('dashboard.filters.last30')}</MenuItem>
+                <MenuItem value="90">{t('dashboard.filters.last90')}</MenuItem>
+                <MenuItem value="custom">{t('dashboard.filters.customRange')}</MenuItem>
               </Select>
             </FormControl>
             <IconButton
@@ -239,7 +239,7 @@ const DashboardPage = () => {
       >
         <Box sx={{ p: 2, minWidth: 300 }}>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Custom Date Range</Typography>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{t('dashboard.filters.customDateRange')}</Typography>
             <IconButton size="small" onClick={handleFilterClose}>
               <CloseIcon fontSize="small" />
             </IconButton>
@@ -247,7 +247,7 @@ const DashboardPage = () => {
           <TextField
             fullWidth
             type="date"
-            label="Start Date"
+            label={t('dashboard.filters.startDate')}
             value={customStart ? customStart.toISOString().split('T')[0] : ''}
             onChange={(e) => setCustomStart(e.target.value ? new Date(e.target.value) : null)}
             InputLabelProps={{ shrink: true }}
@@ -257,7 +257,7 @@ const DashboardPage = () => {
           <TextField
             fullWidth
             type="date"
-            label="End Date"
+            label={t('dashboard.filters.endDate')}
             value={customEnd ? customEnd.toISOString().split('T')[0] : ''}
             onChange={(e) => setCustomEnd(e.target.value ? new Date(e.target.value) : null)}
             InputLabelProps={{ shrink: true }}
@@ -271,7 +271,7 @@ const DashboardPage = () => {
             disabled={!customStart || !customEnd}
             size="small"
           >
-            Apply Filter
+            {t('dashboard.filters.apply')}
           </Button>
         </Box>
       </Popover>
@@ -293,7 +293,7 @@ const DashboardPage = () => {
             <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
               <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
                 <FolderIcon sx={{ fontSize: 28, opacity: 0.9 }} />
-                <Chip label="Active" size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
+                <Chip label={t('common.active')} size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
               </Box>
               {isLoading ? (
                 <CircularProgress size={24} sx={{ color: '#ffffff' }} />
@@ -303,7 +303,7 @@ const DashboardPage = () => {
                     {realTime.openCases || 0}
                   </Typography>
                   <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '13px' }}>
-                    Open Service Cases
+                    {t('dashboard.cards.openCases')}
                   </Typography>
                 </>
               )}
@@ -326,7 +326,7 @@ const DashboardPage = () => {
             <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
               <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
                 <CalendarIcon sx={{ fontSize: 28, opacity: 0.9 }} />
-                <Chip label="Due Soon" size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
+                <Chip label={t('dashboard.badges.dueSoon')} size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
               </Box>
               {isLoading ? (
                 <CircularProgress size={24} sx={{ color: '#ffffff' }} />
@@ -336,7 +336,7 @@ const DashboardPage = () => {
                     {realTime.closeToDeadline || 0}
                   </Typography>
                   <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '13px' }}>
-                    Cases Close to Deadline
+                    {t('dashboard.cards.closeToDeadline')}
                   </Typography>
                 </>
               )}
@@ -359,7 +359,7 @@ const DashboardPage = () => {
             <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
               <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
                 <WarningIcon sx={{ fontSize: 28, opacity: 0.9 }} />
-                <Chip label="Urgent" size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
+                <Chip label={t('dashboard.badges.urgent')} size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
               </Box>
               {isLoading ? (
                 <CircularProgress size={24} sx={{ color: '#ffffff' }} />
@@ -369,7 +369,7 @@ const DashboardPage = () => {
                     {realTime.dueCases || 0}
                   </Typography>
                   <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '13px' }}>
-                    Overdue Cases
+                    {t('dashboard.cards.dueCases')}
                   </Typography>
                 </>
               )}
@@ -392,7 +392,7 @@ const DashboardPage = () => {
             <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
               <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
                 <CheckCircleIcon sx={{ fontSize: 28, opacity: 0.9 }} />
-                <Chip label="Completed" size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
+                <Chip label={t('dashboard.badges.completed')} size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
               </Box>
               {isLoading ? (
                 <CircularProgress size={24} sx={{ color: '#ffffff' }} />
@@ -402,7 +402,7 @@ const DashboardPage = () => {
                     {timeFiltered.closedCases || 0}
                   </Typography>
                   <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '13px' }}>
-                    Closed This Month
+                    {t('dashboard.cards.closedThisMonth')}
                   </Typography>
                 </>
               )}
@@ -428,7 +428,7 @@ const DashboardPage = () => {
             <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
               <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
                 <WarrantyIcon sx={{ fontSize: 28, opacity: 0.9 }} />
-                <Chip label="Active" size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
+                <Chip label={t('common.active')} size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
               </Box>
               {isLoading ? (
                 <CircularProgress size={24} sx={{ color: '#ffffff' }} />
@@ -438,7 +438,7 @@ const DashboardPage = () => {
                     {timeFiltered.activeWarranties || 0}
                   </Typography>
                   <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '13px' }}>
-                    Active Warranties
+                    {t('dashboard.cards.activeWarranties')}
                   </Typography>
                 </>
               )}
@@ -461,7 +461,7 @@ const DashboardPage = () => {
             <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
               <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
                 <WarrantyIcon sx={{ fontSize: 28, opacity: 0.9 }} />
-                <Chip label="Expired" size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
+                <Chip label={t('common.expired')} size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
               </Box>
               {isLoading ? (
                 <CircularProgress size={24} sx={{ color: '#ffffff' }} />
@@ -471,7 +471,7 @@ const DashboardPage = () => {
                     {timeFiltered.expiredWarranties || 0}
                   </Typography>
                   <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '13px' }}>
-                    Expired Warranties
+                    {t('dashboard.cards.expiredWarranties')}
                   </Typography>
                 </>
               )}
@@ -494,7 +494,7 @@ const DashboardPage = () => {
             <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
               <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
                 <PaymentIcon sx={{ fontSize: 28, opacity: 0.9 }} />
-                <Chip label="Revenue" size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
+                <Chip label={t('dashboard.badges.revenue')} size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
               </Box>
               {isLoading ? (
                 <CircularProgress size={24} sx={{ color: '#ffffff' }} />
@@ -504,7 +504,7 @@ const DashboardPage = () => {
                     ₾{timeFiltered.totalMoneyIn?.toFixed(0) || 0}
                   </Typography>
                   <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '13px' }}>
-                    Total Payments This Month
+                    {t('dashboard.cards.payments')}
                   </Typography>
                 </>
               )}
@@ -519,7 +519,7 @@ const DashboardPage = () => {
           <Paper sx={{ p: 2.5, borderRadius: 2, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
               <Typography variant="h6" sx={{ fontWeight: 600, color: '#1e293b', fontSize: '16px' }}>
-                Service Completion Time
+                {t('dashboard.charts.completionTime')}
               </Typography>
               <FormControl size="small" sx={{ minWidth: 120 }}>
                 <Select
@@ -532,9 +532,9 @@ const DashboardPage = () => {
                   IconComponent={ArrowDropDownIcon}
                   sx={{ fontSize: '13px' }}
                 >
-                  <MenuItem value="7">Last 7 Days</MenuItem>
-                  <MenuItem value="30">Last 30 Days</MenuItem>
-                  <MenuItem value="90">Last 90 Days</MenuItem>
+                  <MenuItem value="7">{t('dashboard.filters.last7')}</MenuItem>
+                  <MenuItem value="30">{t('dashboard.filters.last30')}</MenuItem>
+                  <MenuItem value="90">{t('dashboard.filters.last90')}</MenuItem>
                 </Select>
               </FormControl>
             </Box>
@@ -557,7 +557,7 @@ const DashboardPage = () => {
               </ResponsiveContainer>
             ) : (
               <Box display="flex" justifyContent="center" alignItems="center" height={250}>
-                <Typography variant="body2" sx={{ color: '#64748b' }}>No data available</Typography>
+                <Typography variant="body2" sx={{ color: '#64748b' }}>{t('dashboard.charts.noData')}</Typography>
               </Box>
             )}
           </Paper>
@@ -566,7 +566,7 @@ const DashboardPage = () => {
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 2.5, borderRadius: 2, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
             <Typography variant="h6" sx={{ fontWeight: 600, color: '#1e293b', mb: 2, fontSize: '16px' }}>
-              Cases by Status
+              {t('dashboard.charts.casesByStatus')}
             </Typography>
             {statusChartData && statusChartData.length > 0 ? (
               <>
@@ -609,7 +609,7 @@ const DashboardPage = () => {
               </>
             ) : (
               <Box display="flex" justifyContent="center" alignItems="center" height={250}>
-                <Typography variant="body2" sx={{ color: '#64748b' }}>No data available</Typography>
+                <Typography variant="body2" sx={{ color: '#64748b' }}>{t('dashboard.charts.noData')}</Typography>
               </Box>
             )}
           </Paper>
@@ -622,7 +622,7 @@ const DashboardPage = () => {
           <Paper sx={{ p: 2.5, borderRadius: 2, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
             <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
               <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 500, fontSize: '13px' }}>
-                Average Service Time
+                {t('dashboard.kpi.avgServiceTime')}
               </Typography>
               <TrendingDownIcon sx={{ color: '#10b981', fontSize: 18 }} />
             </Box>
@@ -631,14 +631,14 @@ const DashboardPage = () => {
             ) : (
               <>
                 <Typography variant="h5" sx={{ fontWeight: 700, color: '#1e293b', mb: 1, fontSize: '24px' }}>
-                  {timeFiltered.avgCompletionTime?.toFixed(1) || 0} days
+                  {timeFiltered.avgCompletionTime?.toFixed(1) || 0} {t('common.days')}
                 </Typography>
                 <Box display="flex" alignItems="center" gap={1}>
                   <Typography variant="caption" sx={{ color: '#10b981', fontWeight: 600, fontSize: '11px' }}>
-                    12% faster
+                    {t('dashboard.kpi.faster')}
                   </Typography>
                   <Typography variant="caption" sx={{ color: '#64748b', fontSize: '11px' }}>
-                    vs last month
+                    {t('dashboard.kpi.vsLastMonth')}
                   </Typography>
                 </Box>
               </>
@@ -650,7 +650,7 @@ const DashboardPage = () => {
           <Paper sx={{ p: 2.5, borderRadius: 2, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
             <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
               <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 500, fontSize: '13px' }}>
-                On-Time Performance
+                {t('dashboard.kpi.onTimePerformance')}
               </Typography>
             </Box>
             {isLoading ? (
@@ -682,7 +682,7 @@ const DashboardPage = () => {
           <Paper sx={{ p: 2.5, borderRadius: 2, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
             <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
               <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 500, fontSize: '13px' }}>
-                Customer Satisfaction
+                {t('dashboard.kpi.customerSatisfaction')}
               </Typography>
               <StarIcon sx={{ color: '#f59e0b', fontSize: 18 }} />
             </Box>
@@ -692,21 +692,21 @@ const DashboardPage = () => {
             <Box display="flex" alignItems="center" gap={1}>
               <TrendingUpIcon sx={{ color: '#10b981', fontSize: 14 }} />
               <Typography variant="caption" sx={{ color: '#10b981', fontWeight: 600, fontSize: '11px' }}>
-                0.3 points
+                {t('dashboard.kpi.ratingChange')}
               </Typography>
               <Typography variant="caption" sx={{ color: '#64748b', fontSize: '11px' }}>
-                vs last month
+                {t('dashboard.kpi.vsLastMonth')}
               </Typography>
             </Box>
           </Paper>
         </Grid>
       </Grid>
 
-      {/* Recent Service Cases Table */}
+      {/* {t('dashboard.table.recentCases')} Table */}
       <Paper sx={{ borderRadius: 2, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)', overflow: 'hidden' }}>
         <Box sx={{ p: 2.5, borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6" sx={{ fontWeight: 600, color: '#1e293b', fontSize: '16px' }}>
-            Recent Service Cases
+            {t('dashboard.table.recentCases')}
           </Typography>
           <Link
             component="button"
@@ -721,7 +721,7 @@ const DashboardPage = () => {
               '&:hover': { textDecoration: 'underline' },
             }}
           >
-            View All
+            {t('dashboard.table.viewAll')}
           </Link>
         </Box>
         <TableContainer>
@@ -729,28 +729,28 @@ const DashboardPage = () => {
             <TableHead>
               <TableRow sx={{ bgcolor: '#f8fafc' }}>
                 <TableCell sx={{ fontWeight: 600, color: '#64748b', fontSize: '11px', textTransform: 'uppercase', py: 1.5 }}>
-                  CASE ID
+                  {t('dashboard.table.caseId')}
                 </TableCell>
                 <TableCell sx={{ fontWeight: 600, color: '#64748b', fontSize: '11px', textTransform: 'uppercase', py: 1.5 }}>
-                  CUSTOMER
+                  {t('dashboard.table.customer')}
                 </TableCell>
                 <TableCell sx={{ fontWeight: 600, color: '#64748b', fontSize: '11px', textTransform: 'uppercase', py: 1.5 }}>
-                  PRODUCT
+                  {t('dashboard.table.product')}
                 </TableCell>
                 <TableCell sx={{ fontWeight: 600, color: '#64748b', fontSize: '11px', textTransform: 'uppercase', py: 1.5 }}>
-                  STATUS
+                  {t('dashboard.table.status')}
                 </TableCell>
                 <TableCell sx={{ fontWeight: 600, color: '#64748b', fontSize: '11px', textTransform: 'uppercase', py: 1.5 }}>
-                  PRIORITY
+                  {t('dashboard.table.priority')}
                 </TableCell>
                 <TableCell sx={{ fontWeight: 600, color: '#64748b', fontSize: '11px', textTransform: 'uppercase', py: 1.5 }}>
-                  TECHNICIAN
+                  {t('dashboard.table.technician')}
                 </TableCell>
                 <TableCell sx={{ fontWeight: 600, color: '#64748b', fontSize: '11px', textTransform: 'uppercase', py: 1.5 }}>
-                  DEADLINE
+                  {t('dashboard.table.deadline')}
                 </TableCell>
                 <TableCell sx={{ fontWeight: 600, color: '#64748b', fontSize: '11px', textTransform: 'uppercase', py: 1.5 }}>
-                  ACTIONS
+                  {t('dashboard.table.actions')}
                 </TableCell>
               </TableRow>
             </TableHead>
@@ -830,13 +830,13 @@ const DashboardPage = () => {
                   </TableCell>
                   <TableCell sx={{ py: 1.5 }}>
                     <Typography variant="body2" sx={{ color: '#1e293b', fontSize: '13px' }}>
-                      {caseItem.technician?.name || 'Unassigned'}
+                      {caseItem.technician?.name || t('dashboard.table.unassigned')}
                     </Typography>
                   </TableCell>
                   <TableCell sx={{ py: 1.5 }}>
                     {isOverdue(caseItem.deadline_at) ? (
                       <Typography variant="body2" sx={{ color: '#ef4444', fontWeight: 500, fontSize: '13px' }}>
-                        ▲ Overdue
+                        ▲ {t('dashboard.table.overdue')}
                       </Typography>
                     ) : (
                       <Typography variant="body2" sx={{ color: '#64748b', fontSize: '13px' }}>

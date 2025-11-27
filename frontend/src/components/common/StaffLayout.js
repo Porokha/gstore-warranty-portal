@@ -69,11 +69,11 @@ const StaffLayout = () => {
 
   const menuItems = [
     { path: '/staff/dashboard', label: t('common.dashboard'), icon: <DashboardIcon /> },
-    { path: '/staff/cases', label: 'Service Cases', icon: <OpenCasesIcon />, badge: urgentCasesCount },
+    { path: '/staff/cases', label: t('common.serviceCases'), icon: <OpenCasesIcon />, badge: urgentCasesCount },
     { path: '/staff/warranties', label: t('common.warranties'), icon: <WarrantiesIcon /> },
-    { path: '/staff/finance', label: 'Payments', icon: <FinanceIcon /> },
+    { path: '/staff/finance', label: t('common.finance'), icon: <FinanceIcon /> },
     { path: '/staff/statistics', label: t('common.statistics') || 'Statistics', icon: <StatisticsIcon /> },
-    { path: '/staff/import', label: 'Import Data', icon: <ImportIcon /> },
+    { path: '/staff/import', label: t('common.importData'), icon: <ImportIcon /> },
   ];
 
   const bottomMenuItems = [
@@ -101,15 +101,15 @@ const StaffLayout = () => {
           '& .MuiDrawer-paper': {
             width: drawerWidth,
             boxSizing: 'border-box',
-            bgcolor: '#1e293b',
-            color: '#ffffff',
+            bgcolor: '#f4e7d3',
+            color: '#1f2937',
             borderRight: 'none',
           },
         }}
       >
-        <Toolbar sx={{ bgcolor: '#1e293b', minHeight: '80px !important' }}>
+        <Toolbar sx={{ bgcolor: '#f4e7d3', minHeight: '80px !important' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <ZevaLogo size="small" variant="light" />
+            <ZevaLogo size="medium" variant="default" showSubtitle />
           </Box>
         </Toolbar>
         
@@ -129,21 +129,21 @@ const StaffLayout = () => {
                       borderRadius: 2,
                       py: 1.5,
                       '&.Mui-selected': {
-                        bgcolor: '#3b82f6',
+                        bgcolor: '#1e293b',
                         color: '#ffffff',
                         '&:hover': {
-                          bgcolor: '#3b82f6',
+                          bgcolor: '#1e293b',
                         },
                         '& .MuiListItemText-primary': {
                           fontWeight: 600,
                         },
                       },
                       '&:hover': {
-                        bgcolor: 'rgba(255, 255, 255, 0.1)',
+                        bgcolor: 'rgba(0, 0, 0, 0.05)',
                       },
                     }}
                   >
-                    <Box sx={{ mr: 2, display: 'flex', alignItems: 'center', color: isActive ? '#ffffff' : '#cbd5e1' }}>
+                    <Box sx={{ mr: 2, display: 'flex', alignItems: 'center', color: isActive ? '#ffffff' : '#8a5a2b' }}>
                       {item.icon}
                     </Box>
                     <ListItemText 
