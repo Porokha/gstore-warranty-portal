@@ -340,6 +340,42 @@ const WarrantiesPage = () => {
         frozenColumns={['select', 'warranty_id']}
         defaultColumnWidth={150}
         onRowClick={(row) => navigate(`/staff/warranties/${row.id}`)}
+        onBulkDelete={async (selectedIds) => {
+          try {
+            for (const id of selectedIds) {
+              await warrantiesService.delete(id);
+            }
+            queryClient.invalidateQueries('warranties');
+            alert(t('warranty.warrantyDeleted') || 'Warranties deleted successfully');
+          } catch (err) {
+            alert(err.response?.data?.message || t('common.errorLoading') || 'Error deleting warranties');
+          }
+        }}
+        onBulkExport={(selectedIds) => {
+          const selectedWarranties = rows.filter((w) => selectedIds.includes(w.id));
+          const csv = [
+            ['Warranty ID', 'Product', 'SKU', 'Serial', 'Customer', 'Phone', 'Purchase Date', 'Warranty End', 'Status'].join(','),
+            ...selectedWarranties.map((w) =>
+              [
+                w.warranty_id,
+                w.title,
+                w.sku,
+                w.serial_number,
+                `${w.customer_name} ${w.customer_last_name}`,
+                w.customer_phone,
+                new Date(w.purchase_date).toLocaleDateString(),
+                new Date(w.warranty_end).toLocaleDateString(),
+                w.isActive ? 'Active' : 'Expired',
+              ].join(',')
+            ),
+          ].join('\n');
+          const blob = new Blob([csv], { type: 'text/csv' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `warranties-${new Date().toISOString().split('T')[0]}.csv`;
+          a.click();
+        }}
       />
     </div>
   );

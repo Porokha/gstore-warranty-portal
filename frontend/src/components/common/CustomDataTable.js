@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   Table,
@@ -14,12 +14,21 @@ import {
   Button,
   Divider,
   Tooltip,
+  Pagination,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import {
   Visibility as EyeIcon,
   VisibilityOff as EyeSlashIcon,
   DragIndicator as DragIcon,
   Settings as SettingsIcon,
+  Lock as LockIcon,
+  LockOpen as LockOpenIcon,
+  Delete as DeleteIcon,
+  FileDownload as ExportIcon,
 } from '@mui/icons-material';
 
 const CustomDataTable = ({
@@ -27,9 +36,13 @@ const CustomDataTable = ({
   data,
   onRowClick,
   onBulkAction,
+  onBulkDelete,
+  onBulkExport,
   tableKey = 'default',
   frozenColumns = [],
   defaultColumnWidth = 150,
+  pageSizeOptions = [10, 25, 50, 100],
+  defaultPageSize = 25,
 }) => {
   const [columns, setColumns] = useState(initialColumns);
   const [hiddenCols, setHiddenCols] = useState([]);
@@ -38,6 +51,25 @@ const CustomDataTable = ({
   const [dragColKey, setDragColKey] = useState(null);
   const [columnWidths, setColumnWidths] = useState({});
   const [selected, setSelected] = useState([]);
+  const [frozenCols, setFrozenCols] = useState(frozenColumns || []);
+  const [frozenRows, setFrozenRows] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(defaultPageSize);
+  const [showAll, setShowAll] = useState(false);
+  const tableContainerRef = useRef(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  // Measure container width
+  useEffect(() => {
+    const updateWidth = () => {
+      if (tableContainerRef.current) {
+        setContainerWidth(tableContainerRef.current.offsetWidth);
+      }
+    };
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
 
   // Load persisted preferences
   useEffect(() => {
@@ -45,6 +77,8 @@ const CustomDataTable = ({
       const storedWidths = localStorage.getItem(`${tableKey}_columnWidths`);
       const storedOrder = localStorage.getItem(`${tableKey}_columnOrder`);
       const storedHidden = localStorage.getItem(`${tableKey}_hiddenCols`);
+      const storedFrozenCols = localStorage.getItem(`${tableKey}_frozenCols`);
+      const storedPageSize = localStorage.getItem(`${tableKey}_pageSize`);
 
       if (storedWidths) {
         setColumnWidths(JSON.parse(storedWidths));
@@ -59,6 +93,12 @@ const CustomDataTable = ({
       }
       if (storedHidden) {
         setHiddenCols(JSON.parse(storedHidden));
+      }
+      if (storedFrozenCols) {
+        setFrozenCols(JSON.parse(storedFrozenCols));
+      }
+      if (storedPageSize) {
+        setPageSize(parseInt(storedPageSize, 10));
       }
     } catch (e) {
       console.error('Failed to load table preferences:', e);
@@ -102,6 +142,18 @@ const CustomDataTable = ({
     [tableKey]
   );
 
+  // Save frozen columns
+  const saveFrozenCols = useCallback(
+    (frozen) => {
+      try {
+        localStorage.setItem(`${tableKey}_frozenCols`, JSON.stringify(frozen));
+      } catch (e) {
+        console.error('Failed to save frozen columns:', e);
+      }
+    },
+    [tableKey]
+  );
+
   // Column ordering drag handlers
   const startOrderDrag = (key) => {
     setDragColKey(key);
@@ -130,6 +182,7 @@ const CustomDataTable = ({
 
   // Toggle column visibility
   const toggleColumn = (key) => {
+    if (key === 'select') return; // Prevent hiding checkbox column
     setHiddenCols((prev) => {
       const updated = prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key];
       saveHidden(updated);
@@ -137,7 +190,37 @@ const CustomDataTable = ({
     });
   };
 
-  const visibleColumns = columns.filter((c) => !hiddenCols.includes(c.key));
+  // Toggle column freeze
+  const toggleColumnFreeze = (key) => {
+    if (key === 'select') return; // Checkbox column is always frozen
+    setFrozenCols((prev) => {
+      const updated = prev.includes(key)
+        ? prev.filter((x) => x !== key)
+        : [...prev, key].sort((a, b) => {
+            const aIdx = visibleColumns.findIndex((c) => c.key === a);
+            const bIdx = visibleColumns.findIndex((c) => c.key === b);
+            return aIdx - bIdx;
+          });
+      saveFrozenCols(updated);
+      return updated;
+    });
+  };
+
+  // Toggle row freeze
+  const toggleRowFreeze = (rowId) => {
+    setFrozenRows((prev) => (prev.includes(rowId) ? prev.filter((x) => x !== rowId) : [...prev, rowId]));
+  };
+
+  // Toggle freeze all rows
+  const toggleFreezeAllRows = () => {
+    if (frozenRows.length === paginatedData.length) {
+      setFrozenRows([]);
+    } else {
+      setFrozenRows(paginatedData.map((d) => d.id));
+    }
+  };
+
+  const visibleColumns = columns.filter((c) => !hiddenCols.includes(c.key) && c.key !== 'rowFreeze');
 
   // Row selection
   const toggleRow = (id) => {
@@ -145,15 +228,16 @@ const CustomDataTable = ({
   };
 
   const toggleAll = () => {
-    if (selected.length === data.length) {
+    if (selected.length === paginatedData.length) {
       setSelected([]);
     } else {
-      setSelected(data.map((d) => d.id));
+      setSelected(paginatedData.map((d) => d.id));
     }
   };
 
   // Column resize
   const startResize = (e, key) => {
+    if (key === 'select') return; // Prevent resizing checkbox column
     e.preventDefault();
     e.stopPropagation();
     const startX = e.clientX;
@@ -185,61 +269,219 @@ const CustomDataTable = ({
   };
 
   const getColumnWidth = (col) => {
+    if (col.key === 'select') return 50; // Fixed width for checkbox
     return columnWidths[col.key] || col.width || defaultColumnWidth;
   };
 
-  // Calculate total table width based on visible columns
-  const totalTableWidth = useMemo(() => {
-    return visibleColumns.reduce((sum, col) => sum + getColumnWidth(col), 0);
-  }, [visibleColumns, columnWidths, defaultColumnWidth]);
+  // Calculate total table width and adjust last column if needed
+  const { totalTableWidth, adjustedColumns } = useMemo(() => {
+    const baseWidth = visibleColumns.reduce((sum, col) => sum + getColumnWidth(col), 0);
+    const freezeColWidth = 50; // Width for row freeze column
+    const totalBaseWidth = baseWidth + freezeColWidth;
+
+    // If table is narrower than container and we have space, expand last non-frozen column
+    let adjustedCols = [...visibleColumns];
+    if (containerWidth > 0 && totalBaseWidth < containerWidth && visibleColumns.length > 0) {
+      const lastCol = visibleColumns[visibleColumns.length - 1];
+      if (lastCol.key !== 'select' && lastCol.key !== 'rowFreeze' && !frozenCols.includes(lastCol.key)) {
+        const diff = containerWidth - totalBaseWidth;
+        adjustedCols = adjustedCols.map((col, idx) => {
+          if (idx === adjustedCols.length - 1) {
+            return { ...col, _adjustedWidth: getColumnWidth(col) + diff };
+          }
+          return col;
+        });
+      }
+    }
+
+    const finalWidth = adjustedCols.reduce((sum, col) => sum + (col._adjustedWidth || getColumnWidth(col)), 0) + freezeColWidth;
+    return { totalTableWidth: Math.max(finalWidth, containerWidth || totalBaseWidth), adjustedColumns: adjustedCols };
+  }, [visibleColumns, columnWidths, defaultColumnWidth, containerWidth, frozenCols]);
+
+  // Pagination
+  const paginatedData = useMemo(() => {
+    if (showAll) return data;
+    const start = (currentPage - 1) * pageSize;
+    const end = start + pageSize;
+    return data.slice(start, end);
+  }, [data, currentPage, pageSize, showAll]);
+
+  const totalPages = useMemo(() => Math.ceil(data.length / pageSize), [data.length, pageSize]);
+
+  // Separate frozen and regular rows
+  const { frozenRowsData, regularRowsData } = useMemo(() => {
+    const frozen = paginatedData.filter((row) => frozenRows.includes(row.id));
+    const regular = paginatedData.filter((row) => !frozenRows.includes(row.id));
+    return { frozenRowsData: frozen, regularRowsData: regular };
+  }, [paginatedData, frozenRows]);
+
+  const handlePageChange = (event, value) => {
+    setCurrentPage(value);
+    setSelected([]); // Clear selection on page change
+  };
+
+  const handlePageSizeChange = (event) => {
+    const newSize = parseInt(event.target.value, 10);
+    setPageSize(newSize);
+    setCurrentPage(1);
+    setSelected([]);
+    try {
+      localStorage.setItem(`${tableKey}_pageSize`, String(newSize));
+    } catch (e) {
+      console.error('Failed to save page size:', e);
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (onBulkDelete && selected.length > 0) {
+      if (window.confirm(`Are you sure you want to delete ${selected.length} item(s)?`)) {
+        onBulkDelete(selected);
+        setSelected([]);
+      }
+    }
+  };
+
+  const handleBulkExport = () => {
+    if (onBulkExport && selected.length > 0) {
+      onBulkExport(selected);
+    }
+  };
 
   return (
     <Box>
-      {/* Settings Button - Left Side */}
-      <Box display="flex" justifyContent="flex-start" alignItems="center" mb={2}>
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<SettingsIcon />}
-          onClick={handleSettingsClick}
-          sx={{
-            borderColor: '#d1d5db',
-            color: '#4b5563',
-            textTransform: 'none',
-            fontWeight: 500,
-            '&:hover': {
-              borderColor: '#9ca3af',
-              bgcolor: '#f9fafb',
-            },
-          }}
-        >
-          Columns & Order
-        </Button>
-        <Menu
-          anchorEl={anchorEl}
-          open={orderingOpen}
-          onClose={handleSettingsClose}
-          PaperProps={{
-            sx: {
-              borderRadius: 2,
-              boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-              border: '1px solid #e5e7eb',
-              mt: 1,
-            },
-          }}
-        >
-          <Box sx={{ p: 2, minWidth: 300 }}>
-            <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600, color: '#111827' }}>
-              Show / Hide & Reorder Columns
-            </Typography>
-            <Divider sx={{ mb: 1.5 }} />
-            <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
-              {columns.map((col) => (
+      {/* Top Bar with Settings and Bulk Actions */}
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} flexWrap="wrap" gap={2}>
+        <Box display="flex" alignItems="center" gap={2}>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<SettingsIcon />}
+            onClick={handleSettingsClick}
+            sx={{
+              borderColor: '#d1d5db',
+              color: '#4b5563',
+              textTransform: 'none',
+              fontWeight: 500,
+              '&:hover': {
+                borderColor: '#9ca3af',
+                bgcolor: '#f9fafb',
+              },
+            }}
+          >
+            Columns & Order
+          </Button>
+
+          {selected.length > 0 && (
+            <>
+              <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500 }}>
+                {selected.length} selected
+              </Typography>
+              {onBulkExport && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<ExportIcon />}
+                  onClick={handleBulkExport}
+                  sx={{
+                    borderColor: '#3b82f6',
+                    color: '#3b82f6',
+                    textTransform: 'none',
+                    '&:hover': {
+                      borderColor: '#2563eb',
+                      bgcolor: '#eff6ff',
+                    },
+                  }}
+                >
+                  Export
+                </Button>
+              )}
+              {onBulkDelete && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<DeleteIcon />}
+                  onClick={handleBulkDelete}
+                  sx={{
+                    borderColor: '#ef4444',
+                    color: '#ef4444',
+                    textTransform: 'none',
+                    '&:hover': {
+                      borderColor: '#dc2626',
+                      bgcolor: '#fef2f2',
+                    },
+                  }}
+                >
+                  Delete
+                </Button>
+              )}
+            </>
+          )}
+        </Box>
+
+        {/* Pagination Controls */}
+        <Box display="flex" alignItems="center" gap={2}>
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>Show</InputLabel>
+            <Select value={showAll ? 'all' : pageSize} label="Show" onChange={(e) => {
+              if (e.target.value === 'all') {
+                setShowAll(true);
+              } else {
+                setShowAll(false);
+                handlePageSizeChange(e);
+              }
+            }}>
+              {pageSizeOptions.map((size) => (
+                <MenuItem key={size} value={size}>
+                  {size} per page
+                </MenuItem>
+              ))}
+              <MenuItem value="all">All</MenuItem>
+            </Select>
+          </FormControl>
+          {!showAll && totalPages > 1 && (
+            <Pagination
+              count={totalPages}
+              page={currentPage}
+              onChange={handlePageChange}
+              color="primary"
+              size="small"
+              showFirstButton
+              showLastButton
+            />
+          )}
+        </Box>
+      </Box>
+
+      <Menu
+        anchorEl={anchorEl}
+        open={orderingOpen}
+        onClose={handleSettingsClose}
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+            border: '1px solid #e5e7eb',
+            mt: 1,
+          },
+        }}
+      >
+        <Box sx={{ p: 2, minWidth: 300 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600, color: '#111827' }}>
+            Show / Hide & Reorder Columns
+          </Typography>
+          <Divider sx={{ mb: 1.5 }} />
+          <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
+            {columns.map((col) => {
+              const isSelectCol = col.key === 'select';
+              const isHidden = hiddenCols.includes(col.key);
+              const isFrozen = frozenCols.includes(col.key) || isSelectCol;
+
+              return (
                 <Box
                   key={col.key}
-                  draggable
-                  onDragStart={() => startOrderDrag(col.key)}
-                  onDragOver={(e) => overOrderDrag(col.key, e)}
+                  draggable={!isSelectCol}
+                  onDragStart={() => !isSelectCol && startOrderDrag(col.key)}
+                  onDragOver={(e) => !isSelectCol && overOrderDrag(col.key, e)}
                   onDragEnd={endOrderDrag}
                   sx={{
                     display: 'flex',
@@ -250,81 +492,59 @@ const CustomDataTable = ({
                     mb: 0.75,
                     border: '1px solid #e5e7eb',
                     borderRadius: 1.5,
-                    bgcolor: hiddenCols.includes(col.key) ? '#f3f4f6' : '#ffffff',
-                    cursor: 'move',
+                    bgcolor: isHidden ? '#f3f4f6' : '#ffffff',
+                    cursor: isSelectCol ? 'default' : 'move',
                     transition: 'all 0.2s',
+                    opacity: isSelectCol ? 0.6 : 1,
                     '&:hover': {
                       bgcolor: '#f9fafb',
                       borderColor: '#d1d5db',
-                      transform: 'translateX(2px)',
+                      transform: isSelectCol ? 'none' : 'translateX(2px)',
                     },
                   }}
                 >
                   <Box display="flex" alignItems="center" gap={1.5} flex={1}>
-                    <DragIcon sx={{ fontSize: 18, color: '#9ca3af', cursor: 'grab' }} />
-                    <IconButton
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleColumn(col.key);
-                      }}
-                      sx={{
-                        p: 0.5,
-                        color: hiddenCols.includes(col.key) ? '#9ca3af' : '#3b82f6',
-                        '&:hover': {
-                          bgcolor: 'rgba(59, 130, 246, 0.1)',
-                        },
-                      }}
-                    >
-                      {hiddenCols.includes(col.key) ? (
-                        <EyeSlashIcon sx={{ fontSize: 18 }} />
-                      ) : (
-                        <EyeIcon sx={{ fontSize: 18 }} />
-                      )}
-                    </IconButton>
+                    {!isSelectCol && <DragIcon sx={{ fontSize: 18, color: '#9ca3af', cursor: 'grab' }} />}
+                    {!isSelectCol && (
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleColumn(col.key);
+                        }}
+                        sx={{
+                          p: 0.5,
+                          color: isHidden ? '#9ca3af' : '#3b82f6',
+                          '&:hover': {
+                            bgcolor: 'rgba(59, 130, 246, 0.1)',
+                          },
+                        }}
+                      >
+                        {isHidden ? <EyeSlashIcon sx={{ fontSize: 18 }} /> : <EyeIcon sx={{ fontSize: 18 }} />}
+                      </IconButton>
+                    )}
                     <Typography
                       variant="body2"
                       sx={{
                         fontSize: '0.875rem',
-                        fontWeight: hiddenCols.includes(col.key) ? 400 : 500,
-                        color: hiddenCols.includes(col.key) ? '#9ca3af' : '#111827',
-                        textDecoration: hiddenCols.includes(col.key) ? 'line-through' : 'none',
+                        fontWeight: isHidden ? 400 : 500,
+                        color: isHidden ? '#9ca3af' : '#111827',
+                        textDecoration: isHidden ? 'line-through' : 'none',
                       }}
                     >
-                      {col.label}
+                      {col.label} {isSelectCol && '(Always visible)'}
                     </Typography>
                   </Box>
                 </Box>
-              ))}
-            </Box>
+              );
+            })}
           </Box>
-        </Menu>
-      </Box>
-
-      {/* Bulk Actions */}
-      {selected.length > 0 && onBulkAction && (
-        <Box
-          sx={{
-            mb: 2,
-            p: 2,
-            bgcolor: '#dbeafe',
-            border: '1px solid #93c5fd',
-            borderRadius: 2,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 2,
-            boxShadow: '0 2px 8px rgba(59, 130, 246, 0.15)',
-          }}
-        >
-          <Typography variant="body2" sx={{ fontWeight: 600, color: '#1e40af' }}>
-            {selected.length} selected
-          </Typography>
-          {onBulkAction(selected)}
         </Box>
-      )}
+      </Menu>
 
       {/* Table Container with Sticky Header */}
       <Paper
+        ref={tableContainerRef}
         sx={{
           overflow: 'hidden',
           border: '1px solid #e5e7eb',
@@ -376,20 +596,54 @@ const CustomDataTable = ({
                   top: 0,
                   zIndex: 100,
                   boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                  width: totalTableWidth,
                 }}
               >
-                {visibleColumns.map((col, idx) => {
-                  const width = getColumnWidth(col);
-                  const isFrozen = frozenColumns.includes(col.key);
+                {/* Checkbox Column - Always Frozen */}
+                {visibleColumns.some((c) => c.key === 'select') && (
+                  <TableCell
+                    sx={{
+                      position: 'sticky',
+                      left: 0,
+                      zIndex: 102,
+                      bgcolor: '#f9fafb',
+                      fontWeight: 600,
+                      fontSize: '0.875rem',
+                      color: '#111827',
+                      whiteSpace: 'nowrap',
+                      userSelect: 'none',
+                      borderRight: '2px solid #d1d5db',
+                      borderBottom: '2px solid #d1d5db',
+                      px: 1.5,
+                      py: 1.75,
+                      width: 50,
+                      minWidth: 50,
+                      maxWidth: 50,
+                      textAlign: 'center',
+                    }}
+                  >
+                    <Checkbox
+                      checked={selected.length === paginatedData.length && paginatedData.length > 0}
+                      indeterminate={selected.length > 0 && selected.length < paginatedData.length}
+                      onChange={toggleAll}
+                      size="small"
+                      sx={{ p: 0.5 }}
+                    />
+                  </TableCell>
+                )}
+
+                {/* Regular Columns */}
+                {adjustedColumns.map((col, idx) => {
+                  if (col.key === 'select') return null;
+                  const width = col._adjustedWidth || getColumnWidth(col);
+                  const isFrozen = frozenCols.includes(col.key);
                   const frozenLeft = isFrozen
-                    ? frozenColumns
-                        .slice(0, frozenColumns.indexOf(col.key))
+                    ? frozenCols
+                        .slice(0, frozenCols.indexOf(col.key))
                         .reduce((acc, k) => {
-                          const colIdx = visibleColumns.findIndex((c) => c.key === k);
+                          const colIdx = adjustedColumns.findIndex((c) => c.key === k);
                           if (colIdx === -1) return acc;
-                          return acc + getColumnWidth(visibleColumns[colIdx]);
-                        }, 0)
+                          return acc + (adjustedColumns[colIdx]._adjustedWidth || getColumnWidth(adjustedColumns[colIdx]));
+                        }, visibleColumns.some((c) => c.key === 'select') ? 50 : 0)
                     : 0;
 
                   return (
@@ -424,32 +678,36 @@ const CustomDataTable = ({
                           overflow: 'hidden',
                         }}
                       >
-                        {col.key === 'select' ? (
-                          <Checkbox
-                            checked={selected.length === data.length && data.length > 0}
-                            indeterminate={selected.length > 0 && selected.length < data.length}
-                            onChange={toggleAll}
-                            size="small"
-                            sx={{ p: 0.5 }}
-                          />
-                        ) : (
-                          <Tooltip title={col.label} arrow>
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                fontWeight: 600,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                flex: 1,
-                              }}
-                            >
-                              {col.label}
-                            </Typography>
-                          </Tooltip>
-                        )}
+                        <Tooltip title={col.label} arrow>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: 600,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              flex: 1,
+                            }}
+                          >
+                            {col.label}
+                          </Typography>
+                        </Tooltip>
+                        <IconButton
+                          size="small"
+                          onClick={() => toggleColumnFreeze(col.key)}
+                          sx={{
+                            p: 0.5,
+                            color: isFrozen ? '#3b82f6' : '#9ca3af',
+                            flexShrink: 0,
+                            '&:hover': {
+                              bgcolor: 'rgba(59, 130, 246, 0.1)',
+                            },
+                          }}
+                        >
+                          {isFrozen ? <LockIcon sx={{ fontSize: 16 }} /> : <LockOpenIcon sx={{ fontSize: 16 }} />}
+                        </IconButton>
                       </Box>
-                      {col.key !== 'actions' && col.key !== 'select' && (
+                      {col.key !== 'actions' && (
                         <Box
                           onMouseDown={(e) => startResize(e, col.key)}
                           sx={{
@@ -464,36 +722,52 @@ const CustomDataTable = ({
                             '&:hover': {
                               bgcolor: '#3b82f6',
                             },
-                            '&:active': {
-                              bgcolor: '#2563eb',
-                            },
-                          }}
-                        />
-                      )}
-                      {/* Separator line indicator */}
-                      {idx < visibleColumns.length - 1 && (
-                        <Box
-                          sx={{
-                            position: 'absolute',
-                            right: 0,
-                            top: 0,
-                            bottom: 0,
-                            width: '1px',
-                            bgcolor: '#e5e7eb',
-                            pointerEvents: 'none',
                           }}
                         />
                       )}
                     </TableCell>
                   );
                 })}
+
+                {/* Row Freeze Column Header */}
+                <TableCell
+                  sx={{
+                    position: 'sticky',
+                    right: 0,
+                    zIndex: 102,
+                    bgcolor: '#f9fafb',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                    color: '#111827',
+                    whiteSpace: 'nowrap',
+                    userSelect: 'none',
+                    borderLeft: '2px solid #d1d5db',
+                    borderBottom: '2px solid #d1d5db',
+                    px: 1.5,
+                    py: 1.75,
+                    width: 50,
+                    minWidth: 50,
+                    maxWidth: 50,
+                    textAlign: 'center',
+                  }}
+                >
+                  <Tooltip title={frozenRows.length === paginatedData.length ? 'Unfreeze all rows' : 'Freeze all rows'}>
+                    <Checkbox
+                      checked={frozenRows.length === paginatedData.length && paginatedData.length > 0}
+                      indeterminate={frozenRows.length > 0 && frozenRows.length < paginatedData.length}
+                      onChange={toggleFreezeAllRows}
+                      size="small"
+                      sx={{ p: 0.5 }}
+                    />
+                  </Tooltip>
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {data.length === 0 ? (
+              {paginatedData.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={visibleColumns.length}
+                    colSpan={adjustedColumns.length + 2}
                     sx={{
                       textAlign: 'center',
                       py: 6,
@@ -504,139 +778,303 @@ const CustomDataTable = ({
                   </TableCell>
                 </TableRow>
               ) : (
-                data.map((row, rowIdx) => (
-                  <TableRow
-                    key={row.id}
-                    onClick={() => {
-                      if (onRowClick) onRowClick(row);
-                      toggleRow(row.id);
-                    }}
-                    sx={{
-                      cursor: 'pointer',
-                      transition: 'all 0.15s',
-                      bgcolor: selected.includes(row.id) ? '#eff6ff' : 'transparent',
-                      '&:hover': {
-                        bgcolor: selected.includes(row.id) ? '#dbeafe' : '#f9fafb',
-                      },
-                      '&:nth-of-type(even)': {
-                        bgcolor: selected.includes(row.id)
-                          ? '#eff6ff'
-                          : 'rgba(249, 250, 251, 0.5)',
-                      },
-                      borderBottom: '1px solid #f3f4f6',
-                    }}
-                  >
-                    {visibleColumns.map((col, colIdx) => {
-                      const width = getColumnWidth(col);
-                      const isFrozen = frozenColumns.includes(col.key);
-                      const frozenLeft = isFrozen
-                        ? frozenColumns
-                            .slice(0, frozenColumns.indexOf(col.key))
-                            .reduce((acc, k) => {
-                              const idx = visibleColumns.findIndex((c) => c.key === k);
-                              if (idx === -1) return acc;
-                              return acc + getColumnWidth(visibleColumns[idx]);
-                            }, 0)
-                        : 0;
+                <>
+                  {/* Frozen Rows */}
+                  {frozenRowsData.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      onClick={() => {
+                        if (onRowClick) onRowClick(row);
+                        toggleRow(row.id);
+                      }}
+                      sx={{
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                        bgcolor: selected.includes(row.id) ? '#eff6ff' : '#fef3c7',
+                        '&:hover': {
+                          bgcolor: selected.includes(row.id) ? '#dbeafe' : '#fde68a',
+                        },
+                        borderBottom: '2px solid #fbbf24',
+                        position: 'sticky',
+                        zIndex: 10,
+                      }}
+                    >
+                      {/* Checkbox */}
+                      {visibleColumns.some((c) => c.key === 'select') && (
+                        <TableCell
+                          onClick={(e) => e.stopPropagation()}
+                          sx={{
+                            position: 'sticky',
+                            left: 0,
+                            zIndex: 12,
+                            bgcolor: selected.includes(row.id) ? '#eff6ff' : '#fef3c7',
+                            borderRight: '2px solid #d1d5db',
+                            px: 1.5,
+                            py: 1.5,
+                            textAlign: 'center',
+                          }}
+                        >
+                          <Checkbox
+                            checked={selected.includes(row.id)}
+                            onChange={() => toggleRow(row.id)}
+                            size="small"
+                            onClick={(e) => e.stopPropagation()}
+                            sx={{ p: 0.5 }}
+                          />
+                        </TableCell>
+                      )}
 
-                      if (col.key === 'select') {
+                      {/* Regular Cells */}
+                      {adjustedColumns.map((col) => {
+                        if (col.key === 'select') return null;
+                        const width = col._adjustedWidth || getColumnWidth(col);
+                        const isFrozen = frozenCols.includes(col.key);
+                        const frozenLeft = isFrozen
+                          ? frozenCols
+                              .slice(0, frozenCols.indexOf(col.key))
+                              .reduce((acc, k) => {
+                                const colIdx = adjustedColumns.findIndex((c) => c.key === k);
+                                if (colIdx === -1) return acc;
+                                return acc + (adjustedColumns[colIdx]._adjustedWidth || getColumnWidth(adjustedColumns[colIdx]));
+                              }, visibleColumns.some((c) => c.key === 'select') ? 50 : 0)
+                          : 0;
+
+                        if (col.key === 'actions') {
+                          return (
+                            <TableCell
+                              key={col.key}
+                              onClick={(e) => e.stopPropagation()}
+                              sx={{
+                                whiteSpace: 'nowrap',
+                                borderRight: '1px solid #f3f4f6',
+                                px: 1.5,
+                                py: 1.5,
+                                width: width,
+                                minWidth: width,
+                                maxWidth: width,
+                                bgcolor: selected.includes(row.id) ? '#eff6ff' : '#fef3c7',
+                              }}
+                            >
+                              {col.render ? col.render(row) : null}
+                            </TableCell>
+                          );
+                        }
+
                         return (
                           <TableCell
                             key={col.key}
+                            sx={{
+                              position: isFrozen ? 'sticky' : 'relative',
+                              left: isFrozen ? frozenLeft : 'auto',
+                              zIndex: isFrozen ? 11 : 10,
+                              bgcolor: selected.includes(row.id) ? '#eff6ff' : '#fef3c7',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              borderRight: '1px solid #f3f4f6',
+                              px: 2,
+                              py: 1.5,
+                              width: width,
+                              minWidth: width,
+                              maxWidth: width,
+                              fontSize: '0.875rem',
+                              color: '#374151',
+                            }}
+                          >
+                            <Tooltip
+                              title={col.render ? '' : col.value ? String(col.value(row)) : String(row[col.key] || '')}
+                              arrow
+                              placement="top"
+                            >
+                              <Box
+                                sx={{
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                  width: '100%',
+                                }}
+                              >
+                                {col.render ? col.render(row) : col.value ? col.value(row) : row[col.key] || '-'}
+                              </Box>
+                            </Tooltip>
+                          </TableCell>
+                        );
+                      })}
+
+                      {/* Row Freeze Cell */}
+                      <TableCell
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleRowFreeze(row.id);
+                        }}
+                        sx={{
+                          position: 'sticky',
+                          right: 0,
+                          zIndex: 12,
+                          bgcolor: selected.includes(row.id) ? '#eff6ff' : '#fef3c7',
+                          borderLeft: '2px solid #d1d5db',
+                          px: 1.5,
+                          py: 1.5,
+                          textAlign: 'center',
+                          cursor: 'pointer',
+                          '&:hover': {
+                            bgcolor: '#fde68a',
+                          },
+                        }}
+                      >
+                        <LockIcon sx={{ fontSize: 18, color: '#f59e0b' }} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+
+                  {/* Regular Rows */}
+                  {regularRowsData.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      onClick={() => {
+                        if (onRowClick) onRowClick(row);
+                        toggleRow(row.id);
+                      }}
+                      sx={{
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                        bgcolor: selected.includes(row.id) ? '#eff6ff' : 'transparent',
+                        '&:hover': {
+                          bgcolor: selected.includes(row.id) ? '#dbeafe' : '#f9fafb',
+                        },
+                        '&:nth-of-type(even)': {
+                          bgcolor: selected.includes(row.id) ? '#eff6ff' : 'rgba(249, 250, 251, 0.5)',
+                        },
+                        borderBottom: '1px solid #f3f4f6',
+                      }}
+                    >
+                      {/* Checkbox */}
+                      {visibleColumns.some((c) => c.key === 'select') && (
+                        <TableCell
+                          onClick={(e) => e.stopPropagation()}
+                          sx={{
+                            position: 'sticky',
+                            left: 0,
+                            zIndex: 11,
+                            bgcolor: selected.includes(row.id) ? '#eff6ff' : 'transparent',
+                            borderRight: '2px solid #d1d5db',
+                            px: 1.5,
+                            py: 1.5,
+                            textAlign: 'center',
+                          }}
+                        >
+                          <Checkbox
+                            checked={selected.includes(row.id)}
+                            onChange={() => toggleRow(row.id)}
+                            size="small"
                             onClick={(e) => e.stopPropagation()}
+                            sx={{ p: 0.5 }}
+                          />
+                        </TableCell>
+                      )}
+
+                      {/* Regular Cells */}
+                      {adjustedColumns.map((col) => {
+                        if (col.key === 'select') return null;
+                        const width = col._adjustedWidth || getColumnWidth(col);
+                        const isFrozen = frozenCols.includes(col.key);
+                        const frozenLeft = isFrozen
+                          ? frozenCols
+                              .slice(0, frozenCols.indexOf(col.key))
+                              .reduce((acc, k) => {
+                                const colIdx = adjustedColumns.findIndex((c) => c.key === k);
+                                if (colIdx === -1) return acc;
+                                return acc + (adjustedColumns[colIdx]._adjustedWidth || getColumnWidth(adjustedColumns[colIdx]));
+                              }, visibleColumns.some((c) => c.key === 'select') ? 50 : 0)
+                          : 0;
+
+                        if (col.key === 'actions') {
+                          return (
+                            <TableCell
+                              key={col.key}
+                              onClick={(e) => e.stopPropagation()}
+                              sx={{
+                                whiteSpace: 'nowrap',
+                                borderRight: '1px solid #f3f4f6',
+                                px: 1.5,
+                                py: 1.5,
+                                    width: width,
+                                    minWidth: width,
+                                    maxWidth: width,
+                              }}
+                            >
+                              {col.render ? col.render(row) : null}
+                            </TableCell>
+                          );
+                        }
+
+                        return (
+                          <TableCell
+                            key={col.key}
                             sx={{
                               position: isFrozen ? 'sticky' : 'relative',
                               left: isFrozen ? frozenLeft : 'auto',
                               zIndex: isFrozen ? 11 : 1,
                               bgcolor: selected.includes(row.id) ? '#eff6ff' : 'transparent',
-                              borderRight: '1px solid #f3f4f6',
-                              px: 1.5,
-                              py: 1.5,
-                            }}
-                          >
-                            <Checkbox
-                              checked={selected.includes(row.id)}
-                              onChange={() => toggleRow(row.id)}
-                              size="small"
-                              onClick={(e) => e.stopPropagation()}
-                              sx={{ p: 0.5 }}
-                            />
-                          </TableCell>
-                        );
-                      }
-
-                      if (col.key === 'actions') {
-                        return (
-                          <TableCell
-                            key={col.key}
-                            onClick={(e) => e.stopPropagation()}
-                            sx={{
                               whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
                               borderRight: '1px solid #f3f4f6',
-                              px: 1.5,
+                              px: 2,
                               py: 1.5,
                               width: width,
                               minWidth: width,
                               maxWidth: width,
+                              fontSize: '0.875rem',
+                              color: '#374151',
                             }}
                           >
-                            {col.render ? col.render(row) : null}
+                            <Tooltip
+                              title={col.render ? '' : col.value ? String(col.value(row)) : String(row[col.key] || '')}
+                              arrow
+                              placement="top"
+                            >
+                              <Box
+                                sx={{
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                  width: '100%',
+                                }}
+                              >
+                                {col.render ? col.render(row) : col.value ? col.value(row) : row[col.key] || '-'}
+                              </Box>
+                            </Tooltip>
                           </TableCell>
                         );
-                      }
+                      })}
 
-                      return (
-                        <TableCell
-                          key={col.key}
-                          sx={{
-                            position: isFrozen ? 'sticky' : 'relative',
-                            left: isFrozen ? frozenLeft : 'auto',
-                            zIndex: isFrozen ? 11 : 1,
-                            bgcolor: selected.includes(row.id) ? '#eff6ff' : 'transparent',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            borderRight: '1px solid #f3f4f6',
-                            px: 2,
-                            py: 1.5,
-                            width: width,
-                            minWidth: width,
-                            maxWidth: width,
-                            fontSize: '0.875rem',
-                            color: '#374151',
-                          }}
-                        >
-                          <Tooltip
-                            title={
-                              col.render
-                                ? ''
-                                : col.value
-                                ? String(col.value(row))
-                                : String(row[col.key] || '')
-                            }
-                            arrow
-                            placement="top"
-                          >
-                            <Box
-                              sx={{
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                width: '100%',
-                              }}
-                            >
-                              {col.render
-                                ? col.render(row)
-                                : col.value
-                                ? col.value(row)
-                                : row[col.key] || '-'}
-                            </Box>
-                          </Tooltip>
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                ))
+                      {/* Row Freeze Cell */}
+                      <TableCell
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleRowFreeze(row.id);
+                        }}
+                        sx={{
+                          position: 'sticky',
+                          right: 0,
+                          zIndex: 11,
+                          bgcolor: selected.includes(row.id) ? '#eff6ff' : 'transparent',
+                          borderLeft: '2px solid #d1d5db',
+                          px: 1.5,
+                          py: 1.5,
+                          textAlign: 'center',
+                          cursor: 'pointer',
+                          '&:hover': {
+                            bgcolor: '#f9fafb',
+                          },
+                        }}
+                      >
+                        <LockOpenIcon sx={{ fontSize: 18, color: '#9ca3af' }} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </>
               )}
             </TableBody>
           </Table>

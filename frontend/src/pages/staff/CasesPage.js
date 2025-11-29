@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from 'react-query';
+import { useQuery, useQueryClient } from 'react-query';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Typography,
@@ -29,6 +29,7 @@ import CustomDataTable from '../../components/common/CustomDataTable';
 const CasesPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   
   // Handle dashboard filter params
@@ -314,6 +315,40 @@ const CasesPage = () => {
         frozenColumns={['select', 'case_number']}
         defaultColumnWidth={150}
         onRowClick={(row) => navigate(`/staff/cases/${row.id}`)}
+        onBulkDelete={async (selectedIds) => {
+          try {
+            for (const id of selectedIds) {
+              await casesService.delete(id);
+            }
+            queryClient.invalidateQueries('cases');
+            alert(t('common.deleted') || 'Cases deleted successfully');
+          } catch (err) {
+            alert(err.response?.data?.message || t('common.errorLoading') || 'Error deleting cases');
+          }
+        }}
+        onBulkExport={(selectedIds) => {
+          const selectedCases = rows.filter((c) => selectedIds.includes(c.id));
+          const csv = [
+            ['Case Number', 'Product', 'Customer', 'Phone', 'Status', 'Priority', 'Deadline'].join(','),
+            ...selectedCases.map((c) =>
+              [
+                c.case_number,
+                c.product_title,
+                c.customerFullName,
+                c.customer_phone,
+                c.status_level,
+                c.priority,
+                new Date(c.deadline_at).toLocaleDateString(),
+              ].join(',')
+            ),
+          ].join('\n');
+          const blob = new Blob([csv], { type: 'text/csv' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `cases-${new Date().toISOString().split('T')[0]}.csv`;
+          a.click();
+        }}
       />
     </div>
   );
