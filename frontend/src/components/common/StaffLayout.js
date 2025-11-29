@@ -356,7 +356,7 @@ const StaffLayout = () => {
       </Drawer>
 
       {/* Main Content Area */}
-      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
         {/* Top Header */}
         <AppBar
           position="sticky"
@@ -422,7 +422,11 @@ const StaffLayout = () => {
             flexGrow: 1,
             bgcolor: '#f5f7fa',
             p: 3,
-            overflow: 'auto',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            width: '100%',
+            maxWidth: '100%',
+            position: 'relative',
           }}
         >
           <Outlet />

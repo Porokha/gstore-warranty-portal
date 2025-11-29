@@ -333,6 +333,8 @@ const CustomDataTable = ({
           position: 'relative',
           width: '100%',
           maxWidth: '100%',
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
         <Box
@@ -342,6 +344,7 @@ const CustomDataTable = ({
             maxHeight: 'calc(100vh - 300px)',
             position: 'relative',
             width: '100%',
+            flex: 1,
             '&::-webkit-scrollbar': {
               height: '8px',
               width: '8px',
