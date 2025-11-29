@@ -87,6 +87,25 @@ let DashboardController = DashboardController_1 = class DashboardController {
             }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    async getCasesByCategory(start, end) {
+        try {
+            const timeFilter = start || end
+                ? {
+                    start: start ? new Date(start) : undefined,
+                    end: end ? new Date(end) : undefined,
+                }
+                : undefined;
+            return await this.dashboardService.getCasesByDeviceType(timeFilter);
+        }
+        catch (error) {
+            this.logger.error('Error fetching cases by category:', error);
+            throw new common_1.HttpException({
+                statusCode: common_1.HttpStatus.INTERNAL_SERVER_ERROR,
+                message: 'Failed to fetch cases by category',
+                error: error.message || 'Unknown error',
+            }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 };
 exports.DashboardController = DashboardController;
 __decorate([
@@ -114,6 +133,14 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], DashboardController.prototype, "getCompletionTimeByDevice", null);
+__decorate([
+    (0, common_1.Get)('charts/cases-by-category'),
+    __param(0, (0, common_1.Query)('start')),
+    __param(1, (0, common_1.Query)('end')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], DashboardController.prototype, "getCasesByCategory", null);
 exports.DashboardController = DashboardController = DashboardController_1 = __decorate([
     (0, common_1.Controller)('dashboard'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

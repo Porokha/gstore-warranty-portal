@@ -64,10 +64,19 @@ export declare class WooCommerceService {
         processed: number;
         imported: number;
         skipped: number;
-        status: "running" | "completed" | "error";
+        status: "pending" | "running" | "completed" | "error" | "cancelled";
+        message?: string;
         error?: string;
         result?: any;
+        cancelRequested?: boolean;
     };
+    cancelSync(jobId: string): Promise<{
+        success: boolean;
+        message: string;
+    } | {
+        success: boolean;
+        message?: undefined;
+    }>;
     syncOrdersByStatus(statuses: string[], options?: {
         limit?: number;
         dateFrom?: string;
@@ -76,6 +85,11 @@ export declare class WooCommerceService {
         success: boolean;
         imported: number;
         skipped: number;
-        warranties: any[];
+        warranties: Warranty[];
+    } | {
+        success: boolean;
+        cancelled: boolean;
+        imported: number;
+        skipped: number;
     }>;
 }

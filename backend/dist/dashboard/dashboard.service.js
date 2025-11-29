@@ -266,6 +266,29 @@ let DashboardService = class DashboardService {
         }
         return result;
     }
+    async getCasesByDeviceType(timeFilter) {
+        const deviceTypes = ['Phone', 'Laptop', 'Tablet', 'Desktop', 'Wearable', 'Accessory'];
+        const result = [];
+        for (const deviceType of deviceTypes) {
+            let query = this.casesRepository
+                .createQueryBuilder('case')
+                .where('case.device_type = :deviceType', { deviceType });
+            if (timeFilter?.start) {
+                query = query.andWhere('case.opened_at >= :start', { start: timeFilter.start });
+            }
+            if (timeFilter?.end) {
+                query = query.andWhere('case.opened_at <= :end', { end: timeFilter.end });
+            }
+            const count = await query.getCount();
+            if (count > 0) {
+                result.push({
+                    name: deviceType === 'Phone' ? 'Smartphones' : deviceType === 'Wearable' ? 'Wearables' : deviceType + 's',
+                    value: count,
+                });
+            }
+        }
+        return result;
+    }
 };
 exports.DashboardService = DashboardService;
 exports.DashboardService = DashboardService = __decorate([

@@ -280,34 +280,68 @@ let WooCommerceService = WooCommerceService_1 = class WooCommerceService {
             percentage: progress.total > 0 ? Math.round((progress.processed / progress.total) * 100) : 0,
         };
     }
+    async cancelSync(jobId) {
+        const progress = this.syncProgress.get(jobId);
+        if (!progress) {
+            throw new common_1.BadRequestException('Sync job not found');
+        }
+        if (['completed', 'error', 'cancelled'].includes(progress.status)) {
+            return { success: false, message: 'Job already finished' };
+        }
+        progress.cancelRequested = true;
+        progress.message = 'Cancellation requested...';
+        this.syncProgress.set(jobId, progress);
+        return { success: true };
+    }
     async syncOrdersByStatus(statuses, options, jobId) {
         const api = await this.getApi();
         if (!statuses || statuses.length === 0) {
             throw new common_1.BadRequestException('At least one order status must be specified');
         }
-        try {
-            const allWarranties = [];
-            const skipped = [];
-            let page = 1;
-            let hasMore = true;
-            const limit = options?.limit;
-            const dateFrom = options?.dateFrom ? new Date(options.dateFrom) : null;
-            const skipDuplicates = options?.skipDuplicates ?? true;
-            let totalProcessed = 0;
-            let totalOrders = 0;
-            if (jobId) {
-                this.syncProgress.set(jobId, {
-                    total: 0,
-                    processed: 0,
-                    imported: 0,
-                    skipped: 0,
-                    status: 'running',
-                });
+        const limit = options?.limit;
+        const dateFrom = options?.dateFrom ? new Date(options.dateFrom) : null;
+        const skipDuplicates = options?.skipDuplicates ?? true;
+        const allWarranties = [];
+        const skipped = [];
+        let page = 1;
+        let hasMore = true;
+        let processedOrders = 0;
+        if (jobId) {
+            this.syncProgress.set(jobId, {
+                total: limit || 0,
+                processed: 0,
+                imported: 0,
+                skipped: 0,
+                status: 'running',
+                message: 'Import started',
+                cancelRequested: false,
+            });
+        }
+        const checkCancellation = () => {
+            if (!jobId)
+                return false;
+            const progress = this.syncProgress.get(jobId);
+            if (progress?.cancelRequested) {
+                progress.status = 'cancelled';
+                progress.message = 'Import cancelled by user';
+                progress.result = {
+                    success: false,
+                    cancelled: true,
+                    imported: allWarranties.length,
+                    skipped: skipped.length,
+                };
+                this.syncProgress.set(jobId, progress);
+                return true;
             }
-            while (hasMore && (!limit || allWarranties.length < limit)) {
+            return false;
+        };
+        try {
+            while (hasMore && (!limit || processedOrders < limit)) {
+                const remaining = limit ? Math.max(limit - processedOrders, 0) : undefined;
+                const perPage = remaining ? Math.min(remaining, 100) : 100;
                 const params = {
                     status: statuses.join(','),
-                    per_page: 100,
+                    per_page: perPage,
                     page,
                     orderby: 'date',
                     order: 'desc',
@@ -322,28 +356,29 @@ let WooCommerceService = WooCommerceService_1 = class WooCommerceService {
                     hasMore = false;
                     break;
                 }
-                this.logger.log(`📦 Fetched ${orders.length} orders from page ${page}. Processing...`);
-                if (page === 1 || orders.length === 100) {
-                    totalOrders += orders.length;
-                    if (jobId) {
+                if (jobId && !limit) {
+                    const headerTotal = Number(response.headers['x-wp-total']);
+                    if (headerTotal) {
                         const progress = this.syncProgress.get(jobId);
-                        if (progress) {
-                            progress.total = totalOrders;
+                        if (progress && progress.total === 0) {
+                            progress.total = headerTotal;
+                            this.syncProgress.set(jobId, progress);
                         }
                     }
                 }
                 for (const order of orders) {
-                    totalProcessed++;
-                    if (totalProcessed % 10 === 0) {
-                        this.logger.log(`⏳ Progress: Processed ${totalProcessed} orders, imported ${allWarranties.length} warranties, skipped ${skipped.length}`);
-                        if (jobId) {
-                            const progress = this.syncProgress.get(jobId);
-                            if (progress) {
-                                progress.processed = totalProcessed;
-                                progress.imported = allWarranties.length;
-                                progress.skipped = skipped.length;
-                            }
-                        }
+                    if (limit && processedOrders >= limit) {
+                        hasMore = false;
+                        break;
+                    }
+                    processedOrders++;
+                    if (checkCancellation()) {
+                        return {
+                            success: false,
+                            cancelled: true,
+                            imported: allWarranties.length,
+                            skipped: skipped.length,
+                        };
                     }
                     if (dateFrom) {
                         const orderDate = new Date(order.date_created);
@@ -351,8 +386,11 @@ let WooCommerceService = WooCommerceService_1 = class WooCommerceService {
                             continue;
                         }
                     }
+                    if (processedOrders % 10 === 0) {
+                        this.logger.log(`⏳ Progress: ${processedOrders} orders processed, ${allWarranties.length} warranties imported`);
+                    }
                     try {
-                        const lineItemPromises = order.line_items.map(async (lineItem, i) => {
+                        const lineItemResults = await Promise.all(order.line_items.map(async (lineItem, i) => {
                             if (skipDuplicates) {
                                 const existing = await this.warrantiesRepository.findOne({
                                     where: {
@@ -376,35 +414,31 @@ let WooCommerceService = WooCommerceService_1 = class WooCommerceService {
                                 }
                                 throw error;
                             }
-                        });
-                        const results = await Promise.all(lineItemPromises);
-                        const successfulWarranties = results.filter(w => w !== null);
+                        }));
+                        const successfulWarranties = lineItemResults.filter((warranty) => Boolean(warranty));
                         allWarranties.push(...successfulWarranties);
-                        if (limit && allWarranties.length >= limit) {
-                            hasMore = false;
-                            break;
-                        }
                     }
                     catch (error) {
-                        if (error.message?.includes('already exists')) {
-                            skipped.push({ orderId: order.id });
-                        }
-                        else {
-                            this.logger.error(`Failed to process order ${order.id}:`, error.message);
-                        }
+                        this.logger.error(`Failed to process order ${order.id}:`, error.message);
                     }
-                    if (limit && allWarranties.length >= limit) {
-                        hasMore = false;
-                        break;
+                    if (jobId) {
+                        const progress = this.syncProgress.get(jobId);
+                        if (progress) {
+                            progress.processed = processedOrders;
+                            progress.imported = allWarranties.length;
+                            progress.skipped = skipped.length;
+                            progress.message = `Processing order #${order.id}`;
+                            this.syncProgress.set(jobId, progress);
+                        }
                     }
                 }
                 page++;
-                if (orders.length < 100) {
+                if (orders.length < perPage) {
                     hasMore = false;
                 }
             }
-            this.logger.log(`✅ Import complete! Total processed: ${totalProcessed} orders, Imported: ${allWarranties.length} warranties, Skipped: ${skipped.length}`);
-            const result = {
+            this.logger.log(`✅ Import complete! Processed: ${processedOrders} orders, Imported: ${allWarranties.length} warranties, Skipped: ${skipped.length}`);
+            const finalResult = {
                 success: true,
                 imported: allWarranties.length,
                 skipped: skipped.length,
@@ -414,13 +448,15 @@ let WooCommerceService = WooCommerceService_1 = class WooCommerceService {
                 const progress = this.syncProgress.get(jobId);
                 if (progress) {
                     progress.status = 'completed';
-                    progress.processed = totalProcessed;
+                    progress.processed = processedOrders;
                     progress.imported = allWarranties.length;
                     progress.skipped = skipped.length;
-                    progress.result = result;
+                    progress.result = finalResult;
+                    progress.message = 'Import completed';
+                    this.syncProgress.set(jobId, progress);
                 }
             }
-            return result;
+            return finalResult;
         }
         catch (error) {
             this.logger.error('Failed to sync orders:', error.message);
@@ -429,6 +465,8 @@ let WooCommerceService = WooCommerceService_1 = class WooCommerceService {
                 if (progress) {
                     progress.status = 'error';
                     progress.error = error.message;
+                    progress.message = 'Import failed';
+                    this.syncProgress.set(jobId, progress);
                 }
             }
             throw new common_1.BadRequestException(`Failed to sync orders: ${error.message}`);

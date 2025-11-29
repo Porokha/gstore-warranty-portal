@@ -75,6 +75,9 @@ let WooCommerceController = WooCommerceController_1 = class WooCommerceControlle
     getSyncProgress(jobId) {
         return this.wooCommerceService.getSyncProgress(jobId);
     }
+    cancelSync(jobId) {
+        return this.wooCommerceService.cancelSync(jobId);
+    }
 };
 exports.WooCommerceController = WooCommerceController;
 __decorate([
@@ -136,6 +139,14 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], WooCommerceController.prototype, "getSyncProgress", null);
+__decorate([
+    (0, common_1.Post)('sync/cancel/:jobId'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Param)('jobId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], WooCommerceController.prototype, "cancelSync", null);
 exports.WooCommerceController = WooCommerceController = WooCommerceController_1 = __decorate([
     (0, common_1.Controller)('woocommerce'),
     __metadata("design:paramtypes", [woocommerce_service_1.WooCommerceService])

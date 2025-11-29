@@ -28,4 +28,5 @@ export declare class DashboardController {
         color: string;
     }[]>;
     getCompletionTimeByDevice(start?: string, end?: string): Promise<any[]>;
+    getCasesByCategory(start?: string, end?: string): Promise<any[]>;
 }

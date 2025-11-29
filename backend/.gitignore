@@ -1,5 +1,5 @@
 # compiled output
-/dist
+# /dist  # Commented out to allow prebuilt dist folder in git
 /node_modules
 
 # Logs

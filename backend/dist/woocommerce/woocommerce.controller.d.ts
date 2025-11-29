@@ -35,8 +35,17 @@ export declare class WooCommerceController {
         processed: number;
         imported: number;
         skipped: number;
-        status: "running" | "completed" | "error";
+        status: "pending" | "running" | "completed" | "error" | "cancelled";
+        message?: string;
         error?: string;
         result?: any;
+        cancelRequested?: boolean;
     };
+    cancelSync(jobId: string): Promise<{
+        success: boolean;
+        message: string;
+    } | {
+        success: boolean;
+        message?: undefined;
+    }>;
 }

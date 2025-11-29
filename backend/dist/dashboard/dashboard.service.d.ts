@@ -45,4 +45,8 @@ export declare class DashboardService {
         start?: Date;
         end?: Date;
     }): Promise<any[]>;
+    getCasesByDeviceType(timeFilter?: {
+        start?: Date;
+        end?: Date;
+    }): Promise<any[]>;
 }
