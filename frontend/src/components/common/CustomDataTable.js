@@ -188,6 +188,11 @@ const CustomDataTable = ({
     return columnWidths[col.key] || col.width || defaultColumnWidth;
   };
 
+  // Calculate total table width based on visible columns
+  const totalTableWidth = useMemo(() => {
+    return visibleColumns.reduce((sum, col) => sum + getColumnWidth(col), 0);
+  }, [visibleColumns, columnWidths, defaultColumnWidth]);
+
   return (
     <Box>
       {/* Settings Button - Left Side */}
@@ -326,6 +331,8 @@ const CustomDataTable = ({
           borderRadius: 2,
           boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
           position: 'relative',
+          width: '100%',
+          maxWidth: '100%',
         }}
       >
         <Box
@@ -334,11 +341,27 @@ const CustomDataTable = ({
             overflowY: 'auto',
             maxHeight: 'calc(100vh - 300px)',
             position: 'relative',
+            width: '100%',
+            '&::-webkit-scrollbar': {
+              height: '8px',
+              width: '8px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: '#f1f1f1',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: '#c1c1c1',
+              borderRadius: '4px',
+              '&:hover': {
+                background: '#a8a8a8',
+              },
+            },
           }}
         >
           <Table
             sx={{
-              minWidth: '100%',
+              width: totalTableWidth,
+              minWidth: totalTableWidth,
               tableLayout: 'fixed',
             }}
           >
@@ -350,6 +373,7 @@ const CustomDataTable = ({
                   top: 0,
                   zIndex: 100,
                   boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                  width: totalTableWidth,
                 }}
               >
                 {visibleColumns.map((col, idx) => {
