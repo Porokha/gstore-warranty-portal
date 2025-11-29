@@ -604,8 +604,8 @@ const CustomDataTable = ({
                     sx={{
                       position: 'sticky',
                       left: 0,
-                      zIndex: 102,
-                      bgcolor: '#f9fafb',
+                      zIndex: 104,
+                      bgcolor: '#ffffff',
                       fontWeight: 600,
                       fontSize: '0.875rem',
                       color: '#111827',
@@ -619,6 +619,7 @@ const CustomDataTable = ({
                       minWidth: 50,
                       maxWidth: 50,
                       textAlign: 'center',
+                      boxShadow: '2px 0 4px rgba(0,0,0,0.05)',
                     }}
                   >
                     <Checkbox
@@ -652,14 +653,14 @@ const CustomDataTable = ({
                       sx={{
                         position: isFrozen ? 'sticky' : 'relative',
                         left: isFrozen ? frozenLeft : 'auto',
-                        zIndex: isFrozen ? 101 : 100,
-                        bgcolor: '#f9fafb',
+                        zIndex: isFrozen ? 103 : 100,
+                        bgcolor: isFrozen ? '#ffffff' : '#f9fafb',
                         fontWeight: 600,
                         fontSize: '0.875rem',
                         color: '#111827',
                         whiteSpace: 'nowrap',
                         userSelect: 'none',
-                        borderRight: '1px solid #e5e7eb',
+                        borderRight: isFrozen ? '2px solid #d1d5db' : '1px solid #e5e7eb',
                         borderBottom: '2px solid #d1d5db',
                         px: 2,
                         py: 1.75,
@@ -668,6 +669,7 @@ const CustomDataTable = ({
                         maxWidth: width,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
+                        boxShadow: isFrozen ? '2px 0 4px rgba(0,0,0,0.05)' : 'none',
                       }}
                     >
                       <Box
@@ -734,8 +736,8 @@ const CustomDataTable = ({
                   sx={{
                     position: 'sticky',
                     right: 0,
-                    zIndex: 102,
-                    bgcolor: '#f9fafb',
+                    zIndex: 104,
+                    bgcolor: '#ffffff',
                     fontWeight: 600,
                     fontSize: '0.875rem',
                     color: '#111827',
@@ -749,6 +751,7 @@ const CustomDataTable = ({
                     minWidth: 50,
                     maxWidth: 50,
                     textAlign: 'center',
+                    boxShadow: '-2px 0 4px rgba(0,0,0,0.05)',
                   }}
                 >
                   <Tooltip title={frozenRows.length === paginatedData.length ? 'Unfreeze all rows' : 'Freeze all rows'}>
@@ -780,49 +783,57 @@ const CustomDataTable = ({
               ) : (
                 <>
                   {/* Frozen Rows */}
-                  {frozenRowsData.map((row) => (
-                    <TableRow
-                      key={row.id}
-                      onClick={() => {
-                        if (onRowClick) onRowClick(row);
-                        toggleRow(row.id);
-                      }}
-                      sx={{
-                        cursor: 'pointer',
-                        transition: 'all 0.15s',
-                        bgcolor: selected.includes(row.id) ? '#eff6ff' : '#fef3c7',
-                        '&:hover': {
-                          bgcolor: selected.includes(row.id) ? '#dbeafe' : '#fde68a',
-                        },
-                        borderBottom: '2px solid #fbbf24',
-                        position: 'sticky',
-                        zIndex: 10,
-                      }}
-                    >
-                      {/* Checkbox */}
-                      {visibleColumns.some((c) => c.key === 'select') && (
-                        <TableCell
-                          onClick={(e) => e.stopPropagation()}
-                          sx={{
-                            position: 'sticky',
-                            left: 0,
-                            zIndex: 12,
-                            bgcolor: selected.includes(row.id) ? '#eff6ff' : '#fef3c7',
-                            borderRight: '2px solid #d1d5db',
-                            px: 1.5,
-                            py: 1.5,
-                            textAlign: 'center',
-                          }}
-                        >
-                          <Checkbox
-                            checked={selected.includes(row.id)}
-                            onChange={() => toggleRow(row.id)}
-                            size="small"
+                  {frozenRowsData.map((row, frozenIdx) => {
+                    const rowHeight = 48; // Approximate row height
+                    const topOffset = 64 + frozenIdx * rowHeight; // Header height + previous frozen rows
+                    
+                    return (
+                      <TableRow
+                        key={row.id}
+                        onClick={() => {
+                          if (onRowClick) onRowClick(row);
+                          toggleRow(row.id);
+                        }}
+                        sx={{
+                          cursor: 'pointer',
+                          transition: 'all 0.15s',
+                          bgcolor: selected.includes(row.id) ? '#eff6ff' : '#fef3c7',
+                          '&:hover': {
+                            bgcolor: selected.includes(row.id) ? '#dbeafe' : '#fde68a',
+                          },
+                          borderBottom: '2px solid #fbbf24',
+                          position: 'sticky',
+                          top: `${topOffset}px`,
+                          zIndex: 20 + frozenIdx,
+                        }}
+                      >
+                        {/* Checkbox */}
+                        {visibleColumns.some((c) => c.key === 'select') && (
+                          <TableCell
                             onClick={(e) => e.stopPropagation()}
-                            sx={{ p: 0.5 }}
-                          />
-                        </TableCell>
-                      )}
+                            sx={{
+                              position: 'sticky',
+                              left: 0,
+                              zIndex: 30 + frozenIdx,
+                              bgcolor: selected.includes(row.id) ? '#eff6ff' : '#fef3c7',
+                              borderRight: '2px solid #d1d5db',
+                              px: 1.5,
+                              py: 1.5,
+                              textAlign: 'center',
+                              width: 50,
+                              minWidth: 50,
+                              maxWidth: 50,
+                            }}
+                          >
+                            <Checkbox
+                              checked={selected.includes(row.id)}
+                              onChange={() => toggleRow(row.id)}
+                              size="small"
+                              onClick={(e) => e.stopPropagation()}
+                              sx={{ p: 0.5 }}
+                            />
+                          </TableCell>
+                        )}
 
                       {/* Regular Cells */}
                       {adjustedColumns.map((col) => {
@@ -866,8 +877,10 @@ const CustomDataTable = ({
                             sx={{
                               position: isFrozen ? 'sticky' : 'relative',
                               left: isFrozen ? frozenLeft : 'auto',
-                              zIndex: isFrozen ? 11 : 10,
-                              bgcolor: selected.includes(row.id) ? '#eff6ff' : '#fef3c7',
+                              zIndex: isFrozen ? 25 + frozenIdx : 10,
+                              bgcolor: isFrozen 
+                                ? (selected.includes(row.id) ? '#eff6ff' : '#fef3c7')
+                                : (selected.includes(row.id) ? '#eff6ff' : '#fef3c7'),
                               whiteSpace: 'nowrap',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
@@ -901,77 +914,86 @@ const CustomDataTable = ({
                         );
                       })}
 
-                      {/* Row Freeze Cell */}
-                      <TableCell
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleRowFreeze(row.id);
-                        }}
-                        sx={{
-                          position: 'sticky',
-                          right: 0,
-                          zIndex: 12,
-                          bgcolor: selected.includes(row.id) ? '#eff6ff' : '#fef3c7',
-                          borderLeft: '2px solid #d1d5db',
-                          px: 1.5,
-                          py: 1.5,
-                          textAlign: 'center',
-                          cursor: 'pointer',
-                          '&:hover': {
-                            bgcolor: '#fde68a',
-                          },
-                        }}
-                      >
-                        <LockIcon sx={{ fontSize: 18, color: '#f59e0b' }} />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-
-                  {/* Regular Rows */}
-                  {regularRowsData.map((row) => (
-                    <TableRow
-                      key={row.id}
-                      onClick={() => {
-                        if (onRowClick) onRowClick(row);
-                        toggleRow(row.id);
-                      }}
-                      sx={{
-                        cursor: 'pointer',
-                        transition: 'all 0.15s',
-                        bgcolor: selected.includes(row.id) ? '#eff6ff' : 'transparent',
-                        '&:hover': {
-                          bgcolor: selected.includes(row.id) ? '#dbeafe' : '#f9fafb',
-                        },
-                        '&:nth-of-type(even)': {
-                          bgcolor: selected.includes(row.id) ? '#eff6ff' : 'rgba(249, 250, 251, 0.5)',
-                        },
-                        borderBottom: '1px solid #f3f4f6',
-                      }}
-                    >
-                      {/* Checkbox */}
-                      {visibleColumns.some((c) => c.key === 'select') && (
+                        {/* Row Freeze Cell */}
                         <TableCell
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleRowFreeze(row.id);
+                          }}
                           sx={{
                             position: 'sticky',
-                            left: 0,
-                            zIndex: 11,
-                            bgcolor: selected.includes(row.id) ? '#eff6ff' : 'transparent',
-                            borderRight: '2px solid #d1d5db',
+                            right: 0,
+                            zIndex: 30 + frozenIdx,
+                            bgcolor: selected.includes(row.id) ? '#eff6ff' : '#fef3c7',
+                            borderLeft: '2px solid #d1d5db',
                             px: 1.5,
                             py: 1.5,
                             textAlign: 'center',
+                            cursor: 'pointer',
+                            '&:hover': {
+                              bgcolor: '#fde68a',
+                            },
+                            boxShadow: '-2px 0 4px rgba(0,0,0,0.05)',
                           }}
                         >
-                          <Checkbox
-                            checked={selected.includes(row.id)}
-                            onChange={() => toggleRow(row.id)}
-                            size="small"
-                            onClick={(e) => e.stopPropagation()}
-                            sx={{ p: 0.5 }}
-                          />
+                          <LockIcon sx={{ fontSize: 18, color: '#f59e0b' }} />
                         </TableCell>
-                      )}
+                      </TableRow>
+                    );
+                  })}
+
+                  {/* Regular Rows */}
+                  {regularRowsData.map((row, regIdx) => {
+                    const isEven = regIdx % 2 === 0;
+                    const baseBg = selected.includes(row.id) 
+                      ? '#eff6ff' 
+                      : (isEven ? 'rgba(249, 250, 251, 0.5)' : 'transparent');
+                    
+                    return (
+                      <TableRow
+                        key={row.id}
+                        onClick={() => {
+                          if (onRowClick) onRowClick(row);
+                          toggleRow(row.id);
+                        }}
+                        sx={{
+                          cursor: 'pointer',
+                          transition: 'all 0.15s',
+                          bgcolor: baseBg,
+                          '&:hover': {
+                            bgcolor: selected.includes(row.id) ? '#dbeafe' : '#f9fafb',
+                          },
+                          borderBottom: '1px solid #f3f4f6',
+                        }}
+                      >
+                        {/* Checkbox */}
+                        {visibleColumns.some((c) => c.key === 'select') && (
+                          <TableCell
+                            onClick={(e) => e.stopPropagation()}
+                            sx={{
+                              position: 'sticky',
+                              left: 0,
+                              zIndex: 15,
+                              bgcolor: '#ffffff',
+                              borderRight: '2px solid #d1d5db',
+                              px: 1.5,
+                              py: 1.5,
+                              textAlign: 'center',
+                              width: 50,
+                              minWidth: 50,
+                              maxWidth: 50,
+                              boxShadow: '2px 0 4px rgba(0,0,0,0.05)',
+                            }}
+                          >
+                            <Checkbox
+                              checked={selected.includes(row.id)}
+                              onChange={() => toggleRow(row.id)}
+                              size="small"
+                              onClick={(e) => e.stopPropagation()}
+                              sx={{ p: 0.5 }}
+                            />
+                          </TableCell>
+                        )}
 
                       {/* Regular Cells */}
                       {adjustedColumns.map((col) => {
@@ -1014,12 +1036,14 @@ const CustomDataTable = ({
                             sx={{
                               position: isFrozen ? 'sticky' : 'relative',
                               left: isFrozen ? frozenLeft : 'auto',
-                              zIndex: isFrozen ? 11 : 1,
-                              bgcolor: selected.includes(row.id) ? '#eff6ff' : 'transparent',
+                              zIndex: isFrozen ? 16 : 1,
+                              bgcolor: isFrozen
+                                ? (selected.includes(row.id) ? '#eff6ff' : '#ffffff')
+                                : (selected.includes(row.id) ? '#eff6ff' : baseBg),
                               whiteSpace: 'nowrap',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
-                              borderRight: '1px solid #f3f4f6',
+                              borderRight: isFrozen ? '2px solid #d1d5db' : '1px solid #f3f4f6',
                               px: 2,
                               py: 1.5,
                               width: width,
@@ -1027,6 +1051,7 @@ const CustomDataTable = ({
                               maxWidth: width,
                               fontSize: '0.875rem',
                               color: '#374151',
+                              boxShadow: isFrozen ? '2px 0 4px rgba(0,0,0,0.05)' : 'none',
                             }}
                           >
                             <Tooltip
@@ -1049,31 +1074,33 @@ const CustomDataTable = ({
                         );
                       })}
 
-                      {/* Row Freeze Cell */}
-                      <TableCell
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleRowFreeze(row.id);
-                        }}
-                        sx={{
-                          position: 'sticky',
-                          right: 0,
-                          zIndex: 11,
-                          bgcolor: selected.includes(row.id) ? '#eff6ff' : 'transparent',
-                          borderLeft: '2px solid #d1d5db',
-                          px: 1.5,
-                          py: 1.5,
-                          textAlign: 'center',
-                          cursor: 'pointer',
-                          '&:hover': {
-                            bgcolor: '#f9fafb',
-                          },
-                        }}
-                      >
-                        <LockOpenIcon sx={{ fontSize: 18, color: '#9ca3af' }} />
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        {/* Row Freeze Cell */}
+                        <TableCell
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleRowFreeze(row.id);
+                          }}
+                          sx={{
+                            position: 'sticky',
+                            right: 0,
+                            zIndex: 15,
+                            bgcolor: '#ffffff',
+                            borderLeft: '2px solid #d1d5db',
+                            px: 1.5,
+                            py: 1.5,
+                            textAlign: 'center',
+                            cursor: 'pointer',
+                            '&:hover': {
+                              bgcolor: '#f9fafb',
+                            },
+                            boxShadow: '-2px 0 4px rgba(0,0,0,0.05)',
+                          }}
+                        >
+                          <LockOpenIcon sx={{ fontSize: 18, color: '#9ca3af' }} />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </>
               )}
             </TableBody>
