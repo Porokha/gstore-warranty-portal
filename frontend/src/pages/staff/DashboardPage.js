@@ -93,7 +93,21 @@ const DashboardPage = () => {
 
   const { data: recentCases } = useQuery(
     'recent-cases',
-    () => casesService.getAll({ limit: 5, sort: 'created_at', order: 'DESC' }),
+    () => casesService.getAll({ limit: 5, sort: 'opened_at', order: 'DESC' }),
+    {
+      refetchInterval: 30000,
+      select: (data) => {
+        // Handle both array and { data: [...] } response formats
+        if (Array.isArray(data)) return data;
+        if (data?.data && Array.isArray(data.data)) return data.data;
+        return [];
+      },
+    }
+  );
+
+  const { data: casesByCategory } = useQuery(
+    ['dashboard', 'cases-by-category', timeFilter, customStart, customEnd],
+    () => dashboardService.getCasesByCategory(timeRange.start, timeRange.end),
     {
       refetchInterval: 30000,
     }
@@ -702,6 +716,70 @@ const DashboardPage = () => {
         </Grid>
       </Grid>
 
+      {/* Cases by Category and Average Completion by Category */}
+      <Grid container spacing={2} mb={2}>
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 2.5, borderRadius: 2, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: '#1e293b', mb: 2, fontSize: '16px' }}>
+              {t('dashboard.charts.casesByCategory') || 'Cases by Category'}
+            </Typography>
+            {casesByCategory && casesByCategory.length > 0 ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={casesByCategory}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="name" stroke="#64748b" fontSize={11} />
+                  <YAxis stroke="#64748b" fontSize={11} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#ffffff',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                    }}
+                  />
+                  <Bar dataKey="value" fill="#8b5cf6" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <Box display="flex" justifyContent="center" alignItems="center" height={250}>
+                <Typography variant="body2" sx={{ color: '#64748b' }}>{t('dashboard.charts.noData')}</Typography>
+              </Box>
+            )}
+          </Paper>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 2.5, borderRadius: 2, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: '#1e293b', mb: 2, fontSize: '16px' }}>
+              {t('dashboard.charts.avgCompletionByCategory') || 'Average Completion by Category'}
+            </Typography>
+            {completionChartData && completionChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={completionChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="name" stroke="#64748b" fontSize={11} />
+                  <YAxis stroke="#64748b" fontSize={11} label={{ value: t('common.days') || 'Days', angle: -90, position: 'insideLeft' }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#ffffff',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                    }}
+                    formatter={(value) => [`${value} ${t('common.days') || 'days'}`, '']}
+                  />
+                  <Bar dataKey="value" fill="#10b981" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <Box display="flex" justifyContent="center" alignItems="center" height={250}>
+                <Typography variant="body2" sx={{ color: '#64748b' }}>{t('dashboard.charts.noData')}</Typography>
+              </Box>
+            )}
+          </Paper>
+        </Grid>
+      </Grid>
+
       {/* {t('dashboard.table.recentCases')} Table */}
       <Paper sx={{ borderRadius: 2, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)', overflow: 'hidden' }}>
         <Box sx={{ p: 2.5, borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -755,7 +833,14 @@ const DashboardPage = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {recentCases?.data?.slice(0, 4).map((caseItem) => (
+              {(!recentCases || recentCases.length === 0) ? (
+                <TableRow>
+                  <TableCell colSpan={8} sx={{ textAlign: 'center', py: 4, color: '#64748b' }}>
+                    {t('dashboard.table.noRecentCases') || 'No recent cases'}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                recentCases.slice(0, 5).map((caseItem) => (
                 <TableRow key={caseItem.id} hover>
                   <TableCell sx={{ py: 1.5 }}>
                     <Link
@@ -854,7 +939,8 @@ const DashboardPage = () => {
                     </IconButton>
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

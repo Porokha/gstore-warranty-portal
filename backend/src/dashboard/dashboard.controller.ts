@@ -105,5 +105,32 @@ export class DashboardController {
       );
     }
   }
+
+  @Get('charts/cases-by-category')
+  async getCasesByCategory(
+    @Query('start') start?: string,
+    @Query('end') end?: string,
+  ) {
+    try {
+      const timeFilter =
+        start || end
+          ? {
+              start: start ? new Date(start) : undefined,
+              end: end ? new Date(end) : undefined,
+            }
+          : undefined;
+      return await this.dashboardService.getCasesByDeviceType(timeFilter);
+    } catch (error) {
+      this.logger.error('Error fetching cases by category:', error);
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Failed to fetch cases by category',
+          error: error.message || 'Unknown error',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }
 
