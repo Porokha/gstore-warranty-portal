@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from 'react-query';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -14,6 +14,7 @@ import {
   FormControl,
   InputLabel,
   Button,
+  CircularProgress,
   Tooltip,
 } from '@mui/material';
 import {
@@ -23,7 +24,7 @@ import {
 import { casesService } from '../../services/casesService';
 import StatusBar from '../../components/cases/StatusBar';
 import ResultBar from '../../components/cases/ResultBar';
-import SmartDataGrid from '../../components/common/SmartDataGrid';
+import CustomDataTable from '../../components/common/CustomDataTable';
 
 const CasesPage = () => {
   const { t } = useTranslation();
@@ -54,7 +55,7 @@ const CasesPage = () => {
     }
   );
 
-  const rawCases = React.useMemo(() => {
+  const rawCases = useMemo(() => {
     if (!cases) return [];
     if (Array.isArray(cases)) return cases;
     if (Array.isArray(cases?.data)) return cases.data;
@@ -62,7 +63,7 @@ const CasesPage = () => {
     return [];
   }, [cases]);
 
-  const rows = React.useMemo(
+  const rows = useMemo(
     () =>
       rawCases.map((case_) => ({
         ...case_,
@@ -72,97 +73,107 @@ const CasesPage = () => {
     [rawCases]
   );
 
-  const columns = React.useMemo(
+  const getPriorityColor = (priority) => {
+    const colors = {
+      low: 'default',
+      normal: 'primary',
+      high: 'warning',
+      critical: 'error',
+    };
+    return colors[priority] || 'default';
+  };
+
+  const columns = useMemo(
     () => [
       {
-        field: 'case_number',
-        headerName: t('case.caseNumber'),
-        minWidth: 180,
+        key: 'select',
+        label: '',
+        width: 50,
       },
       {
-        field: 'order_id',
-        headerName: t('case.orderId'),
-        minWidth: 140,
-        valueGetter: (params) => params.value || '-',
+        key: 'case_number',
+        label: t('case.caseNumber'),
+        width: 180,
       },
       {
-        field: 'product_title',
-        headerName: t('case.productTitle'),
-        flex: 1.2,
-        minWidth: 220,
+        key: 'order_id',
+        label: t('case.orderId'),
+        width: 140,
+        value: (row) => row.order_id || '-',
       },
       {
-        field: 'product_id',
-        headerName: t('case.productId'),
-        minWidth: 140,
-        valueGetter: (params) => params.value || '-',
+        key: 'product_title',
+        label: t('case.productTitle'),
+        width: 220,
       },
       {
-        field: 'opened_at',
-        headerName: t('case.openDate'),
-        minWidth: 150,
-        valueGetter: (params) => new Date(params.value).toLocaleDateString(),
+        key: 'product_id',
+        label: t('case.productId'),
+        width: 140,
+        value: (row) => row.product_id || '-',
       },
       {
-        field: 'deadline_at',
-        headerName: t('case.deadline'),
-        minWidth: 160,
-        valueGetter: (params) => new Date(params.value).toLocaleDateString(),
+        key: 'opened_at',
+        label: t('case.openDate'),
+        width: 150,
+        value: (row) => new Date(row.opened_at).toLocaleDateString(),
       },
       {
-        field: 'customerFullName',
-        headerName: t('case.customerName'),
-        minWidth: 200,
+        key: 'deadline_at',
+        label: t('case.deadline'),
+        width: 160,
+        value: (row) => new Date(row.deadline_at).toLocaleDateString(),
       },
       {
-        field: 'customer_phone',
-        headerName: t('case.phone'),
-        minWidth: 150,
+        key: 'customerFullName',
+        label: t('case.customerName'),
+        width: 200,
       },
       {
-        field: 'customer_email',
-        headerName: t('case.email'),
-        minWidth: 200,
-        valueGetter: (params) => params.value || '-',
+        key: 'customer_phone',
+        label: t('case.phone'),
+        width: 150,
       },
       {
-        field: 'status_level',
-        headerName: t('common.status'),
-        minWidth: 160,
-        renderCell: (params) => (
-          <StatusBar statusLevel={params.value} size="small" />
-        ),
+        key: 'customer_email',
+        label: t('case.email'),
+        width: 200,
+        value: (row) => row.customer_email || '-',
       },
       {
-        field: 'result_type',
-        headerName: t('common.result'),
-        minWidth: 160,
-        renderCell: (params) => (
-          <ResultBar resultType={params.value} size="small" />
-        ),
+        key: 'status_level',
+        label: t('common.status'),
+        width: 160,
+        render: (row) => <StatusBar statusLevel={row.status_level} size="small" />,
       },
       {
-        field: 'priority',
-        headerName: t('common.priority') || 'Priority',
-        minWidth: 140,
-        renderCell: (params) => (
+        key: 'result_type',
+        label: t('common.result'),
+        width: 160,
+        render: (row) => <ResultBar resultType={row.result_type} size="small" />,
+      },
+      {
+        key: 'priority',
+        label: t('common.priority') || 'Priority',
+        width: 140,
+        render: (row) => (
           <Chip
-            label={params.value}
-            color={getPriorityColor(params.value)}
+            label={row.priority}
+            color={getPriorityColor(row.priority)}
             size="small"
             sx={{ textTransform: 'capitalize' }}
           />
         ),
       },
       {
-        field: 'tags',
-        headerName: t('common.tags'),
-        minWidth: 200,
-        renderCell: (params) =>
-          params.value && params.value.length > 0 ? (
+        key: 'tags',
+        label: t('common.tags'),
+        width: 200,
+        render: (row) =>
+          row.tags && row.tags.length > 0 ? (
             <Box display="flex" gap={0.5} flexWrap="wrap">
-              {params.value.map((tag, idx) => (
-                <Chip key={`${params.row.id}-tag-${idx}`} label={tag} size="small" variant="outlined" />
+              {row.tags.map((tag, idx) => (
+                <Chip key={`${row.id}-tag-${idx}`} label={tag} size="small" variant="outlined" />
               ))}
             </Box>
           ) : (
@@ -170,23 +181,27 @@ const CasesPage = () => {
           ),
       },
       {
-        field: 'technician',
-        headerName: t('case.technician'),
-        minWidth: 200,
-        valueGetter: (params) =>
-          params.row.assigned_technician
-            ? `${params.row.assigned_technician.name || ''} ${params.row.assigned_technician.last_name || ''}`.trim()
+        key: 'technician',
+        label: t('case.technician'),
+        width: 200,
+        value: (row) =>
+          row.assigned_technician
+            ? `${row.assigned_technician.name || ''} ${row.assigned_technician.last_name || ''}`.trim()
             : '-',
       },
       {
-        field: 'actions',
-        headerName: t('common.actions') || 'Actions',
-        sortable: false,
-        filterable: false,
-        minWidth: 120,
-        renderCell: (params) => (
+        key: 'actions',
+        label: t('common.actions') || 'Actions',
+        width: 120,
+        render: (row) => (
           <Tooltip title={t('common.view')}>
-            <IconButton size="small" onClick={() => navigate(`/staff/cases/${params.row.id}`)}>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/staff/cases/${row.id}`);
+              }}
+            >
               <ViewIcon />
             </IconButton>
           </Tooltip>
@@ -208,15 +223,13 @@ const CasesPage = () => {
     setSearchParams(params);
   };
 
-  const getPriorityColor = (priority) => {
-    const colors = {
-      low: 'default',
-      normal: 'primary',
-      high: 'warning',
-      critical: 'error',
-    };
-    return colors[priority] || 'default';
-  };
+  if (isLoading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <div>
@@ -294,12 +307,13 @@ const CasesPage = () => {
         </Box>
       </Paper>
 
-      <SmartDataGrid
-        rows={rows}
+      <CustomDataTable
         columns={columns}
+        data={rows}
         tableKey="cases-table"
-        loading={isLoading}
-        rowHeight={64}
+        frozenColumns={['select', 'case_number']}
+        defaultColumnWidth={150}
+        onRowClick={(row) => navigate(`/staff/cases/${row.id}`)}
       />
     </div>
   );

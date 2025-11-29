@@ -15,7 +15,6 @@ import {
   Divider,
   Avatar,
   IconButton,
-  Badge,
   Menu,
   MenuItem,
 } from '@mui/material';
@@ -36,9 +35,6 @@ import {
   ChevronRight,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
-import { useQuery } from 'react-query';
-import { casesService } from '../../services/casesService';
-import ZevaLogo from './ZevaLogo';
 
 const EXPANDED_DRAWER_WIDTH = 280;
 const COLLAPSED_DRAWER_WIDTH = 88;
@@ -65,16 +61,6 @@ const StaffLayout = () => {
     });
   };
 
-  // Get urgent cases count for badge
-  const { data: urgentCasesCount } = useQuery(
-    'urgent-cases-badge',
-    () => casesService.getAll({ status: 'opened,investigating,pending', priority: 'high,critical' }),
-    {
-      select: (data) => data?.data?.length || 0,
-      refetchInterval: 30000,
-    }
-  );
-
   const handleLogout = () => {
     logout();
     navigate('/staff/login');
@@ -87,7 +73,7 @@ const StaffLayout = () => {
 
   const menuItems = [
     { path: '/staff/dashboard', label: t('common.dashboard'), icon: <DashboardIcon /> },
-    { path: '/staff/cases', label: t('common.serviceCases'), icon: <OpenCasesIcon />, badge: urgentCasesCount },
+    { path: '/staff/cases', label: t('common.serviceCases'), icon: <OpenCasesIcon /> },
     { path: '/staff/warranties', label: t('common.warranties'), icon: <WarrantiesIcon /> },
     { path: '/staff/finance', label: t('common.finance'), icon: <FinanceIcon /> },
     { path: '/staff/statistics', label: t('common.statistics') || 'Statistics', icon: <StatisticsIcon /> },
@@ -134,6 +120,7 @@ const StaffLayout = () => {
             alignItems: 'center',
             justifyContent: 'space-between',
             px: isCollapsed ? 1 : 2,
+            py: 2,
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -145,7 +132,22 @@ const StaffLayout = () => {
                 sx={{ width: 36, height: 36 }}
               />
             ) : (
-              <ZevaLogo size="medium" variant="default" showSubtitle />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box
+                  component="img"
+                  src="/zezva-mini.png"
+                  alt="ZEZVA logo"
+                  sx={{ width: 36, height: 36 }}
+                />
+                <Box sx={{ ml: 1 }}>
+                  <Typography variant="h6" sx={{ fontSize: '16px', fontWeight: 600, lineHeight: 1.2 }}>
+                    ZEZVA
+                  </Typography>
+                  <Typography variant="caption" sx={{ fontSize: '10px', color: '#6b7280', lineHeight: 1.2 }}>
+                    Warranty & Service
+                  </Typography>
+                </Box>
+              </Box>
             )}
           </Box>
           <IconButton onClick={toggleSidebar} size="small" sx={{ color: '#1f2937' }}>
@@ -153,7 +155,16 @@ const StaffLayout = () => {
           </IconButton>
         </Toolbar>
         
-        <Box sx={{ overflow: 'auto', flex: 1 }}>
+        <Box 
+          sx={{ 
+            overflow: isCollapsed ? 'hidden' : 'auto',
+            flex: 1,
+            '&::-webkit-scrollbar': {
+              display: isCollapsed ? 'none' : 'auto',
+            },
+            scrollbarWidth: isCollapsed ? 'none' : 'thin',
+          }}
+        >
           <List sx={{ px: 2, py: 1 }}>
             {menuItems.map((item) => {
               const isActive = location.pathname === item.path || 
@@ -204,21 +215,6 @@ const StaffLayout = () => {
                         transition: 'opacity 0.2s ease',
                       }}
                     />
-                    {item.badge && item.badge > 0 && (
-                      <Badge 
-                        badgeContent={item.badge} 
-                        color="error"
-                        sx={{
-                          display: isCollapsed ? 'none' : 'inline-flex',
-                          '& .MuiBadge-badge': {
-                            bgcolor: '#ef4444',
-                            fontSize: '11px',
-                            minWidth: '20px',
-                            height: '20px',
-                          },
-                        }}
-                      />
-                    )}
                   </ListItemButton>
                 </ListItem>
               );
@@ -372,13 +368,27 @@ const StaffLayout = () => {
             zIndex: (theme) => theme.zIndex.drawer + 1,
           }}
         >
-          <Toolbar sx={{ justifyContent: 'space-between', px: 3 }}>
-            <Box sx={{ flexGrow: 1 }} />
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <IconButton sx={{ color: '#64748b' }}>
+          <Toolbar 
+            sx={{ 
+              justifyContent: 'space-between', 
+              px: 3,
+              minHeight: '64px !important',
+              overflow: 'hidden',
+            }}
+          >
+            <Box sx={{ flexGrow: 1, minWidth: 0, overflow: 'hidden' }} />
+            <Box 
+              sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 2,
+                flexShrink: 0,
+              }}
+            >
+              <IconButton sx={{ color: '#64748b', flexShrink: 0 }}>
                 <NotificationsIcon />
               </IconButton>
-              <IconButton sx={{ color: '#64748b' }}>
+              <IconButton sx={{ color: '#64748b', flexShrink: 0 }}>
                 <PersonIcon />
               </IconButton>
               <Button
@@ -391,6 +401,8 @@ const StaffLayout = () => {
                   borderColor: '#e2e8f0',
                   color: '#64748b',
                   textTransform: 'none',
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap',
                   '&:hover': {
                     borderColor: '#cbd5e1',
                     bgcolor: '#f8fafc',

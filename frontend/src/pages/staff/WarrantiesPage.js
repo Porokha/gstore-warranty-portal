@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from 'react-query';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -28,7 +28,7 @@ import {
 import { warrantiesService } from '../../services/warrantiesService';
 import { useQueryClient } from 'react-query';
 import { useAuth } from '../../contexts/AuthContext';
-import SmartDataGrid from '../../components/common/SmartDataGrid';
+import CustomDataTable from '../../components/common/CustomDataTable';
 
 const WarrantiesPage = () => {
   const { t } = useTranslation();
@@ -80,7 +80,7 @@ const WarrantiesPage = () => {
     return diffDays;
   };
 
-  const rawData = React.useMemo(() => {
+  const rawData = useMemo(() => {
     if (!warranties) return [];
     if (Array.isArray(warranties)) return warranties;
     if (Array.isArray(warranties?.data)) return warranties.data;
@@ -88,68 +88,69 @@ const WarrantiesPage = () => {
     return [];
   }, [warranties]);
 
-  const rows = React.useMemo(() => rawData.map((warranty) => ({
+  const rows = useMemo(() => rawData.map((warranty) => ({
     ...warranty,
     id: warranty.id,
     isActive: isWarrantyActive(warranty.warranty_end),
     daysLeft: getDaysLeft(warranty.warranty_end),
   })), [rawData]);
 
-  const columns = React.useMemo(() => [
+  const columns = useMemo(() => [
     {
-      field: 'warranty_id',
-      headerName: t('warranty.warrantyId'),
-      minWidth: 160,
-      flex: 1,
+      key: 'select',
+      label: '',
+      width: 50,
     },
     {
-      field: 'title',
-      headerName: t('case.productTitle'),
-      flex: 1.4,
-      minWidth: 200,
+      key: 'warranty_id',
+      label: t('warranty.warrantyId'),
+      width: 160,
     },
     {
-      field: 'sku',
-      headerName: t('case.sku'),
-      minWidth: 140,
+      key: 'title',
+      label: t('case.productTitle'),
+      width: 200,
     },
     {
-      field: 'serial_number',
-      headerName: t('case.serialNumber'),
-      minWidth: 160,
+      key: 'sku',
+      label: t('case.sku'),
+      width: 140,
     },
     {
-      field: 'customer',
-      headerName: t('case.customerName'),
-      flex: 1.2,
-      minWidth: 180,
-      valueGetter: (params) =>
-        `${params.row.customer_name || ''} ${params.row.customer_last_name || ''}`.trim(),
+      key: 'serial_number',
+      label: t('case.serialNumber'),
+      width: 160,
     },
     {
-      field: 'customer_phone',
-      headerName: t('case.phone'),
-      minWidth: 160,
+      key: 'customer',
+      label: t('case.customerName'),
+      width: 180,
+      value: (row) => `${row.customer_name || ''} ${row.customer_last_name || ''}`.trim(),
     },
     {
-      field: 'purchase_date',
-      headerName: t('warranty.purchaseDate'),
-      minWidth: 150,
-      valueGetter: (params) => new Date(params.value).toLocaleDateString(),
+      key: 'customer_phone',
+      label: t('case.phone'),
+      width: 160,
     },
     {
-      field: 'warranty_end',
-      headerName: t('warranty.warrantyEndDate'),
-      minWidth: 170,
-      valueGetter: (params) => new Date(params.value).toLocaleDateString(),
+      key: 'purchase_date',
+      label: t('warranty.purchaseDate'),
+      width: 150,
+      value: (row) => new Date(row.purchase_date).toLocaleDateString(),
     },
     {
-      field: 'daysLeft',
-      headerName: t('warranty.daysLeft'),
-      minWidth: 150,
-      renderCell: (params) => {
-        const active = params.row.isActive;
-        const days = params.value;
+      key: 'warranty_end',
+      label: t('warranty.warrantyEndDate'),
+      width: 170,
+      value: (row) => new Date(row.warranty_end).toLocaleDateString(),
+    },
+    {
+      key: 'daysLeft',
+      label: t('warranty.daysLeft'),
+      width: 150,
+      render: (row) => {
+        const active = row.isActive;
+        const days = row.daysLeft;
         return (
           <Chip
             label={
@@ -164,30 +165,30 @@ const WarrantiesPage = () => {
       },
     },
     {
-      field: 'status',
-      headerName: t('common.status'),
-      minWidth: 140,
-      renderCell: (params) => (
+      key: 'status',
+      label: t('common.status'),
+      width: 140,
+      render: (row) => (
         <Chip
-          label={params.row.isActive ? (t('common.active') || 'Active') : (t('common.expired') || 'Expired')}
-          color={params.row.isActive ? 'success' : 'default'}
+          label={row.isActive ? (t('common.active') || 'Active') : (t('common.expired') || 'Expired')}
+          color={row.isActive ? 'success' : 'default'}
           size="small"
         />
       ),
     },
     {
-      field: 'actions',
-      headerName: t('common.actions'),
-      sortable: false,
-      filterable: false,
-      disableColumnMenu: true,
-      minWidth: 180,
-      renderCell: (params) => (
+      key: 'actions',
+      label: t('common.actions'),
+      width: 180,
+      render: (row) => (
         <Box display="flex" gap={0.5}>
           <Tooltip title={t('common.view')}>
             <IconButton
               size="small"
-              onClick={() => navigate(`/staff/warranties/${params.row.id}`)}
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/staff/warranties/${row.id}`);
+              }}
             >
               <ViewIcon />
             </IconButton>
@@ -196,7 +197,10 @@ const WarrantiesPage = () => {
             <IconButton
               size="small"
               color="primary"
-              onClick={() => navigate(`/staff/cases/new?warranty_id=${params.row.id}`)}
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/staff/cases/new?warranty_id=${row.id}`);
+              }}
             >
               <BuildIcon />
             </IconButton>
@@ -206,10 +210,11 @@ const WarrantiesPage = () => {
               <IconButton
                 size="small"
                 color="error"
-                onClick={async () => {
+                onClick={async (e) => {
+                  e.stopPropagation();
                   if (window.confirm(t('warranty.deleteWarrantyConfirm'))) {
                     try {
-                      await warrantiesService.delete(params.row.id);
+                      await warrantiesService.delete(row.id);
                       queryClient.invalidateQueries('warranties');
                       alert(t('warranty.warrantyDeleted'));
                     } catch (err) {
@@ -227,32 +232,48 @@ const WarrantiesPage = () => {
     },
   ], [t, isAdmin, navigate, queryClient]);
 
+  if (isLoading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert severity="error">
+        {t('common.errorLoading') || 'Error loading warranties'}
+      </Alert>
+    );
+  }
+
   return (
     <div>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <Typography variant="h4">{t('common.warranties')}</Typography>
-          <Box display="flex" gap={1}>
-            <Button
-              variant="outlined"
-              onClick={() => navigate('/staff/warranties/import/csv')}
-            >
-              {t('common.importCSV') || 'Import CSV'}
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={() => navigate('/staff/warranties/import/woocommerce')}
-            >
-              {t('common.importWooCommerce') || 'Import from WooCommerce'}
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => navigate('/staff/warranties/new')}
-            >
-              {t('common.createWarranty')}
-            </Button>
-          </Box>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography variant="h4">{t('common.warranties')}</Typography>
+        <Box display="flex" gap={1}>
+          <Button
+            variant="outlined"
+            onClick={() => navigate('/staff/warranties/import/csv')}
+          >
+            {t('common.importCSV') || 'Import CSV'}
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => navigate('/staff/warranties/import/woocommerce')}
+          >
+            {t('common.importWooCommerce') || 'Import from WooCommerce'}
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => navigate('/staff/warranties/new')}
+          >
+            {t('common.createWarranty')}
+          </Button>
         </Box>
+      </Box>
 
       {/* Filters */}
       <Paper sx={{ p: 2, mb: 3 }}>
@@ -312,11 +333,13 @@ const WarrantiesPage = () => {
         </Box>
       </Paper>
 
-      <SmartDataGrid
-        rows={rows}
+      <CustomDataTable
         columns={columns}
+        data={rows}
         tableKey="warranties-table"
-        loading={isLoading}
+        frozenColumns={['select', 'warranty_id']}
+        defaultColumnWidth={150}
+        onRowClick={(row) => navigate(`/staff/warranties/${row.id}`)}
       />
     </div>
   );
