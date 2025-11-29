@@ -134,14 +134,17 @@ export class ImportService {
                 : 365,
               order_id: row.order_id ? parseInt(row.order_id) : undefined,
               product_id: row.product_id ? parseInt(row.product_id) : undefined,
-              created_source: row.created_source === 'woocommerce' ? CreatedSource.AUTO_WOO : CreatedSource.MANUAL,
+              order_line_index: row.order_line_index ? parseInt(row.order_line_index) : undefined,
+              created_source: row.created_source === 'woocommerce' || row.created_source === 'auto_woo' ? CreatedSource.AUTO_WOO : CreatedSource.MANUAL,
               price: row.price ? parseFloat(row.price) : 0,
-              // New admin-only fields
+              thumbnail_url: row.thumbnail_url || undefined,
+              // Admin-only fields
               brand: row.brand || undefined,
               model: row.model || undefined,
               condition: row.condition || undefined,
               personal_identification_number: row.personal_identification_number || row.pn || undefined,
               admin_notes: row.admin_notes || undefined,
+              extended_days: row.extended_days ? parseInt(row.extended_days) : 0,
             };
 
             // Validate required fields
@@ -264,13 +267,16 @@ export class ImportService {
       'warranty_duration_days',
       'order_id',
       'product_id',
+      'order_line_index',
       'created_source',
       'price',
+      'thumbnail_url',
       'brand',
       'model',
       'condition',
       'personal_identification_number',
       'admin_notes',
+      'extended_days',
     ];
 
     const exampleRow = [
@@ -289,13 +295,16 @@ export class ImportService {
       '365',
       '12345',
       '67890',
+      '0',
       'manual',
       '999.99',
+      'https://example.com/image.jpg',
       'Apple',
       'iPhone 15 Pro',
       'New',
       'PN-12345',
       'Internal note for admin',
+      '0',
     ];
 
     return [headers.join(','), exampleRow.join(',')].join('\n');
