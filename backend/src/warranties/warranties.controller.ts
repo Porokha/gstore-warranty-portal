@@ -37,7 +37,7 @@ export class WarrantiesController {
     return this.warrantiesService.findAll(filters);
   }
 
-  @Get('device-types')
+  @Get('filters/device-types')
   getDeviceTypes() {
     return this.warrantiesService.getUniqueDeviceTypes();
   }

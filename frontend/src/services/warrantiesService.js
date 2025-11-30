@@ -64,7 +64,7 @@ export const warrantiesService = {
   },
 
   getDeviceTypes: async () => {
-    const response = await api.get('/warranties/device-types');
+    const response = await api.get('/warranties/filters/device-types');
     return response.data;
   },
 };
