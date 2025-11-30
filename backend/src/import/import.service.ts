@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
-import csv from 'csv-parser';
+import csv = require('csv-parser');
 import { ServiceCase, CaseStatusLevel, Priority } from '../cases/entities/service-case.entity';
 import { Warranty, CreatedSource } from '../warranties/entities/warranty.entity';
 import { CasesService } from '../cases/cases.service';
