@@ -17,5 +17,12 @@ export declare class WarrantiesController {
     findOne(id: number): Promise<import("./entities/warranty.entity").Warranty>;
     update(id: number, updateDto: UpdateWarrantyDto): Promise<import("./entities/warranty.entity").Warranty>;
     extendWarranty(id: number, days: number): Promise<import("./entities/warranty.entity").Warranty>;
+    bulkDelete(body: {
+        ids: number[];
+    }, req: any): Promise<{
+        deleted: number;
+        failed: number;
+        errors: string[];
+    }>;
     remove(id: number, req: any): Promise<void>;
 }

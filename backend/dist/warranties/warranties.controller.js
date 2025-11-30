@@ -49,6 +49,9 @@ let WarrantiesController = class WarrantiesController {
     extendWarranty(id, days) {
         return this.warrantiesService.extendWarranty(id, days);
     }
+    bulkDelete(body, req) {
+        return this.warrantiesService.bulkRemove(body.ids, req.user.id);
+    }
     remove(id, req) {
         return this.warrantiesService.remove(id, req.user.id);
     }
@@ -107,6 +110,16 @@ __decorate([
     __metadata("design:paramtypes", [Number, Number]),
     __metadata("design:returntype", void 0)
 ], WarrantiesController.prototype, "extendWarranty", null);
+__decorate([
+    (0, common_1.Post)('bulk-delete'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.ADMIN),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], WarrantiesController.prototype, "bulkDelete", null);
 __decorate([
     (0, common_1.Delete)(':id'),
     (0, common_1.HttpCode)(common_1.HttpStatus.NO_CONTENT),

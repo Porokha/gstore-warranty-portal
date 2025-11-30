@@ -17,6 +17,7 @@ import {
   CircularProgress,
   Tooltip,
   Alert,
+  Snackbar,
 } from '@mui/material';
 import {
   Visibility as ViewIcon,
@@ -29,6 +30,7 @@ import { warrantiesService } from '../../services/warrantiesService';
 import { useQueryClient } from 'react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import CustomDataTable from '../../components/common/CustomDataTable';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 
 const WarrantiesPage = () => {
   const { t } = useTranslation();
@@ -46,6 +48,17 @@ const WarrantiesPage = () => {
     customer_phone: searchParams.get('customer_phone') || '',
     active_only: searchParams.get('active_only') || '',
     expired_only: searchParams.get('expired_only') || '',
+  });
+
+  const [deleteDialog, setDeleteDialog] = useState({
+    open: false,
+    count: 0,
+    onConfirm: null,
+  });
+  const [notification, setNotification] = useState({
+    open: false,
+    message: '',
+    severity: 'success',
   });
 
   const { data: warranties, isLoading, error } = useQuery(
@@ -210,17 +223,29 @@ const WarrantiesPage = () => {
               <IconButton
                 size="small"
                 color="error"
-                onClick={async (e) => {
+                onClick={(e) => {
                   e.stopPropagation();
-                  if (window.confirm(t('warranty.deleteWarrantyConfirm'))) {
-                    try {
-                      await warrantiesService.delete(row.id);
-                      queryClient.invalidateQueries('warranties');
-                      alert(t('warranty.warrantyDeleted'));
-                    } catch (err) {
-                      alert(err.response?.data?.message || t('common.errorLoading'));
-                    }
-                  }
+                  setDeleteDialog({
+                    open: true,
+                    count: 1,
+                    onConfirm: async () => {
+                      try {
+                        await warrantiesService.delete(row.id);
+                        queryClient.invalidateQueries('warranties');
+                        setNotification({
+                          open: true,
+                          message: t('warranty.warrantyDeleted'),
+                          severity: 'success',
+                        });
+                      } catch (err) {
+                        setNotification({
+                          open: true,
+                          message: err.response?.data?.message || t('common.errorLoading'),
+                          severity: 'error',
+                        });
+                      }
+                    },
+                  });
                 }}
               >
                 <DeleteIcon />
@@ -340,16 +365,39 @@ const WarrantiesPage = () => {
         frozenColumns={['select', 'warranty_id']}
         defaultColumnWidth={150}
         onRowClick={(row) => navigate(`/staff/warranties/${row.id}`)}
-        onBulkDelete={async (selectedIds) => {
-          try {
-            for (const id of selectedIds) {
-              await warrantiesService.delete(id);
-            }
-            queryClient.invalidateQueries('warranties');
-            alert(t('warranty.warrantyDeleted') || 'Warranties deleted successfully');
-          } catch (err) {
-            alert(err.response?.data?.message || t('common.errorLoading') || 'Error deleting warranties');
-          }
+        onBulkDelete={(selectedIds) => {
+          setDeleteDialog({
+            open: true,
+            count: selectedIds.length,
+            onConfirm: async () => {
+              try {
+                const result = await warrantiesService.bulkDelete(selectedIds);
+                queryClient.invalidateQueries('warranties');
+                if (result.failed > 0) {
+                  setNotification({
+                    open: true,
+                    message: t('warranty.bulkDeletePartial', {
+                      deleted: result.deleted,
+                      failed: result.failed,
+                    }) || `Deleted ${result.deleted}, failed ${result.failed}`,
+                    severity: 'warning',
+                  });
+                } else {
+                  setNotification({
+                    open: true,
+                    message: t('warranty.bulkDeleteSuccess', { count: result.deleted }) || `Successfully deleted ${result.deleted} warranties`,
+                    severity: 'success',
+                  });
+                }
+              } catch (err) {
+                setNotification({
+                  open: true,
+                  message: err.response?.data?.message || t('common.errorLoading') || 'Error deleting warranties',
+                  severity: 'error',
+                });
+              }
+            },
+          });
         }}
         onBulkExport={(selectedIds) => {
           const selectedWarranties = rows.filter((w) => selectedIds.includes(w.id));
@@ -377,6 +425,32 @@ const WarrantiesPage = () => {
           a.click();
         }}
       />
+      
+      <ConfirmDialog
+        open={deleteDialog.open}
+        onClose={() => setDeleteDialog({ open: false, count: 0, onConfirm: null })}
+        onConfirm={deleteDialog.onConfirm || (() => {})}
+        title={t('warranty.deleteConfirmTitle') || 'Confirm Delete'}
+        message={t('warranty.deleteConfirmMessage', { count: deleteDialog.count }) || `Are you sure you want to delete ${deleteDialog.count} item(s)?`}
+        confirmText={t('common.delete') || 'Delete'}
+        cancelText={t('common.cancel') || 'Cancel'}
+        severity="error"
+      />
+      
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={6000}
+        onClose={() => setNotification({ open: false, message: '', severity: 'success' })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setNotification({ open: false, message: '', severity: 'success' })}
+          severity={notification.severity}
+          sx={{ width: '100%' }}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

@@ -46,6 +46,11 @@ export const warrantiesService = {
     return response.data;
   },
 
+  bulkDelete: async (ids) => {
+    const response = await api.post('/warranties/bulk-delete', { ids });
+    return response.data;
+  },
+
   getStats: async (startDate, endDate) => {
     const params = new URLSearchParams();
     if (startDate) params.append('start', startDate);

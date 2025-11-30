@@ -187,6 +187,37 @@ let WarrantiesService = class WarrantiesService {
         });
         await this.warrantiesRepository.remove(warranty);
     }
+    async bulkRemove(ids, deletedBy) {
+        const result = { deleted: 0, failed: 0, errors: [] };
+        for (const id of ids) {
+            try {
+                const warranty = await this.findOne(id);
+                if (warranty.service_cases && warranty.service_cases.length > 0) {
+                    result.failed++;
+                    result.errors.push(`Warranty ${warranty.warranty_id} has associated service cases`);
+                    continue;
+                }
+                await this.auditService.log(deletedBy, 'warranty.deleted', {
+                    warranty_id: warranty.id,
+                    warranty_number: warranty.warranty_id,
+                    customer_name: warranty.customer_name,
+                    customer_last_name: warranty.customer_last_name,
+                    customer_phone: warranty.customer_phone,
+                    product_title: warranty.title,
+                    sku: warranty.sku,
+                    serial_number: warranty.serial_number,
+                    deleted_at: new Date().toISOString(),
+                });
+                await this.warrantiesRepository.remove(warranty);
+                result.deleted++;
+            }
+            catch (error) {
+                result.failed++;
+                result.errors.push(`Failed to delete warranty ID ${id}: ${error.message}`);
+            }
+        }
+        return result;
+    }
     async getStats(startDate, endDate) {
         const queryBuilder = this.warrantiesRepository.createQueryBuilder('warranty');
         const now = new Date();

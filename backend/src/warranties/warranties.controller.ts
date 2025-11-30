@@ -74,6 +74,13 @@ export class WarrantiesController {
     return this.warrantiesService.extendWarranty(id, days);
   }
 
+  @Post('bulk-delete')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  bulkDelete(@Body() body: { ids: number[] }, @Request() req) {
+    return this.warrantiesService.bulkRemove(body.ids, req.user.id);
+  }
+
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(JwtAuthGuard, RolesGuard)

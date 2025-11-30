@@ -16,6 +16,11 @@ export declare class WarrantiesService {
     update(id: number, updateDto: UpdateWarrantyDto): Promise<Warranty>;
     extendWarranty(id: number, days: number): Promise<Warranty>;
     remove(id: number, deletedBy: number): Promise<void>;
+    bulkRemove(ids: number[], deletedBy: number): Promise<{
+        deleted: number;
+        failed: number;
+        errors: string[];
+    }>;
     getStats(startDate?: Date, endDate?: Date): Promise<{
         total: number;
         active: number;

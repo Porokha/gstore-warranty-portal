@@ -378,17 +378,18 @@ export class ImportService {
                 continue;
               }
 
-              // Check for duplicates - by serial_number and order_id if provided
-              const existingWarranty = await this.warrantiesRepository.findOne({
-                where: [
-                  { serial_number: warrantyData.serial_number, order_id: warrantyData.order_id || null },
-                  ...(warrantyData.order_id ? [{ order_id: warrantyData.order_id }] : []),
-                ],
-              });
+              // Check for duplicates - ONLY by order_id (if provided)
+              // Same person, same product, same date can be different warranties
+              // Duplicates only if order_id matches
+              if (warrantyData.order_id) {
+                const existingWarranty = await this.warrantiesRepository.findOne({
+                  where: { order_id: warrantyData.order_id },
+                });
 
-              if (existingWarranty) {
-                skipped.push({ row, reason: 'Duplicate warranty found' });
-                continue;
+                if (existingWarranty) {
+                  skipped.push({ row, reason: `Duplicate warranty found: Order ID ${warrantyData.order_id} already exists` });
+                  continue;
+                }
               }
 
               // Log first warranty data for debugging

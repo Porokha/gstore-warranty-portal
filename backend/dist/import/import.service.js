@@ -321,15 +321,14 @@ let ImportService = ImportService_1 = class ImportService {
                             errors.push({ row, error: errorMsg });
                             continue;
                         }
-                        const existingWarranty = await this.warrantiesRepository.findOne({
-                            where: [
-                                { serial_number: warrantyData.serial_number, order_id: warrantyData.order_id || null },
-                                ...(warrantyData.order_id ? [{ order_id: warrantyData.order_id }] : []),
-                            ],
-                        });
-                        if (existingWarranty) {
-                            skipped.push({ row, reason: 'Duplicate warranty found' });
-                            continue;
+                        if (warrantyData.order_id) {
+                            const existingWarranty = await this.warrantiesRepository.findOne({
+                                where: { order_id: warrantyData.order_id },
+                            });
+                            if (existingWarranty) {
+                                skipped.push({ row, reason: `Duplicate warranty found: Order ID ${warrantyData.order_id} already exists` });
+                                continue;
+                            }
                         }
                         if (results.length === 0 && errors.length === 0) {
                             this.logger.log(`Sample warranty data being created:`, JSON.stringify(warrantyData, null, 2).substring(0, 500));
