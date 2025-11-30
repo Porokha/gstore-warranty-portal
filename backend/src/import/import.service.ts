@@ -1,7 +1,8 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as fs from 'fs';
+import * as path from 'path';
 import csv from 'csv-parser';
 import { ServiceCase, CaseStatusLevel, Priority } from '../cases/entities/service-case.entity';
 import { Warranty, CreatedSource } from '../warranties/entities/warranty.entity';
@@ -12,6 +13,8 @@ import { CreateWarrantyDto } from '../warranties/dto/create-warranty.dto';
 
 @Injectable()
 export class ImportService {
+  private readonly logger = new Logger(ImportService.name);
+
   constructor(
     @InjectRepository(ServiceCase)
     private casesRepository: Repository<ServiceCase>,
@@ -111,6 +114,12 @@ export class ImportService {
     const skipped: any[] = [];
     const rows: any[] = [];
 
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      this.logger.error(`File not found: ${filePath}`);
+      throw new BadRequestException(`File not found: ${filePath}`);
+    }
+
     // First, read all rows into memory
     return new Promise((resolve, reject) => {
       fs.createReadStream(filePath)
@@ -119,6 +128,7 @@ export class ImportService {
           rows.push(row);
         })
         .on('end', async () => {
+          this.logger.log(`Processing ${rows.length} warranty rows from CSV`);
           // Process rows sequentially to avoid race conditions
           for (const row of rows) {
             try {
@@ -203,6 +213,7 @@ export class ImportService {
               const created = await this.warrantiesService.create(warrantyData);
               results.push({ row, warranty: created });
             } catch (error) {
+              this.logger.error(`Error processing warranty row: ${JSON.stringify(row)}`, error.stack || error.message);
               // Check if it's a duplicate error
               if (error.message?.includes('already exists') || error.message?.includes('duplicate')) {
                 skipped.push({ row, reason: error.message });
@@ -211,6 +222,8 @@ export class ImportService {
               }
             }
           }
+
+          this.logger.log(`Import complete: ${results.length} imported, ${skipped.length} skipped, ${errors.length} errors`);
 
           // Clean up file
           try {
@@ -232,8 +245,12 @@ export class ImportService {
           });
         })
         .on('error', (error) => {
+          this.logger.error('Error reading CSV file:', error);
           reject(error);
         });
+    }).catch((error) => {
+      this.logger.error('Error in importWarrantiesFromCSV:', error);
+      throw error;
     });
   }
 

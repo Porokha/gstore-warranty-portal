@@ -3,9 +3,10 @@ import { ImportService } from './import.service';
 type MulterFile = any;
 export declare class ImportController {
     private importService;
+    private readonly logger;
     constructor(importService: ImportService);
     importCases(file: MulterFile, user: any): Promise<unknown>;
-    importWarranties(file: MulterFile, user: any): Promise<unknown>;
+    importWarranties(file: MulterFile, user: any): Promise<any>;
     downloadCasesExample(res: Response): Promise<void>;
     downloadWarrantiesExample(res: Response): Promise<void>;
 }

@@ -8,10 +8,13 @@ import {
   Res,
   HttpCode,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { Response } from 'express';
+import * as fs from 'fs';
+import * as path from 'path';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -26,13 +29,28 @@ type MulterFile = any;
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
 export class ImportController {
-  constructor(private importService: ImportService) {}
+  private readonly logger = new Logger(ImportController.name);
+
+  constructor(private importService: ImportService) {
+    // Ensure uploads/imports directory exists
+    const uploadsDir = path.join(process.cwd(), 'uploads', 'imports');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+      this.logger.log(`Created uploads directory: ${uploadsDir}`);
+    }
+  }
 
   @Post('cases/csv')
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: 'uploads/imports',
+        destination: (req, file, cb) => {
+          const uploadsDir = path.join(process.cwd(), 'uploads', 'imports');
+          if (!fs.existsSync(uploadsDir)) {
+            fs.mkdirSync(uploadsDir, { recursive: true });
+          }
+          cb(null, uploadsDir);
+        },
         filename: (req, file, cb) => {
           const timestamp = Date.now();
           cb(null, `cases_${timestamp}_${file.originalname}`);
@@ -64,7 +82,13 @@ export class ImportController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: 'uploads/imports',
+        destination: (req, file, cb) => {
+          const uploadsDir = path.join(process.cwd(), 'uploads', 'imports');
+          if (!fs.existsSync(uploadsDir)) {
+            fs.mkdirSync(uploadsDir, { recursive: true });
+          }
+          cb(null, uploadsDir);
+        },
         filename: (req, file, cb) => {
           const timestamp = Date.now();
           cb(null, `warranties_${timestamp}_${file.originalname}`);
@@ -89,7 +113,16 @@ export class ImportController {
     if (!file) {
       throw new Error('No file uploaded');
     }
-    return this.importService.importWarrantiesFromCSV((file as any).path, user.id);
+    try {
+      this.logger.log(`Importing warranties from CSV: ${(file as any).path}`);
+      const result: any = await this.importService.importWarrantiesFromCSV((file as any).path, user.id);
+      this.logger.log(`Import complete: ${result.imported} imported, ${result.skipped} skipped, ${result.errors} errors`);
+      return result;
+    } catch (error) {
+      this.logger.error('Error importing warranties from CSV:', error);
+      this.logger.error('Error stack:', (error as any).stack);
+      throw error;
+    }
   }
 
   @Get('cases/csv/example')

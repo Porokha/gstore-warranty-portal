@@ -8,6 +8,7 @@ export declare class ImportService {
     private warrantiesRepository;
     private casesService;
     private warrantiesService;
+    private readonly logger;
     constructor(casesRepository: Repository<ServiceCase>, warrantiesRepository: Repository<Warranty>, casesService: CasesService, warrantiesService: WarrantiesService);
     importCasesFromCSV(filePath: string, userId: number): Promise<unknown>;
     importWarrantiesFromCSV(filePath: string, userId: number): Promise<unknown>;

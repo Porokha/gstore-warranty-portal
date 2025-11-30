@@ -11,20 +11,29 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var ImportController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ImportController = void 0;
 const common_1 = require("@nestjs/common");
 const platform_express_1 = require("@nestjs/platform-express");
 const multer_1 = require("multer");
+const fs = require("fs");
+const path = require("path");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("../auth/guards/roles.guard");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 const user_entity_1 = require("../users/entities/user.entity");
 const import_service_1 = require("./import.service");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
-let ImportController = class ImportController {
+let ImportController = ImportController_1 = class ImportController {
     constructor(importService) {
         this.importService = importService;
+        this.logger = new common_1.Logger(ImportController_1.name);
+        const uploadsDir = path.join(process.cwd(), 'uploads', 'imports');
+        if (!fs.existsSync(uploadsDir)) {
+            fs.mkdirSync(uploadsDir, { recursive: true });
+            this.logger.log(`Created uploads directory: ${uploadsDir}`);
+        }
     }
     async importCases(file, user) {
         if (!file) {
@@ -36,7 +45,17 @@ let ImportController = class ImportController {
         if (!file) {
             throw new Error('No file uploaded');
         }
-        return this.importService.importWarrantiesFromCSV(file.path, user.id);
+        try {
+            this.logger.log(`Importing warranties from CSV: ${file.path}`);
+            const result = await this.importService.importWarrantiesFromCSV(file.path, user.id);
+            this.logger.log(`Import complete: ${result.imported} imported, ${result.skipped} skipped, ${result.errors} errors`);
+            return result;
+        }
+        catch (error) {
+            this.logger.error('Error importing warranties from CSV:', error);
+            this.logger.error('Error stack:', error.stack);
+            throw error;
+        }
     }
     async downloadCasesExample(res) {
         const csv = this.importService.generateCasesExampleCSV();
@@ -56,7 +75,13 @@ __decorate([
     (0, common_1.Post)('cases/csv'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file', {
         storage: (0, multer_1.diskStorage)({
-            destination: 'uploads/imports',
+            destination: (req, file, cb) => {
+                const uploadsDir = path.join(process.cwd(), 'uploads', 'imports');
+                if (!fs.existsSync(uploadsDir)) {
+                    fs.mkdirSync(uploadsDir, { recursive: true });
+                }
+                cb(null, uploadsDir);
+            },
             filename: (req, file, cb) => {
                 const timestamp = Date.now();
                 cb(null, `cases_${timestamp}_${file.originalname}`);
@@ -84,7 +109,13 @@ __decorate([
     (0, common_1.Post)('warranties/csv'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file', {
         storage: (0, multer_1.diskStorage)({
-            destination: 'uploads/imports',
+            destination: (req, file, cb) => {
+                const uploadsDir = path.join(process.cwd(), 'uploads', 'imports');
+                if (!fs.existsSync(uploadsDir)) {
+                    fs.mkdirSync(uploadsDir, { recursive: true });
+                }
+                cb(null, uploadsDir);
+            },
             filename: (req, file, cb) => {
                 const timestamp = Date.now();
                 cb(null, `warranties_${timestamp}_${file.originalname}`);
@@ -122,7 +153,7 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], ImportController.prototype, "downloadWarrantiesExample", null);
-exports.ImportController = ImportController = __decorate([
+exports.ImportController = ImportController = ImportController_1 = __decorate([
     (0, common_1.Controller)('import'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(user_entity_1.UserRole.ADMIN),

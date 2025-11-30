@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var ImportService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ImportService = void 0;
 const common_1 = require("@nestjs/common");
@@ -22,12 +23,13 @@ const service_case_entity_1 = require("../cases/entities/service-case.entity");
 const warranty_entity_1 = require("../warranties/entities/warranty.entity");
 const cases_service_1 = require("../cases/cases.service");
 const warranties_service_1 = require("../warranties/warranties.service");
-let ImportService = class ImportService {
+let ImportService = ImportService_1 = class ImportService {
     constructor(casesRepository, warrantiesRepository, casesService, warrantiesService) {
         this.casesRepository = casesRepository;
         this.warrantiesRepository = warrantiesRepository;
         this.casesService = casesService;
         this.warrantiesService = warrantiesService;
+        this.logger = new common_1.Logger(ImportService_1.name);
     }
     async importCasesFromCSV(filePath, userId) {
         const results = [];
@@ -109,6 +111,10 @@ let ImportService = class ImportService {
         const errors = [];
         const skipped = [];
         const rows = [];
+        if (!fs.existsSync(filePath)) {
+            this.logger.error(`File not found: ${filePath}`);
+            throw new common_1.BadRequestException(`File not found: ${filePath}`);
+        }
         return new Promise((resolve, reject) => {
             fs.createReadStream(filePath)
                 .pipe((0, csv_parser_1.default)())
@@ -116,6 +122,7 @@ let ImportService = class ImportService {
                 rows.push(row);
             })
                 .on('end', async () => {
+                this.logger.log(`Processing ${rows.length} warranty rows from CSV`);
                 for (const row of rows) {
                     try {
                         const warrantyData = {
@@ -187,6 +194,7 @@ let ImportService = class ImportService {
                         results.push({ row, warranty: created });
                     }
                     catch (error) {
+                        this.logger.error(`Error processing warranty row: ${JSON.stringify(row)}`, error.stack || error.message);
                         if (error.message?.includes('already exists') || error.message?.includes('duplicate')) {
                             skipped.push({ row, reason: error.message });
                         }
@@ -195,6 +203,7 @@ let ImportService = class ImportService {
                         }
                     }
                 }
+                this.logger.log(`Import complete: ${results.length} imported, ${skipped.length} skipped, ${errors.length} errors`);
                 try {
                     fs.unlinkSync(filePath);
                 }
@@ -214,8 +223,12 @@ let ImportService = class ImportService {
                 });
             })
                 .on('error', (error) => {
+                this.logger.error('Error reading CSV file:', error);
                 reject(error);
             });
+        }).catch((error) => {
+            this.logger.error('Error in importWarrantiesFromCSV:', error);
+            throw error;
         });
     }
     generateCasesExampleCSV() {
@@ -318,7 +331,7 @@ let ImportService = class ImportService {
     }
 };
 exports.ImportService = ImportService;
-exports.ImportService = ImportService = __decorate([
+exports.ImportService = ImportService = ImportService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(service_case_entity_1.ServiceCase)),
     __param(1, (0, typeorm_1.InjectRepository)(warranty_entity_1.Warranty)),
