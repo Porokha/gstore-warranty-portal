@@ -120,7 +120,13 @@ let ImportService = ImportService_1 = class ImportService {
         const csvParser = require('csv-parser');
         return new Promise((resolve, reject) => {
             fs.createReadStream(filePath)
-                .pipe(csvParser())
+                .pipe(csvParser({
+                skipEmptyLines: true,
+                skipLinesWithError: false,
+                mapHeaders: ({ header }) => {
+                    return header.replace(/^\ufeff/, '').trim();
+                }
+            }))
                 .on('data', (row) => {
                 rows.push(row);
             })
@@ -145,10 +151,22 @@ let ImportService = ImportService_1 = class ImportService {
                 this.logger.log(`First row sample (keys): ${Object.keys(rows[0]).join(', ')}`);
                 this.logger.log(`First row data: ${JSON.stringify(rows[0]).substring(0, 500)}`);
                 let processedCount = 0;
-                for (const row of rows) {
+                for (const rawRow of rows) {
                     processedCount++;
                     if (processedCount % 1000 === 0) {
                         this.logger.log(`Processed ${processedCount}/${rows.length} rows... (${results.length} imported, ${errors.length} errors)`);
+                    }
+                    const row = {};
+                    for (const key in rawRow) {
+                        if (rawRow.hasOwnProperty(key)) {
+                            const normalizedKey = key.replace(/^\ufeff/, '').trim();
+                            row[normalizedKey] = rawRow[key];
+                        }
+                    }
+                    if (processedCount === 1) {
+                        this.logger.log(`Raw row keys: ${Object.keys(rawRow).join(', ')}`);
+                        this.logger.log(`Normalized row keys: ${Object.keys(row).join(', ')}`);
+                        this.logger.log(`title value: "${row.title}" (type: ${typeof row.title})`);
                     }
                     try {
                         let serialNumber = row.serial_number || row.imei || '';

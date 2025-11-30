@@ -129,7 +129,14 @@ export class ImportService {
     const csvParser = require('csv-parser');
     return new Promise((resolve, reject) => {
       fs.createReadStream(filePath)
-        .pipe(csvParser())
+        .pipe(csvParser({
+          skipEmptyLines: true,
+          skipLinesWithError: false,
+          mapHeaders: ({ header }) => {
+            // Remove BOM and trim whitespace from headers
+            return header.replace(/^\ufeff/, '').trim();
+          }
+        }))
         .on('data', (row) => {
           rows.push(row);
         })
@@ -160,13 +167,31 @@ export class ImportService {
           
           // Process rows sequentially to avoid race conditions
           let processedCount = 0;
-          for (const row of rows) {
+          for (const rawRow of rows) {
             processedCount++;
             if (processedCount % 1000 === 0) {
               this.logger.log(`Processed ${processedCount}/${rows.length} rows... (${results.length} imported, ${errors.length} errors)`);
             }
             
+            // Normalize row keys - remove BOM, trim whitespace, handle case sensitivity
+            const row: any = {};
+            for (const key in rawRow) {
+              if (rawRow.hasOwnProperty(key)) {
+                // Remove BOM (Byte Order Mark) and trim whitespace
+                const normalizedKey = key.replace(/^\ufeff/, '').trim();
+                row[normalizedKey] = rawRow[key];
+              }
+            }
+            
+            // Debug: Log first row's actual keys vs normalized keys
+            if (processedCount === 1) {
+              this.logger.log(`Raw row keys: ${Object.keys(rawRow).join(', ')}`);
+              this.logger.log(`Normalized row keys: ${Object.keys(row).join(', ')}`);
+              this.logger.log(`title value: "${row.title}" (type: ${typeof row.title})`);
+            }
+            
             try {
+              
               // Map CSV row to CreateWarrantyDto
               // Use imei as serial_number for phones if serial_number is empty
               let serialNumber = row.serial_number || row.imei || '';
