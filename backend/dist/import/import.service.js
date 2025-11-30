@@ -151,11 +151,40 @@ let ImportService = ImportService_1 = class ImportService {
                         this.logger.log(`Processed ${processedCount}/${rows.length} rows... (${results.length} imported, ${errors.length} errors)`);
                     }
                     try {
+                        let serialNumber = row.serial_number || row.imei || '';
+                        if (!serialNumber) {
+                            if (row.order_id && row.product_id) {
+                                serialNumber = `ORDER-${row.order_id}-PROD-${row.product_id}`;
+                            }
+                            else if (row.order_id) {
+                                serialNumber = `ORDER-${row.order_id}`;
+                            }
+                            else {
+                                const hash = `${row.title || 'UNKNOWN'}-${row.customer_phone || 'NO-PHONE'}-${processedCount}`.substring(0, 50).replace(/\s+/g, '-');
+                                serialNumber = `IMPORT-${hash}`;
+                            }
+                        }
+                        let sku = row.sku || '';
+                        if (!sku) {
+                            if (row.order_id && row.product_id) {
+                                sku = `ORDER-${row.order_id}-${row.product_id}`;
+                            }
+                            else if (row.order_id) {
+                                sku = `ORDER-${row.order_id}`;
+                            }
+                            else if (serialNumber) {
+                                sku = `SN-${serialNumber.substring(0, 30)}`;
+                            }
+                            else {
+                                const hash = (row.title + row.customer_name + row.customer_phone).substring(0, 20).replace(/\s+/g, '-');
+                                sku = `IMPORT-${hash}`;
+                            }
+                        }
                         const warrantyData = {
                             title: row.title || '',
-                            sku: row.sku || '',
+                            sku: sku,
                             imei: row.imei || undefined,
-                            serial_number: row.serial_number || '',
+                            serial_number: serialNumber,
                             device_type: row.device_type || 'Laptop',
                             customer_name: row.customer_name || '',
                             customer_last_name: row.customer_last_name || '',

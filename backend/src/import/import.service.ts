@@ -168,11 +168,43 @@ export class ImportService {
             
             try {
               // Map CSV row to CreateWarrantyDto
+              // Use imei as serial_number for phones if serial_number is empty
+              let serialNumber = row.serial_number || row.imei || '';
+              
+              // If serial_number is still empty, generate one from available data
+              if (!serialNumber) {
+                if (row.order_id && row.product_id) {
+                  serialNumber = `ORDER-${row.order_id}-PROD-${row.product_id}`;
+                } else if (row.order_id) {
+                  serialNumber = `ORDER-${row.order_id}`;
+                } else {
+                  // Generate from title + customer + timestamp for uniqueness
+                  const hash = `${row.title || 'UNKNOWN'}-${row.customer_phone || 'NO-PHONE'}-${processedCount}`.substring(0, 50).replace(/\s+/g, '-');
+                  serialNumber = `IMPORT-${hash}`;
+                }
+              }
+              
+              // Generate SKU from available data if SKU is empty
+              let sku = row.sku || '';
+              if (!sku) {
+                if (row.order_id && row.product_id) {
+                  sku = `ORDER-${row.order_id}-${row.product_id}`;
+                } else if (row.order_id) {
+                  sku = `ORDER-${row.order_id}`;
+                } else if (serialNumber) {
+                  sku = `SN-${serialNumber.substring(0, 30)}`;
+                } else {
+                  // Last resort: use a hash of title + customer to make it somewhat stable
+                  const hash = (row.title + row.customer_name + row.customer_phone).substring(0, 20).replace(/\s+/g, '-');
+                  sku = `IMPORT-${hash}`;
+                }
+              }
+              
               const warrantyData: any = {
                 title: row.title || '',
-                sku: row.sku || '',
+                sku: sku,
                 imei: row.imei || undefined,
-                serial_number: row.serial_number || '',
+                serial_number: serialNumber,
                 device_type: row.device_type || 'Laptop',
                 customer_name: row.customer_name || '',
                 customer_last_name: row.customer_last_name || '', // Required field, default to empty string
