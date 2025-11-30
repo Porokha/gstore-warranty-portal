@@ -7,13 +7,13 @@ export declare class WarrantiesController {
     constructor(warrantiesService: WarrantiesService);
     create(createDto: CreateWarrantyDto): Promise<import("./entities/warranty.entity").Warranty>;
     findAll(filters: FilterWarrantyDto): Promise<import("./entities/warranty.entity").Warranty[]>;
+    getDeviceTypes(): Promise<string[]>;
     getStats(startDate?: string, endDate?: string): Promise<{
         total: number;
         active: number;
         expired: number;
         expiringSoon: number;
     }>;
-    getDeviceTypes(): Promise<string[]>;
     findByWarrantyId(warrantyId: string): Promise<import("./entities/warranty.entity").Warranty>;
     findOne(id: number): Promise<import("./entities/warranty.entity").Warranty>;
     update(id: number, updateDto: UpdateWarrantyDto): Promise<import("./entities/warranty.entity").Warranty>;

@@ -37,6 +37,11 @@ export class WarrantiesController {
     return this.warrantiesService.findAll(filters);
   }
 
+  @Get('device-types')
+  getDeviceTypes() {
+    return this.warrantiesService.getUniqueDeviceTypes();
+  }
+
   @Get('stats')
   getStats(
     @Query('start') startDate?: string,
@@ -45,11 +50,6 @@ export class WarrantiesController {
     const start = startDate ? new Date(startDate) : undefined;
     const end = endDate ? new Date(endDate) : undefined;
     return this.warrantiesService.getStats(start, end);
-  }
-
-  @Get('device-types')
-  getDeviceTypes() {
-    return this.warrantiesService.getUniqueDeviceTypes();
   }
 
   @Get('warranty-id/:warrantyId')

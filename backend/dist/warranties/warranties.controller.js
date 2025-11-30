@@ -32,13 +32,13 @@ let WarrantiesController = class WarrantiesController {
     findAll(filters) {
         return this.warrantiesService.findAll(filters);
     }
+    getDeviceTypes() {
+        return this.warrantiesService.getUniqueDeviceTypes();
+    }
     getStats(startDate, endDate) {
         const start = startDate ? new Date(startDate) : undefined;
         const end = endDate ? new Date(endDate) : undefined;
         return this.warrantiesService.getStats(start, end);
-    }
-    getDeviceTypes() {
-        return this.warrantiesService.getUniqueDeviceTypes();
     }
     findByWarrantyId(warrantyId) {
         return this.warrantiesService.findByWarrantyId(warrantyId);
@@ -75,6 +75,12 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], WarrantiesController.prototype, "findAll", null);
 __decorate([
+    (0, common_1.Get)('device-types'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], WarrantiesController.prototype, "getDeviceTypes", null);
+__decorate([
     (0, common_1.Get)('stats'),
     __param(0, (0, common_1.Query)('start')),
     __param(1, (0, common_1.Query)('end')),
@@ -82,12 +88,6 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", void 0)
 ], WarrantiesController.prototype, "getStats", null);
-__decorate([
-    (0, common_1.Get)('device-types'),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
-], WarrantiesController.prototype, "getDeviceTypes", null);
 __decorate([
     (0, common_1.Get)('warranty-id/:warrantyId'),
     __param(0, (0, common_1.Param)('warrantyId')),
