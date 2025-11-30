@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
-import csv = require('csv-parser');
 import { ServiceCase, CaseStatusLevel, Priority } from '../cases/entities/service-case.entity';
 import { Warranty, CreatedSource } from '../warranties/entities/warranty.entity';
 import { CasesService } from '../cases/cases.service';
@@ -29,9 +28,11 @@ export class ImportService {
     const errors: any[] = [];
     const skipped: any[] = [];
 
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const csvParser = require('csv-parser');
     return new Promise((resolve, reject) => {
       fs.createReadStream(filePath)
-        .pipe(csv())
+        .pipe(csvParser())
         .on('data', async (row) => {
           try {
             // Map CSV row to CreateCaseDto
@@ -121,9 +122,11 @@ export class ImportService {
     }
 
     // First, read all rows into memory
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const csvParser = require('csv-parser');
     return new Promise((resolve, reject) => {
       fs.createReadStream(filePath)
-        .pipe(csv())
+        .pipe(csvParser())
         .on('data', (row) => {
           rows.push(row);
         })

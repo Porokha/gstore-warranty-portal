@@ -18,7 +18,6 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const fs = require("fs");
-const csv = require("csv-parser");
 const service_case_entity_1 = require("../cases/entities/service-case.entity");
 const warranty_entity_1 = require("../warranties/entities/warranty.entity");
 const cases_service_1 = require("../cases/cases.service");
@@ -35,9 +34,10 @@ let ImportService = ImportService_1 = class ImportService {
         const results = [];
         const errors = [];
         const skipped = [];
+        const csvParser = require('csv-parser');
         return new Promise((resolve, reject) => {
             fs.createReadStream(filePath)
-                .pipe(csv())
+                .pipe(csvParser())
                 .on('data', async (row) => {
                 try {
                     const caseData = {
@@ -115,9 +115,10 @@ let ImportService = ImportService_1 = class ImportService {
             this.logger.error(`File not found: ${filePath}`);
             throw new common_1.BadRequestException(`File not found: ${filePath}`);
         }
+        const csvParser = require('csv-parser');
         return new Promise((resolve, reject) => {
             fs.createReadStream(filePath)
-                .pipe(csv())
+                .pipe(csvParser())
                 .on('data', (row) => {
                 rows.push(row);
             })
