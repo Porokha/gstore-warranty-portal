@@ -132,6 +132,13 @@ export class ImportService {
         })
         .on('end', async () => {
           this.logger.log(`Processing ${rows.length} warranty rows from CSV`);
+          
+          // Log first row structure for debugging
+          if (rows.length > 0) {
+            this.logger.log(`First row sample (keys): ${Object.keys(rows[0]).join(', ')}`);
+            this.logger.log(`First row data: ${JSON.stringify(rows[0]).substring(0, 500)}`);
+          }
+          
           // Process rows sequentially to avoid race conditions
           for (const row of rows) {
             try {
@@ -182,13 +189,23 @@ export class ImportService {
                   warrantyData.warranty_end = endDate.toISOString();
                 }
               } catch (dateError) {
-                errors.push({ row, error: `Invalid date format: ${dateError.message}` });
+                const errorMsg = `Invalid date format: ${dateError.message}`;
+                if (errors.length < 3) {
+                  this.logger.error(`Date parsing error (row ${errors.length + 1}): ${errorMsg}`);
+                  this.logger.error(`Row data: ${JSON.stringify(row).substring(0, 300)}`);
+                }
+                errors.push({ row, error: errorMsg });
                 continue;
               }
 
               // Validate required fields
               if (!warrantyData.title || !warrantyData.sku || !warrantyData.serial_number || !warrantyData.customer_name || !warrantyData.customer_phone) {
-                errors.push({ row, error: 'Missing required fields (title, sku, serial_number, customer_name, customer_phone)' });
+                const errorMsg = 'Missing required fields (title, sku, serial_number, customer_name, customer_phone)';
+                if (errors.length < 3) {
+                  this.logger.error(`Validation error (row ${errors.length + 1}): ${errorMsg}`);
+                  this.logger.error(`Row data: title=${row.title}, sku=${row.sku}, serial_number=${row.serial_number}, customer_name=${row.customer_name}, customer_phone=${row.customer_phone}`);
+                }
+                errors.push({ row, error: errorMsg });
                 continue;
               }
 
@@ -196,7 +213,12 @@ export class ImportService {
               if (isNaN(new Date(warrantyData.purchase_date).getTime()) || 
                   isNaN(new Date(warrantyData.warranty_start).getTime()) || 
                   isNaN(new Date(warrantyData.warranty_end).getTime())) {
-                errors.push({ row, error: 'Invalid date values' });
+                const errorMsg = 'Invalid date values';
+                if (errors.length < 3) {
+                  this.logger.error(`Date validation error (row ${errors.length + 1}): ${errorMsg}`);
+                  this.logger.error(`Dates: purchase_date=${warrantyData.purchase_date}, warranty_start=${warrantyData.warranty_start}, warranty_end=${warrantyData.warranty_end}`);
+                }
+                errors.push({ row, error: errorMsg });
                 continue;
               }
 
