@@ -422,10 +422,13 @@
       "ordersCount": "{{count}} შეკვეთა"
     },
     "progress": {
-      "title": "იმპორტი მიმდინარეობს WooCommerce-დან...",
+      "title": "იმპორტი მიმდინარეობს...",
       "ordersProcessed": "დამუშავდა {{processed}} / {{total}} შეკვეთა",
+      "rowsProcessed": "დამუშავდა {{processed}} / {{total}} სტრიქონი",
       "summary": "შემოიტანეს: {{imported}} | გამოტოვდა: {{skipped}}",
+      "errors": "შეცდომები: {{count}}",
       "status": "სტატუსი: {{status}}",
+      "stop": "შეჩერება",
       "cancelled": "იმპორტი გაუქმდა",
       "error": "იმპორტი ვერ შესრულდა: {{message}}"
     },

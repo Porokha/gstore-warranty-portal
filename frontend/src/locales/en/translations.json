@@ -416,10 +416,13 @@
       "ordersCount": "{{count}} orders"
     },
     "progress": {
-      "title": "Importing warranties from WooCommerce...",
+      "title": "Importing...",
       "ordersProcessed": "Progress: {{processed}} / {{total}} orders processed",
-      "summary": "Imported: {{imported}} warranties | Skipped: {{skipped}}",
+      "rowsProcessed": "Progress: {{processed}} / {{total}} rows processed",
+      "summary": "Imported: {{imported}} | Skipped: {{skipped}}",
+      "errors": "Errors: {{count}}",
       "status": "Status: {{status}}",
+      "stop": "Stop",
       "cancelled": "Import cancelled",
       "error": "Import failed: {{message}}"
     },

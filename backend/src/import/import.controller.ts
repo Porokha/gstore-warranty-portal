@@ -9,6 +9,7 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
+  Param,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -115,14 +116,43 @@ export class ImportController {
     }
     try {
       this.logger.log(`Importing warranties from CSV: ${(file as any).path}`);
-      const result: any = await this.importService.importWarrantiesFromCSV((file as any).path, user.id);
-      this.logger.log(`Import complete: ${result.imported} imported, ${result.skipped} skipped, ${result.errors} errors`);
-      return result;
+      
+      // Generate job ID for progress tracking
+      const jobId = `csv-import-${Date.now()}`;
+      
+      // Process import asynchronously
+      this.importService.importWarrantiesFromCSV((file as any).path, user.id, jobId)
+        .then((result: any) => {
+          this.logger.log(`Import complete: ${result.imported} imported, ${result.skipped} skipped, ${result.errors} errors`);
+        })
+        .catch((error) => {
+          this.logger.error('Error importing warranties from CSV:', error);
+        });
+      
+      return {
+        success: true,
+        jobId,
+        message: 'Import started. Use the progress endpoint to track status.',
+      };
     } catch (error) {
       this.logger.error('Error importing warranties from CSV:', error);
       this.logger.error('Error stack:', (error as any).stack);
       throw error;
     }
+  }
+
+  @Get('warranties/csv/progress/:jobId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  getImportProgress(@Param('jobId') jobId: string) {
+    return this.importService.getImportProgress(jobId);
+  }
+
+  @Post('warranties/csv/cancel/:jobId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  cancelImport(@Param('jobId') jobId: string) {
+    return this.importService.cancelImport(jobId);
   }
 
   @Get('cases/csv/example')

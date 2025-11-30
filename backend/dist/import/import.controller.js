@@ -47,15 +47,31 @@ let ImportController = ImportController_1 = class ImportController {
         }
         try {
             this.logger.log(`Importing warranties from CSV: ${file.path}`);
-            const result = await this.importService.importWarrantiesFromCSV(file.path, user.id);
-            this.logger.log(`Import complete: ${result.imported} imported, ${result.skipped} skipped, ${result.errors} errors`);
-            return result;
+            const jobId = `csv-import-${Date.now()}`;
+            this.importService.importWarrantiesFromCSV(file.path, user.id, jobId)
+                .then((result) => {
+                this.logger.log(`Import complete: ${result.imported} imported, ${result.skipped} skipped, ${result.errors} errors`);
+            })
+                .catch((error) => {
+                this.logger.error('Error importing warranties from CSV:', error);
+            });
+            return {
+                success: true,
+                jobId,
+                message: 'Import started. Use the progress endpoint to track status.',
+            };
         }
         catch (error) {
             this.logger.error('Error importing warranties from CSV:', error);
             this.logger.error('Error stack:', error.stack);
             throw error;
         }
+    }
+    getImportProgress(jobId) {
+        return this.importService.getImportProgress(jobId);
+    }
+    cancelImport(jobId) {
+        return this.importService.cancelImport(jobId);
     }
     async downloadCasesExample(res) {
         const csv = this.importService.generateCasesExampleCSV();
@@ -139,6 +155,24 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], ImportController.prototype, "importWarranties", null);
+__decorate([
+    (0, common_1.Get)('warranties/csv/progress/:jobId'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.ADMIN),
+    __param(0, (0, common_1.Param)('jobId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], ImportController.prototype, "getImportProgress", null);
+__decorate([
+    (0, common_1.Post)('warranties/csv/cancel/:jobId'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.ADMIN),
+    __param(0, (0, common_1.Param)('jobId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], ImportController.prototype, "cancelImport", null);
 __decorate([
     (0, common_1.Get)('cases/csv/example'),
     __param(0, (0, common_1.Res)()),

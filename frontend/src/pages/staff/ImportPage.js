@@ -41,6 +41,10 @@ const ImportPage = () => {
   const [warrantiesFile, setWarrantiesFile] = useState(null);
   const [warrantiesError, setWarrantiesError] = useState('');
   const [warrantiesSuccess, setWarrantiesSuccess] = useState(null);
+  const [warrantiesProgress, setWarrantiesProgress] = useState(null);
+  const [isWarrantiesImportRunning, setIsWarrantiesImportRunning] = useState(false);
+  const [currentWarrantiesJobId, setCurrentWarrantiesJobId] = useState(null);
+  const warrantiesProgressIntervalRef = useRef(null);
   
   // WooCommerce state
   const [selectedStatuses, setSelectedStatuses] = useState(['completed']);
@@ -59,6 +63,9 @@ const ImportPage = () => {
     return () => {
       if (wooProgressIntervalRef.current) {
         clearInterval(wooProgressIntervalRef.current);
+      }
+      if (warrantiesProgressIntervalRef.current) {
+        clearInterval(warrantiesProgressIntervalRef.current);
       }
     };
   }, []);
@@ -165,11 +172,19 @@ const ImportPage = () => {
     },
     {
       onSuccess: (data) => {
-        setWarrantiesSuccess(data);
-        setWarrantiesFile(null);
+        setWarrantiesError('');
+        if (data.jobId) {
+          startWarrantiesProgressPolling(data.jobId);
+        } else {
+          setWarrantiesSuccess(data);
+          setWarrantiesFile(null);
+          setIsWarrantiesImportRunning(false);
+        }
       },
       onError: (err) => {
         setWarrantiesError(err.response?.data?.message || t('common.errorLoading'));
+        setIsWarrantiesImportRunning(false);
+        stopWarrantiesProgressPolling(true);
       },
     }
   );
@@ -206,6 +221,53 @@ const ImportPage = () => {
       setIsWooStopping(false);
       setCurrentWooJobId(null);
     }
+  };
+
+  const stopWarrantiesProgressPolling = (resetState = false) => {
+    if (warrantiesProgressIntervalRef.current) {
+      clearInterval(warrantiesProgressIntervalRef.current);
+      warrantiesProgressIntervalRef.current = null;
+    }
+    if (resetState) {
+      setWarrantiesProgress(null);
+      setIsWarrantiesImportRunning(false);
+      setCurrentWarrantiesJobId(null);
+    }
+  };
+
+  const startWarrantiesProgressPolling = (jobId) => {
+    stopWarrantiesProgressPolling();
+    setCurrentWarrantiesJobId(jobId);
+    setIsWarrantiesImportRunning(true);
+    warrantiesProgressIntervalRef.current = setInterval(async () => {
+      try {
+        const response = await api.get(`/import/warranties/csv/progress/${jobId}`);
+        const progressData = response.data;
+        setWarrantiesProgress(progressData);
+
+        if (progressData.status === 'completed') {
+          stopWarrantiesProgressPolling(true);
+          setWarrantiesSuccess(
+            progressData.result || { imported: progressData.imported, skipped: progressData.skipped, errors: progressData.errors }
+          );
+          setWarrantiesError('');
+        } else if (progressData.status === 'error') {
+          stopWarrantiesProgressPolling(true);
+          setWarrantiesError(progressData.error || t('importPage.warranties.errorGeneric'));
+          setWarrantiesSuccess(null);
+        } else if (progressData.status === 'cancelled') {
+          stopWarrantiesProgressPolling(true);
+          setWarrantiesSuccess(null);
+          setWarrantiesError(t('importPage.progress.cancelled'));
+        } else if (progressData.status === 'not_found') {
+          stopWarrantiesProgressPolling(true);
+        }
+      } catch (error) {
+        stopWarrantiesProgressPolling(true);
+        setWarrantiesError(t('importPage.warranties.errorGeneric'));
+        setWarrantiesSuccess(null);
+      }
+    }, 2000);
   };
 
     const startWooProgressPolling = (jobId) => {
@@ -502,12 +564,53 @@ const ImportPage = () => {
                 )}
               </Box>
 
-              {warrantiesUploadMutation.isLoading && (
+              {(warrantiesUploadMutation.isLoading || warrantiesProgress || isWarrantiesImportRunning) && (
                 <Box sx={{ mt: 2 }}>
-                  <LinearProgress />
-                  <Typography variant="body2" sx={{ mt: 1 }} align="center">
-                    {t('importPage.warranties.importing')}
-                  </Typography>
+                  <LinearProgress
+                    variant={warrantiesProgress?.total ? 'determinate' : 'indeterminate'}
+                    value={warrantiesProgress?.total ? (warrantiesProgress.processed / warrantiesProgress.total) * 100 : 0}
+                  />
+                  <Box sx={{ mt: 1 }} textAlign="center">
+                    <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                      {warrantiesProgress ? t('importPage.progress.title') : t('importPage.warranties.importing')}
+                    </Typography>
+                    {warrantiesProgress && (
+                      <>
+                        <Typography variant="body2" color="text.secondary">
+                          {t('importPage.progress.rowsProcessed', {
+                            processed: warrantiesProgress.processed || 0,
+                            total: warrantiesProgress.total || '?',
+                          })}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {t('importPage.progress.summary', {
+                            imported: warrantiesProgress.imported || 0,
+                            skipped: warrantiesProgress.skipped || 0,
+                          })}
+                        </Typography>
+                        {warrantiesProgress.errors > 0 && (
+                          <Typography variant="body2" color="error">
+                            {t('importPage.progress.errors', { count: warrantiesProgress.errors })}
+                          </Typography>
+                        )}
+                        {warrantiesProgress.status && (
+                          <Typography variant="body2" color="text.secondary">
+                            {t('importPage.progress.status', { status: warrantiesProgress.status })}
+                          </Typography>
+                        )}
+                        {warrantiesProgress.message && (
+                          <Typography variant="body2" color="text.secondary">
+                            {warrantiesProgress.message}
+                          </Typography>
+                        )}
+                        {warrantiesProgress.total > 0 && (
+                          <Typography variant="h6" sx={{ mt: 1 }}>
+                            {Math.round((warrantiesProgress.processed / warrantiesProgress.total) * 100)}%
+                          </Typography>
+                        )}
+                      </>
+                    )}
+                  </Box>
                 </Box>
               )}
 
@@ -515,11 +618,29 @@ const ImportPage = () => {
                 <Button
                   variant="contained"
                   onClick={handleWarrantiesUpload}
-                  disabled={!warrantiesFile || warrantiesUploadMutation.isLoading}
-                  startIcon={warrantiesUploadMutation.isLoading ? <CircularProgress size={20} /> : <UploadIcon />}
+                  disabled={!warrantiesFile || warrantiesUploadMutation.isLoading || isWarrantiesImportRunning}
+                  startIcon={(warrantiesUploadMutation.isLoading || isWarrantiesImportRunning) ? <CircularProgress size={20} /> : <UploadIcon />}
                 >
-                  {warrantiesUploadMutation.isLoading ? t('importPage.warranties.importing') : t('importPage.warranties.importButton')}
+                  {(warrantiesUploadMutation.isLoading || isWarrantiesImportRunning)
+                    ? t('importPage.warranties.importing')
+                    : t('importPage.warranties.importButton')}
                 </Button>
+                {isWarrantiesImportRunning && currentWarrantiesJobId && (
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={async () => {
+                      try {
+                        await api.post(`/import/warranties/csv/cancel/${currentWarrantiesJobId}`);
+                        stopWarrantiesProgressPolling(true);
+                      } catch (err) {
+                        console.error('Failed to cancel import:', err);
+                      }
+                    }}
+                  >
+                    {t('importPage.progress.stop')}
+                  </Button>
+                )}
               </Box>
             </Box>
           )}

@@ -29,6 +29,7 @@ let ImportService = ImportService_1 = class ImportService {
         this.casesService = casesService;
         this.warrantiesService = warrantiesService;
         this.logger = new common_1.Logger(ImportService_1.name);
+        this.importProgress = new Map();
     }
     async importCasesFromCSV(filePath, userId) {
         const results = [];
@@ -106,12 +107,22 @@ let ImportService = ImportService_1 = class ImportService {
             });
         });
     }
-    async importWarrantiesFromCSV(filePath, userId) {
+    async importWarrantiesFromCSV(filePath, userId, jobId) {
         this.logger.log(`=== Starting warranty CSV import from: ${filePath} ===`);
         const results = [];
         const errors = [];
         const skipped = [];
         const rows = [];
+        if (jobId) {
+            this.importProgress.set(jobId, {
+                total: 0,
+                processed: 0,
+                imported: 0,
+                skipped: 0,
+                errors: 0,
+                status: 'pending',
+            });
+        }
         if (!fs.existsSync(filePath)) {
             this.logger.error(`File not found: ${filePath}`);
             throw new common_1.BadRequestException(`File not found: ${filePath}`);
@@ -132,8 +143,24 @@ let ImportService = ImportService_1 = class ImportService {
             })
                 .on('end', async () => {
                 this.logger.log(`CSV parsing complete. Found ${rows.length} rows.`);
+                if (jobId) {
+                    const progress = this.importProgress.get(jobId);
+                    if (progress) {
+                        progress.total = rows.length;
+                        progress.status = 'running';
+                        this.importProgress.set(jobId, progress);
+                    }
+                }
                 if (rows.length === 0) {
                     this.logger.error(`No rows found in CSV file!`);
+                    if (jobId) {
+                        const progress = this.importProgress.get(jobId);
+                        if (progress) {
+                            progress.status = 'error';
+                            progress.error = 'No rows found in CSV file';
+                            this.importProgress.set(jobId, progress);
+                        }
+                    }
                     resolve({
                         success: false,
                         imported: 0,
@@ -152,9 +179,35 @@ let ImportService = ImportService_1 = class ImportService {
                 this.logger.log(`First row data: ${JSON.stringify(rows[0]).substring(0, 500)}`);
                 let processedCount = 0;
                 for (const rawRow of rows) {
+                    if (jobId) {
+                        const progress = this.importProgress.get(jobId);
+                        if (progress?.cancelRequested) {
+                            this.logger.log(`Import cancelled by user`);
+                            progress.status = 'cancelled';
+                            this.importProgress.set(jobId, progress);
+                            resolve({
+                                success: false,
+                                imported: results.length,
+                                skipped: skipped.length,
+                                errors: errors.length,
+                                details: { successful: results, skipped, failed: errors },
+                            });
+                            return;
+                        }
+                    }
                     processedCount++;
                     if (processedCount % 1000 === 0) {
                         this.logger.log(`Processed ${processedCount}/${rows.length} rows... (${results.length} imported, ${errors.length} errors)`);
+                    }
+                    if (jobId && processedCount % 100 === 0) {
+                        const progress = this.importProgress.get(jobId);
+                        if (progress) {
+                            progress.processed = processedCount;
+                            progress.imported = results.length;
+                            progress.skipped = skipped.length;
+                            progress.errors = errors.length;
+                            this.importProgress.set(jobId, progress);
+                        }
                     }
                     const row = {};
                     for (const key in rawRow) {
@@ -312,6 +365,27 @@ let ImportService = ImportService_1 = class ImportService {
                     }
                 }
                 this.logger.log(`Import complete: ${results.length} imported, ${skipped.length} skipped, ${errors.length} errors`);
+                if (jobId) {
+                    const progress = this.importProgress.get(jobId);
+                    if (progress) {
+                        progress.processed = rows.length;
+                        progress.imported = results.length;
+                        progress.skipped = skipped.length;
+                        progress.errors = errors.length;
+                        progress.status = 'completed';
+                        progress.result = {
+                            imported: results.length,
+                            skipped: skipped.length,
+                            errors: errors.length,
+                            details: {
+                                successful: results,
+                                skipped,
+                                failed: errors,
+                            },
+                        };
+                        this.importProgress.set(jobId, progress);
+                    }
+                }
                 if (errors.length > 0) {
                     this.logger.error(`First 5 errors:`);
                     errors.slice(0, 5).forEach((err, idx) => {
@@ -332,7 +406,7 @@ let ImportService = ImportService_1 = class ImportService {
                 catch (unlinkError) {
                     console.error('Failed to delete temp file:', unlinkError);
                 }
-                resolve({
+                const result = {
                     success: true,
                     imported: results.length,
                     skipped: skipped.length,
@@ -342,16 +416,64 @@ let ImportService = ImportService_1 = class ImportService {
                         skipped,
                         failed: errors,
                     },
-                });
+                };
+                if (!jobId) {
+                    resolve(result);
+                }
+                else {
+                    resolve(result);
+                }
             })
                 .on('error', (error) => {
                 this.logger.error('Error reading CSV file:', error);
+                if (jobId) {
+                    const progress = this.importProgress.get(jobId);
+                    if (progress) {
+                        progress.status = 'error';
+                        progress.error = error.message;
+                        this.importProgress.set(jobId, progress);
+                    }
+                }
                 reject(error);
             });
         }).catch((error) => {
             this.logger.error('Error in importWarrantiesFromCSV:', error);
+            if (jobId) {
+                const progress = this.importProgress.get(jobId);
+                if (progress) {
+                    progress.status = 'error';
+                    progress.error = error.message;
+                    this.importProgress.set(jobId, progress);
+                }
+            }
             throw error;
         });
+    }
+    getImportProgress(jobId) {
+        const progress = this.importProgress.get(jobId);
+        if (!progress) {
+            return {
+                total: 0,
+                processed: 0,
+                imported: 0,
+                skipped: 0,
+                errors: 0,
+                status: 'not_found',
+            };
+        }
+        return progress;
+    }
+    cancelImport(jobId) {
+        const progress = this.importProgress.get(jobId);
+        if (!progress) {
+            return { success: false, message: 'Import job not found' };
+        }
+        if (progress.status === 'completed' || progress.status === 'error' || progress.status === 'cancelled') {
+            return { success: false, message: `Import is already ${progress.status}` };
+        }
+        progress.cancelRequested = true;
+        this.importProgress.set(jobId, progress);
+        return { success: true, message: 'Import cancellation requested' };
     }
     generateCasesExampleCSV() {
         const headers = [
