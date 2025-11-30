@@ -107,6 +107,7 @@ let ImportService = ImportService_1 = class ImportService {
         });
     }
     async importWarrantiesFromCSV(filePath, userId) {
+        this.logger.log(`=== Starting warranty CSV import from: ${filePath} ===`);
         const results = [];
         const errors = [];
         const skipped = [];
@@ -115,6 +116,7 @@ let ImportService = ImportService_1 = class ImportService {
             this.logger.error(`File not found: ${filePath}`);
             throw new common_1.BadRequestException(`File not found: ${filePath}`);
         }
+        this.logger.log(`File exists, starting CSV parsing...`);
         const csvParser = require('csv-parser');
         return new Promise((resolve, reject) => {
             fs.createReadStream(filePath)
@@ -123,12 +125,31 @@ let ImportService = ImportService_1 = class ImportService {
                 rows.push(row);
             })
                 .on('end', async () => {
-                this.logger.log(`Processing ${rows.length} warranty rows from CSV`);
-                if (rows.length > 0) {
-                    this.logger.log(`First row sample (keys): ${Object.keys(rows[0]).join(', ')}`);
-                    this.logger.log(`First row data: ${JSON.stringify(rows[0]).substring(0, 500)}`);
+                this.logger.log(`CSV parsing complete. Found ${rows.length} rows.`);
+                if (rows.length === 0) {
+                    this.logger.error(`No rows found in CSV file!`);
+                    resolve({
+                        success: false,
+                        imported: 0,
+                        skipped: 0,
+                        errors: 0,
+                        details: {
+                            successful: [],
+                            skipped: [],
+                            failed: [{ error: 'No rows found in CSV file' }],
+                        },
+                    });
+                    return;
                 }
+                this.logger.log(`Processing ${rows.length} warranty rows from CSV`);
+                this.logger.log(`First row sample (keys): ${Object.keys(rows[0]).join(', ')}`);
+                this.logger.log(`First row data: ${JSON.stringify(rows[0]).substring(0, 500)}`);
+                let processedCount = 0;
                 for (const row of rows) {
+                    processedCount++;
+                    if (processedCount % 1000 === 0) {
+                        this.logger.log(`Processed ${processedCount}/${rows.length} rows... (${results.length} imported, ${errors.length} errors)`);
+                    }
                     try {
                         const warrantyData = {
                             title: row.title || '',

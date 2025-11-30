@@ -110,6 +110,7 @@ export class ImportService {
   }
 
   async importWarrantiesFromCSV(filePath: string, userId: number) {
+    this.logger.log(`=== Starting warranty CSV import from: ${filePath} ===`);
     const results: any[] = [];
     const errors: any[] = [];
     const skipped: any[] = [];
@@ -121,6 +122,8 @@ export class ImportService {
       throw new BadRequestException(`File not found: ${filePath}`);
     }
 
+    this.logger.log(`File exists, starting CSV parsing...`);
+
     // First, read all rows into memory
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const csvParser = require('csv-parser');
@@ -131,16 +134,38 @@ export class ImportService {
           rows.push(row);
         })
         .on('end', async () => {
+          this.logger.log(`CSV parsing complete. Found ${rows.length} rows.`);
+          
+          if (rows.length === 0) {
+            this.logger.error(`No rows found in CSV file!`);
+            resolve({
+              success: false,
+              imported: 0,
+              skipped: 0,
+              errors: 0,
+              details: {
+                successful: [],
+                skipped: [],
+                failed: [{ error: 'No rows found in CSV file' }],
+              },
+            });
+            return;
+          }
+          
           this.logger.log(`Processing ${rows.length} warranty rows from CSV`);
           
           // Log first row structure for debugging
-          if (rows.length > 0) {
-            this.logger.log(`First row sample (keys): ${Object.keys(rows[0]).join(', ')}`);
-            this.logger.log(`First row data: ${JSON.stringify(rows[0]).substring(0, 500)}`);
-          }
+          this.logger.log(`First row sample (keys): ${Object.keys(rows[0]).join(', ')}`);
+          this.logger.log(`First row data: ${JSON.stringify(rows[0]).substring(0, 500)}`);
           
           // Process rows sequentially to avoid race conditions
+          let processedCount = 0;
           for (const row of rows) {
+            processedCount++;
+            if (processedCount % 1000 === 0) {
+              this.logger.log(`Processed ${processedCount}/${rows.length} rows... (${results.length} imported, ${errors.length} errors)`);
+            }
+            
             try {
               // Map CSV row to CreateWarrantyDto
               const warrantyData: any = {
