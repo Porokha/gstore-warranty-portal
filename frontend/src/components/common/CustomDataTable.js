@@ -58,6 +58,17 @@ const CustomDataTable = ({
   const [showAll, setShowAll] = useState(false);
   const tableContainerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(0);
+  const prevDataLengthRef = useRef(data?.length || 0);
+
+  // Clear selection when data changes (e.g., after deletion)
+  useEffect(() => {
+    const currentLength = data?.length || 0;
+    if (currentLength < prevDataLengthRef.current && selected.length > 0) {
+      // Data decreased and we have selections - clear them
+      setSelected([]);
+    }
+    prevDataLengthRef.current = currentLength;
+  }, [data, selected.length]);
 
   // Measure container width
   useEffect(() => {
@@ -334,10 +345,9 @@ const CustomDataTable = ({
 
   const handleBulkDelete = () => {
     if (onBulkDelete && selected.length > 0) {
-      if (window.confirm(`Are you sure you want to delete ${selected.length} item(s)?`)) {
-        onBulkDelete(selected);
-        setSelected([]);
-      }
+      // Let parent component handle confirmation dialog
+      onBulkDelete(selected);
+      // Don't clear selection here - let parent handle it after confirmation
     }
   };
 
