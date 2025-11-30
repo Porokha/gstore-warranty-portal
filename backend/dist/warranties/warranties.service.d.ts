@@ -27,4 +27,5 @@ export declare class WarrantiesService {
         expired: number;
         expiringSoon: number;
     }>;
+    getUniqueDeviceTypes(): Promise<string[]>;
 }

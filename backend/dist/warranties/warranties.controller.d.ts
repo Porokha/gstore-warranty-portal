@@ -13,6 +13,7 @@ export declare class WarrantiesController {
         expired: number;
         expiringSoon: number;
     }>;
+    getDeviceTypes(): Promise<string[]>;
     findByWarrantyId(warrantyId: string): Promise<import("./entities/warranty.entity").Warranty>;
     findOne(id: number): Promise<import("./entities/warranty.entity").Warranty>;
     update(id: number, updateDto: UpdateWarrantyDto): Promise<import("./entities/warranty.entity").Warranty>;

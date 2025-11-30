@@ -60,12 +60,21 @@ const WarrantiesPage = () => {
     message: '',
     severity: 'success',
   });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { data: warranties, isLoading, error } = useQuery(
     ['warranties', filters],
     () => warrantiesService.getAll(filters),
     {
       keepPreviousData: true,
+    }
+  );
+
+  const { data: deviceTypes = [] } = useQuery(
+    'warranties-device-types',
+    () => warrantiesService.getDeviceTypes(),
+    {
+      staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     }
   );
 
@@ -133,6 +142,11 @@ const WarrantiesPage = () => {
       key: 'serial_number',
       label: t('case.serialNumber'),
       width: 160,
+    },
+    {
+      key: 'device_type',
+      label: t('case.deviceType'),
+      width: 150,
     },
     {
       key: 'customer',
@@ -229,9 +243,11 @@ const WarrantiesPage = () => {
                     open: true,
                     count: 1,
                     onConfirm: async () => {
+                      setIsDeleting(true);
                       try {
                         await warrantiesService.delete(row.id);
                         queryClient.invalidateQueries('warranties');
+                        setDeleteDialog({ open: false, count: 0, onConfirm: null });
                         setNotification({
                           open: true,
                           message: t('warranty.warrantyDeleted'),
@@ -243,6 +259,8 @@ const WarrantiesPage = () => {
                           message: err.response?.data?.message || t('common.errorLoading'),
                           severity: 'error',
                         });
+                      } finally {
+                        setIsDeleting(false);
                       }
                     },
                   });
@@ -332,11 +350,11 @@ const WarrantiesPage = () => {
               onChange={(e) => handleFilterChange('device_type', e.target.value)}
             >
               <MenuItem value="">{t('common.all')}</MenuItem>
-              <MenuItem value="Laptop">Laptop</MenuItem>
-              <MenuItem value="Phone">Phone</MenuItem>
-              <MenuItem value="Tablet">Tablet</MenuItem>
-              <MenuItem value="Desktop">Desktop</MenuItem>
-              <MenuItem value="Other">Other</MenuItem>
+              {deviceTypes.map((type) => (
+                <MenuItem key={type} value={type}>
+                  {type || '(Unknown)'}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
           <FormControl size="small" sx={{ minWidth: 150 }}>
@@ -370,9 +388,11 @@ const WarrantiesPage = () => {
             open: true,
             count: selectedIds.length,
             onConfirm: async () => {
+              setIsDeleting(true);
               try {
                 const result = await warrantiesService.bulkDelete(selectedIds);
                 queryClient.invalidateQueries('warranties');
+                setDeleteDialog({ open: false, count: 0, onConfirm: null });
                 if (result.failed > 0) {
                   setNotification({
                     open: true,
@@ -395,6 +415,8 @@ const WarrantiesPage = () => {
                   message: err.response?.data?.message || t('common.errorLoading') || 'Error deleting warranties',
                   severity: 'error',
                 });
+              } finally {
+                setIsDeleting(false);
               }
             },
           });
@@ -428,13 +450,18 @@ const WarrantiesPage = () => {
       
       <ConfirmDialog
         open={deleteDialog.open}
-        onClose={() => setDeleteDialog({ open: false, count: 0, onConfirm: null })}
+        onClose={() => {
+          if (!isDeleting) {
+            setDeleteDialog({ open: false, count: 0, onConfirm: null });
+          }
+        }}
         onConfirm={deleteDialog.onConfirm || (() => {})}
         title={t('warranty.deleteConfirmTitle') || 'Confirm Delete'}
         message={t('warranty.deleteConfirmMessage', { count: deleteDialog.count }) || `Are you sure you want to delete ${deleteDialog.count} item(s)?`}
         confirmText={t('common.delete') || 'Delete'}
         cancelText={t('common.cancel') || 'Cancel'}
         severity="error"
+        loading={isDeleting}
       />
       
       <Snackbar

@@ -325,4 +325,16 @@ export class WarrantiesService {
       expiringSoon: expiringSoonCount,
     };
   }
+
+  async getUniqueDeviceTypes(): Promise<string[]> {
+    const results = await this.warrantiesRepository
+      .createQueryBuilder('warranty')
+      .select('DISTINCT warranty.device_type', 'device_type')
+      .where('warranty.device_type IS NOT NULL')
+      .andWhere('warranty.device_type != ""')
+      .orderBy('warranty.device_type', 'ASC')
+      .getRawMany();
+
+    return results.map((r) => r.device_type).filter(Boolean);
+  }
 }

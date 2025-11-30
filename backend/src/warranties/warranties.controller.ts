@@ -47,6 +47,11 @@ export class WarrantiesController {
     return this.warrantiesService.getStats(start, end);
   }
 
+  @Get('filter-options/device-types')
+  getDeviceTypes() {
+    return this.warrantiesService.getUniqueDeviceTypes();
+  }
+
   @Get('warranty-id/:warrantyId')
   findByWarrantyId(@Param('warrantyId') warrantyId: string) {
     return this.warrantiesService.findByWarrantyId(warrantyId);
