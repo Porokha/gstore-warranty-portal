@@ -27,13 +27,33 @@ mkdir -p dist
 echo "$(date +%s)" > dist/.build-timestamp
 echo "Build timestamp: $(cat dist/.build-timestamp)"
 
-# Step 3: Build Docker image with cache bust
-echo "Building Docker image..."
+# Step 3: Stop and remove old container/image
+echo "Stopping and removing old container..."
 cd ..
+docker compose -f docker-compose.prod.prebuilt.yml stop backend 2>/dev/null || true
+docker compose -f docker-compose.prod.prebuilt.yml rm -f backend 2>/dev/null || true
+docker rmi gstore-warranty-portal-backend:latest 2>/dev/null || true
+
+# Step 4: Build Docker image with cache bust
+echo "Building Docker image..."
 BUILD_TIMESTAMP=$(date +%s)
 docker compose -f docker-compose.prod.prebuilt.yml build \
   --build-arg CACHE_BUST="${BUILD_TIMESTAMP}" \
   --no-cache \
   backend
 
+# Step 5: Start the new container
+echo "Starting backend container..."
+docker compose -f docker-compose.prod.prebuilt.yml up -d backend
+
+# Step 6: Verify the code is correct inside the container
+echo "Verifying code in container..."
+sleep 2
+if docker compose -f docker-compose.prod.prebuilt.yml exec -T backend grep -q "Starting warranty CSV import" /app/dist/import/import.service.js 2>/dev/null; then
+  echo "✓ New code verified in container"
+else
+  echo "✗ WARNING: Code verification failed - container may have old code"
+fi
+
 echo "=== Backend rebuild complete ==="
+echo "Check logs with: docker compose -f docker-compose.prod.prebuilt.yml logs -f backend"
