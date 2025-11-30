@@ -108,74 +108,99 @@ let ImportService = class ImportService {
         const results = [];
         const errors = [];
         const skipped = [];
+        const rows = [];
         return new Promise((resolve, reject) => {
             fs.createReadStream(filePath)
                 .pipe((0, csv_parser_1.default)())
-                .on('data', async (row) => {
-                try {
-                    const warrantyData = {
-                        title: row.title || '',
-                        sku: row.sku || '',
-                        imei: row.imei || undefined,
-                        serial_number: row.serial_number || '',
-                        device_type: row.device_type || 'Laptop',
-                        customer_name: row.customer_name || '',
-                        customer_last_name: row.customer_last_name || undefined,
-                        customer_phone: row.customer_phone || '',
-                        customer_email: row.customer_email || undefined,
-                        purchase_date: row.purchase_date ? new Date(row.purchase_date).toISOString() : new Date().toISOString(),
-                        warranty_start: row.warranty_start ? new Date(row.warranty_start).toISOString() : new Date().toISOString(),
-                        warranty_end: row.warranty_end ? new Date(row.warranty_end).toISOString() : undefined,
-                        warranty_duration_days: row.warranty_duration_days
-                            ? parseInt(row.warranty_duration_days)
-                            : 365,
-                        order_id: row.order_id ? parseInt(row.order_id) : undefined,
-                        product_id: row.product_id ? parseInt(row.product_id) : undefined,
-                        order_line_index: row.order_line_index ? parseInt(row.order_line_index) : undefined,
-                        created_source: row.created_source === 'woocommerce' || row.created_source === 'auto_woo' ? warranty_entity_1.CreatedSource.AUTO_WOO : warranty_entity_1.CreatedSource.MANUAL,
-                        price: row.price ? parseFloat(row.price) : 0,
-                        thumbnail_url: row.thumbnail_url || undefined,
-                        brand: row.brand || undefined,
-                        model: row.model || undefined,
-                        condition: row.condition || undefined,
-                        personal_identification_number: row.personal_identification_number || row.pn || undefined,
-                        admin_notes: row.admin_notes || undefined,
-                        extended_days: row.extended_days ? parseInt(row.extended_days) : 0,
-                    };
-                    if (!warrantyData.title || !warrantyData.sku || !warrantyData.serial_number || !warrantyData.customer_name || !warrantyData.customer_phone) {
-                        errors.push({ row, error: 'Missing required fields' });
-                        return;
-                    }
-                    const existingWarranty = await this.warrantiesRepository.findOne({
-                        where: [
-                            { serial_number: warrantyData.serial_number, order_id: warrantyData.order_id || null },
-                            ...(warrantyData.order_id ? [{ order_id: warrantyData.order_id }] : []),
-                        ],
-                    });
-                    if (existingWarranty) {
-                        skipped.push({ row, reason: 'Duplicate warranty found' });
-                        return;
-                    }
-                    if (!warrantyData.warranty_end) {
-                        const start = new Date(warrantyData.warranty_start || warrantyData.purchase_date);
-                        const endDate = new Date(start);
-                        endDate.setDate(endDate.getDate() + (parseInt(row.warranty_duration_days) || 365));
-                        warrantyData.warranty_end = endDate.toISOString();
-                    }
-                    const created = await this.warrantiesService.create(warrantyData);
-                    results.push({ row, warranty: created });
-                }
-                catch (error) {
-                    if (error.message?.includes('already exists') || error.message?.includes('duplicate')) {
-                        skipped.push({ row, reason: error.message });
-                    }
-                    else {
-                        errors.push({ row, error: error.message });
-                    }
-                }
+                .on('data', (row) => {
+                rows.push(row);
             })
-                .on('end', () => {
-                fs.unlinkSync(filePath);
+                .on('end', async () => {
+                for (const row of rows) {
+                    try {
+                        const warrantyData = {
+                            title: row.title || '',
+                            sku: row.sku || '',
+                            imei: row.imei || undefined,
+                            serial_number: row.serial_number || '',
+                            device_type: row.device_type || 'Laptop',
+                            customer_name: row.customer_name || '',
+                            customer_last_name: row.customer_last_name || '',
+                            customer_phone: row.customer_phone || '',
+                            customer_email: row.customer_email || undefined,
+                            price: row.price ? parseFloat(row.price) : 0,
+                            thumbnail_url: row.thumbnail_url || undefined,
+                            brand: row.brand || undefined,
+                            model: row.model || undefined,
+                            condition: row.condition || undefined,
+                            personal_identification_number: row.personal_identification_number || row.pn || undefined,
+                            admin_notes: row.admin_notes || undefined,
+                            extended_days: row.extended_days ? parseInt(row.extended_days) : 0,
+                            order_id: row.order_id ? parseInt(row.order_id) : undefined,
+                            product_id: row.product_id ? parseInt(row.product_id) : undefined,
+                            order_line_index: row.order_line_index ? parseInt(row.order_line_index) : undefined,
+                            created_source: row.created_source === 'woocommerce' || row.created_source === 'auto_woo' ? warranty_entity_1.CreatedSource.AUTO_WOO : warranty_entity_1.CreatedSource.MANUAL,
+                        };
+                        try {
+                            warrantyData.purchase_date = row.purchase_date
+                                ? new Date(row.purchase_date).toISOString()
+                                : new Date().toISOString();
+                            warrantyData.warranty_start = row.warranty_start
+                                ? new Date(row.warranty_start).toISOString()
+                                : warrantyData.purchase_date;
+                            if (row.warranty_end) {
+                                warrantyData.warranty_end = new Date(row.warranty_end).toISOString();
+                            }
+                            else {
+                                const start = new Date(warrantyData.warranty_start || warrantyData.purchase_date);
+                                const durationDays = row.warranty_duration_days ? parseInt(row.warranty_duration_days) : 365;
+                                const endDate = new Date(start);
+                                endDate.setDate(endDate.getDate() + durationDays);
+                                warrantyData.warranty_end = endDate.toISOString();
+                            }
+                        }
+                        catch (dateError) {
+                            errors.push({ row, error: `Invalid date format: ${dateError.message}` });
+                            continue;
+                        }
+                        if (!warrantyData.title || !warrantyData.sku || !warrantyData.serial_number || !warrantyData.customer_name || !warrantyData.customer_phone) {
+                            errors.push({ row, error: 'Missing required fields (title, sku, serial_number, customer_name, customer_phone)' });
+                            continue;
+                        }
+                        if (isNaN(new Date(warrantyData.purchase_date).getTime()) ||
+                            isNaN(new Date(warrantyData.warranty_start).getTime()) ||
+                            isNaN(new Date(warrantyData.warranty_end).getTime())) {
+                            errors.push({ row, error: 'Invalid date values' });
+                            continue;
+                        }
+                        const existingWarranty = await this.warrantiesRepository.findOne({
+                            where: [
+                                { serial_number: warrantyData.serial_number, order_id: warrantyData.order_id || null },
+                                ...(warrantyData.order_id ? [{ order_id: warrantyData.order_id }] : []),
+                            ],
+                        });
+                        if (existingWarranty) {
+                            skipped.push({ row, reason: 'Duplicate warranty found' });
+                            continue;
+                        }
+                        const created = await this.warrantiesService.create(warrantyData);
+                        results.push({ row, warranty: created });
+                    }
+                    catch (error) {
+                        if (error.message?.includes('already exists') || error.message?.includes('duplicate')) {
+                            skipped.push({ row, reason: error.message });
+                        }
+                        else {
+                            errors.push({ row, error: error.message || 'Unknown error' });
+                        }
+                    }
+                }
+                try {
+                    fs.unlinkSync(filePath);
+                }
+                catch (unlinkError) {
+                    console.error('Failed to delete temp file:', unlinkError);
+                }
                 resolve({
                     success: true,
                     imported: results.length,
