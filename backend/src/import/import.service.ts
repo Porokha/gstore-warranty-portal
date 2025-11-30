@@ -213,20 +213,63 @@ export class ImportService {
                 continue;
               }
 
+              // Log first warranty data for debugging
+              if (results.length === 0 && errors.length === 0) {
+                this.logger.log(`Sample warranty data being created:`, JSON.stringify(warrantyData, null, 2).substring(0, 500));
+              }
+
               const created = await this.warrantiesService.create(warrantyData);
               results.push({ row, warranty: created });
             } catch (error) {
-              this.logger.error(`Error processing warranty row: ${JSON.stringify(row)}`, error.stack || error.message);
+              const errorMessage = error.message || 'Unknown error';
+              const errorStack = error.stack || '';
+              
+              // Log detailed error for first few errors
+              if (errors.length < 3) {
+                this.logger.error(`Error processing warranty row ${errors.length + 1}:`, errorMessage);
+                this.logger.error(`Row data:`, JSON.stringify(row).substring(0, 300));
+                if (errorStack) {
+                  this.logger.error(`Stack:`, errorStack.substring(0, 500));
+                }
+              }
+              
               // Check if it's a duplicate error
-              if (error.message?.includes('already exists') || error.message?.includes('duplicate')) {
-                skipped.push({ row, reason: error.message });
+              if (errorMessage.includes('already exists') || errorMessage.includes('duplicate')) {
+                skipped.push({ row, reason: errorMessage });
               } else {
-                errors.push({ row, error: error.message || 'Unknown error' });
+                // Include validation errors if available
+                let fullError = errorMessage;
+                if (error.response?.message) {
+                  if (Array.isArray(error.response.message)) {
+                    fullError = error.response.message.join('; ');
+                  } else {
+                    fullError = error.response.message;
+                  }
+                }
+                errors.push({ row, error: fullError });
               }
             }
           }
 
           this.logger.log(`Import complete: ${results.length} imported, ${skipped.length} skipped, ${errors.length} errors`);
+
+          // Log sample errors to help debug
+          if (errors.length > 0) {
+            this.logger.error(`First 5 errors:`);
+            errors.slice(0, 5).forEach((err, idx) => {
+              this.logger.error(`Error ${idx + 1}: ${err.error}`);
+              this.logger.error(`Row data: ${JSON.stringify(err.row).substring(0, 200)}...`);
+            });
+
+            // Count error types
+            const errorTypes: { [key: string]: number } = {};
+            errors.forEach(err => {
+              const errorMsg = err.error || 'Unknown error';
+              const errorType = errorMsg.split(':')[0].split('(')[0].trim();
+              errorTypes[errorType] = (errorTypes[errorType] || 0) + 1;
+            });
+            this.logger.error(`Error summary: ${JSON.stringify(errorTypes)}`);
+          }
 
           // Clean up file
           try {

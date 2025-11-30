@@ -191,20 +191,54 @@ let ImportService = ImportService_1 = class ImportService {
                             skipped.push({ row, reason: 'Duplicate warranty found' });
                             continue;
                         }
+                        if (results.length === 0 && errors.length === 0) {
+                            this.logger.log(`Sample warranty data being created:`, JSON.stringify(warrantyData, null, 2).substring(0, 500));
+                        }
                         const created = await this.warrantiesService.create(warrantyData);
                         results.push({ row, warranty: created });
                     }
                     catch (error) {
-                        this.logger.error(`Error processing warranty row: ${JSON.stringify(row)}`, error.stack || error.message);
-                        if (error.message?.includes('already exists') || error.message?.includes('duplicate')) {
-                            skipped.push({ row, reason: error.message });
+                        const errorMessage = error.message || 'Unknown error';
+                        const errorStack = error.stack || '';
+                        if (errors.length < 3) {
+                            this.logger.error(`Error processing warranty row ${errors.length + 1}:`, errorMessage);
+                            this.logger.error(`Row data:`, JSON.stringify(row).substring(0, 300));
+                            if (errorStack) {
+                                this.logger.error(`Stack:`, errorStack.substring(0, 500));
+                            }
+                        }
+                        if (errorMessage.includes('already exists') || errorMessage.includes('duplicate')) {
+                            skipped.push({ row, reason: errorMessage });
                         }
                         else {
-                            errors.push({ row, error: error.message || 'Unknown error' });
+                            let fullError = errorMessage;
+                            if (error.response?.message) {
+                                if (Array.isArray(error.response.message)) {
+                                    fullError = error.response.message.join('; ');
+                                }
+                                else {
+                                    fullError = error.response.message;
+                                }
+                            }
+                            errors.push({ row, error: fullError });
                         }
                     }
                 }
                 this.logger.log(`Import complete: ${results.length} imported, ${skipped.length} skipped, ${errors.length} errors`);
+                if (errors.length > 0) {
+                    this.logger.error(`First 5 errors:`);
+                    errors.slice(0, 5).forEach((err, idx) => {
+                        this.logger.error(`Error ${idx + 1}: ${err.error}`);
+                        this.logger.error(`Row data: ${JSON.stringify(err.row).substring(0, 200)}...`);
+                    });
+                    const errorTypes = {};
+                    errors.forEach(err => {
+                        const errorMsg = err.error || 'Unknown error';
+                        const errorType = errorMsg.split(':')[0].split('(')[0].trim();
+                        errorTypes[errorType] = (errorTypes[errorType] || 0) + 1;
+                    });
+                    this.logger.error(`Error summary: ${JSON.stringify(errorTypes)}`);
+                }
                 try {
                     fs.unlinkSync(filePath);
                 }
