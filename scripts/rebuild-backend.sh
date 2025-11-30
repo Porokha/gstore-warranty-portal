@@ -1,32 +1,28 @@
 #!/bin/bash
-
-# Script to rebuild and restart backend
-# Usage: ./scripts/rebuild-backend.sh
+# Script to rebuild backend with proper cache busting
 
 set -e
 
-echo "🔄 Rebuilding backend..."
+echo "=== Rebuilding Backend ==="
 
-# Pull latest changes
-echo "📥 Pulling latest changes..."
-git pull
+cd "$(dirname "$0")/../backend" || exit 1
 
-# Rebuild backend
-echo "🔨 Building backend container..."
-docker-compose -f docker-compose.prod.yml build --no-cache backend
+# Step 1: Build the TypeScript code
+echo "Building TypeScript..."
+npm run build
 
-# Restart backend
-echo "🔄 Restarting backend..."
-docker-compose -f docker-compose.prod.yml up -d backend
+# Step 2: Create a build timestamp file in dist to bust Docker cache
+echo "Creating build timestamp..."
+echo "$(date +%s)" > dist/.build-timestamp
+echo "Build timestamp: $(cat dist/.build-timestamp)"
 
-# Wait for it to start
-echo "⏳ Waiting for backend to start..."
-sleep 15
+# Step 3: Build Docker image with cache bust
+echo "Building Docker image..."
+cd ..
+BUILD_TIMESTAMP=$(date +%s)
+docker compose -f docker-compose.prod.prebuilt.yml build \
+  --build-arg CACHE_BUST="${BUILD_TIMESTAMP}" \
+  --no-cache \
+  backend
 
-# Check logs
-echo "📋 Recent backend logs:"
-docker-compose -f docker-compose.prod.yml logs --tail=30 backend
-
-echo ""
-echo "✅ Done! Check the logs above to see if backend started successfully."
-
+echo "=== Backend rebuild complete ==="

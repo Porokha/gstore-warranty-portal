@@ -5,6 +5,10 @@
 
 FROM node:18-alpine
 
+# Build argument to bust cache - pass different value each time to force dist copy
+ARG CACHE_BUST=1
+RUN echo "Cache bust: ${CACHE_BUST}"
+
 WORKDIR /app
 
 # Install build dependencies for bcrypt (needed for native modules)
@@ -16,7 +20,12 @@ COPY package*.json ./
 # Install only production dependencies (much faster)
 RUN npm install --omit=dev --no-audit --no-fund
 
+# Copy build timestamp first (this file changes on each build, busting cache)
+# This ensures the dist folder is always fresh
+COPY dist/.build-timestamp ./build-timestamp
+
 # Copy pre-built application (assumes dist/ folder exists)
+# The timestamp file above ensures this layer is rebuilt when dist changes
 COPY dist ./dist
 
 # Copy any other necessary files
