@@ -96,7 +96,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], WarrantiesController.prototype, "findByWarrantyId", null);
 __decorate([
-    (0, common_1.Get)(':id'),
+    (0, common_1.Get)(':id(\\d+)'),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
