@@ -50,6 +50,16 @@ import { casesService } from '../../services/casesService';
 const DashboardPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const brand = {
+    violet: '#A576FF',
+    violetSoft: '#EFE7FF',
+    violetDeep: '#8F5EF0',
+    ink: '#18181B',
+    muted: '#5B5568',
+    border: '#E3D7FF',
+    surface: '#FBF9FF',
+    black: '#000000',
+  };
   const [timeFilter, setTimeFilter] = useState('30');
   const [filterAnchor, setFilterAnchor] = useState(null);
   const [customStart, setCustomStart] = useState(null);
@@ -136,10 +146,10 @@ const DashboardPage = () => {
 
   const getStatusColor = (status) => {
     const statusMap = {
-      'opened': '#8b5cf6',
-      'investigating': '#f59e0b',
-      'pending': '#3b82f6',
-      'completed': '#10b981',
+      'opened': '#d4befe',
+      'investigating': '#a576ff',
+      'pending': '#6d28d9',
+      'completed': '#000000',
     };
     return statusMap[status?.toLowerCase()] || '#64748b';
   };
@@ -156,12 +166,12 @@ const DashboardPage = () => {
 
   const getPriorityColor = (priority) => {
     const priorityMap = {
-      'high': '#ef4444',
-      'critical': '#ef4444',
-      'normal': '#64748b',
-      'low': '#10b981',
+      'high': '#8f5ef0',
+      'critical': '#000000',
+      'normal': '#5b5568',
+      'low': '#d4befe',
     };
-    return priorityMap[priority?.toLowerCase()] || '#64748b';
+    return priorityMap[priority?.toLowerCase()] || '#5b5568';
   };
 
   const formatDate = (date) => {
@@ -206,10 +216,10 @@ const DashboardPage = () => {
       <Box mb={4}>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Box>
-            <Typography variant="h4" sx={{ fontWeight: 700, color: '#1e293b', mb: 1 }}>
+            <Typography variant="h4" sx={{ fontWeight: 700, color: brand.ink, mb: 1 }}>
               {t('dashboard.title')}
             </Typography>
-            <Typography variant="body1" sx={{ color: '#64748b' }}>
+            <Typography variant="body1" sx={{ color: brand.muted }}>
               {t('dashboard.welcome')}
             </Typography>
           </Box>
@@ -223,7 +233,7 @@ const DashboardPage = () => {
                   }
                 }}
                 IconComponent={ArrowDropDownIcon}
-                sx={{ fontSize: '14px', bgcolor: '#ffffff' }}
+                sx={{ fontSize: '14px', bgcolor: '#ffffff', borderRadius: 2 }}
               >
                 <MenuItem value="7">{t('dashboard.filters.last7')}</MenuItem>
                 <MenuItem value="30">{t('dashboard.filters.last30')}</MenuItem>
@@ -234,7 +244,7 @@ const DashboardPage = () => {
             <IconButton
               size="small"
               onClick={handleFilterClick}
-              sx={{ border: '1px solid #e2e8f0', color: '#64748b' }}
+              sx={{ border: `1px solid ${brand.border}`, color: brand.muted, bgcolor: '#fff' }}
             >
               <FilterIcon />
             </IconButton>
@@ -295,10 +305,10 @@ const DashboardPage = () => {
         <Grid item xs={12} sm={6} md={3}>
           <Card
             sx={{
-              bgcolor: '#3b82f6',
+              background: `linear-gradient(135deg, ${brand.violet} 0%, ${brand.violetDeep} 100%)`,
               color: '#ffffff',
               borderRadius: 2,
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+              boxShadow: '0 18px 36px rgba(143, 94, 240, 0.2)',
               cursor: 'pointer',
               '&:hover': { boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)' },
             }}
@@ -328,10 +338,10 @@ const DashboardPage = () => {
         <Grid item xs={12} sm={6} md={3}>
           <Card
             sx={{
-              bgcolor: '#f59e0b',
+              background: `linear-gradient(135deg, ${brand.black} 0%, #2a2a2f 100%)`,
               color: '#ffffff',
               borderRadius: 2,
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+              boxShadow: '0 18px 36px rgba(0, 0, 0, 0.18)',
               cursor: 'pointer',
               '&:hover': { boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)' },
             }}
@@ -361,10 +371,10 @@ const DashboardPage = () => {
         <Grid item xs={12} sm={6} md={3}>
           <Card
             sx={{
-              bgcolor: '#ef4444',
+              background: `linear-gradient(135deg, ${brand.violetDeep} 0%, #6d28d9 100%)`,
               color: '#ffffff',
               borderRadius: 2,
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+              boxShadow: '0 18px 36px rgba(109, 40, 217, 0.2)',
               cursor: 'pointer',
               '&:hover': { boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)' },
             }}
@@ -394,10 +404,10 @@ const DashboardPage = () => {
         <Grid item xs={12} sm={6} md={3}>
           <Card
             sx={{
-              bgcolor: '#10b981',
-              color: '#ffffff',
+              background: `linear-gradient(135deg, ${brand.violetSoft} 0%, ${brand.violet} 100%)`,
+              color: brand.ink,
               borderRadius: 2,
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+              boxShadow: '0 18px 36px rgba(165, 118, 255, 0.18)',
               cursor: 'pointer',
               '&:hover': { boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)' },
             }}
@@ -406,7 +416,7 @@ const DashboardPage = () => {
             <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
               <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
                 <CheckCircleIcon sx={{ fontSize: 28, opacity: 0.9 }} />
-                <Chip label={t('dashboard.badges.completed')} size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
+                <Chip label={t('dashboard.badges.completed')} size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.55)', color: brand.ink, height: 22, fontSize: '11px' }} />
               </Box>
               {isLoading ? (
                 <CircularProgress size={24} sx={{ color: '#ffffff' }} />
@@ -463,10 +473,10 @@ const DashboardPage = () => {
         <Grid item xs={12} sm={6} md={4}>
           <Card
             sx={{
-              bgcolor: '#64748b',
+              background: `linear-gradient(135deg, #2d2b34 0%, ${brand.black} 100%)`,
               color: '#ffffff',
               borderRadius: 2,
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+              boxShadow: '0 18px 36px rgba(0, 0, 0, 0.18)',
               cursor: 'pointer',
               '&:hover': { boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)' },
             }}
@@ -496,10 +506,10 @@ const DashboardPage = () => {
         <Grid item xs={12} sm={6} md={4}>
           <Card
             sx={{
-              bgcolor: '#8b5cf6',
+              background: `linear-gradient(135deg, ${brand.violet} 0%, ${brand.black} 100%)`,
               color: '#ffffff',
               borderRadius: 2,
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+              boxShadow: '0 18px 36px rgba(63, 30, 120, 0.18)',
               cursor: 'pointer',
               '&:hover': { boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)' },
             }}
@@ -530,9 +540,9 @@ const DashboardPage = () => {
       {/* Charts Section - Same Height */}
       <Grid container spacing={2} mb={2}>
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2.5, borderRadius: 2, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
+          <Paper sx={{ p: 2.5, borderRadius: 3, boxShadow: '0 18px 48px rgba(63, 30, 120, 0.08)', border: `1px solid ${brand.border}` }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-              <Typography variant="h6" sx={{ fontWeight: 600, color: '#1e293b', fontSize: '16px' }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: brand.ink, fontSize: '16px' }}>
                 {t('dashboard.charts.completionTime')}
               </Typography>
               <FormControl size="small" sx={{ minWidth: 120 }}>
@@ -555,31 +565,31 @@ const DashboardPage = () => {
             {completionChartData && completionChartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={completionChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="name" stroke="#64748b" fontSize={11} />
-                  <YAxis stroke="#64748b" fontSize={11} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={brand.border} />
+                  <XAxis dataKey="name" stroke={brand.muted} fontSize={11} />
+                  <YAxis stroke={brand.muted} fontSize={11} />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: '#ffffff',
-                      border: '1px solid #e2e8f0',
+                      border: `1px solid ${brand.border}`,
                       borderRadius: '8px',
                       fontSize: '12px',
                     }}
                   />
-                  <Bar dataKey="value" fill="#3b82f6" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="value" fill={brand.violet} radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
               <Box display="flex" justifyContent="center" alignItems="center" height={250}>
-                <Typography variant="body2" sx={{ color: '#64748b' }}>{t('dashboard.charts.noData')}</Typography>
+                <Typography variant="body2" sx={{ color: brand.muted }}>{t('dashboard.charts.noData')}</Typography>
               </Box>
             )}
           </Paper>
         </Grid>
 
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2.5, borderRadius: 2, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, color: '#1e293b', mb: 2, fontSize: '16px' }}>
+          <Paper sx={{ p: 2.5, borderRadius: 3, boxShadow: '0 18px 48px rgba(63, 30, 120, 0.08)', border: `1px solid ${brand.border}` }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: brand.ink, mb: 2, fontSize: '16px' }}>
               {t('dashboard.charts.casesByStatus')}
             </Typography>
             {statusChartData && statusChartData.length > 0 ? (
@@ -614,7 +624,7 @@ const DashboardPage = () => {
                           bgcolor: item.color,
                         }}
                       />
-                      <Typography variant="caption" sx={{ color: '#64748b', fontSize: '11px' }}>
+                      <Typography variant="caption" sx={{ color: brand.muted, fontSize: '11px' }}>
                         {item.name}
                       </Typography>
                     </Box>

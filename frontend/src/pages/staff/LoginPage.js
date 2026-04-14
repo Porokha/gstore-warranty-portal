@@ -59,7 +59,7 @@ const LoginPage = () => {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: '#f5f7fa',
+        background: 'radial-gradient(circle at top, #f3ecff 0%, #fbf9ff 45%, #f4f0ff 100%)',
         position: 'relative',
         py: 4,
         px: 2,
@@ -76,9 +76,10 @@ const LoginPage = () => {
           elevation={0}
           sx={{
             p: 4,
-            borderRadius: 3,
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-            bgcolor: '#ffffff',
+            borderRadius: 4,
+            boxShadow: '0 24px 80px rgba(63, 30, 120, 0.12)',
+            bgcolor: 'rgba(255,255,255,0.92)',
+            border: '1px solid #e3d7ff',
             width: '100%',
             maxWidth: 440,
             mx: 'auto',
@@ -89,7 +90,7 @@ const LoginPage = () => {
               variant="h4"
               sx={{
                 fontWeight: 700,
-                color: '#1e293b',
+                color: '#18181b',
                 mb: 0.5,
                 fontSize: '28px',
               }}
@@ -99,7 +100,7 @@ const LoginPage = () => {
             <Typography
               variant="body2"
               sx={{
-                color: '#64748b',
+                color: '#5b5568',
                 fontSize: '14px',
               }}
             >
@@ -121,29 +122,29 @@ const LoginPage = () => {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 2,
-                  bgcolor: '#f8fafc',
+                  bgcolor: '#fbf9ff',
                   '& fieldset': {
-                    borderColor: '#e2e8f0',
+                    borderColor: '#e3d7ff',
                   },
                   '&:hover fieldset': {
-                    borderColor: '#3b82f6',
+                    borderColor: '#a576ff',
                   },
                   '&.Mui-focused fieldset': {
-                    borderColor: '#3b82f6',
+                    borderColor: '#a576ff',
                   },
                 },
                 '& .MuiInputLabel-root': {
-                  color: '#64748b',
+                  color: '#5b5568',
                 },
                 '& .MuiInputLabel-root.Mui-focused': {
-                  color: '#3b82f6',
+                  color: '#8f5ef0',
                 },
                 mt: 0,
               }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <PersonIcon sx={{ color: '#64748b', fontSize: 20 }} />
+                    <PersonIcon sx={{ color: '#5b5568', fontSize: 20 }} />
                   </InputAdornment>
                 ),
               }}
@@ -161,28 +162,28 @@ const LoginPage = () => {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 2,
-                  bgcolor: '#f8fafc',
+                  bgcolor: '#fbf9ff',
                   '& fieldset': {
-                    borderColor: '#e2e8f0',
+                    borderColor: '#e3d7ff',
                   },
                   '&:hover fieldset': {
-                    borderColor: '#3b82f6',
+                    borderColor: '#a576ff',
                   },
                   '&.Mui-focused fieldset': {
-                    borderColor: '#3b82f6',
+                    borderColor: '#a576ff',
                   },
                 },
                 '& .MuiInputLabel-root': {
-                  color: '#64748b',
+                  color: '#5b5568',
                 },
                 '& .MuiInputLabel-root.Mui-focused': {
-                  color: '#3b82f6',
+                  color: '#8f5ef0',
                 },
               }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <LockIcon sx={{ color: '#64748b', fontSize: 20 }} />
+                    <LockIcon sx={{ color: '#5b5568', fontSize: 20 }} />
                   </InputAdornment>
                 ),
                 endAdornment: (
@@ -190,7 +191,7 @@ const LoginPage = () => {
                     <IconButton
                       onClick={() => setShowPassword(!showPassword)}
                       edge="end"
-                      sx={{ color: '#64748b' }}
+                      sx={{ color: '#5b5568' }}
                     >
                       {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
                     </IconButton>
@@ -204,15 +205,15 @@ const LoginPage = () => {
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
                   sx={{
-                    color: '#3b82f6',
+                    color: '#a576ff',
                     '&.Mui-checked': {
-                      color: '#3b82f6',
+                      color: '#a576ff',
                     },
                   }}
                 />
               }
               label={
-                <Typography variant="body2" sx={{ color: '#64748b', fontSize: '14px' }}>
+                <Typography variant="body2" sx={{ color: '#5b5568', fontSize: '14px' }}>
                   {t('login.rememberMe')}
                 </Typography>
               }

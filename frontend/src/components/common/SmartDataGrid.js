@@ -182,20 +182,24 @@ const SmartDataGrid = ({
           }}
           initialState={initialState}
           sx={{
-            '--DataGrid-containerBackground': '#faf7f0',
-            '--DataGrid-rowBorderColor': '#e2e8f0',
-            '--DataGrid-columnHeaderBackgroundColor': '#f4e7d3',
+            '--DataGrid-containerBackground': '#fbf9ff',
+            '--DataGrid-rowBorderColor': '#e3d7ff',
+            '--DataGrid-columnHeaderBackgroundColor': '#f3ecff',
             '& .smart-grid-header': {
-              backgroundColor: '#f4e7d3',
+              backgroundColor: '#f3ecff',
               fontWeight: 600,
               textTransform: 'uppercase',
               letterSpacing: 0.4,
+              color: '#18181b',
             },
             '& .MuiDataGrid-row': {
               bgcolor: '#ffffff',
             },
             '& .MuiDataGrid-row:nth-of-type(even)': {
-              bgcolor: '#fdfaf5',
+              bgcolor: '#fbf9ff',
+            },
+            '& .MuiDataGrid-row:hover': {
+              bgcolor: '#f3ecff',
             },
             '& .MuiDataGrid-cell:focus, & .MuiDataGrid-columnHeader:focus': {
               outline: 'none',
@@ -218,4 +222,3 @@ SmartDataGrid.propTypes = {
 };
 
 export default SmartDataGrid;
-

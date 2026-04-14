@@ -80,7 +80,7 @@ const WarrantySearchPage = () => {
     let yPos = margin;
 
     // Set background color
-    pdf.setFillColor(252, 244, 232); // #fcf4e8
+    pdf.setFillColor(251, 249, 255);
     pdf.rect(0, 0, pageWidth, pageHeight, 'F');
 
     // Add logo with maximum compression - skip if too large
@@ -89,13 +89,13 @@ const WarrantySearchPage = () => {
       // Try to load and compress logo, but with very strict limits
       const logoImg = new Image();
       logoImg.crossOrigin = 'anonymous';
-      logoImg.src = process.env.PUBLIC_URL + '/zezva-pdf.png';
+      logoImg.src = process.env.PUBLIC_URL + '/brand-logo-horizontal.svg';
       
       await new Promise((resolve) => {
         const timeout = setTimeout(() => {
           // Timeout - use text logo instead
           pdf.setFontSize(28);
-          pdf.setTextColor(30, 41, 59);
+          pdf.setTextColor(24, 24, 27);
           pdf.setFont(undefined, 'bold');
           pdf.text('ZEZVA', pageWidth / 2, yPos, { align: 'center' });
           yPos += 12;
@@ -132,7 +132,7 @@ const WarrantySearchPage = () => {
             if (dataSize > 50000) { // If compressed > 50KB, skip image
               // console.warn('Compressed logo still too large, using text instead');
               pdf.setFontSize(28);
-              pdf.setTextColor(30, 41, 59);
+              pdf.setTextColor(24, 24, 27);
               pdf.setFont(undefined, 'bold');
               pdf.text('ZEZVA', pageWidth / 2, yPos, { align: 'center' });
               yPos += 12;
@@ -152,7 +152,7 @@ const WarrantySearchPage = () => {
             clearTimeout(timeout);
             // Use text logo as fallback
             pdf.setFontSize(28);
-            pdf.setTextColor(30, 41, 59);
+            pdf.setTextColor(24, 24, 27);
             pdf.setFont(undefined, 'bold');
             pdf.text('ZEZVA', pageWidth / 2, yPos, { align: 'center' });
             yPos += 12;
@@ -163,7 +163,7 @@ const WarrantySearchPage = () => {
           clearTimeout(timeout);
           // Use text logo as fallback
           pdf.setFontSize(28);
-          pdf.setTextColor(30, 41, 59);
+          pdf.setTextColor(24, 24, 27);
           pdf.setFont(undefined, 'bold');
           pdf.text('ZEZVA', pageWidth / 2, yPos, { align: 'center' });
           yPos += 12;
@@ -173,7 +173,7 @@ const WarrantySearchPage = () => {
     } catch (err) {
       // Fallback to text logo
       pdf.setFontSize(28);
-      pdf.setTextColor(30, 41, 59);
+      pdf.setTextColor(24, 24, 27);
       pdf.setFont(undefined, 'bold');
       pdf.text('ZEZVA', pageWidth / 2, yPos, { align: 'center' });
       yPos += 12;
@@ -181,7 +181,7 @@ const WarrantySearchPage = () => {
 
     // Title with styling
     pdf.setFontSize(24);
-    pdf.setTextColor(30, 41, 59); // #1e293b
+    pdf.setTextColor(24, 24, 27);
     pdf.setFont(undefined, 'bold');
     pdf.text(t('warrantySearch.warrantyDetails'), pageWidth / 2, yPos, { align: 'center' });
     yPos += 12;
@@ -233,13 +233,13 @@ const WarrantySearchPage = () => {
 
       // Label
       pdf.setFontSize(10);
-      pdf.setTextColor(100, 116, 139); // #64748b
+      pdf.setTextColor(91, 85, 104);
       pdf.setFont(undefined, 'normal');
       pdf.text(field.label + ':', margin, yPos);
 
       // Value
       pdf.setFontSize(11);
-      pdf.setTextColor(30, 41, 59); // #1e293b
+      pdf.setTextColor(24, 24, 27);
       if (field.highlight) {
         pdf.setFont(undefined, 'bold');
       } else {
@@ -294,7 +294,7 @@ const WarrantySearchPage = () => {
     <Box
       sx={{
         minHeight: 'calc(100vh - 70px)',
-        bgcolor: '#fcf4e8',
+        background: 'linear-gradient(180deg, #fbf9ff 0%, #f3ecff 100%)',
         pt: 4,
         pb: 8,
       }}
@@ -306,7 +306,8 @@ const WarrantySearchPage = () => {
             aria-label="back"
             sx={{
               bgcolor: '#ffffff',
-              '&:hover': { bgcolor: '#f1f5f9' },
+              border: '1px solid #e3d7ff',
+              '&:hover': { bgcolor: '#f3ecff' },
             }}
           >
             <ArrowBack />
@@ -317,7 +318,7 @@ const WarrantySearchPage = () => {
             sx={{
               cursor: 'pointer',
               textDecoration: 'none',
-              color: '#1e293b',
+              color: '#18181b',
               fontWeight: 700,
               '&:hover': { textDecoration: 'underline' },
             }}
@@ -330,9 +331,10 @@ const WarrantySearchPage = () => {
           elevation={0}
           sx={{
             p: 4,
-            borderRadius: 3,
-            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
+            borderRadius: 4,
+            boxShadow: '0 28px 90px rgba(63, 30, 120, 0.1)',
             bgcolor: '#ffffff',
+            border: '1px solid #e3d7ff',
           }}
         >
           <Box display="flex" alignItems="center" gap={2} mb={3}>
@@ -341,7 +343,7 @@ const WarrantySearchPage = () => {
                 width: 48,
                 height: 48,
                 borderRadius: 2,
-                bgcolor: '#3b82f6',
+                bgcolor: '#a576ff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -349,7 +351,7 @@ const WarrantySearchPage = () => {
             >
               <WarrantyIcon sx={{ color: '#ffffff', fontSize: 28 }} />
             </Box>
-            <Typography variant="h5" sx={{ fontWeight: 600, color: '#1e293b' }}>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: '#18181b' }}>
               {t('warrantySearch.findWarranty')}
             </Typography>
           </Box>
@@ -367,7 +369,7 @@ const WarrantySearchPage = () => {
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 2,
                   '&:hover fieldset': {
-                    borderColor: '#3b82f6',
+                    borderColor: '#a576ff',
                   },
                 },
               }}
@@ -384,7 +386,7 @@ const WarrantySearchPage = () => {
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 2,
                   '&:hover fieldset': {
-                    borderColor: '#3b82f6',
+                    borderColor: '#a576ff',
                   },
                 },
               }}
@@ -399,12 +401,14 @@ const WarrantySearchPage = () => {
                 mt: 3,
                 py: 1.5,
                 borderRadius: 2,
-                bgcolor: '#3b82f6',
+                bgcolor: '#a576ff',
+                color: '#111111',
                 fontWeight: 600,
                 textTransform: 'none',
                 fontSize: '16px',
                 '&:hover': {
-                  bgcolor: '#2563eb',
+                  bgcolor: '#8f5ef0',
+                  color: '#ffffff',
                 },
               }}
             >

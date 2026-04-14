@@ -68,7 +68,7 @@ const CaseSearchPage = () => {
     <Box
       sx={{
         minHeight: 'calc(100vh - 70px)',
-        bgcolor: '#fcf4e8',
+        background: 'linear-gradient(180deg, #fbf9ff 0%, #f3ecff 100%)',
         pt: 4,
         pb: 8,
       }}
@@ -80,7 +80,8 @@ const CaseSearchPage = () => {
             aria-label="back"
             sx={{
               bgcolor: '#ffffff',
-              '&:hover': { bgcolor: '#f1f5f9' },
+              border: '1px solid #e3d7ff',
+              '&:hover': { bgcolor: '#f3ecff' },
             }}
           >
             <ArrowBack />
@@ -91,7 +92,7 @@ const CaseSearchPage = () => {
             sx={{
               cursor: 'pointer',
               textDecoration: 'none',
-              color: '#1e293b',
+              color: '#18181b',
               fontWeight: 700,
               '&:hover': { textDecoration: 'underline' },
             }}
@@ -104,9 +105,10 @@ const CaseSearchPage = () => {
           elevation={0}
           sx={{
             p: 4,
-            borderRadius: 3,
-            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
+            borderRadius: 4,
+            boxShadow: '0 28px 90px rgba(63, 30, 120, 0.1)',
             bgcolor: '#ffffff',
+            border: '1px solid #e3d7ff',
           }}
         >
           <Box display="flex" alignItems="center" gap={2} mb={3}>
@@ -115,7 +117,7 @@ const CaseSearchPage = () => {
                 width: 48,
                 height: 48,
                 borderRadius: 2,
-                bgcolor: '#10b981',
+                bgcolor: '#18181b',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -123,7 +125,7 @@ const CaseSearchPage = () => {
             >
               <CaseIcon sx={{ color: '#ffffff', fontSize: 28 }} />
             </Box>
-            <Typography variant="h5" sx={{ fontWeight: 600, color: '#1e293b' }}>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: '#18181b' }}>
               {t('caseSearch.findCase')}
             </Typography>
           </Box>
@@ -140,8 +142,12 @@ const CaseSearchPage = () => {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 2,
+                  bgcolor: '#fbf9ff',
+                  '& fieldset': {
+                    borderColor: '#e3d7ff',
+                  },
                   '&:hover fieldset': {
-                    borderColor: '#10b981',
+                    borderColor: '#a576ff',
                   },
                 },
               }}
@@ -157,8 +163,12 @@ const CaseSearchPage = () => {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 2,
+                  bgcolor: '#fbf9ff',
+                  '& fieldset': {
+                    borderColor: '#e3d7ff',
+                  },
                   '&:hover fieldset': {
-                    borderColor: '#10b981',
+                    borderColor: '#a576ff',
                   },
                 },
               }}
@@ -173,12 +183,14 @@ const CaseSearchPage = () => {
                 mt: 3,
                 py: 1.5,
                 borderRadius: 2,
-                bgcolor: '#10b981',
+                bgcolor: '#a576ff',
+                color: '#111111',
                 fontWeight: 600,
                 textTransform: 'none',
                 fontSize: '16px',
                 '&:hover': {
-                  bgcolor: '#059669',
+                  bgcolor: '#8f5ef0',
+                  color: '#ffffff',
                 },
               }}
             >
@@ -194,41 +206,41 @@ const CaseSearchPage = () => {
 
           {result && (
             <Box sx={{ mt: 4 }}>
-              <Typography variant="h6" sx={{ fontWeight: 600, color: '#1e293b', mb: 3 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: '#18181b', mb: 3 }}>
                 {t('caseSearch.caseDetails')}
               </Typography>
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
-                  <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '13px' }}>
+                  <Typography variant="body2" sx={{ color: '#5b5568', mb: 0.5, fontSize: '13px' }}>
                     {t('caseSearch.customerName')}
                   </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: 600, color: '#1e293b', fontSize: '16px' }}>
+                  <Typography variant="body1" sx={{ fontWeight: 700, color: '#18181b', fontSize: '16px' }}>
                     {result.customer_name} {result.customer_last_name || ''}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '13px' }}>
+                  <Typography variant="body2" sx={{ color: '#5b5568', mb: 0.5, fontSize: '13px' }}>
                     {t('caseSearch.caseNumber')}
                   </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: 600, color: '#1e293b', fontSize: '16px' }}>
+                  <Typography variant="body1" sx={{ fontWeight: 700, color: '#18181b', fontSize: '16px' }}>
                     {result.case_number}
                   </Typography>
                 </Grid>
                 {result.warranty_id && (
                   <Grid item xs={12} md={6}>
-                    <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '13px' }}>
+                    <Typography variant="body2" sx={{ color: '#5b5568', mb: 0.5, fontSize: '13px' }}>
                       {t('caseSearch.warrantyId')}
                     </Typography>
                     <Box display="flex" alignItems="center" gap={1}>
-                      <Typography variant="body1" sx={{ color: '#1e293b', fontSize: '15px' }}>
+                      <Typography variant="body1" sx={{ color: '#18181b', fontSize: '15px' }}>
                         {result.warranty_id}
                       </Typography>
                       {result.warranty_status && (
                         <Chip
                           label={result.warranty_status.is_active ? t('caseSearch.activeWarranty') : t('caseSearch.expiredWarranty')}
                           sx={{
-                            bgcolor: result.warranty_status.is_active ? '#d1fae5' : '#f1f5f9',
-                            color: result.warranty_status.is_active ? '#059669' : '#64748b',
+                            bgcolor: result.warranty_status.is_active ? '#efe7ff' : '#f2f2f2',
+                            color: result.warranty_status.is_active ? '#6d28d9' : '#5b5568',
                             fontWeight: 500,
                             fontSize: '11px',
                             height: 24,
@@ -250,63 +262,63 @@ const CaseSearchPage = () => {
                   </Grid>
                 )}
                 <Grid item xs={12}>
-                  <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '13px' }}>
+                  <Typography variant="body2" sx={{ color: '#5b5568', mb: 0.5, fontSize: '13px' }}>
                     {t('caseSearch.product')}
                   </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: 600, color: '#1e293b', fontSize: '16px' }}>
+                  <Typography variant="body1" sx={{ fontWeight: 700, color: '#18181b', fontSize: '16px' }}>
                     {result.product_title}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} md={4}>
-                  <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '13px' }}>
+                  <Typography variant="body2" sx={{ color: '#5b5568', mb: 0.5, fontSize: '13px' }}>
                     {t('caseSearch.deviceType')}
                   </Typography>
-                  <Typography variant="body1" sx={{ color: '#1e293b', fontSize: '15px' }}>
+                  <Typography variant="body1" sx={{ color: '#18181b', fontSize: '15px' }}>
                     {result.device_type}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} md={4}>
-                  <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '13px' }}>
+                  <Typography variant="body2" sx={{ color: '#5b5568', mb: 0.5, fontSize: '13px' }}>
                     {t('caseSearch.openedDate')}
                   </Typography>
-                  <Typography variant="body1" sx={{ color: '#1e293b', fontSize: '15px' }}>
+                  <Typography variant="body1" sx={{ color: '#18181b', fontSize: '15px' }}>
                     {new Date(result.opened_at).toLocaleDateString()}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} md={4}>
-                  <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '13px' }}>
+                  <Typography variant="body2" sx={{ color: '#5b5568', mb: 0.5, fontSize: '13px' }}>
                     {t('caseSearch.deadline')}
                   </Typography>
-                  <Typography variant="body1" sx={{ color: '#1e293b', fontSize: '15px' }}>
+                  <Typography variant="body1" sx={{ color: '#18181b', fontSize: '15px' }}>
                     {new Date(result.deadline_at).toLocaleDateString()}
                   </Typography>
                 </Grid>
                 <Grid item xs={12}>
-                  <Typography variant="body2" sx={{ color: '#64748b', mb: 1, fontSize: '13px' }}>
+                  <Typography variant="body2" sx={{ color: '#5b5568', mb: 1, fontSize: '13px' }}>
                     {t('caseSearch.status')}
                   </Typography>
                   <StatusBar statusLevel={result.status_level} size="medium" />
-                  <Typography variant="body2" sx={{ mt: 1, color: '#64748b', fontSize: '13px' }}>
+                  <Typography variant="body2" sx={{ mt: 1, color: '#5b5568', fontSize: '13px' }}>
                     {getStatusLabel(result.status_level)}
                   </Typography>
                 </Grid>
                 {result.result_type && (
                   <Grid item xs={12}>
-                    <Typography variant="body2" sx={{ color: '#64748b', mb: 1, fontSize: '13px' }}>
+                    <Typography variant="body2" sx={{ color: '#5b5568', mb: 1, fontSize: '13px' }}>
                       {t('caseSearch.result')}
                     </Typography>
                     <ResultBar resultType={result.result_type} size="medium" />
-                    <Typography variant="body2" sx={{ mt: 1, color: '#64748b', fontSize: '13px' }}>
+                    <Typography variant="body2" sx={{ mt: 1, color: '#5b5568', fontSize: '13px' }}>
                       {getResultLabel(result.result_type)}
                     </Typography>
                   </Grid>
                 )}
                 {result.assigned_technician && (
                   <Grid item xs={12} md={6}>
-                    <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '13px' }}>
+                    <Typography variant="body2" sx={{ color: '#5b5568', mb: 0.5, fontSize: '13px' }}>
                       {t('caseSearch.assignedTechnician')}
                     </Typography>
-                    <Typography variant="body1" sx={{ color: '#1e293b', fontSize: '15px' }}>
+                    <Typography variant="body1" sx={{ color: '#18181b', fontSize: '15px' }}>
                       {result.assigned_technician.name} {result.assigned_technician.last_name}
                     </Typography>
                   </Grid>
@@ -325,21 +337,21 @@ const CaseSearchPage = () => {
                       sx={{
                         p: 2.5,
                         mb: 2,
-                        border: '1px solid #e2e8f0',
+                        border: '1px solid #e3d7ff',
                         borderRadius: 2,
-                        bgcolor: '#f8fafc',
+                        bgcolor: '#fbf9ff',
                       }}
                     >
-                      <Typography variant="body2" sx={{ color: '#64748b', fontSize: '12px' }}>
+                      <Typography variant="body2" sx={{ color: '#5b5568', fontSize: '12px' }}>
                         {new Date(history.created_at).toLocaleString()}
                       </Typography>
                       {history.new_status_level && (
-                        <Typography variant="body2" sx={{ mt: 0.5, color: '#1e293b', fontSize: '14px' }}>
+                        <Typography variant="body2" sx={{ mt: 0.5, color: '#18181b', fontSize: '14px' }}>
                           {t('caseSearch.status')}: {getStatusLabel(history.new_status_level)}
                         </Typography>
                       )}
                       {history.new_result && (
-                        <Typography variant="body2" sx={{ mt: 0.5, color: '#1e293b', fontSize: '14px' }}>
+                        <Typography variant="body2" sx={{ mt: 0.5, color: '#18181b', fontSize: '14px' }}>
                           {t('caseSearch.result')}: {getResultLabel(history.new_result)}
                         </Typography>
                       )}

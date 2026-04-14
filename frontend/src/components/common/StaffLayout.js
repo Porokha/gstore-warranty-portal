@@ -95,8 +95,7 @@ const StaffLayout = () => {
   };
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f7fa' }}>
-      {/* Dark Blue Sidebar */}
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#fbf9ff' }}>
       <Drawer
         variant="permanent"
         sx={{
@@ -105,16 +104,16 @@ const StaffLayout = () => {
           '& .MuiDrawer-paper': {
             width: drawerWidth,
             boxSizing: 'border-box',
-            bgcolor: '#e5e7eb',
-            color: '#1f2937',
-            borderRight: '1px solid #d1d5db',
+            bgcolor: '#0f0f12',
+            color: '#f5f3ff',
+            borderRight: '1px solid rgba(165, 118, 255, 0.2)',
             transition: 'width 0.2s ease',
           },
         }}
       >
         <Toolbar
           sx={{
-            bgcolor: '#e5e7eb',
+            bgcolor: '#0f0f12',
             minHeight: '80px !important',
             display: 'flex',
             alignItems: 'center',
@@ -127,7 +126,7 @@ const StaffLayout = () => {
             {isCollapsed ? (
               <Box
                 component="img"
-                src="/zezva-mini.png"
+                src="/brand-logotype-original.svg"
                 alt="ZEZVA mini logo"
                 sx={{ width: 36, height: 36 }}
               />
@@ -135,22 +134,14 @@ const StaffLayout = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Box
                   component="img"
-                  src="/zezva-mini.png"
+                  src="/brand-logo-horizontal.svg"
                   alt="ZEZVA logo"
-                  sx={{ width: 36, height: 36 }}
+                  sx={{ width: 132, height: 'auto' }}
                 />
-                <Box sx={{ ml: 1 }}>
-                  <Typography variant="h6" sx={{ fontSize: '16px', fontWeight: 600, lineHeight: 1.2 }}>
-                    ZEZVA
-                  </Typography>
-                  <Typography variant="caption" sx={{ fontSize: '10px', color: '#6b7280', lineHeight: 1.2 }}>
-                    Warranty & Service
-                  </Typography>
-                </Box>
               </Box>
             )}
           </Box>
-          <IconButton onClick={toggleSidebar} size="small" sx={{ color: '#1f2937' }}>
+          <IconButton onClick={toggleSidebar} size="small" sx={{ color: '#f5f3ff' }}>
             {isCollapsed ? <ChevronRight fontSize="small" /> : <ChevronLeft fontSize="small" />}
           </IconButton>
         </Toolbar>
@@ -182,14 +173,14 @@ const StaffLayout = () => {
                       justifyContent: isCollapsed ? 'center' : 'flex-start',
                       px: isCollapsed ? 1.5 : 2,
                       '&.Mui-selected': {
-                        bgcolor: '#1f2937',
-                        color: '#ffffff',
-                        '&:hover': {
-                          bgcolor: '#111827',
+                      bgcolor: 'rgba(165, 118, 255, 0.18)',
+                      color: '#ffffff',
+                      '&:hover': {
+                          bgcolor: 'rgba(165, 118, 255, 0.28)',
                         },
                       },
                       '&:hover': {
-                        bgcolor: '#d1d5db',
+                        bgcolor: 'rgba(255,255,255,0.06)',
                       },
                     }}
                   >
@@ -198,7 +189,7 @@ const StaffLayout = () => {
                         mr: isCollapsed ? 0 : 2,
                         display: 'flex',
                         alignItems: 'center',
-                        color: isActive ? '#ffffff' : '#4b5563',
+                        color: isActive ? '#ffffff' : '#c8b6ff',
                       }}
                     >
                       {item.icon}
@@ -221,7 +212,7 @@ const StaffLayout = () => {
             })}
           </List>
 
-          <Divider sx={{ borderColor: '#d1d5db', my: 2, mx: 2 }} />
+          <Divider sx={{ borderColor: 'rgba(165, 118, 255, 0.18)', my: 2, mx: 2 }} />
 
           <List sx={{ px: 2, py: 1 }}>
             {bottomMenuItems.map((item) => {
@@ -238,14 +229,14 @@ const StaffLayout = () => {
                     justifyContent: isCollapsed ? 'center' : 'flex-start',
                     px: isCollapsed ? 1.5 : 2,
                       '&.Mui-selected': {
-                      bgcolor: '#1f2937',
+                      bgcolor: 'rgba(165, 118, 255, 0.18)',
                         color: '#ffffff',
                         '&:hover': {
-                        bgcolor: '#111827',
+                        bgcolor: 'rgba(165, 118, 255, 0.28)',
                         },
                       },
                       '&:hover': {
-                      bgcolor: '#d1d5db',
+                      bgcolor: 'rgba(255,255,255,0.06)',
                       },
                     }}
                   >
@@ -254,7 +245,7 @@ const StaffLayout = () => {
                         mr: isCollapsed ? 0 : 2,
                         display: 'flex',
                         alignItems: 'center',
-                        color: isActive ? '#ffffff' : '#4b5563',
+                        color: isActive ? '#ffffff' : '#c8b6ff',
                       }}
                     >
                       {item.icon}

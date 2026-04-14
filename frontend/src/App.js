@@ -31,10 +31,60 @@ const queryClient = new QueryClient();
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1976d2',
+      main: '#A576FF',
+      light: '#D4BEFE',
+      dark: '#8F5EF0',
+      contrastText: '#111111',
     },
     secondary: {
-      main: '#dc004e',
+      main: '#000000',
+      contrastText: '#FFFFFF',
+    },
+    background: {
+      default: '#FBF9FF',
+      paper: '#FFFFFF',
+    },
+    text: {
+      primary: '#18181B',
+      secondary: '#5B5568',
+    },
+  },
+  shape: {
+    borderRadius: 16,
+  },
+  typography: {
+    fontFamily: '"Segoe UI", "Helvetica Neue", sans-serif',
+    h4: {
+      fontWeight: 700,
+      letterSpacing: '-0.02em',
+    },
+    h5: {
+      fontWeight: 700,
+      letterSpacing: '-0.02em',
+    },
+    h6: {
+      fontWeight: 700,
+    },
+    button: {
+      textTransform: 'none',
+      fontWeight: 700,
+    },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 14,
+          boxShadow: 'none',
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundImage: 'none',
+        },
+      },
     },
   },
 });
@@ -85,4 +135,3 @@ function App() {
 }
 
 export default App;
-

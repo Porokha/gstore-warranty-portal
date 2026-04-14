@@ -6,10 +6,10 @@ const ResultBar = ({ resultType, size = 'medium' }) => {
   const { t } = useTranslation();
   
   const results = [
-    { type: 'covered', label: t('result.covered'), labelGe: 'გარანტიით შეკეთებული', color: '#9e9e9e' },
-    { type: 'payable', label: t('result.payable'), labelGe: 'გადასახდელი', color: '#4caf50' },
-    { type: 'returned', label: t('result.returned'), labelGe: 'დაბრუნდა როგორც არის', color: '#ff9800' },
-    { type: 'replaceable', label: t('result.replaceable'), labelGe: 'შესაცვლელი', color: '#f44336' },
+    { type: 'covered', label: t('result.covered'), labelGe: 'გარანტიით შეკეთებული', color: '#d4befe' },
+    { type: 'payable', label: t('result.payable'), labelGe: 'გადასახდელი', color: '#a576ff' },
+    { type: 'returned', label: t('result.returned'), labelGe: 'დაბრუნდა როგორც არის', color: '#6d28d9' },
+    { type: 'replaceable', label: t('result.replaceable'), labelGe: 'შესაცვლელი', color: '#000000' },
   ];
 
   const boxSize = size === 'small' ? 20 : size === 'large' ? 40 : 30;
@@ -24,9 +24,9 @@ const ResultBar = ({ resultType, size = 'medium' }) => {
             sx={{
               width: boxSize,
               height: boxSize,
-              backgroundColor: '#e0e0e0',
-              borderRadius: 1,
-              border: '1px solid #ccc',
+              backgroundColor: '#efe7ff',
+              borderRadius: 1.5,
+              border: '1px solid #d4befe',
             }}
           />
         ))}
@@ -48,9 +48,9 @@ const ResultBar = ({ resultType, size = 'medium' }) => {
             sx={{
               width: boxSize,
               height: boxSize,
-              backgroundColor: result.type === resultType ? result.color : '#e0e0e0',
-              borderRadius: 1,
-              border: '1px solid #ccc',
+              backgroundColor: result.type === resultType ? result.color : '#efe7ff',
+              borderRadius: 1.5,
+              border: '1px solid #d4befe',
               cursor: 'pointer',
             }}
           />
@@ -61,4 +61,3 @@ const ResultBar = ({ resultType, size = 'medium' }) => {
 };
 
 export default ResultBar;
-

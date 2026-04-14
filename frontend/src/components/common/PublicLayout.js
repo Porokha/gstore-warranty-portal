@@ -14,8 +14,9 @@ const PublicLayout = () => {
       <AppBar
         position="sticky"
         sx={{
-          bgcolor: '#f4e7d3',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+          bgcolor: 'rgba(255,255,255,0.92)',
+          backdropFilter: 'blur(14px)',
+          boxShadow: '0 8px 30px rgba(17, 17, 17, 0.06)',
           zIndex: 1000,
         }}
       >
@@ -44,12 +45,15 @@ const PublicLayout = () => {
             }}
             startIcon={<LanguageIcon />}
             sx={{
-              color: '#1e293b',
+              color: '#18181b',
               textTransform: 'none',
-              fontWeight: 500,
+              fontWeight: 700,
               fontSize: '14px',
+              border: '1px solid #e3d7ff',
+              borderRadius: '999px',
+              px: 1.5,
               '&:hover': {
-                bgcolor: 'rgba(0, 0, 0, 0.05)',
+                bgcolor: '#f3ecff',
               },
             }}
           >
@@ -57,7 +61,7 @@ const PublicLayout = () => {
           </Button>
         </Toolbar>
       </AppBar>
-      <Box sx={{ flex: 1, bgcolor: '#fcf4e8' }}>
+      <Box sx={{ flex: 1, bgcolor: '#fbf9ff' }}>
         <Outlet />
       </Box>
     </Box>

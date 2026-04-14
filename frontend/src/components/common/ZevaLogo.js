@@ -6,14 +6,19 @@ const ZevaLogo = ({ size = 'medium', showSubtitle = false, variant = 'default' }
   const [logoError, setLogoError] = useState(false);
 
   const sizes = {
-    small: { logo: 40, text: '20px', subtitle: '12px' },
-    medium: { logo: 60, text: '28px', subtitle: '14px' },
-    large: { logo: 140, text: '36px', subtitle: '16px' },
+    small: { logo: 42, text: '20px', subtitle: '12px' },
+    medium: { logo: 180, text: '28px', subtitle: '14px' },
+    large: { logo: 240, text: '36px', subtitle: '16px' },
   };
 
   const currentSize = sizes[size] || sizes.medium;
-  const textColor = variant === 'light' ? '#FFFFFF' : '#374151';
-  const subtitleColor = variant === 'light' ? 'rgba(255,255,255,0.8)' : '#6B7280';
+  const isLight = variant === 'light';
+  const textColor = isLight ? '#FFFFFF' : '#18181B';
+  const subtitleColor = isLight ? 'rgba(255,255,255,0.84)' : '#5B5568';
+  const logoSrc =
+    size === 'small'
+      ? (isLight ? '/brand-logotype-original.svg' : '/brand-logotype-black.svg')
+      : '/brand-logo-horizontal.svg';
 
   return (
     <Box
@@ -21,13 +26,12 @@ const ZevaLogo = ({ size = 'medium', showSubtitle = false, variant = 'default' }
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 1,
+        gap: 1.25,
       }}
     >
-      {/* Logo Image */}
       <Box
         component="img"
-        src="/logo.png"
+        src={logoSrc}
         alt="ZEZVA"
         onLoad={() => setLogoLoaded(true)}
         onError={() => setLogoError(true)}
@@ -38,14 +42,13 @@ const ZevaLogo = ({ size = 'medium', showSubtitle = false, variant = 'default' }
           display: logoError ? 'none' : 'block',
         }}
       />
-      {/* Fallback placeholder if image doesn't exist */}
       {logoError && (
         <Box
           sx={{
             width: currentSize.logo,
             height: currentSize.logo,
-            borderRadius: 1,
-            bgcolor: variant === 'light' ? 'rgba(255,255,255,0.2)' : '#f3f4f6',
+            borderRadius: 2,
+            bgcolor: isLight ? 'rgba(255,255,255,0.14)' : '#f3ecff',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -63,7 +66,6 @@ const ZevaLogo = ({ size = 'medium', showSubtitle = false, variant = 'default' }
           </Typography>
         </Box>
       )}
-      {/* Only show text if logo failed to load */}
       {logoError && (
         <Box>
           <Typography
@@ -72,8 +74,9 @@ const ZevaLogo = ({ size = 'medium', showSubtitle = false, variant = 'default' }
               fontWeight: 700,
               fontSize: currentSize.text,
               color: textColor,
-              letterSpacing: '0.5px',
+              letterSpacing: '0.08em',
               lineHeight: 1,
+              textAlign: 'center',
             }}
           >
             ZEZVA
@@ -90,24 +93,25 @@ const ZevaLogo = ({ size = 'medium', showSubtitle = false, variant = 'default' }
                 textAlign: 'center',
               }}
             >
-              Warranty & Service Management
+              Warranty & Service Portal
             </Typography>
           )}
         </Box>
       )}
-      {/* Show subtitle below logo if logo loaded successfully */}
       {logoLoaded && showSubtitle && (
         <Typography
           variant="caption"
           sx={{
             fontSize: currentSize.subtitle,
             color: subtitleColor,
-            fontWeight: 400,
+            fontWeight: 600,
             display: 'block',
             textAlign: 'center',
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
           }}
         >
-          Warranty & Service Management
+          Warranty & Service Portal
         </Typography>
       )}
     </Box>

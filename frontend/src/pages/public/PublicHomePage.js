@@ -21,14 +21,14 @@ const PublicHomePage = () => {
     <Box
       sx={{
         minHeight: 'calc(100vh - 70px)',
-        bgcolor: '#fcf4e8',
+        background: 'linear-gradient(180deg, #fbf9ff 0%, #f3ecff 100%)',
         pt: 6,
         pb: 8,
       }}
     >
       <Container maxWidth="md">
         <Box sx={{ textAlign: 'center', mb: 6 }}>
-          <Typography variant="h5" sx={{ color: '#1e293b', fontWeight: 400, fontSize: '18px' }}>
+          <Typography variant="h5" sx={{ color: '#18181b', fontWeight: 700, fontSize: '18px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
             {t('public.checkWarrantyStatus')}
           </Typography>
         </Box>
@@ -36,28 +36,29 @@ const PublicHomePage = () => {
         <Paper
           elevation={0}
           sx={{
-            borderRadius: 3,
-            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
+            borderRadius: 4,
+            boxShadow: '0 28px 90px rgba(63, 30, 120, 0.1)',
             bgcolor: '#ffffff',
             overflow: 'hidden',
+            border: '1px solid #e3d7ff',
           }}
         >
           <Tabs
             value={activeTab}
             onChange={handleTabChange}
             sx={{
-              borderBottom: '1px solid #e2e8f0',
+              borderBottom: '1px solid #efe7ff',
               '& .MuiTab-root': {
                 textTransform: 'none',
-                fontWeight: 500,
+                fontWeight: 700,
                 fontSize: '15px',
                 minHeight: 64,
                 '&.Mui-selected': {
-                  color: '#3b82f6',
+                  color: '#a576ff',
                 },
               },
               '& .MuiTabs-indicator': {
-                bgcolor: '#3b82f6',
+                bgcolor: '#a576ff',
                 height: 3,
               },
             }}
@@ -69,7 +70,7 @@ const PublicHomePage = () => {
               label={t('public.searchWarranty')}
               sx={{
                 '&.Mui-selected': {
-                  color: '#3b82f6',
+                  color: '#a576ff',
                 },
               }}
             />
@@ -79,7 +80,7 @@ const PublicHomePage = () => {
               label={t('public.searchCase')}
               sx={{
                 '&.Mui-selected': {
-                  color: '#10b981',
+                  color: '#18181b',
                 },
               }}
             />
@@ -93,7 +94,7 @@ const PublicHomePage = () => {
                     width: 56,
                     height: 56,
                     borderRadius: 2,
-                    bgcolor: '#3b82f6',
+                    bgcolor: '#a576ff',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -103,10 +104,10 @@ const PublicHomePage = () => {
                 >
                   <WarrantyIcon sx={{ color: '#ffffff', fontSize: 32 }} />
                 </Box>
-                <Typography variant="h5" sx={{ fontWeight: 600, color: '#1e293b', mb: 1, textAlign: 'center' }}>
+                <Typography variant="h5" sx={{ fontWeight: 700, color: '#18181b', mb: 1, textAlign: 'center' }}>
                   {t('public.searchWarranty')}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#64748b', mb: 3, textAlign: 'center' }}>
+                <Typography variant="body2" sx={{ color: '#5b5568', mb: 3, textAlign: 'center' }}>
                   {t('public.searchWarrantyDescription')}
                 </Typography>
                 <Box sx={{ display: 'flex', justifyContent: 'center' }}>
@@ -119,12 +120,14 @@ const PublicHomePage = () => {
                       py: 1.5,
                       px: 3,
                       borderRadius: 2,
-                      bgcolor: '#3b82f6',
+                      bgcolor: '#a576ff',
+                      color: '#111111',
                       fontWeight: 600,
                       textTransform: 'none',
                       fontSize: '15px',
                       '&:hover': {
-                        bgcolor: '#2563eb',
+                        bgcolor: '#8f5ef0',
+                        color: '#ffffff',
                       },
                     }}
                   >
@@ -141,7 +144,7 @@ const PublicHomePage = () => {
                     width: 56,
                     height: 56,
                     borderRadius: 2,
-                    bgcolor: '#10b981',
+                    bgcolor: '#18181b',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -151,10 +154,10 @@ const PublicHomePage = () => {
                 >
                   <CaseIcon sx={{ color: '#ffffff', fontSize: 32 }} />
                 </Box>
-                <Typography variant="h5" sx={{ fontWeight: 600, color: '#1e293b', mb: 1, textAlign: 'center' }}>
+                <Typography variant="h5" sx={{ fontWeight: 700, color: '#18181b', mb: 1, textAlign: 'center' }}>
                   {t('public.searchCase')}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#64748b', mb: 3, textAlign: 'center' }}>
+                <Typography variant="body2" sx={{ color: '#5b5568', mb: 3, textAlign: 'center' }}>
                   {t('public.searchCaseDescription')}
                 </Typography>
                 <Box sx={{ display: 'flex', justifyContent: 'center' }}>
@@ -167,12 +170,13 @@ const PublicHomePage = () => {
                       py: 1.5,
                       px: 3,
                       borderRadius: 2,
-                      bgcolor: '#10b981',
+                      bgcolor: '#18181b',
                       fontWeight: 600,
                       textTransform: 'none',
                       fontSize: '15px',
                       '&:hover': {
-                        bgcolor: '#059669',
+                        bgcolor: '#a576ff',
+                        color: '#111111',
                       },
                     }}
                   >

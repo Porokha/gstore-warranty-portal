@@ -6,10 +6,10 @@ const StatusBar = ({ statusLevel, size = 'medium' }) => {
   const { t } = useTranslation();
   
   const statuses = [
-    { level: 1, label: t('status.opened'), labelGe: 'ღია', color: '#9e9e9e' },
-    { level: 2, label: t('status.investigating'), labelGe: 'კვლევა', color: '#f44336' },
-    { level: 3, label: t('status.pending'), labelGe: 'მოლოდინში', color: '#ff9800' },
-    { level: 4, label: t('status.completed'), labelGe: 'დასრულებული', color: '#4caf50' },
+    { level: 1, label: t('status.opened'), labelGe: 'ღია', color: '#d4befe' },
+    { level: 2, label: t('status.investigating'), labelGe: 'კვლევა', color: '#a576ff' },
+    { level: 3, label: t('status.pending'), labelGe: 'მოლოდინში', color: '#6d28d9' },
+    { level: 4, label: t('status.completed'), labelGe: 'დასრულებული', color: '#000000' },
   ];
 
   const boxSize = size === 'small' ? 20 : size === 'large' ? 40 : 30;
@@ -27,9 +27,9 @@ const StatusBar = ({ statusLevel, size = 'medium' }) => {
             sx={{
               width: boxSize,
               height: boxSize,
-              backgroundColor: status.level <= statusLevel ? status.color : '#e0e0e0',
-              borderRadius: 1,
-              border: '1px solid #ccc',
+              backgroundColor: status.level <= statusLevel ? status.color : '#efe7ff',
+              borderRadius: 1.5,
+              border: '1px solid #d4befe',
               cursor: 'pointer',
             }}
           />
@@ -40,4 +40,3 @@ const StatusBar = ({ statusLevel, size = 'medium' }) => {
 };
 
 export default StatusBar;
-
