@@ -72,6 +72,18 @@ else
   echo "Skipping git push."
 fi
 
+REMOTE_PREP_CMD=$(cat <<EOF
+set -euo pipefail
+cd "$REMOTE_PATH"
+git fetch origin
+git checkout "$BRANCH"
+git pull --ff-only origin "$BRANCH"
+EOF
+)
+
+echo "Preparing remote checkout on ${SERVER_USER}@${SERVER_HOST}:${REMOTE_PATH}..."
+ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}" "$REMOTE_PREP_CMD"
+
 echo "Syncing prebuilt artifacts to ${SERVER_USER}@${SERVER_HOST}:${REMOTE_PATH}..."
 rsync -az --delete -e "ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no" \
   "$ROOT_DIR/backend/dist/" "${SERVER_USER}@${SERVER_HOST}:${REMOTE_PATH}/backend/dist/"
@@ -81,9 +93,6 @@ rsync -az --delete -e "ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no" \
 REMOTE_CMD=$(cat <<EOF
 set -euo pipefail
 cd "$REMOTE_PATH"
-git fetch origin
-git checkout "$BRANCH"
-git pull --ff-only origin "$BRANCH"
 docker compose -f docker-compose.prod.prebuilt.yml up -d db
 docker compose -f docker-compose.prod.prebuilt.yml up -d --build backend
 docker compose -f docker-compose.prod.prebuilt.yml up -d frontend
