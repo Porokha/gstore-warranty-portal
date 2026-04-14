@@ -60,9 +60,10 @@ if [[ -n "$(git status --short)" ]]; then
   exit 1
 fi
 
-echo "Verifying local builds..."
+echo "Building locally for prebuilt deployment..."
 npm run build:backend
 npm run build:frontend
+date +%s > backend/dist/.build-timestamp
 
 if [[ "$SKIP_PUSH" -eq 0 ]]; then
   echo "Pushing '$BRANCH' to origin..."
@@ -77,7 +78,9 @@ cd "$REMOTE_PATH"
 git fetch origin
 git checkout "$BRANCH"
 git pull --ff-only origin "$BRANCH"
-docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.prebuilt.yml up -d db
+docker compose -f docker-compose.prod.prebuilt.yml up -d --build backend
+docker compose -f docker-compose.prod.prebuilt.yml up -d frontend
 docker compose ps
 EOF
 )

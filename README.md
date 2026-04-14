@@ -84,7 +84,7 @@ Use Node 20 for predictable local builds:
 nvm use
 ```
 
-This repo now includes a deployment helper that validates a clean working tree, runs both builds locally, pushes `main`, and redeploys the server over SSH:
+This repo now includes a deployment helper that validates a clean working tree, builds backend and frontend locally, refreshes the prebuilt backend timestamp, pushes `main`, and redeploys the server over SSH using `docker-compose.prod.prebuilt.yml`:
 
 ```bash
 ./scripts/push-and-deploy.sh
