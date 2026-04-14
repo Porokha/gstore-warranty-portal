@@ -10,12 +10,18 @@ if (typeof globalThis.crypto === 'undefined') {
 }
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
-    const allowedOrigins = [
-        process.env.FRONTEND_URL || 'http://localhost:3001',
+    const allowedOrigins = Array.from(new Set([
+        process.env.FRONTEND_URL,
+        process.env.PORTAL_URL,
+        'http://localhost',
         'http://localhost:3001',
+        'http://3.68.134.145',
         'http://3.68.134.145:3001',
-        process.env.PORTAL_URL || 'http://localhost:3001',
-    ].filter(Boolean);
+        'http://zezva.ge',
+        'https://zezva.ge',
+        'http://www.zezva.ge',
+        'https://www.zezva.ge',
+    ].filter(Boolean)));
     app.enableCors({
         origin: (origin, callback) => {
             if (!origin) {

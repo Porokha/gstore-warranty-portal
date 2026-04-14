@@ -70,6 +70,7 @@ services:
         REACT_APP_PORTAL_URL: ${REACT_APP_PORTAL_URL:-http://3.68.134.145:3001}
     container_name: gstore-warranty-frontend
     ports:
+      - "80:80"
       - "3001:80"
     depends_on:
       - backend
@@ -84,4 +85,3 @@ volumes:
 networks:
   gstore-network:
     driver: bridge
-

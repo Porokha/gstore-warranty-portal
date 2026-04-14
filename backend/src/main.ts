@@ -14,12 +14,22 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Enable CORS
-  const allowedOrigins = [
-    process.env.FRONTEND_URL || 'http://localhost:3001',
-    'http://localhost:3001',
-    'http://3.68.134.145:3001',
-    process.env.PORTAL_URL || 'http://localhost:3001',
-  ].filter(Boolean);
+  const allowedOrigins = Array.from(
+    new Set(
+      [
+        process.env.FRONTEND_URL,
+        process.env.PORTAL_URL,
+        'http://localhost',
+        'http://localhost:3001',
+        'http://3.68.134.145',
+        'http://3.68.134.145:3001',
+        'http://zezva.ge',
+        'https://zezva.ge',
+        'http://www.zezva.ge',
+        'https://www.zezva.ge',
+      ].filter(Boolean),
+    ),
+  );
 
   app.enableCors({
     origin: (origin, callback) => {

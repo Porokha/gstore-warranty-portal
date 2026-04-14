@@ -24,7 +24,7 @@ export const filesService = {
   },
 
   getFileUrl: (file) => {
-    const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+    const baseUrl = process.env.REACT_APP_API_URL || '/api';
     return `${baseUrl}/files/${file.id}/download`;
   },
 };
