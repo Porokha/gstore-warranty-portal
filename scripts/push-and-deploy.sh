@@ -75,6 +75,7 @@ fi
 REMOTE_PREP_CMD=$(cat <<EOF
 set -euo pipefail
 cd "$REMOTE_PATH"
+git checkout -- backend/dist frontend/build
 git fetch origin
 git checkout "$BRANCH"
 git pull --ff-only origin "$BRANCH"
