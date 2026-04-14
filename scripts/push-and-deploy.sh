@@ -54,9 +54,9 @@ if [[ "$CURRENT_BRANCH" != "$BRANCH" ]]; then
   exit 1
 fi
 
-if [[ -n "$(git status --short)" ]]; then
+if [[ -n "$(git status --short --untracked-files=no)" ]]; then
   echo "Working tree is not clean. Commit or stash changes before deployment." >&2
-  git status --short
+  git status --short --untracked-files=no
   exit 1
 fi
 
