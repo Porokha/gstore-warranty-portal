@@ -72,6 +72,12 @@ else
   echo "Skipping git push."
 fi
 
+echo "Syncing prebuilt artifacts to ${SERVER_USER}@${SERVER_HOST}:${REMOTE_PATH}..."
+rsync -az --delete -e "ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no" \
+  "$ROOT_DIR/backend/dist/" "${SERVER_USER}@${SERVER_HOST}:${REMOTE_PATH}/backend/dist/"
+rsync -az --delete -e "ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no" \
+  "$ROOT_DIR/frontend/build/" "${SERVER_USER}@${SERVER_HOST}:${REMOTE_PATH}/frontend/build/"
+
 REMOTE_CMD=$(cat <<EOF
 set -euo pipefail
 cd "$REMOTE_PATH"
