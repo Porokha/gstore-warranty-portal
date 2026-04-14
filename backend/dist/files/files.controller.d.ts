@@ -8,6 +8,7 @@ export declare class FilesController {
     findAllByCase(caseId: number): Promise<import("./entities/case-file.entity").CaseFile[]>;
     findOne(id: number): Promise<import("./entities/case-file.entity").CaseFile>;
     downloadFile(id: number, res: Response): Promise<void>;
+    publicDownloadFile(id: number, caseNumber?: string, phone?: string, res?: Response): Promise<void>;
     remove(id: number): Promise<void>;
 }
 export {};

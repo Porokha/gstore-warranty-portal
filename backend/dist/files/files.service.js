@@ -85,6 +85,13 @@ let FilesService = class FilesService {
         }
         return file;
     }
+    async assertPublicDownloadAccess(id, caseNumber, phone) {
+        const file = await this.findOne(id);
+        if (!file.case_ || file.case_.case_number !== caseNumber || file.case_.customer_phone !== phone) {
+            throw new common_1.ForbiddenException('File access denied');
+        }
+        return file;
+    }
     async remove(id) {
         const file = await this.findOne(id);
         const filePath = (0, path_1.join)(process.cwd(), file.file_url);

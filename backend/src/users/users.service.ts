@@ -14,7 +14,11 @@ export class UsersService {
   ) {}
 
   async findByUsername(username: string): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { username } });
+    return this.usersRepository
+      .createQueryBuilder('user')
+      .addSelect('user.password_hash')
+      .where('user.username = :username', { username })
+      .getOne();
   }
 
   async findById(id: number): Promise<User | null> {
@@ -72,4 +76,3 @@ export class UsersService {
     return this.usersRepository.save(user);
   }
 }
-

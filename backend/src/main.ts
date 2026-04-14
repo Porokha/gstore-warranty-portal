@@ -2,7 +2,6 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { join } from 'path';
 import { AppModule } from './app.module';
 import * as crypto from 'crypto';
 
@@ -13,11 +12,6 @@ if (typeof globalThis.crypto === 'undefined') {
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  
-  // Serve static files from uploads directory
-  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
-    prefix: '/uploads',
-  });
 
   // Enable CORS
   const allowedOrigins = [
@@ -29,25 +23,16 @@ async function bootstrap() {
 
   app.enableCors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) {
-        console.log('CORS: Allowing request with no origin');
         return callback(null, true);
       }
-      
-      console.log(`CORS: Checking origin: ${origin}`);
-      console.log(`CORS: Allowed origins:`, allowedOrigins);
-      
+
       if (allowedOrigins.includes(origin)) {
-        console.log(`CORS: Origin allowed: ${origin}`);
         callback(null, true);
       } else {
-        // For development, allow all origins
         if (process.env.NODE_ENV === 'development') {
-          console.log(`CORS: Development mode - allowing origin: ${origin}`);
           callback(null, true);
         } else {
-          console.log(`CORS: Origin NOT allowed: ${origin}`);
           callback(new Error('Not allowed by CORS'));
         }
       }
@@ -65,17 +50,6 @@ async function bootstrap() {
       transform: true,
     }),
   );
-
-  // Log all incoming requests for debugging
-  app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`, {
-      origin: req.headers.origin,
-      hasAuth: !!req.headers.authorization,
-      contentType: req.headers['content-type'],
-      userAgent: req.headers['user-agent']?.substring(0, 50),
-    });
-    next();
-  });
 
   // API prefix
   app.setGlobalPrefix('api');
@@ -97,4 +71,3 @@ async function bootstrap() {
 }
 
 bootstrap();
-

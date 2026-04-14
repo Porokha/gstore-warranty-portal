@@ -41,81 +41,88 @@ export class ImportService {
     const results: any[] = [];
     const errors: any[] = [];
     const skipped: any[] = [];
+    const rows: any[] = [];
 
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const csvParser = require('csv-parser');
     return new Promise((resolve, reject) => {
       fs.createReadStream(filePath)
         .pipe(csvParser())
-        .on('data', async (row) => {
+        .on('data', (row) => {
+          rows.push(row);
+        })
+        .on('end', async () => {
           try {
-            // Map CSV row to CreateCaseDto
-            const caseData: CreateCaseDto = {
-              warranty_id: row.warranty_id ? parseInt(row.warranty_id) : undefined,
-              sku: row.sku || '',
-              imei: row.imei || undefined,
-              serial_number: row.serial_number || '',
-              device_type: row.device_type || 'Laptop',
-              product_title: row.product_title || '',
-              customer_name: row.customer_name || '',
-              customer_last_name: row.customer_last_name || undefined,
-              customer_phone: row.customer_phone || '',
-              customer_email: row.customer_email || undefined,
-              customer_initial_note: row.customer_initial_note || undefined,
-              order_id: row.order_id ? parseInt(row.order_id) : undefined,
-              product_id: row.product_id ? parseInt(row.product_id) : undefined,
-              assigned_technician_id: row.assigned_technician_id
-                ? parseInt(row.assigned_technician_id)
-                : undefined,
-              priority: (row.priority as Priority) || Priority.NORMAL,
-              tags: row.tags ? row.tags.split(',').map((t: string) => t.trim()) : undefined,
-              deadline_days: row.deadline_days ? parseInt(row.deadline_days) : 14,
-            };
+            for (const row of rows) {
+              try {
+                const caseData: CreateCaseDto = {
+                  warranty_id: row.warranty_id ? parseInt(row.warranty_id) : undefined,
+                  sku: row.sku || '',
+                  imei: row.imei || undefined,
+                  serial_number: row.serial_number || '',
+                  device_type: row.device_type || 'Laptop',
+                  product_title: row.product_title || '',
+                  customer_name: row.customer_name || '',
+                  customer_last_name: row.customer_last_name || undefined,
+                  customer_phone: row.customer_phone || '',
+                  customer_email: row.customer_email || undefined,
+                  customer_initial_note: row.customer_initial_note || undefined,
+                  order_id: row.order_id ? parseInt(row.order_id) : undefined,
+                  product_id: row.product_id ? parseInt(row.product_id) : undefined,
+                  assigned_technician_id: row.assigned_technician_id
+                    ? parseInt(row.assigned_technician_id)
+                    : undefined,
+                  priority: (row.priority as Priority) || Priority.NORMAL,
+                  tags: row.tags ? row.tags.split(',').map((t: string) => t.trim()) : undefined,
+                  deadline_days: row.deadline_days ? parseInt(row.deadline_days) : 14,
+                };
 
-            // Validate required fields
-            if (!caseData.sku || !caseData.serial_number || !caseData.product_title || !caseData.customer_name || !caseData.customer_phone) {
-              errors.push({ row, error: 'Missing required fields' });
-              return;
+                if (!caseData.sku || !caseData.serial_number || !caseData.product_title || !caseData.customer_name || !caseData.customer_phone) {
+                  errors.push({ row, error: 'Missing required fields' });
+                  continue;
+                }
+
+                const existingCase = await this.casesRepository.findOne({
+                  where: [
+                    { serial_number: caseData.serial_number, order_id: caseData.order_id || null },
+                    ...(caseData.order_id ? [{ order_id: caseData.order_id }] : []),
+                  ],
+                });
+
+                if (existingCase) {
+                  skipped.push({ row, reason: 'Duplicate case found' });
+                  continue;
+                }
+
+                const created = await this.casesService.create(caseData, userId);
+                results.push({ row, case: created });
+              } catch (error) {
+                if (error.message?.includes('already exists') || error.message?.includes('duplicate')) {
+                  skipped.push({ row, reason: error.message });
+                } else {
+                  errors.push({ row, error: error.message });
+                }
+              }
             }
 
-            // Check for duplicates - by serial_number and order_id if provided
-            const existingCase = await this.casesRepository.findOne({
-              where: [
-                { serial_number: caseData.serial_number, order_id: caseData.order_id || null },
-                ...(caseData.order_id ? [{ order_id: caseData.order_id }] : []),
-              ],
+            resolve({
+              success: true,
+              imported: results.length,
+              skipped: skipped.length,
+              errors: errors.length,
+              details: {
+                successful: results,
+                skipped,
+                failed: errors,
+              },
             });
-
-            if (existingCase) {
-              skipped.push({ row, reason: 'Duplicate case found' });
-              return;
-            }
-
-            const created = await this.casesService.create(caseData, userId);
-            results.push({ row, case: created });
           } catch (error) {
-            // Check if it's a duplicate error
-            if (error.message?.includes('already exists') || error.message?.includes('duplicate')) {
-              skipped.push({ row, reason: error.message });
-            } else {
-              errors.push({ row, error: error.message });
+            reject(error);
+          } finally {
+            if (fs.existsSync(filePath)) {
+              fs.unlinkSync(filePath);
             }
           }
-        })
-        .on('end', () => {
-          // Clean up file
-          fs.unlinkSync(filePath);
-          resolve({
-            success: true,
-            imported: results.length,
-            skipped: skipped.length,
-            errors: errors.length,
-            details: {
-              successful: results,
-              skipped,
-              failed: errors,
-            },
-          });
         })
         .on('error', (error) => {
           reject(error);
@@ -658,4 +665,3 @@ export class ImportService {
     return [headers.join(','), exampleRow.join(',')].join('\n');
   }
 }
-

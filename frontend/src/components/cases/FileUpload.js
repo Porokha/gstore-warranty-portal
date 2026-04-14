@@ -158,7 +158,7 @@ const FileUpload = ({ caseId }) => {
                     <Box display="flex" alignItems="center" gap={1}>
                       <Typography variant="body1">
                         <a
-                          href={filesService.getFileUrl(file.file_url)}
+                          href={filesService.getFileUrl(file)}
                           target="_blank"
                           rel="noopener noreferrer"
                         >
@@ -194,4 +194,3 @@ const FileUpload = ({ caseId }) => {
 };
 
 export default FileUpload;
-

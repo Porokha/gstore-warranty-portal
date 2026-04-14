@@ -11,7 +11,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var SettingsController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SettingsController = void 0;
 const common_1 = require("@nestjs/common");
@@ -20,48 +19,16 @@ const roles_guard_1 = require("../auth/guards/roles.guard");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 const user_entity_1 = require("../users/entities/user.entity");
 const settings_service_1 = require("./settings.service");
-let SettingsController = SettingsController_1 = class SettingsController {
+let SettingsController = class SettingsController {
     constructor(settingsService) {
         this.settingsService = settingsService;
-        this.logger = new common_1.Logger(SettingsController_1.name);
-        this.logger.log('SettingsController initialized');
     }
     async getApiKeys() {
-        this.logger.log('GET /api/settings/api-keys - Retrieving API keys');
-        const keys = await this.settingsService.getApiKeys();
-        this.logger.log(`📋 Retrieved API keys - URL: ${keys.woocommerce_url ? `set (${keys.woocommerce_url})` : 'missing'}, Key: ${keys.woocommerce_consumer_key ? `set (${keys.woocommerce_consumer_key.length} chars)` : 'missing'}, Secret: ${keys.woocommerce_consumer_secret ? `set (${keys.woocommerce_consumer_secret.length} chars)` : 'missing'}`);
-        return keys;
+        return this.settingsService.getApiKeys();
     }
     async setApiKeys(keys) {
-        this.logger.log('💾 POST /api/settings/api-keys - Saving API keys');
-        this.logger.log('📥 Received keys:', {
-            hasUrl: !!keys.woocommerce_url,
-            hasKey: !!keys.woocommerce_consumer_key,
-            hasSecret: !!keys.woocommerce_consumer_secret,
-            url: keys.woocommerce_url || 'MISSING',
-            keyLength: keys.woocommerce_consumer_key?.length || 0,
-            secretLength: keys.woocommerce_consumer_secret?.length || 0,
-        });
-        try {
-            await this.settingsService.setApiKeys(keys);
-            this.logger.log('✅ API keys saved to database');
-            const saved = await this.settingsService.getApiKeys();
-            this.logger.log(`🔍 Verified saved keys - URL: ${saved.woocommerce_url ? `set (${saved.woocommerce_url})` : 'missing'}, Key: ${saved.woocommerce_consumer_key ? `set (${saved.woocommerce_consumer_key.length} chars)` : 'missing'}, Secret: ${saved.woocommerce_consumer_secret ? `set (${saved.woocommerce_consumer_secret.length} chars)` : 'missing'}`);
-            return {
-                success: true,
-                message: 'API keys updated successfully',
-                saved: {
-                    hasUrl: !!saved.woocommerce_url,
-                    hasKey: !!saved.woocommerce_consumer_key,
-                    hasSecret: !!saved.woocommerce_consumer_secret,
-                }
-            };
-        }
-        catch (error) {
-            this.logger.error('❌ Failed to save API keys:', error);
-            this.logger.error('Error details:', error.message, error.stack);
-            throw new Error(`Failed to save API keys: ${error.message}`);
-        }
+        await this.settingsService.setApiKeys(keys);
+        return { success: true, message: 'API keys updated successfully' };
     }
     async getWooCommerceAutomation() {
         const enabled = await this.settingsService.get('WOOCOMMERCE_AUTOMATION_ENABLED');
@@ -99,7 +66,7 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], SettingsController.prototype, "setWooCommerceAutomation", null);
-exports.SettingsController = SettingsController = SettingsController_1 = __decorate([
+exports.SettingsController = SettingsController = __decorate([
     (0, common_1.Controller)('settings'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(user_entity_1.UserRole.ADMIN),

@@ -23,7 +23,11 @@ let UsersService = class UsersService {
         this.usersRepository = usersRepository;
     }
     async findByUsername(username) {
-        return this.usersRepository.findOne({ where: { username } });
+        return this.usersRepository
+            .createQueryBuilder('user')
+            .addSelect('user.password_hash')
+            .where('user.username = :username', { username })
+            .getOne();
     }
     async findById(id) {
         return this.usersRepository.findOne({ where: { id } });

@@ -4,6 +4,7 @@ import {
   Post,
   Delete,
   Param,
+  Query,
   UseGuards,
   UseInterceptors,
   UploadedFile,
@@ -11,6 +12,7 @@ import {
   HttpCode,
   HttpStatus,
   Res,
+  ForbiddenException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -102,6 +104,7 @@ export class FilesController {
   }
 
   @Get(':id/download')
+  @UseGuards(JwtAuthGuard)
   async downloadFile(
     @Param('id', ParseIntPipe) id: number,
     @Res() res: Response,
@@ -109,6 +112,25 @@ export class FilesController {
     const file = await this.filesService.findOne(id);
     const filePath = this.filesService.getFilePath(file.file_url);
     
+    return res.sendFile(filePath, {
+      root: process.cwd(),
+    });
+  }
+
+  @Get(':id/public-download')
+  async publicDownloadFile(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('case_number') caseNumber?: string,
+    @Query('phone') phone?: string,
+    @Res() res?: Response,
+  ) {
+    if (!caseNumber || !phone) {
+      throw new ForbiddenException('Missing public download credentials');
+    }
+
+    const file = await this.filesService.assertPublicDownloadAccess(id, caseNumber, phone);
+    const filePath = this.filesService.getFilePath(file.file_url);
+
     return res.sendFile(filePath, {
       root: process.cwd(),
     });

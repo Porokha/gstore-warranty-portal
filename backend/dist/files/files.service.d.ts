@@ -10,6 +10,7 @@ export declare class FilesService {
     uploadFile(caseId: number, file: any, uploadedBy: number): Promise<CaseFile>;
     findAllByCase(caseId: number): Promise<CaseFile[]>;
     findOne(id: number): Promise<CaseFile>;
+    assertPublicDownloadAccess(id: number, caseNumber: string, phone: string): Promise<CaseFile>;
     remove(id: number): Promise<void>;
     getFilePath(fileUrl: string): string;
 }

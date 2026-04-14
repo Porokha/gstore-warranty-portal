@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const core_1 = require("@nestjs/core");
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
-const path_1 = require("path");
 const app_module_1 = require("./app.module");
 const crypto = require("crypto");
 if (typeof globalThis.crypto === 'undefined') {
@@ -11,9 +10,6 @@ if (typeof globalThis.crypto === 'undefined') {
 }
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
-    app.useStaticAssets((0, path_1.join)(__dirname, '..', 'uploads'), {
-        prefix: '/uploads',
-    });
     const allowedOrigins = [
         process.env.FRONTEND_URL || 'http://localhost:3001',
         'http://localhost:3001',
@@ -23,22 +19,16 @@ async function bootstrap() {
     app.enableCors({
         origin: (origin, callback) => {
             if (!origin) {
-                console.log('CORS: Allowing request with no origin');
                 return callback(null, true);
             }
-            console.log(`CORS: Checking origin: ${origin}`);
-            console.log(`CORS: Allowed origins:`, allowedOrigins);
             if (allowedOrigins.includes(origin)) {
-                console.log(`CORS: Origin allowed: ${origin}`);
                 callback(null, true);
             }
             else {
                 if (process.env.NODE_ENV === 'development') {
-                    console.log(`CORS: Development mode - allowing origin: ${origin}`);
                     callback(null, true);
                 }
                 else {
-                    console.log(`CORS: Origin NOT allowed: ${origin}`);
                     callback(new Error('Not allowed by CORS'));
                 }
             }
@@ -52,15 +42,6 @@ async function bootstrap() {
         forbidNonWhitelisted: true,
         transform: true,
     }));
-    app.use((req, res, next) => {
-        console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`, {
-            origin: req.headers.origin,
-            hasAuth: !!req.headers.authorization,
-            contentType: req.headers['content-type'],
-            userAgent: req.headers['user-agent']?.substring(0, 50),
-        });
-        next();
-    });
     app.setGlobalPrefix('api');
     const config = new swagger_1.DocumentBuilder()
         .setTitle('ZEZVA Warranty Portal API')

@@ -15,10 +15,7 @@ dist/
 .next/
 out/
 *.tsbuildinfo
-
-# Exception: Allow prebuilt builds for deployment
-!frontend/build/
-!backend/dist/
+.build-timestamp
 
 # Exception: Allow prebuilt builds for deployment
 !frontend/build/

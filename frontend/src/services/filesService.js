@@ -23,10 +23,8 @@ export const filesService = {
     return response.data;
   },
 
-  getFileUrl: (fileUrl) => {
-    // Construct full URL to the file
-    const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000';
-    return `${baseUrl}${fileUrl}`;
+  getFileUrl: (file) => {
+    const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+    return `${baseUrl}/files/${file.id}/download`;
   },
 };
-

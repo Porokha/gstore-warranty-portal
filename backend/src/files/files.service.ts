@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -97,6 +98,20 @@ export class FilesService {
 
     if (!file) {
       throw new NotFoundException(`File with ID ${id} not found`);
+    }
+
+    return file;
+  }
+
+  async assertPublicDownloadAccess(
+    id: number,
+    caseNumber: string,
+    phone: string,
+  ): Promise<CaseFile> {
+    const file = await this.findOne(id);
+
+    if (!file.case_ || file.case_.case_number !== caseNumber || file.case_.customer_phone !== phone) {
+      throw new ForbiddenException('File access denied');
     }
 
     return file;

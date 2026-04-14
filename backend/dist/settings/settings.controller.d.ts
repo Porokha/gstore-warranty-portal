@@ -1,7 +1,6 @@
 import { SettingsService } from './settings.service';
 export declare class SettingsController {
     private settingsService;
-    private readonly logger;
     constructor(settingsService: SettingsService);
     getApiKeys(): Promise<{
         woocommerce_url?: string;
@@ -16,11 +15,6 @@ export declare class SettingsController {
     setApiKeys(keys: any): Promise<{
         success: boolean;
         message: string;
-        saved: {
-            hasUrl: boolean;
-            hasKey: boolean;
-            hasSecret: boolean;
-        };
     }>;
     getWooCommerceAutomation(): Promise<{
         enabled: boolean;

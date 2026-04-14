@@ -76,6 +76,30 @@ A comprehensive warranty and service management platform for Gstore with separat
 docker-compose up -d
 ```
 
+### Local Automation
+
+Use Node 20 for predictable local builds:
+
+```bash
+nvm use
+```
+
+This repo now includes a deployment helper that validates a clean working tree, runs both builds locally, pushes `main`, and redeploys the server over SSH:
+
+```bash
+./scripts/push-and-deploy.sh
+```
+
+Useful variants:
+
+```bash
+# Deploy a different branch
+./scripts/push-and-deploy.sh --branch your-branch
+
+# Redeploy the server without pushing new commits
+./scripts/push-and-deploy.sh --skip-push
+```
+
 ### 🚀 AWS Lightsail Deployment
 
 **Ready to deploy on AWS Lightsail?** Follow our step-by-step guides:

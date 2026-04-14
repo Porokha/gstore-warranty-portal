@@ -28,6 +28,8 @@ export class WarrantiesController {
   constructor(private warrantiesService: WarrantiesService) {}
 
   @Post()
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
   create(@Body() createDto: CreateWarrantyDto) {
     return this.warrantiesService.create(createDto);
   }
@@ -63,6 +65,8 @@ export class WarrantiesController {
   }
 
   @Put(':id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateWarrantyDto,
@@ -71,6 +75,8 @@ export class WarrantiesController {
   }
 
   @Post(':id/extend')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.OK)
   extendWarranty(
     @Param('id', ParseIntPipe) id: number,

@@ -45,6 +45,16 @@ let FilesController = class FilesController {
             root: process.cwd(),
         });
     }
+    async publicDownloadFile(id, caseNumber, phone, res) {
+        if (!caseNumber || !phone) {
+            throw new common_1.ForbiddenException('Missing public download credentials');
+        }
+        const file = await this.filesService.assertPublicDownloadAccess(id, caseNumber, phone);
+        const filePath = this.filesService.getFilePath(file.file_url);
+        return res.sendFile(filePath, {
+            root: process.cwd(),
+        });
+    }
     remove(id) {
         return this.filesService.remove(id);
     }
@@ -120,12 +130,23 @@ __decorate([
 ], FilesController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Get)(':id/download'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __param(1, (0, common_1.Res)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], FilesController.prototype, "downloadFile", null);
+__decorate([
+    (0, common_1.Get)(':id/public-download'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Query)('case_number')),
+    __param(2, (0, common_1.Query)('phone')),
+    __param(3, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, String, String, Object]),
+    __metadata("design:returntype", Promise)
+], FilesController.prototype, "publicDownloadFile", null);
 __decorate([
     (0, common_1.Delete)(':id'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
