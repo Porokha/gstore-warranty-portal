@@ -83,74 +83,34 @@ const WarrantySearchPage = () => {
     pdf.setFillColor(251, 249, 255);
     pdf.rect(0, 0, pageWidth, pageHeight, 'F');
 
-    // Add logo with maximum compression - skip if too large
-    // For better file size, we'll use text logo instead of image
+    // Add the dedicated high-resolution PDF logo without lossy recompression.
     try {
-      // Try to load and compress logo, but with very strict limits
       const logoImg = new Image();
       logoImg.crossOrigin = 'anonymous';
-      logoImg.src = process.env.PUBLIC_URL + '/brand-logo-horizontal.svg';
-      
+      logoImg.src = process.env.PUBLIC_URL + '/zezva-pdf.png';
+
       await new Promise((resolve) => {
         const timeout = setTimeout(() => {
-          // Timeout - use text logo instead
           pdf.setFontSize(28);
           pdf.setTextColor(24, 24, 27);
           pdf.setFont(undefined, 'bold');
           pdf.text('ZEZVA', pageWidth / 2, yPos, { align: 'center' });
           yPos += 12;
           resolve();
-        }, 2000); // Shorter timeout
-        
+        }, 2500);
+
         logoImg.onload = () => {
           clearTimeout(timeout);
           try {
-            // Very aggressive compression - max 100x100px
-            const canvas = document.createElement('canvas');
-            const maxWidth = 100;
-            const maxHeight = 100;
-            let width = Math.min(logoImg.width, maxWidth);
-            let height = Math.min(logoImg.height, maxHeight);
-
-            // Maintain aspect ratio
-            if (logoImg.width > logoImg.height) {
-              height = (logoImg.height * width) / logoImg.width;
-            } else {
-              width = (logoImg.width * height) / logoImg.height;
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(logoImg, 0, 0, width, height);
-
-            // Very aggressive compression - 0.5 quality
-            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.5);
-            
-            // Check data URL size - if still too large, skip
-            const dataSize = compressedDataUrl.length;
-            if (dataSize > 50000) { // If compressed > 50KB, skip image
-              // console.warn('Compressed logo still too large, using text instead');
-              pdf.setFontSize(28);
-              pdf.setTextColor(24, 24, 27);
-              pdf.setFont(undefined, 'bold');
-              pdf.text('ZEZVA', pageWidth / 2, yPos, { align: 'center' });
-              yPos += 12;
-              resolve();
-              return;
-            }
-            
-            // Small logo in PDF - 40mm
-            const logoWidth = 40;
-            const logoHeight = (height / width) * logoWidth;
+            const logoWidth = 78;
+            const logoHeight = (logoImg.height / logoImg.width) * logoWidth;
             const logoX = (pageWidth - logoWidth) / 2;
-            
-            pdf.addImage(compressedDataUrl, 'JPEG', logoX, yPos, logoWidth, logoHeight, undefined, 'FAST');
+
+            pdf.addImage(logoImg, 'PNG', logoX, yPos, logoWidth, logoHeight);
             yPos += logoHeight + 15;
             resolve();
           } catch (err) {
             clearTimeout(timeout);
-            // Use text logo as fallback
             pdf.setFontSize(28);
             pdf.setTextColor(24, 24, 27);
             pdf.setFont(undefined, 'bold');
@@ -161,7 +121,6 @@ const WarrantySearchPage = () => {
         };
         logoImg.onerror = () => {
           clearTimeout(timeout);
-          // Use text logo as fallback
           pdf.setFontSize(28);
           pdf.setTextColor(24, 24, 27);
           pdf.setFont(undefined, 'bold');
