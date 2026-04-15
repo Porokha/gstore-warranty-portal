@@ -171,12 +171,13 @@ const PublicHomePage = () => {
                       px: 3,
                       borderRadius: 2,
                       bgcolor: '#18181b',
+                      color: '#ffffff',
                       fontWeight: 600,
                       textTransform: 'none',
                       fontSize: '15px',
                       '&:hover': {
                         bgcolor: '#a576ff',
-                        color: '#111111',
+                        color: '#ffffff',
                       },
                     }}
                   >
