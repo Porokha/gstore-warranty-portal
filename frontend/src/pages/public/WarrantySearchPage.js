@@ -102,11 +102,20 @@ const WarrantySearchPage = () => {
         logoImg.onload = () => {
           clearTimeout(timeout);
           try {
+            const canvas = document.createElement('canvas');
+            const targetWidth = 1200;
+            const targetHeight = Math.round((logoImg.height / logoImg.width) * targetWidth);
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(logoImg, 0, 0, targetWidth, targetHeight);
+
             const logoWidth = 78;
-            const logoHeight = (logoImg.height / logoImg.width) * logoWidth;
+            const logoHeight = (targetHeight / targetWidth) * logoWidth;
             const logoX = (pageWidth - logoWidth) / 2;
 
-            pdf.addImage(logoImg, 'PNG', logoX, yPos, logoWidth, logoHeight);
+            pdf.addImage(canvas.toDataURL('PNG'), 'PNG', logoX, yPos, logoWidth, logoHeight);
             yPos += logoHeight + 15;
             resolve();
           } catch (err) {
