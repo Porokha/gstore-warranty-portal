@@ -83,11 +83,11 @@ const WarrantySearchPage = () => {
     pdf.setFillColor(251, 249, 255);
     pdf.rect(0, 0, pageWidth, pageHeight, 'F');
 
-    // Add the dedicated high-resolution PDF logo without lossy recompression.
+    // Rasterize the current brand logo at a sane size for crisp but compact PDFs.
     try {
       const logoImg = new Image();
       logoImg.crossOrigin = 'anonymous';
-      logoImg.src = process.env.PUBLIC_URL + '/zezva-pdf.png';
+      logoImg.src = process.env.PUBLIC_URL + '/brand-logo-horizontal.svg';
 
       await new Promise((resolve) => {
         const timeout = setTimeout(() => {
@@ -103,7 +103,7 @@ const WarrantySearchPage = () => {
           clearTimeout(timeout);
           try {
             const canvas = document.createElement('canvas');
-            const targetWidth = 1200;
+            const targetWidth = 600;
             const targetHeight = Math.round((logoImg.height / logoImg.width) * targetWidth);
             canvas.width = targetWidth;
             canvas.height = targetHeight;
