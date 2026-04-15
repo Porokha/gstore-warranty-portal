@@ -2,6 +2,26 @@ import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || '/api';
 
+const isStaffPath = (pathname) => pathname === '/staff' || pathname.startsWith('/staff/');
+
+const shouldRedirectToStaffLogin = (error) => {
+  if (error.response?.status !== 401) {
+    return false;
+  }
+
+  if (error.config?.skipAuthRedirect) {
+    return false;
+  }
+
+  const requestUrl = typeof error.config?.url === 'string' ? error.config.url : '';
+  if (requestUrl.startsWith('/public/')) {
+    return false;
+  }
+
+  const currentPath = window.location.pathname || '/';
+  return isStaffPath(currentPath);
+};
+
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -23,15 +43,12 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const errorData = error.response?.data;
-    const errorMessage = errorData?.message || errorData?.error || error.message;
-
-    if (error.response?.status === 401) {
+    if (shouldRedirectToStaffLogin(error)) {
       localStorage.removeItem('access_token');
       window.location.href = '/staff/login';
     }
 
-    return Promise.reject(errorMessage || error);
+    return Promise.reject(error);
   }
 );
 
