@@ -29,18 +29,20 @@ const PublicLayout = () => {
       >
         <Toolbar
           sx={{
-            justifyContent: 'space-between',
             minHeight: '60px !important',
             px: 3,
             gap: 2,
+            display: 'grid',
+            gridTemplateColumns: '1fr auto 1fr',
+            alignItems: 'center',
           }}
         >
           <Box
             sx={{
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'flex-start',
               cursor: 'pointer',
-              flex: '0 0 220px',
               '&:hover': { opacity: 0.9 },
             }}
             onClick={() => navigate('/')}
@@ -55,7 +57,7 @@ const PublicLayout = () => {
               justifyContent: 'center',
               alignItems: 'center',
               gap: { xs: 1, md: 2.5 },
-              flex: 1,
+              justifySelf: 'center',
             }}
           >
             {menuItems.map((item) => {
@@ -101,7 +103,7 @@ const PublicLayout = () => {
               border: '1px solid #e3d7ff',
               borderRadius: '999px',
               px: 1.5,
-              flex: '0 0 80px',
+              justifySelf: 'end',
               '&:hover': {
                 bgcolor: '#f3ecff',
               },
