@@ -95,6 +95,7 @@ REMOTE_CMD=$(cat <<EOF
 set -euo pipefail
 cd "$REMOTE_PATH"
 docker compose -f docker-compose.prod.prebuilt.yml up -d db
+./scripts/run-db-migrations.sh docker-compose.prod.prebuilt.yml
 docker compose -f docker-compose.prod.prebuilt.yml up -d --build backend
 docker compose -f docker-compose.prod.prebuilt.yml up -d frontend
 docker compose ps

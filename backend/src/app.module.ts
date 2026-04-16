@@ -19,6 +19,7 @@ import { SlaModule } from './sla/sla.module';
 import { StatisticsModule } from './statistics/statistics.module';
 import { ImportModule } from './import/import.module';
 import { SettingsModule } from './settings/settings.module';
+import { ShopModule } from './shop/shop.module';
 import { DatabaseConfig } from './config/database.config';
 
 @Module({
@@ -46,9 +47,9 @@ import { DatabaseConfig } from './config/database.config';
     StatisticsModule,
     ImportModule,
     SettingsModule,
+    ShopModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
-

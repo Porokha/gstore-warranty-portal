@@ -188,3 +188,45 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     INDEX idx_created_at (created_at)
 );
 
+-- Shop Products
+CREATE TABLE IF NOT EXISTS shop_products (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    slug VARCHAR(255) NOT NULL UNIQUE,
+    title VARCHAR(255) NOT NULL,
+    device_category ENUM('smartphones', 'laptops', 'accessories') NOT NULL DEFAULT 'smartphones',
+    part_category ENUM('board', 'screen', 'sensor', 'battery', 'camera', 'speaker', 'charging', 'accessory') NOT NULL DEFAULT 'accessory',
+    inventory_source ENUM('oem', 'third-party') NOT NULL DEFAULT 'third-party',
+    issue_label VARCHAR(255),
+    description TEXT,
+    image_url VARCHAR(500),
+    price DECIMAL(10, 2) NOT NULL,
+    sale_price DECIMAL(10, 2),
+    service_price DECIMAL(10, 2),
+    stock_quantity INT DEFAULT 0,
+    sort_order INT DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Shop Orders
+CREATE TABLE IF NOT EXISTS shop_orders (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    order_number VARCHAR(100) NOT NULL UNIQUE,
+    status ENUM('draft', 'new', 'processing', 'completed', 'cancelled') NOT NULL DEFAULT 'new',
+    customer_name VARCHAR(255) NOT NULL,
+    customer_last_name VARCHAR(255),
+    customer_phone VARCHAR(50) NOT NULL,
+    customer_email VARCHAR(255),
+    items_json JSON NOT NULL,
+    subtotal_amount DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    service_amount DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    total_amount DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    currency VARCHAR(10) NOT NULL DEFAULT 'GEL',
+    payment_method VARCHAR(100),
+    customer_note TEXT,
+    admin_note TEXT,
+    source VARCHAR(100) NOT NULL DEFAULT 'prototype_checkout',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);

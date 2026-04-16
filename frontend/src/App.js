@@ -27,6 +27,11 @@ import ShopPage from './pages/public/ShopPage';
 import TermsPage from './pages/public/TermsPage';
 import { AuthProvider } from './contexts/AuthContext';
 import PrivateRoute from './components/common/PrivateRoute';
+import ShopAdminRoute from './components/common/ShopAdminRoute';
+import ShopAdminLayout from './components/common/ShopAdminLayout';
+import ShopAdminLoginPage from './pages/shop-admin/ShopAdminLoginPage';
+import ShopAdminProductsPage from './pages/shop-admin/ShopAdminProductsPage';
+import ShopAdminOrdersPage from './pages/shop-admin/ShopAdminOrdersPage';
 
 const queryClient = new QueryClient();
 
@@ -126,6 +131,15 @@ function App() {
                   <Route path="statistics" element={<StatisticsPage />} />
                   <Route path="settings" element={<SettingsPage />} />
                   <Route path="audit" element={<AuditPage />} />
+                </Route>
+              </Route>
+
+              <Route path="/shop/admin/login" element={<ShopAdminLoginPage />} />
+              <Route path="/shop/admin" element={<ShopAdminRoute />}>
+                <Route element={<ShopAdminLayout />}>
+                  <Route index element={<Navigate to="/shop/admin/products" replace />} />
+                  <Route path="products" element={<ShopAdminProductsPage />} />
+                  <Route path="orders" element={<ShopAdminOrdersPage />} />
                 </Route>
               </Route>
 

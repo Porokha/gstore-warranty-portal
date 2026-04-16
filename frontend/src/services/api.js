@@ -3,23 +3,32 @@ import axios from 'axios';
 const API_URL = process.env.REACT_APP_API_URL || '/api';
 
 const isStaffPath = (pathname) => pathname === '/staff' || pathname.startsWith('/staff/');
+const isShopAdminPath = (pathname) => pathname === '/shop/admin' || pathname.startsWith('/shop/admin/');
 
-const shouldRedirectToStaffLogin = (error) => {
+const getAuthRedirectPath = (error) => {
   if (error.response?.status !== 401) {
-    return false;
+    return null;
   }
 
   if (error.config?.skipAuthRedirect) {
-    return false;
+    return null;
   }
 
   const requestUrl = typeof error.config?.url === 'string' ? error.config.url : '';
   if (requestUrl.startsWith('/public/')) {
-    return false;
+    return null;
   }
 
   const currentPath = window.location.pathname || '/';
-  return isStaffPath(currentPath);
+  if (isShopAdminPath(currentPath)) {
+    return '/shop/admin/login';
+  }
+
+  if (isStaffPath(currentPath)) {
+    return '/staff/login';
+  }
+
+  return null;
 };
 
 const api = axios.create({
@@ -43,9 +52,10 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (shouldRedirectToStaffLogin(error)) {
+    const redirectPath = getAuthRedirectPath(error);
+    if (redirectPath) {
       localStorage.removeItem('access_token');
-      window.location.href = '/staff/login';
+      window.location.href = redirectPath;
     }
 
     return Promise.reject(error);
