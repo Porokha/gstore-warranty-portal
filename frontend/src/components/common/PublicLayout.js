@@ -30,11 +30,16 @@ const PublicLayout = () => {
         <Toolbar
           sx={{
             minHeight: '60px !important',
-            px: 3,
+            px: { xs: 1.25, sm: 2, md: 3 },
             gap: 2,
             display: 'grid',
             gridTemplateColumns: '1fr auto 1fr',
             alignItems: 'center',
+            '@media (max-width:480px)': {
+              minHeight: '52px !important',
+              gap: 0.75,
+              gridTemplateColumns: 'auto 1fr auto',
+            },
           }}
         >
           <Box
@@ -47,7 +52,14 @@ const PublicLayout = () => {
             }}
             onClick={() => navigate('/')}
           >
-            <Box sx={{ '& img': { width: '110px !important', maxWidth: '110px' } }}>
+            <Box
+              sx={{
+                '& img': { width: '110px !important', maxWidth: '110px' },
+                '@media (max-width:480px)': {
+                  '& img': { width: '76px !important', maxWidth: '76px' },
+                },
+              }}
+            >
               <ZevaLogo size="large" variant="default" />
             </Box>
           </Box>
@@ -58,6 +70,9 @@ const PublicLayout = () => {
               alignItems: 'center',
               gap: { xs: 1, md: 2.5 },
               justifySelf: 'center',
+              '@media (max-width:480px)': {
+                gap: 0.25,
+              },
             }}
           >
             {menuItems.map((item) => {
@@ -78,6 +93,11 @@ const PublicLayout = () => {
                     minWidth: 'auto',
                     px: 1,
                     borderRadius: 999,
+                    '@media (max-width:480px)': {
+                      fontSize: '10px',
+                      px: 0.3,
+                      minWidth: 0,
+                    },
                     '&:hover': {
                       bgcolor: '#f3ecff',
                       color: '#18181b',
@@ -104,6 +124,17 @@ const PublicLayout = () => {
               borderRadius: '999px',
               px: 1.5,
               justifySelf: 'end',
+              minWidth: 'auto',
+              '@media (max-width:480px)': {
+                fontSize: '11px',
+                px: 0.85,
+                '& .MuiButton-startIcon': {
+                  marginRight: 0.35,
+                },
+                '& .MuiSvgIcon-root': {
+                  fontSize: '14px',
+                },
+              },
               '&:hover': {
                 bgcolor: '#f3ecff',
               },

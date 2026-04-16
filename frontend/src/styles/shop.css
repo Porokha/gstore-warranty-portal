@@ -1757,7 +1757,6 @@ body.zpos-fullscreen .container {
 }
 
 .zpos-tab.is-active {
-  background: transparent;
   color: #ffffff;
   font-weight: 600;
   box-shadow: none;

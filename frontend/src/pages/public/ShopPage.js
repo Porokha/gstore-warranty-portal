@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from 'react-query';
 import '../../styles/shop.css';
 import { shopService } from '../../services/shopService';
@@ -55,6 +55,8 @@ const ShopPage = () => {
   const [cart, setCart] = useState([]);
   const [activeProduct, setActiveProduct] = useState(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [tabIndicatorStyle, setTabIndicatorStyle] = useState({});
+  const tabsRef = useRef(null);
 
   const { data: products = [] } = useQuery(['shop-public-products'], () =>
     shopService.getPublicProducts(),
@@ -66,6 +68,36 @@ const ShopPage = () => {
       document.body.classList.remove('zpos-fullscreen');
     };
   }, []);
+
+  useLayoutEffect(() => {
+    const updateIndicator = () => {
+      const tabsNode = tabsRef.current;
+      if (!tabsNode) {
+        return;
+      }
+
+      const activeTab = tabsNode.querySelector('.zpos-tab.is-active');
+      if (!activeTab) {
+        return;
+      }
+
+      const tabsRect = tabsNode.getBoundingClientRect();
+      const activeRect = activeTab.getBoundingClientRect();
+      const inset = 4;
+
+      setTabIndicatorStyle({
+        width: `${activeRect.width}px`,
+        transform: `translateX(${activeRect.left - tabsRect.left - inset}px)`,
+      });
+    };
+
+    updateIndicator();
+    window.addEventListener('resize', updateIndicator);
+
+    return () => {
+      window.removeEventListener('resize', updateIndicator);
+    };
+  }, [tab]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -336,7 +368,7 @@ const ShopPage = () => {
                 <span>Filters</span>
               </button>
 
-              <div className="zpos-tabs" role="tablist" aria-label="Device tabs">
+              <div className="zpos-tabs" role="tablist" aria-label="Device tabs" ref={tabsRef}>
                 {['all', 'smartphones', 'laptops'].map((value) => (
                   <button
                     key={value}
@@ -347,6 +379,11 @@ const ShopPage = () => {
                     <span>{value === 'all' ? 'All' : labelForDevice[value]}</span>
                   </button>
                 ))}
+                <span
+                  className="zpos-tab-indicator"
+                  aria-hidden="true"
+                  style={tabIndicatorStyle}
+                />
               </div>
 
               <label className="zpos-search">
