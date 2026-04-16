@@ -270,7 +270,7 @@ const WarrantySearchPage = () => {
       <Container maxWidth="md">
         <Box display="flex" alignItems="center" gap={1} mb={3}>
           <IconButton
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/warranty-service')}
             aria-label="back"
             sx={{
               bgcolor: '#ffffff',

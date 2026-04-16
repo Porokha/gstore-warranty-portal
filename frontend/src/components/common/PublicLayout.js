@@ -1,13 +1,20 @@
 import React from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
-import { Box, AppBar, Toolbar, Button, IconButton } from '@mui/material';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Box, AppBar, Toolbar, Button } from '@mui/material';
 import { Language as LanguageIcon } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import ZevaLogo from './ZevaLogo';
 
 const PublicLayout = () => {
   const navigate = useNavigate();
-  const { i18n } = useTranslation();
+  const location = useLocation();
+  const { i18n, t } = useTranslation();
+
+  const menuItems = [
+    { label: t('public.menuShop'), path: '/' },
+    { label: t('public.menuService'), path: '/warranty-service' },
+    { label: t('public.menuTerms'), path: '/terms' },
+  ];
   
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -23,8 +30,9 @@ const PublicLayout = () => {
         <Toolbar
           sx={{
             justifyContent: 'space-between',
-            minHeight: '70px !important',
+            minHeight: '60px !important',
             px: 3,
+            gap: 2,
           }}
         >
           <Box
@@ -32,11 +40,52 @@ const PublicLayout = () => {
               display: 'flex',
               alignItems: 'center',
               cursor: 'pointer',
+              flex: '0 0 220px',
               '&:hover': { opacity: 0.9 },
             }}
             onClick={() => navigate('/')}
           >
-            <ZevaLogo size="large" variant="default" />
+            <Box sx={{ '& img': { width: '110px !important', maxWidth: '110px' } }}>
+              <ZevaLogo size="large" variant="default" />
+            </Box>
+          </Box>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: { xs: 1, md: 2.5 },
+              flex: 1,
+            }}
+          >
+            {menuItems.map((item) => {
+              const isActive =
+                item.path === '/'
+                  ? location.pathname === '/'
+                  : location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
+
+              return (
+                <Button
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  sx={{
+                    color: isActive ? '#18181b' : '#5b5568',
+                    textTransform: 'none',
+                    fontWeight: isActive ? 800 : 700,
+                    fontSize: { xs: '13px', md: '14px' },
+                    minWidth: 'auto',
+                    px: 1,
+                    borderRadius: 999,
+                    '&:hover': {
+                      bgcolor: '#f3ecff',
+                      color: '#18181b',
+                    },
+                  }}
+                >
+                  {item.label}
+                </Button>
+              );
+            })}
           </Box>
           <Button
             onClick={() => {
@@ -52,6 +101,7 @@ const PublicLayout = () => {
               border: '1px solid #e3d7ff',
               borderRadius: '999px',
               px: 1.5,
+              flex: '0 0 80px',
               '&:hover': {
                 bgcolor: '#f3ecff',
               },

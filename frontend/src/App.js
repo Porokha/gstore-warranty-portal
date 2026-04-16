@@ -23,6 +23,8 @@ import ImportPage from './pages/staff/ImportPage';
 import PublicHomePage from './pages/public/PublicHomePage';
 import WarrantySearchPage from './pages/public/WarrantySearchPage';
 import CaseSearchPage from './pages/public/CaseSearchPage';
+import ShopPage from './pages/public/ShopPage';
+import TermsPage from './pages/public/TermsPage';
 import { AuthProvider } from './contexts/AuthContext';
 import PrivateRoute from './components/common/PrivateRoute';
 
@@ -99,7 +101,9 @@ function App() {
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<PublicLayout />}>
-                <Route index element={<PublicHomePage />} />
+                <Route index element={<ShopPage />} />
+                <Route path="warranty-service" element={<PublicHomePage />} />
+                <Route path="terms" element={<TermsPage />} />
                 <Route path="search/warranty" element={<WarrantySearchPage />} />
                 <Route path="search/case" element={<CaseSearchPage />} />
               </Route>

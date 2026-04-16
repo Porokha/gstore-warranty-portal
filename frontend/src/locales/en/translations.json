@@ -234,6 +234,11 @@
     "price": "Price"
   },
   "public": {
+    "menuShop": "Shop",
+    "menuService": "Warranty&Service",
+    "menuTerms": "Terms",
+    "shopPlaceholder": "Shop page is temporarily empty.",
+    "termsPlaceholder": "Terms page is temporarily empty.",
     "checkWarrantyStatus": "Check your warranty status and service cases",
     "searchWarranty": "Search Warranty",
     "searchWarrantyDescription": "Find your warranty information by warranty ID and phone number",

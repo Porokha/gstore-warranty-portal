@@ -76,7 +76,7 @@ const CaseSearchPage = () => {
       <Container maxWidth="md">
         <Box display="flex" alignItems="center" gap={1} mb={3}>
           <IconButton
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/warranty-service')}
             aria-label="back"
             sx={{
               bgcolor: '#ffffff',
@@ -88,7 +88,7 @@ const CaseSearchPage = () => {
           </IconButton>
           <Typography
             variant="h4"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/warranty-service')}
             sx={{
               cursor: 'pointer',
               textDecoration: 'none',
