@@ -54,6 +54,7 @@ const ShopPage = () => {
   const [sources, setSources] = useState(['oem', 'third-party']);
   const [cart, setCart] = useState([]);
   const [activeProduct, setActiveProduct] = useState(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const { data: products = [] } = useQuery(['shop-public-products'], () =>
     shopService.getPublicProducts(),
@@ -63,6 +64,29 @@ const ShopPage = () => {
     document.body.classList.add('zpos-fullscreen');
     return () => {
       document.body.classList.remove('zpos-fullscreen');
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 920) {
+        setFiltersOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setActiveProduct(null);
+        setFiltersOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
 
@@ -110,6 +134,7 @@ const ShopPage = () => {
     setPriceMin('');
     setPriceMax('');
     setSources(['oem', 'third-party']);
+    setFiltersOpen(false);
   };
 
   const addToCart = (product, mode) => {
@@ -161,7 +186,11 @@ const ShopPage = () => {
   };
 
   return (
-    <div id="zpos-root" className="zpos-root" aria-label="ZEZVA shop">
+    <div
+      id="zpos-root"
+      className={`zpos-root ${filtersOpen ? 'zpos-filters-open' : ''}`}
+      aria-label="ZEZVA shop"
+    >
       <div className="zpos-shop-banner">
         <div className="zpos-brand">
           <div className="zpos-brand-icon" aria-hidden="true">
@@ -293,6 +322,20 @@ const ShopPage = () => {
         <main className="zpos-main">
           <div className="zpos-main-sticky">
             <div className="zpos-toolbar">
+              <button
+                type="button"
+                className="zpos-filter-toggle"
+                onClick={() => setFiltersOpen(true)}
+                aria-label="Open filters"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 7h16"></path>
+                  <path d="M7 12h10"></path>
+                  <path d="M10 17h4"></path>
+                </svg>
+                <span>Filters</span>
+              </button>
+
               <div className="zpos-tabs" role="tablist" aria-label="Device tabs">
                 {['all', 'smartphones', 'laptops'].map((value) => (
                   <button

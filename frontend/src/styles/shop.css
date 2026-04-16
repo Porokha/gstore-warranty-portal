@@ -60,6 +60,8 @@ body.zpos-fullscreen .container {
   padding: 16px;
   color: var(--zpos-text);
   font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+  width: min(90vw, 2000px);
+  margin: 0 auto;
 }
 
 .zpos-shop-banner,
@@ -1505,9 +1507,8 @@ body.zpos-fullscreen .container {
 
   .zpos-shell {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto;
-    min-height: 0;
-    height: auto;
+    grid-template-rows: minmax(0, 1fr) auto;
+    height: calc(100vh - 108px);
     position: relative;
   }
 
@@ -1517,28 +1518,43 @@ body.zpos-fullscreen .container {
   }
 
   .zpos-main {
-    grid-column: auto;
-    grid-row: auto;
-    height: auto;
+    grid-column: 1;
+    grid-row: 1;
+    height: 100%;
     min-height: 0;
   }
 
   .zpos-sidebar {
-    position: static;
-    width: 100%;
-    max-width: none;
-    height: auto;
-    z-index: auto;
-    border-right: none;
-    transform: none;
-    transition: none;
-    box-shadow: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(320px, calc(100vw - 28px));
+    max-width: 320px;
+    height: 100vh;
+    z-index: 30;
+    border-right: 1px solid var(--zpos-border);
+    transform: translateX(-102%);
+    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 18px 0 36px rgba(20, 30, 46, 0.12);
     background: var(--zpos-panel);
     overflow: auto;
   }
 
   .zpos-root::before {
-    display: none;
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(18, 27, 38, 0.34);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 24;
+  }
+
+  .zpos-root.zpos-filters-open::before {
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .zpos-cart {
@@ -1636,6 +1652,7 @@ body.zpos-fullscreen .container {
 @media (max-width: 618px) {
   .zpos-root {
     padding: 10px;
+    width: calc(100vw - 20px);
   }
 
   .zpos-toolbar,
