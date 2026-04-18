@@ -673,44 +673,44 @@ const MaintenancePage = () => {
 
     if (activeGame === 'snake') {
       return (
-        <div className="maintenance-mobile-controls">
+        <div className="maintenance-mobile-controls maintenance-mobile-controls--dpad">
           <button
             type="button"
-            className="maintenance-control-btn maintenance-control-btn--wide"
+            className="maintenance-control-btn maintenance-control-btn--up"
             onPointerDown={() => pulseControl('ArrowUp')}
           >
-            Up
+            ↑
           </button>
           <button
             type="button"
-            className="maintenance-control-btn"
+            className="maintenance-control-btn maintenance-control-btn--left"
             onPointerDown={() => pulseControl('ArrowLeft')}
           >
-            Left
+            ←
           </button>
           <button
             type="button"
-            className="maintenance-control-btn"
+            className="maintenance-control-btn maintenance-control-btn--down"
             onPointerDown={() => pulseControl('ArrowDown')}
           >
-            Down
+            ↓
           </button>
           <button
             type="button"
-            className="maintenance-control-btn"
+            className="maintenance-control-btn maintenance-control-btn--right"
             onPointerDown={() => pulseControl('ArrowRight')}
           >
-            Right
+            →
           </button>
         </div>
       );
     }
 
     return (
-      <div className="maintenance-mobile-controls">
+      <div className="maintenance-mobile-controls maintenance-mobile-controls--invaders">
         <button
           type="button"
-          className="maintenance-control-btn"
+          className="maintenance-control-btn maintenance-control-btn--left"
           onPointerDown={() => holdControl('ArrowLeft', true)}
           onPointerUp={() => holdControl('ArrowLeft', false)}
           onPointerCancel={() => holdControl('ArrowLeft', false)}
@@ -720,14 +720,14 @@ const MaintenancePage = () => {
         </button>
         <button
           type="button"
-          className="maintenance-control-btn maintenance-control-btn--wide"
+          className="maintenance-control-btn maintenance-control-btn--shoot"
           onPointerDown={() => pulseControl('Space')}
         >
-          Fire
+          Shoot
         </button>
         <button
           type="button"
-          className="maintenance-control-btn"
+          className="maintenance-control-btn maintenance-control-btn--right"
           onPointerDown={() => holdControl('ArrowRight', true)}
           onPointerUp={() => holdControl('ArrowRight', false)}
           onPointerCancel={() => holdControl('ArrowRight', false)}

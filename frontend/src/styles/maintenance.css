@@ -259,6 +259,47 @@
   grid-column: span 3;
 }
 
+.maintenance-mobile-controls--dpad {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.maintenance-mobile-controls--dpad .maintenance-control-btn--up {
+  grid-column: 2;
+}
+
+.maintenance-mobile-controls--dpad .maintenance-control-btn--left {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.maintenance-mobile-controls--dpad .maintenance-control-btn--down {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.maintenance-mobile-controls--dpad .maintenance-control-btn--right {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.maintenance-mobile-controls--invaders {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.maintenance-mobile-controls--invaders .maintenance-control-btn--left {
+  grid-column: 1;
+}
+
+.maintenance-mobile-controls--invaders .maintenance-control-btn--right {
+  grid-column: 2;
+}
+
+.maintenance-mobile-controls--invaders .maintenance-control-btn--shoot {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: min(240px, 100%);
+}
+
 .maintenance-leaderboard-head {
   display: flex;
   justify-content: space-between;
