@@ -720,13 +720,6 @@ const MaintenancePage = () => {
         </button>
         <button
           type="button"
-          className="maintenance-control-btn maintenance-control-btn--shoot"
-          onPointerDown={() => pulseControl('Space')}
-        >
-          Shoot
-        </button>
-        <button
-          type="button"
           className="maintenance-control-btn maintenance-control-btn--right"
           onPointerDown={() => holdControl('ArrowRight', true)}
           onPointerUp={() => holdControl('ArrowRight', false)}
@@ -734,6 +727,13 @@ const MaintenancePage = () => {
           onPointerLeave={() => holdControl('ArrowRight', false)}
         >
           Right
+        </button>
+        <button
+          type="button"
+          className="maintenance-control-btn maintenance-control-btn--shoot"
+          onPointerDown={() => pulseControl('Space')}
+        >
+          Shoot
         </button>
       </div>
     );
