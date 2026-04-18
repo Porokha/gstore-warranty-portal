@@ -25,6 +25,7 @@ import WarrantySearchPage from './pages/public/WarrantySearchPage';
 import CaseSearchPage from './pages/public/CaseSearchPage';
 import ShopPage from './pages/public/ShopPage';
 import TermsPage from './pages/public/TermsPage';
+import MaintenancePage from './pages/public/MaintenancePage';
 import { AuthProvider } from './contexts/AuthContext';
 import PrivateRoute from './components/common/PrivateRoute';
 import ShopAdminRoute from './components/common/ShopAdminRoute';
@@ -34,6 +35,7 @@ import ShopAdminProductsPage from './pages/shop-admin/ShopAdminProductsPage';
 import ShopAdminOrdersPage from './pages/shop-admin/ShopAdminOrdersPage';
 
 const queryClient = new QueryClient();
+const isPublicMaintenanceMode = process.env.REACT_APP_PUBLIC_MAINTENANCE_MODE === 'true';
 
 const theme = createTheme({
   palette: {
@@ -105,13 +107,24 @@ function App() {
           <Router>
             <Routes>
               {/* Public Routes */}
-              <Route path="/" element={<PublicLayout />}>
-                <Route index element={<ShopPage />} />
-                <Route path="warranty-service" element={<PublicHomePage />} />
-                <Route path="terms" element={<TermsPage />} />
-                <Route path="search/warranty" element={<WarrantySearchPage />} />
-                <Route path="search/case" element={<CaseSearchPage />} />
-              </Route>
+              {isPublicMaintenanceMode ? (
+                <>
+                  <Route path="/" element={<MaintenancePage />} />
+                  <Route path="/maintenance" element={<MaintenancePage />} />
+                  <Route path="/warranty-service" element={<Navigate to="/maintenance" replace />} />
+                  <Route path="/terms" element={<Navigate to="/maintenance" replace />} />
+                  <Route path="/search/warranty" element={<Navigate to="/maintenance" replace />} />
+                  <Route path="/search/case" element={<Navigate to="/maintenance" replace />} />
+                </>
+              ) : (
+                <Route path="/" element={<PublicLayout />}>
+                  <Route index element={<ShopPage />} />
+                  <Route path="warranty-service" element={<PublicHomePage />} />
+                  <Route path="terms" element={<TermsPage />} />
+                  <Route path="search/warranty" element={<WarrantySearchPage />} />
+                  <Route path="search/case" element={<CaseSearchPage />} />
+                </Route>
+              )}
 
               {/* Staff Routes */}
               <Route path="/staff/login" element={<LoginPage />} />
@@ -143,7 +156,10 @@ function App() {
                 </Route>
               </Route>
 
-              <Route path="*" element={<Navigate to="/" replace />} />
+              <Route
+                path="*"
+                element={<Navigate to={isPublicMaintenanceMode ? '/maintenance' : '/'} replace />}
+              />
             </Routes>
           </Router>
         </AuthProvider>

@@ -1,0 +1,220 @@
+.maintenance-mode-body {
+  overflow: hidden;
+}
+
+.maintenance-page {
+  --maintenance-primary: #a87ffb;
+  --maintenance-bg: #0b0b0e;
+  --maintenance-surface: #16161e;
+  --maintenance-text: #e0e0e0;
+  min-height: 100vh;
+  background: var(--maintenance-bg);
+  color: var(--maintenance-text);
+  font-family: 'Courier New', 'SFMono-Regular', Consolas, monospace;
+}
+
+.maintenance-loader {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--maintenance-bg);
+  z-index: 9999;
+  opacity: 1;
+  transition: opacity 0.8s ease;
+}
+
+.maintenance-loader.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.maintenance-logo-loader {
+  position: relative;
+  width: min(300px, 70vw);
+}
+
+.maintenance-logo-base,
+.maintenance-logo-fill {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.maintenance-logo-base {
+  filter: grayscale(100%) opacity(0.15);
+}
+
+.maintenance-logo-fill {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(100% 0 0 0);
+  animation: maintenancePulseFill 3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  filter: drop-shadow(0 0 15px rgba(168, 127, 251, 0.5));
+}
+
+.maintenance-main {
+  display: none;
+  opacity: 0;
+  min-height: 100vh;
+  padding: 2rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: maintenanceFadeIn 1s ease forwards;
+}
+
+.maintenance-main.is-visible {
+  display: flex;
+}
+
+.maintenance-header {
+  width: min(150px, 50vw);
+  margin-bottom: 2rem;
+}
+
+.maintenance-header img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 0 8px rgba(168, 127, 251, 0.3));
+}
+
+.maintenance-hero {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.maintenance-hero h1 {
+  margin-bottom: 0.5rem;
+  font-size: clamp(2rem, 4vw, 2.5rem);
+  color: var(--maintenance-primary);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-shadow: 0 0 10px rgba(168, 127, 251, 0.4);
+}
+
+.maintenance-hero p {
+  max-width: 500px;
+  font-size: 1.1rem;
+  line-height: 1.5;
+  opacity: 0.8;
+}
+
+.maintenance-console {
+  width: 100%;
+  max-width: 600px;
+  padding: 1rem;
+  background: var(--maintenance-surface);
+  border: 1px solid rgba(168, 127, 251, 0.3);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.maintenance-tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.maintenance-tab-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--maintenance-text);
+  font: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+}
+
+.maintenance-tab-btn:hover {
+  color: var(--maintenance-primary);
+}
+
+.maintenance-tab-btn.is-active {
+  border-color: var(--maintenance-primary);
+  color: var(--maintenance-primary);
+  box-shadow: 0 0 10px rgba(168, 127, 251, 0.2) inset;
+}
+
+.maintenance-game {
+  display: none;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  background: #000000;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  min-height: 420px;
+}
+
+.maintenance-game.is-active {
+  display: flex;
+}
+
+.maintenance-game canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  background: #000000;
+}
+
+.maintenance-controls-hint {
+  margin-top: 1rem;
+  text-align: center;
+  font-size: 0.85rem;
+  opacity: 0.5;
+}
+
+@keyframes maintenancePulseFill {
+  0% {
+    clip-path: inset(100% 0 0 0);
+  }
+
+  40% {
+    clip-path: inset(48% 0 0 0);
+  }
+
+  60% {
+    clip-path: inset(48% 0 0 0);
+  }
+
+  100% {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes maintenanceFadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 680px) {
+  .maintenance-main {
+    padding: 1rem;
+    justify-content: flex-start;
+  }
+
+  .maintenance-tabs {
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .maintenance-tab-btn {
+    font-size: 0.9rem;
+    padding: 0.45rem 0.8rem;
+  }
+
+  .maintenance-game {
+    min-height: auto;
+  }
+
+  .maintenance-controls-hint {
+    font-size: 0.78rem;
+  }
+}
