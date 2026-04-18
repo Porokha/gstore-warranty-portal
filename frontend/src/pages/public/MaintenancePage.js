@@ -8,6 +8,7 @@ const scoreLabels = {
   snake: 'Apple score',
   invaders: 'Combat score',
 };
+const pulseKeyDurationMs = 90;
 
 const createMatrix = (width, height) =>
   Array.from({ length: height }, () => new Array(width).fill(0));
@@ -186,6 +187,7 @@ const MaintenancePage = () => {
     let score = 0;
     let dropCounter = 0;
     let lastTime = 0;
+    const getDropInterval = () => Math.max(260, 1000 - Math.floor(score / 300) * 70);
 
     const drawMatrix = (matrix, offset) => {
       matrix.forEach((row, y) => {
@@ -337,7 +339,7 @@ const MaintenancePage = () => {
         keyStateRef.current.ArrowUp = false;
       }
 
-      if (keyStateRef.current.ArrowDown || dropCounter > 1000) {
+      if (keyStateRef.current.ArrowDown || dropCounter > getDropInterval()) {
         dropPlayer();
         dropCounter = 0;
         keyStateRef.current.ArrowDown = false;
@@ -622,9 +624,124 @@ const MaintenancePage = () => {
     }
   };
 
+  const holdControl = (code, isPressed) => {
+    keyStateRef.current[code] = isPressed;
+  };
+
+  const pulseControl = (code) => {
+    keyStateRef.current[code] = true;
+    window.setTimeout(() => {
+      keyStateRef.current[code] = false;
+    }, pulseKeyDurationMs);
+  };
+
+  const renderMobileControls = () => {
+    if (activeGame === 'tetris') {
+      return (
+        <div className="maintenance-mobile-controls">
+          <button
+            type="button"
+            className="maintenance-control-btn"
+            onPointerDown={() => pulseControl('ArrowLeft')}
+          >
+            Left
+          </button>
+          <button
+            type="button"
+            className="maintenance-control-btn"
+            onPointerDown={() => pulseControl('ArrowUp')}
+          >
+            Rotate
+          </button>
+          <button
+            type="button"
+            className="maintenance-control-btn"
+            onPointerDown={() => pulseControl('ArrowRight')}
+          >
+            Right
+          </button>
+          <button
+            type="button"
+            className="maintenance-control-btn maintenance-control-btn--wide"
+            onPointerDown={() => pulseControl('ArrowDown')}
+          >
+            Drop
+          </button>
+        </div>
+      );
+    }
+
+    if (activeGame === 'snake') {
+      return (
+        <div className="maintenance-mobile-controls">
+          <button
+            type="button"
+            className="maintenance-control-btn maintenance-control-btn--wide"
+            onPointerDown={() => pulseControl('ArrowUp')}
+          >
+            Up
+          </button>
+          <button
+            type="button"
+            className="maintenance-control-btn"
+            onPointerDown={() => pulseControl('ArrowLeft')}
+          >
+            Left
+          </button>
+          <button
+            type="button"
+            className="maintenance-control-btn"
+            onPointerDown={() => pulseControl('ArrowDown')}
+          >
+            Down
+          </button>
+          <button
+            type="button"
+            className="maintenance-control-btn"
+            onPointerDown={() => pulseControl('ArrowRight')}
+          >
+            Right
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="maintenance-mobile-controls">
+        <button
+          type="button"
+          className="maintenance-control-btn"
+          onPointerDown={() => holdControl('ArrowLeft', true)}
+          onPointerUp={() => holdControl('ArrowLeft', false)}
+          onPointerCancel={() => holdControl('ArrowLeft', false)}
+          onPointerLeave={() => holdControl('ArrowLeft', false)}
+        >
+          Left
+        </button>
+        <button
+          type="button"
+          className="maintenance-control-btn maintenance-control-btn--wide"
+          onPointerDown={() => pulseControl('Space')}
+        >
+          Fire
+        </button>
+        <button
+          type="button"
+          className="maintenance-control-btn"
+          onPointerDown={() => holdControl('ArrowRight', true)}
+          onPointerUp={() => holdControl('ArrowRight', false)}
+          onPointerCancel={() => holdControl('ArrowRight', false)}
+          onPointerLeave={() => holdControl('ArrowRight', false)}
+        >
+          Right
+        </button>
+      </div>
+    );
+  };
+
   const controlHint =
     activeGame === 'tetris'
-      ? 'Controls: Arrow keys to move, Up to rotate, Down to drop.'
+      ? 'Controls: Arrow keys to move, Up to rotate, Down to drop. Speed rises with score.'
       : activeGame === 'snake'
         ? 'Controls: Arrow keys to steer. Snake wraps through edges.'
         : 'Controls: Left/Right to move, Space to shoot.';
@@ -698,6 +815,7 @@ const MaintenancePage = () => {
           </div>
 
           <div className="maintenance-controls-hint">{controlHint}</div>
+          {renderMobileControls()}
         </section>
 
         <section className="maintenance-leaderboard">

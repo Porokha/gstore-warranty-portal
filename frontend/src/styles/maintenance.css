@@ -236,6 +236,29 @@
   color: var(--maintenance-muted);
 }
 
+.maintenance-mobile-controls {
+  display: none;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.maintenance-control-btn {
+  padding: 0.85rem 0.7rem;
+  border: 1px solid rgba(168, 127, 251, 0.35);
+  border-radius: 12px;
+  background: rgba(168, 127, 251, 0.1);
+  color: var(--maintenance-text);
+  font: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  touch-action: manipulation;
+}
+
+.maintenance-control-btn--wide {
+  grid-column: span 3;
+}
+
 .maintenance-leaderboard-head {
   display: flex;
   justify-content: space-between;
@@ -419,5 +442,9 @@
 
   .maintenance-score-list {
     grid-template-columns: 1fr;
+  }
+
+  .maintenance-mobile-controls {
+    display: grid;
   }
 }
