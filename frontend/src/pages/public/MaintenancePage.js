@@ -403,9 +403,16 @@ const MaintenancePage = () => {
       snake.x += snake.dx;
       snake.y += snake.dy;
 
-      if (snake.x < 0 || snake.x >= canvas.width || snake.y < 0 || snake.y >= canvas.height) {
-        handleGameOver('snake', score, 'You hit the wall');
-        return;
+      if (snake.x < 0) {
+        snake.x = canvas.width - grid;
+      } else if (snake.x >= canvas.width) {
+        snake.x = 0;
+      }
+
+      if (snake.y < 0) {
+        snake.y = canvas.height - grid;
+      } else if (snake.y >= canvas.height) {
+        snake.y = 0;
       }
 
       snake.cells.unshift({ x: snake.x, y: snake.y });
@@ -619,7 +626,7 @@ const MaintenancePage = () => {
     activeGame === 'tetris'
       ? 'Controls: Arrow keys to move, Up to rotate, Down to drop.'
       : activeGame === 'snake'
-        ? 'Controls: Arrow keys to steer. Walls are fatal.'
+        ? 'Controls: Arrow keys to steer. Snake wraps through edges.'
         : 'Controls: Left/Right to move, Space to shoot.';
 
   const visibleScores = leaderboards[activeGame] || [];
