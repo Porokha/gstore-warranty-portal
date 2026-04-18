@@ -6,6 +6,8 @@ import { ServiceCase } from '../cases/entities/service-case.entity';
 import { CaseStatusHistory } from '../cases/entities/case-status-history.entity';
 import { SearchWarrantyDto } from './dto/search-warranty.dto';
 import { SearchCaseDto } from './dto/search-case.dto';
+import { CreateArcadeScoreDto } from './dto/create-arcade-score.dto';
+import { ArcadeGame, ArcadeScore } from './entities/arcade-score.entity';
 
 @Injectable()
 export class PublicService {
@@ -16,6 +18,8 @@ export class PublicService {
     private casesRepository: Repository<ServiceCase>,
     @InjectRepository(CaseStatusHistory)
     private historyRepository: Repository<CaseStatusHistory>,
+    @InjectRepository(ArcadeScore)
+    private arcadeScoresRepository: Repository<ArcadeScore>,
   ) {}
 
   async searchWarranty(searchDto: SearchWarrantyDto) {
@@ -130,6 +134,46 @@ export class PublicService {
             last_name: case_.assigned_technician.last_name,
           }
         : null,
+    };
+  }
+
+  async getArcadeScores() {
+    const games = [ArcadeGame.TETRIS, ArcadeGame.SNAKE, ArcadeGame.INVADERS];
+    const result: Record<string, any[]> = {};
+
+    for (const game of games) {
+      const scores = await this.arcadeScoresRepository.find({
+        where: { game },
+        order: { score: 'DESC', created_at: 'ASC' },
+        take: 10,
+      });
+
+      result[game] = scores.map((entry) => ({
+        id: entry.id,
+        player_name: entry.player_name,
+        score: entry.score,
+        created_at: entry.created_at,
+      }));
+    }
+
+    return result;
+  }
+
+  async createArcadeScore(createDto: CreateArcadeScoreDto) {
+    const score = this.arcadeScoresRepository.create({
+      game: createDto.game,
+      player_name: createDto.player_name.trim().slice(0, 60),
+      score: createDto.score,
+    });
+
+    const saved = await this.arcadeScoresRepository.save(score);
+
+    return {
+      id: saved.id,
+      game: saved.game,
+      player_name: saved.player_name,
+      score: saved.score,
+      created_at: saved.created_at,
     };
   }
 }

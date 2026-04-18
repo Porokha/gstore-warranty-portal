@@ -230,3 +230,13 @@ CREATE TABLE IF NOT EXISTS shop_orders (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+-- Arcade Scores
+CREATE TABLE IF NOT EXISTS arcade_scores (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    game ENUM('tetris', 'snake', 'invaders') NOT NULL,
+    player_name VARCHAR(60) NOT NULL,
+    score INT UNSIGNED NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_arcade_scores_game_score (game, score, created_at)
+);

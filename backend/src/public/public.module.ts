@@ -5,13 +5,13 @@ import { PublicService } from './public.service';
 import { Warranty } from '../warranties/entities/warranty.entity';
 import { ServiceCase } from '../cases/entities/service-case.entity';
 import { CaseStatusHistory } from '../cases/entities/case-status-history.entity';
+import { ArcadeScore } from './entities/arcade-score.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Warranty, ServiceCase, CaseStatusHistory]),
+    TypeOrmModule.forFeature([Warranty, ServiceCase, CaseStatusHistory, ArcadeScore]),
   ],
   controllers: [PublicController],
   providers: [PublicService],
 })
 export class PublicModule {}
-
