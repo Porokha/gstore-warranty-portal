@@ -1,4 +1,9 @@
 .maintenance-mode-body {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.maintenance-loader-active {
   overflow: hidden;
 }
 
@@ -184,7 +189,7 @@
 }
 
 .maintenance-game.is-active {
-  display: block;
+  display: flex;
 }
 
 .maintenance-game-frame {

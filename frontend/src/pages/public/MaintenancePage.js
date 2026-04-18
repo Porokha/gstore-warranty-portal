@@ -55,7 +55,7 @@ const MaintenancePage = () => {
   }, [activeGame]);
 
   useEffect(() => {
-    document.body.classList.add('maintenance-mode-body');
+    document.body.classList.add('maintenance-mode-body', 'maintenance-loader-active');
 
     const timer = window.setTimeout(() => {
       setShowMainContent(true);
@@ -63,10 +63,18 @@ const MaintenancePage = () => {
 
     return () => {
       window.clearTimeout(timer);
-      document.body.classList.remove('maintenance-mode-body');
+      document.body.classList.remove('maintenance-mode-body', 'maintenance-loader-active');
       stopGameLoops();
     };
   }, []);
+
+  useEffect(() => {
+    if (showMainContent) {
+      document.body.classList.remove('maintenance-loader-active');
+    } else {
+      document.body.classList.add('maintenance-loader-active');
+    }
+  }, [showMainContent]);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
