@@ -129,8 +129,8 @@ body.zpos-fullscreen .container {
 
 .zpos-shop-step {
   position: relative;
-  min-height: 260px;
-  padding: 28px 22px 24px;
+  min-height: 222px;
+  padding: 22px 20px 18px;
   border-right: 1px solid rgba(111, 66, 217, 0.12);
   transition:
     transform 0.22s ease,
@@ -200,7 +200,7 @@ body.zpos-fullscreen .container {
   justify-content: center;
   width: 48px;
   height: 48px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   border-radius: 14px;
   border: 1px solid rgba(165, 118, 255, 0.26);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(235, 227, 255, 0.96));
@@ -215,7 +215,7 @@ body.zpos-fullscreen .container {
 }
 
 .zpos-shop-step-label {
-  margin: 0 0 8px;
+  margin: 0 0 6px;
   color: #7d61d8;
   font-size: 11px;
   font-weight: 700;
@@ -233,11 +233,11 @@ body.zpos-fullscreen .container {
 }
 
 .zpos-shop-step-desc {
-  margin: 12px 0 0;
+  margin: 10px 0 0;
   max-width: 28ch;
   color: var(--zpos-muted);
   font-size: 14px;
-  line-height: 1.65;
+  line-height: 1.55;
 }
 
 .zpos-shop-step-connector {
@@ -1691,7 +1691,7 @@ body.zpos-fullscreen .container {
   }
 
   .zpos-shop-step {
-    min-height: 230px;
+    min-height: 204px;
     border-bottom: 1px solid rgba(111, 66, 217, 0.12);
   }
 
