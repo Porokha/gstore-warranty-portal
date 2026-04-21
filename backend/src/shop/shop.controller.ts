@@ -10,6 +10,7 @@ import {
   Post,
   Put,
   Query,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -18,6 +19,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import * as fs from 'fs';
 import * as path from 'path';
+import { Response } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -73,6 +75,14 @@ export class ShopController {
     }
 
     return this.shopService.importProductsFromCsv(file.path);
+  }
+
+  @Get('products/import/csv/template')
+  downloadProductsTemplate(@Res() res: Response) {
+    const csv = this.shopService.generateProductsTemplateCsv();
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=shop-products-template.csv');
+    res.send(csv);
   }
 
   @Post('products/upload-image')

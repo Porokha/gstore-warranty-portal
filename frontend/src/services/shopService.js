@@ -47,6 +47,13 @@ export const shopService = {
     return response.data;
   },
 
+  downloadProductsCsvTemplate: async () => {
+    const response = await api.get('/shop/admin/products/import/csv/template', {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
   uploadProductImage: async (file) => {
     const formData = new FormData();
     formData.append('file', file);

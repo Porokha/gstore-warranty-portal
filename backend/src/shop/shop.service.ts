@@ -243,6 +243,68 @@ export class ShopService {
     };
   }
 
+  generateProductsTemplateCsv() {
+    const header = [
+      'title',
+      'slug',
+      'device_category',
+      'part_category',
+      'inventory_source',
+      'issue_label',
+      'description',
+      'image_url',
+      'price',
+      'sale_price',
+      'service_price',
+      'stock_quantity',
+      'sort_order',
+      'is_active',
+    ];
+
+    const rows = [
+      [
+        'iPhone 15 OLED Display',
+        'iphone-15-oled-display',
+        'smartphones',
+        'screen',
+        'oem',
+        'Cracked front glass',
+        'Premium replacement display assembly for iPhone 15.',
+        'https://example.com/iphone15-display.jpg',
+        '699',
+        '649',
+        '759',
+        '12',
+        '10',
+        'true',
+      ],
+      [
+        'MacBook Air M2 Battery Pack',
+        'macbook-air-m2-battery-pack',
+        'laptops',
+        'battery',
+        'third-party',
+        'Battery health degraded',
+        'Replacement battery pack for MacBook Air M2 service jobs.',
+        '',
+        '299',
+        '',
+        '349',
+        '5',
+        '20',
+        'true',
+      ],
+    ];
+
+    return [header, ...rows]
+      .map((row) =>
+        row
+          .map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`)
+          .join(','),
+      )
+      .join('\n');
+  }
+
   async listOrders(scope: ShopScope = 'active') {
     await this.purgeExpiredTrash();
 

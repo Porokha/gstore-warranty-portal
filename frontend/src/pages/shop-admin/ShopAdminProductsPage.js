@@ -23,6 +23,7 @@ import {
 } from '@mui/material';
 import {
   Add,
+  Download,
   DeleteOutline,
   FileUpload,
   RestoreFromTrash,
@@ -176,6 +177,25 @@ const ShopAdminProductsPage = () => {
     },
     onError: (mutationError) => {
       setError(mutationError.response?.data?.message || 'Failed to upload image.');
+      setMessage('');
+    },
+  });
+
+  const downloadTemplateMutation = useMutation(() => shopService.downloadProductsCsvTemplate(), {
+    onSuccess: (blob) => {
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'shop-products-template.csv';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      setMessage('CSV template downloaded.');
+      setError('');
+    },
+    onError: (mutationError) => {
+      setError(mutationError.response?.data?.message || 'Failed to download CSV template.');
       setMessage('');
     },
   });
@@ -362,6 +382,15 @@ const ShopAdminProductsPage = () => {
                   sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
                 >
                   {importMutation.isLoading ? 'Importing...' : 'Import CSV'}
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<Download />}
+                  onClick={() => downloadTemplateMutation.mutate()}
+                  disabled={downloadTemplateMutation.isLoading}
+                  sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
+                >
+                  {downloadTemplateMutation.isLoading ? 'Preparing...' : 'Download Template'}
                 </Button>
                 <Button
                   onClick={() => applyProductToForm(null)}
