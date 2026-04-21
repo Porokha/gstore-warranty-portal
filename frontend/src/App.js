@@ -126,6 +126,16 @@ function App() {
                 </Route>
               )}
 
+              <Route path="/preview" element={<PrivateRoute />}>
+                <Route element={<PublicLayout />}>
+                  <Route index element={<ShopPage />} />
+                  <Route path="warranty-service" element={<PublicHomePage />} />
+                  <Route path="terms" element={<TermsPage />} />
+                  <Route path="search/warranty" element={<WarrantySearchPage />} />
+                  <Route path="search/case" element={<CaseSearchPage />} />
+                </Route>
+              </Route>
+
               {/* Staff Routes */}
               <Route path="/staff/login" element={<LoginPage />} />
               <Route path="/staff" element={<PrivateRoute />}>
