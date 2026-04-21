@@ -321,27 +321,7 @@ const ShopPage = () => {
       aria-label="ZEZVA shop"
     >
       <div className="zpos-shop-banner">
-        <div className="zpos-shop-banner-head">
-          <div className="zpos-brand">
-            <div className="zpos-brand-icon" aria-hidden="true">
-              <img src="/shop-assets/svg/logo-icon.svg" alt="" />
-            </div>
-            <div className="zpos-brand-text" aria-hidden="true">
-              <img src="/shop-assets/svg/logo-text.svg" alt="" />
-            </div>
-          </div>
-          <div className="zpos-shop-banner-status">
-            <span className="zpos-shop-banner-status-dot" aria-hidden="true"></span>
-            Public Catalog
-          </div>
-        </div>
-
         <div className="zpos-shop-banner-copy">
-          <div className="zpos-shop-banner-eyebrow">
-            <span className="zpos-shop-banner-eyebrow-line" aria-hidden="true"></span>
-            <span>How Zezva Shop Works</span>
-          </div>
-          <span className="zpos-prototype-chip">Shop Preview</span>
           <h1>
             Parts sourcing,
             <em> made clearer.</em>

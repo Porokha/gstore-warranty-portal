@@ -75,66 +75,30 @@ body.zpos-fullscreen .container {
   position: relative;
   display: grid;
   gap: 22px;
-  padding: 28px;
-  border-radius: var(--zpos-radius-xl);
-  background:
-    radial-gradient(circle at top left, rgba(165, 118, 255, 0.18), transparent 34%),
-    radial-gradient(circle at right bottom, rgba(91, 124, 255, 0.1), transparent 28%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 239, 255, 0.96)),
-    var(--zpos-panel);
+  padding: 18px 0 8px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   overflow: hidden;
 }
 
 .zpos-shop-banner::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(135deg, rgba(165, 118, 255, 0.05), transparent 42%),
-    linear-gradient(0deg, rgba(63, 94, 214, 0.04), transparent 50%);
-  pointer-events: none;
-}
-
-.zpos-shop-banner > * {
-  position: relative;
-  z-index: 1;
-}
-
-.zpos-shop-banner-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  display: none;
 }
 
 .zpos-shop-banner-copy {
   min-width: 0;
-}
-
-.zpos-shop-banner-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 14px;
-  color: var(--zpos-brand-deep);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.zpos-shop-banner-eyebrow-line {
-  width: 30px;
-  height: 2px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--zpos-brand), #a576ff);
+  text-align: center;
+  justify-self: center;
 }
 
 .zpos-shop-banner-copy h1 {
-  margin: 12px 0 0;
+  margin: 0;
   font-size: clamp(28px, 4vw, 46px);
   line-height: 1;
-  max-width: 11ch;
+  max-width: none;
+  white-space: nowrap;
 }
 
 .zpos-shop-banner-copy h1 em {
@@ -148,31 +112,7 @@ body.zpos-fullscreen .container {
   font-size: 15px;
   line-height: 1.7;
   color: var(--zpos-muted);
-}
-
-.zpos-shop-banner-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(111, 66, 217, 0.16);
-  background: rgba(255, 255, 255, 0.74);
-  color: #34265f;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  box-shadow: 0 10px 24px rgba(111, 66, 217, 0.08);
-  white-space: nowrap;
-}
-
-.zpos-shop-banner-status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #9f7cff, #6f42d9);
-  box-shadow: 0 0 0 4px rgba(165, 118, 255, 0.14);
+  text-align: center;
 }
 
 .zpos-shop-banner-grid {
@@ -324,7 +264,10 @@ body.zpos-fullscreen .container {
 .zpos-shop-banner-trust {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
   gap: 10px 18px;
+  text-align: center;
 }
 
 .zpos-shop-banner-trust span {
@@ -1735,18 +1678,12 @@ body.zpos-fullscreen .container {
     align-items: start;
   }
 
-  .zpos-operator,
-  .zpos-shop-banner-status {
+  .zpos-operator {
     justify-self: start;
   }
 
   .zpos-shop-banner {
-    padding: 22px 18px;
-  }
-
-  .zpos-shop-banner-head {
-    flex-direction: column;
-    align-items: flex-start;
+    padding: 14px 0 4px;
   }
 
   .zpos-shop-banner-grid {
@@ -1904,8 +1841,8 @@ body.zpos-fullscreen .container {
 
 @media (max-width: 560px) {
   .zpos-shop-banner-copy h1 {
-    max-width: none;
     font-size: clamp(26px, 9vw, 36px);
+    white-space: normal;
   }
 
   .zpos-shop-banner-copy p {
