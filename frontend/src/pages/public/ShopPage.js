@@ -45,6 +45,103 @@ const labelForSource = {
 
 const formatMoney = (value) => `₾${Number(value || 0).toFixed(2)}`;
 
+const shopJourney = [
+  {
+    step: '01',
+    label: 'Browse',
+    title: 'Choose your device',
+    description: 'Start with the right family and narrow down the catalog before you compare parts.',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="M7.25 4.75h9.5A2.25 2.25 0 0 1 19 7v10a2.25 2.25 0 0 1-2.25 2.25h-9.5A2.25 2.25 0 0 1 5 17V7a2.25 2.25 0 0 1 2.25-2.25Z"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M10 7.75h4M11 16.25h2"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        />
+      </svg>
+    ),
+  },
+  {
+    step: '02',
+    label: 'Match',
+    title: 'Find the exact part',
+    description: 'Search by issue, component family, and repair flow to avoid mismatched replacements.',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="m17 17 3.5 3.5M19 10.5a8.5 8.5 0 1 1-17 0 8.5 8.5 0 0 1 17 0Z"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M8.25 10.5h4.5M10.5 8.25v4.5"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        />
+      </svg>
+    ),
+  },
+  {
+    step: '03',
+    label: 'Select',
+    title: 'Pick OEM or service-ready',
+    description: 'Compare origin, bundled repair pricing, and future payment options before checkout.',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="M12 3.75 4.5 7.5V12c0 4.35 2.95 8.31 7.5 9.45 4.55-1.14 7.5-5.1 7.5-9.45V7.5L12 3.75Z"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="m9.25 12 1.75 1.75 3.75-4"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
+  },
+  {
+    step: '04',
+    label: 'Receive',
+    title: 'Get it fast across Georgia',
+    description: 'Orders move into fulfillment quickly, with the shop prepared for checkout and delivery expansion.',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="M3.75 7.75h11.5v7.5H3.75v-7.5ZM15.25 10h2.41c.45 0 .88.2 1.16.55l1.43 1.8c.19.24.3.53.3.83v2.07h-5.3V10Z"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M7.5 18.25a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0ZM18.5 18.25a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0ZM15.25 18.25H9"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
+  },
+];
+
 const ShopPage = () => {
   const [tab, setTab] = useState('all');
   const [parts, setParts] = useState([]);
@@ -224,22 +321,56 @@ const ShopPage = () => {
       aria-label="ZEZVA shop"
     >
       <div className="zpos-shop-banner">
-        <div className="zpos-brand">
-          <div className="zpos-brand-icon" aria-hidden="true">
-            <img src="/shop-assets/svg/logo-icon.svg" alt="" />
+        <div className="zpos-shop-banner-head">
+          <div className="zpos-brand">
+            <div className="zpos-brand-icon" aria-hidden="true">
+              <img src="/shop-assets/svg/logo-icon.svg" alt="" />
+            </div>
+            <div className="zpos-brand-text" aria-hidden="true">
+              <img src="/shop-assets/svg/logo-text.svg" alt="" />
+            </div>
           </div>
-          <div className="zpos-brand-text" aria-hidden="true">
-            <img src="/shop-assets/svg/logo-text.svg" alt="" />
+          <div className="zpos-shop-banner-status">
+            <span className="zpos-shop-banner-status-dot" aria-hidden="true"></span>
+            Public Catalog
           </div>
         </div>
+
         <div className="zpos-shop-banner-copy">
+          <div className="zpos-shop-banner-eyebrow">
+            <span className="zpos-shop-banner-eyebrow-line" aria-hidden="true"></span>
+            <span>How Zezva Shop Works</span>
+          </div>
           <span className="zpos-prototype-chip">Shop Preview</span>
-          <h1>ZEZVA Parts Store</h1>
-          <p>Prototype storefront for service parts, repair bundles, and future checkout integration.</p>
+          <h1>
+            Parts sourcing,
+            <em> made clearer.</em>
+          </h1>
+          <p>
+            A cleaner Zezva storefront for parts discovery, repair bundles, and the checkout flow
+            you will expand next.
+          </p>
         </div>
-        <div className="zpos-shop-banner-side">
-          <span className="zpos-operator-label">Live Area</span>
-          <strong>Public catalog</strong>
+
+        <div className="zpos-shop-banner-grid" aria-label="Shop process">
+          {shopJourney.map((item, index) => (
+            <article className="zpos-shop-step" key={item.step}>
+              <div className="zpos-shop-step-mark">{item.step}</div>
+              <div className="zpos-shop-step-icon">{item.icon}</div>
+              <p className="zpos-shop-step-label">{item.label}</p>
+              <h2>{item.title}</h2>
+              <p className="zpos-shop-step-desc">{item.description}</p>
+              {index < shopJourney.length - 1 ? (
+                <span className="zpos-shop-step-connector" aria-hidden="true"></span>
+              ) : null}
+            </article>
+          ))}
+        </div>
+
+        <div className="zpos-shop-banner-trust" aria-label="Shop highlights">
+          <span>Service bundles ready</span>
+          <span>OEM and third-party stock</span>
+          <span>Fast local delivery flow</span>
         </div>
       </div>
 
