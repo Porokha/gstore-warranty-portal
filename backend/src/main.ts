@@ -4,6 +4,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import * as crypto from 'crypto';
+import { join } from 'path';
 
 // Polyfill for crypto.randomUUID if not available (for NestJS schedule)
 if (typeof globalThis.crypto === 'undefined') {
@@ -63,6 +64,9 @@ async function bootstrap() {
 
   // API prefix
   app.setGlobalPrefix('api');
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+    prefix: '/uploads',
+  });
 
   // Swagger documentation
   const config = new DocumentBuilder()

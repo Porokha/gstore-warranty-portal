@@ -69,7 +69,7 @@ const ShopAdminLayout = () => {
                     sx={{
                       textTransform: 'none',
                       fontWeight: 700,
-                      borderRadius: 999,
+                      borderRadius: 3,
                       px: 2,
                       color: active ? '#ffffff' : '#26334d',
                       bgcolor: active ? '#172033' : 'transparent',
@@ -90,7 +90,7 @@ const ShopAdminLayout = () => {
                 sx={{
                   px: 1.5,
                   py: 1,
-                  borderRadius: 999,
+                  borderRadius: 3,
                   bgcolor: '#eef3fb',
                   border: '1px solid #dbe4f3',
                 }}
@@ -108,7 +108,7 @@ const ShopAdminLayout = () => {
                   textTransform: 'none',
                   fontWeight: 700,
                   color: '#172033',
-                  borderRadius: 999,
+                  borderRadius: 3,
                 }}
               >
                 Logout

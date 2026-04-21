@@ -64,7 +64,7 @@ const ShopAdminLoginPage = () => {
           elevation={0}
           sx={{
             p: { xs: 3, md: 4 },
-            borderRadius: 4,
+            borderRadius: 3,
             border: '1px solid #dce4f0',
             boxShadow: '0 30px 80px rgba(14, 23, 38, 0.12)',
           }}

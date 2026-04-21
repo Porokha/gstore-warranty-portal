@@ -75,6 +75,9 @@ export class ShopOrder {
   @Column({ default: 'prototype_checkout' })
   source: string;
 
+  @Column({ type: 'datetime', nullable: true })
+  deleted_at: Date | null;
+
   @CreateDateColumn()
   created_at: Date;
 

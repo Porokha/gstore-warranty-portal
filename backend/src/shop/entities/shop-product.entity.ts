@@ -87,6 +87,9 @@ export class ShopProduct {
   @Column({ type: 'boolean', default: true })
   is_active: boolean;
 
+  @Column({ type: 'datetime', nullable: true })
+  deleted_at: Date | null;
+
   @CreateDateColumn()
   created_at: Date;
 
