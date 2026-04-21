@@ -4,6 +4,7 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   Chip,
   Grid,
   IconButton,
@@ -29,6 +30,7 @@ import {
   UploadFile,
 } from '@mui/icons-material';
 import { shopService } from '../../services/shopService';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 
 const emptyForm = {
   title: '',
@@ -58,9 +60,18 @@ const ShopAdminProductsPage = () => {
   const imageInputRef = useRef(null);
   const [scope, setScope] = useState('active');
   const [selectedId, setSelectedId] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [confirmState, setConfirmState] = useState({
+    open: false,
+    title: '',
+    message: '',
+    confirmText: 'Confirm',
+    severity: 'warning',
+    onConfirm: null,
+  });
 
   const { data: products = [], isLoading } = useQuery(['shop-admin-products', scope], () =>
     shopService.getAdminProducts(scope),
@@ -68,6 +79,7 @@ const ShopAdminProductsPage = () => {
 
   useEffect(() => {
     setSelectedId(null);
+    setSelectedIds([]);
     setForm(emptyForm);
   }, [scope]);
 
@@ -172,6 +184,8 @@ const ShopAdminProductsPage = () => {
     () => products.find((product) => product.id === selectedId) || null,
     [products, selectedId],
   );
+  const allSelected =
+    products.length > 0 && selectedIds.length > 0 && selectedIds.length === products.length;
 
   const applyProductToForm = (product) => {
     if (!product) {
@@ -181,6 +195,7 @@ const ShopAdminProductsPage = () => {
     }
 
     setSelectedId(product.id);
+    setSelectedIds([product.id]);
     setForm({
       title: product.title || '',
       slug: product.slug || '',
@@ -223,17 +238,100 @@ const ShopAdminProductsPage = () => {
   };
 
   const handleSoftDelete = (productId) => {
-    if (!window.confirm('Move this product to trash?')) {
-      return;
-    }
-    deleteMutation.mutate(productId);
+    setConfirmState({
+      open: true,
+      title: 'Move Product To Trash',
+      message: 'This product will be hidden from the catalog and moved to trash.',
+      confirmText: 'Delete',
+      severity: 'warning',
+      onConfirm: () => deleteMutation.mutate(productId),
+    });
   };
 
   const handlePermanentDelete = (productId) => {
-    if (!window.confirm('Delete this product permanently?')) {
+    setConfirmState({
+      open: true,
+      title: 'Delete Product Permanently',
+      message: 'This action cannot be undone. The product will be removed completely.',
+      confirmText: 'Delete Permanently',
+      severity: 'error',
+      onConfirm: () => permanentDeleteMutation.mutate(productId),
+    });
+  };
+
+  const handleSelectProduct = (productId, checked) => {
+    setSelectedIds((current) =>
+      checked ? [...new Set([...current, productId])] : current.filter((id) => id !== productId),
+    );
+  };
+
+  const handleSelectAll = (checked) => {
+    setSelectedIds(checked ? products.map((product) => product.id) : []);
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedIds.length === 0) {
       return;
     }
-    permanentDeleteMutation.mutate(productId);
+
+    setConfirmState({
+      open: true,
+      title: 'Move Selected Products To Trash',
+      message: `${selectedIds.length} selected products will be moved to trash.`,
+      confirmText: 'Delete Selected',
+      severity: 'warning',
+      onConfirm: async () => {
+        await Promise.all(selectedIds.map((id) => shopService.deleteProduct(id)));
+        setSelectedIds([]);
+        setSelectedId(null);
+        setForm(emptyForm);
+        setMessage(`${selectedIds.length} products moved to trash.`);
+        setError('');
+        await invalidateProducts();
+      },
+    });
+  };
+
+  const handleBulkRestore = () => {
+    if (selectedIds.length === 0) {
+      return;
+    }
+
+    setConfirmState({
+      open: true,
+      title: 'Restore Selected Products',
+      message: `${selectedIds.length} selected products will be restored to the catalog.`,
+      confirmText: 'Restore Selected',
+      severity: 'warning',
+      onConfirm: async () => {
+        await Promise.all(selectedIds.map((id) => shopService.restoreProduct(id)));
+        setSelectedIds([]);
+        setMessage(`${selectedIds.length} products restored.`);
+        setError('');
+        await invalidateProducts();
+      },
+    });
+  };
+
+  const handleBulkPermanentDelete = () => {
+    if (selectedIds.length === 0) {
+      return;
+    }
+
+    setConfirmState({
+      open: true,
+      title: 'Delete Selected Products Permanently',
+      message: `${selectedIds.length} selected products will be removed permanently.`,
+      confirmText: 'Delete Permanently',
+      severity: 'error',
+      onConfirm: async () => {
+        await Promise.all(selectedIds.map((id) => shopService.permanentlyDeleteProduct(id)));
+        setSelectedIds([]);
+        setMessage(`${selectedIds.length} products deleted permanently.`);
+        setError('');
+        await invalidateProducts();
+      },
+    });
   };
 
   return (
@@ -272,6 +370,38 @@ const ShopAdminProductsPage = () => {
                 >
                   New Product
                 </Button>
+                {scope === 'active' ? (
+                  <Button
+                    color="warning"
+                    variant="outlined"
+                    disabled={selectedIds.length === 0}
+                    onClick={handleBulkDelete}
+                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
+                  >
+                    Delete Selected
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      color="primary"
+                      variant="outlined"
+                      disabled={selectedIds.length === 0}
+                      onClick={handleBulkRestore}
+                      sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
+                    >
+                      Restore Selected
+                    </Button>
+                    <Button
+                      color="error"
+                      variant="outlined"
+                      disabled={selectedIds.length === 0}
+                      onClick={handleBulkPermanentDelete}
+                      sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
+                    >
+                      Delete Permanently
+                    </Button>
+                  </>
+                )}
               </Stack>
             </Stack>
 
@@ -310,12 +440,24 @@ const ShopAdminProductsPage = () => {
                 {error}
               </Alert>
             )}
+            {selectedIds.length > 0 && (
+              <Alert severity="info" sx={{ mt: 2 }}>
+                {selectedIds.length} product{selectedIds.length === 1 ? '' : 's'} selected.
+              </Alert>
+            )}
           </Box>
 
           <Box sx={{ overflowX: 'auto' }}>
             <Table>
               <TableHead>
                 <TableRow>
+                  <TableCell padding="checkbox">
+                    <Checkbox
+                      checked={allSelected}
+                      indeterminate={selectedIds.length > 0 && !allSelected}
+                      onChange={(event) => handleSelectAll(event.target.checked)}
+                    />
+                  </TableCell>
                   <TableCell>Title</TableCell>
                   <TableCell>Device</TableCell>
                   <TableCell>Price</TableCell>
@@ -326,12 +468,12 @@ const ShopAdminProductsPage = () => {
               <TableBody>
                 {isLoading && (
                   <TableRow>
-                    <TableCell colSpan={5}>Loading products...</TableCell>
+                    <TableCell colSpan={6}>Loading products...</TableCell>
                   </TableRow>
                 )}
                 {!isLoading && products.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5}>
+                    <TableCell colSpan={6}>
                       {scope === 'trash' ? 'Trash is empty.' : 'No products found.'}
                     </TableCell>
                   </TableRow>
@@ -345,6 +487,17 @@ const ShopAdminProductsPage = () => {
                       selected={scope === 'active' && product.id === selectedId}
                       sx={{ cursor: scope === 'active' ? 'pointer' : 'default' }}
                     >
+                      <TableCell
+                        padding="checkbox"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <Checkbox
+                          checked={selectedIds.includes(product.id)}
+                          onChange={(event) =>
+                            handleSelectProduct(product.id, event.target.checked)
+                          }
+                        />
+                      </TableCell>
                       <TableCell>
                         <Stack direction="row" spacing={1.5} alignItems="center">
                           {product.image_url ? (
@@ -682,16 +835,73 @@ const ShopAdminProductsPage = () => {
                     fontWeight: 800,
                     borderRadius: 3,
                     bgcolor: '#172033',
+                    color: '#ffffff',
+                    '& .MuiButton-startIcon': {
+                      color: 'inherit',
+                    },
                     '&:hover': { bgcolor: '#0f1726' },
                   }}
                 >
                   {selectedProduct ? 'Save Changes' : 'Create Product'}
                 </Button>
               </Grid>
+              {selectedProduct && scope === 'active' && (
+                <>
+                  <Grid item xs={12} sm={6}>
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      color="warning"
+                      startIcon={<DeleteOutline />}
+                      onClick={() => handleSoftDelete(selectedProduct.id)}
+                      sx={{ textTransform: 'none', fontWeight: 800, borderRadius: 3 }}
+                    >
+                      Delete
+                    </Button>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      color="error"
+                      startIcon={<DeleteOutline />}
+                      onClick={() => handlePermanentDelete(selectedProduct.id)}
+                      sx={{ textTransform: 'none', fontWeight: 800, borderRadius: 3 }}
+                    >
+                      Delete Permanently
+                    </Button>
+                  </Grid>
+                </>
+              )}
             </Grid>
           </Box>
         </Paper>
       </Grid>
+      <ConfirmDialog
+        open={confirmState.open}
+        onClose={() =>
+          setConfirmState((prev) => ({
+            ...prev,
+            open: false,
+            onConfirm: null,
+          }))
+        }
+        onConfirm={async () => {
+          if (!confirmState.onConfirm) {
+            return;
+          }
+          await confirmState.onConfirm();
+          setConfirmState((prev) => ({
+            ...prev,
+            open: false,
+            onConfirm: null,
+          }));
+        }}
+        title={confirmState.title}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        severity={confirmState.severity}
+      />
     </Grid>
   );
 };

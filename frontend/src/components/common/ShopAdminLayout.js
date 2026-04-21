@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   AppBar,
+  Avatar,
   Box,
   Button,
   Container,
@@ -21,6 +22,8 @@ const ShopAdminLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const displayName = [user?.name, user?.last_name].filter(Boolean).join(' ').trim() || user?.username || 'Admin';
+  const displayInitial = displayName.charAt(0).toUpperCase() || 'A';
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fb' }}>
@@ -89,14 +92,30 @@ const ShopAdminLayout = () => {
                 elevation={0}
                 sx={{
                   px: 1.5,
-                  py: 1,
+                  py: 0.75,
                   borderRadius: 3,
                   bgcolor: '#eef3fb',
                   border: '1px solid #dbe4f3',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
                 }}
               >
+                <Avatar
+                  sx={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 2.5,
+                    bgcolor: '#172033',
+                    color: '#ffffff',
+                    fontSize: '13px',
+                    fontWeight: 800,
+                  }}
+                >
+                  {displayInitial}
+                </Avatar>
                 <Typography sx={{ fontSize: '13px', color: '#52607a', lineHeight: 1.1 }}>
-                  {user?.name} {user?.last_name}
+                  {displayName}
                 </Typography>
               </Paper>
               <Button

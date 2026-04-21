@@ -21,6 +21,7 @@ import {
 } from '@mui/material';
 import { DeleteOutline, RestoreFromTrash } from '@mui/icons-material';
 import { shopService } from '../../services/shopService';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 
 const statusOptions = ['draft', 'new', 'processing', 'completed', 'cancelled'];
 const orderScopes = [
@@ -33,6 +34,14 @@ const ShopAdminOrdersPage = () => {
   const [scope, setScope] = useState('active');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [confirmState, setConfirmState] = useState({
+    open: false,
+    title: '',
+    message: '',
+    confirmText: 'Confirm',
+    severity: 'warning',
+    onConfirm: null,
+  });
 
   const { data: orders = [], isLoading } = useQuery(['shop-admin-orders', scope], () =>
     shopService.getOrders(scope),
@@ -215,11 +224,16 @@ const ShopAdminOrdersPage = () => {
                               <RestoreFromTrash />
                             </IconButton>
                             <IconButton
-                              onClick={() => {
-                                if (window.confirm('Delete this order permanently?')) {
-                                  permanentDeleteMutation.mutate(order.id);
-                                }
-                              }}
+                              onClick={() =>
+                                setConfirmState({
+                                  open: true,
+                                  title: 'Delete Order Permanently',
+                                  message: 'This order will be removed permanently.',
+                                  confirmText: 'Delete Permanently',
+                                  severity: 'error',
+                                  onConfirm: () => permanentDeleteMutation.mutate(order.id),
+                                })
+                              }
                               color="error"
                             >
                               <DeleteOutline />
@@ -227,11 +241,16 @@ const ShopAdminOrdersPage = () => {
                           </Stack>
                         ) : (
                           <IconButton
-                            onClick={() => {
-                              if (window.confirm('Move this order to trash?')) {
-                                deleteMutation.mutate(order.id);
-                              }
-                            }}
+                            onClick={() =>
+                              setConfirmState({
+                                open: true,
+                                title: 'Move Order To Trash',
+                                message: 'This order will be moved to trash and hidden from the active list.',
+                                confirmText: 'Delete',
+                                severity: 'warning',
+                                onConfirm: () => deleteMutation.mutate(order.id),
+                              })
+                            }
                             color="error"
                           >
                             <DeleteOutline />
@@ -245,6 +264,31 @@ const ShopAdminOrdersPage = () => {
           </Box>
         </Paper>
       </Grid>
+      <ConfirmDialog
+        open={confirmState.open}
+        onClose={() =>
+          setConfirmState((prev) => ({
+            ...prev,
+            open: false,
+            onConfirm: null,
+          }))
+        }
+        onConfirm={async () => {
+          if (!confirmState.onConfirm) {
+            return;
+          }
+          await confirmState.onConfirm();
+          setConfirmState((prev) => ({
+            ...prev,
+            open: false,
+            onConfirm: null,
+          }));
+        }}
+        title={confirmState.title}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        severity={confirmState.severity}
+      />
     </Grid>
   );
 };
