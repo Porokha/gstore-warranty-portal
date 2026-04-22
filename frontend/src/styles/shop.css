@@ -534,10 +534,14 @@ body.zpos-fullscreen .container {
 
 .zpos-sidebar-head {
   flex: 0 0 auto;
+  position: sticky;
+  top: 0;
+  z-index: 3;
   align-items: flex-end;
   gap: 12px;
   margin: 0 0 10px;
   padding: 0 0 12px;
+  background: var(--zpos-panel);
   border-bottom: 1px solid var(--zpos-border);
 }
 
@@ -553,10 +557,6 @@ body.zpos-fullscreen .container {
   margin: 0 0 12px;
   padding: 0 0 12px;
   border-bottom: 1px solid var(--zpos-border);
-}
-
-.zpos-filter-section:last-child {
-  margin-top: auto;
 }
 
 .zpos-filter-section {
@@ -1181,7 +1181,7 @@ body.zpos-fullscreen .container {
   align-items: start;
   flex: 0 0 auto;
   min-height: 0;
-  padding: 16px 18px;
+  padding: 12px 12px;
   border-radius: 18px;
   background: #dce3e9;
   min-width: 0;
