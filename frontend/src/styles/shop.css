@@ -589,6 +589,11 @@ body.zpos-fullscreen .container {
   border-bottom: 1px solid var(--zpos-border-soft);
 }
 
+.zpos-filter-section:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
 .zpos-section-head {
   margin: 0 0 10px;
   padding-bottom: 0;
@@ -964,7 +969,8 @@ body.zpos-fullscreen .container {
 .zpos-grid-scroll {
   flex: 1 1 auto;
   min-height: 0;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: scroll;
   width: calc(100% + 12px);
   margin-right: -12px;
   padding-right: 12px;
