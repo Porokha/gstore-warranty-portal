@@ -41,6 +41,15 @@ export class ShopOrder {
   @Column({ nullable: true })
   customer_email: string;
 
+  @Column({ nullable: true })
+  heard_about: string | null;
+
+  @Column({ default: false })
+  has_partner_warranty: boolean;
+
+  @Column({ nullable: true })
+  partner_warranty_id: string | null;
+
   @Column({ type: 'json' })
   items_json: Array<{
     product_id: number;

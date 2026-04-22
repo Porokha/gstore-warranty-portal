@@ -9,6 +9,7 @@ import {
   MenuItem,
   Paper,
   Stack,
+  Skeleton,
   Tab,
   Tabs,
   Table,
@@ -148,9 +149,30 @@ const ShopAdminOrdersPage = () => {
               </TableHead>
               <TableBody>
                 {isLoading && (
-                  <TableRow>
-                    <TableCell colSpan={6}>Loading orders...</TableCell>
-                  </TableRow>
+                  Array.from({ length: 6 }).map((_, index) => (
+                    <TableRow key={`orders-loading-${index}`}>
+                      <TableCell>
+                        <Skeleton variant="text" width={110} height={24} />
+                        <Skeleton variant="text" width={140} height={18} />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton variant="text" width={150} height={24} />
+                        <Skeleton variant="text" width={120} height={18} />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton variant="text" width={70} height={24} />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton variant="rounded" width={72} height={24} />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton variant="rounded" width="100%" height={40} />
+                      </TableCell>
+                      <TableCell align="right">
+                        <Skeleton variant="circular" width={32} height={32} sx={{ ml: 'auto' }} />
+                      </TableCell>
+                    </TableRow>
+                  ))
                 )}
                 {!isLoading && orders.length === 0 && (
                   <TableRow>

@@ -11,6 +11,7 @@ import {
   MenuItem,
   Paper,
   Stack,
+  Skeleton,
   Tab,
   Tabs,
   Table,
@@ -517,9 +518,37 @@ const ShopAdminProductsPage = () => {
               </TableHead>
               <TableBody>
                 {isLoading && (
-                  <TableRow>
-                    <TableCell colSpan={6}>Loading products...</TableCell>
-                  </TableRow>
+                  Array.from({ length: 6 }).map((_, index) => (
+                    <TableRow key={`products-loading-${index}`}>
+                      <TableCell padding="checkbox">
+                        <Skeleton variant="rounded" width={20} height={20} />
+                      </TableCell>
+                      <TableCell>
+                        <Stack direction="row" spacing={1.5} alignItems="center">
+                          <Skeleton variant="rounded" width={44} height={44} />
+                          <Box>
+                            <Skeleton variant="text" width={180} height={24} />
+                            <Skeleton variant="text" width={120} height={18} />
+                          </Box>
+                        </Stack>
+                      </TableCell>
+                      <TableCell>
+                        <Stack direction="row" spacing={1}>
+                          <Skeleton variant="rounded" width={84} height={24} />
+                          <Skeleton variant="rounded" width={74} height={24} />
+                        </Stack>
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton variant="text" width={110} height={24} />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton variant="rounded" width={76} height={24} />
+                      </TableCell>
+                      <TableCell align="right">
+                        <Skeleton variant="circular" width={32} height={32} sx={{ ml: 'auto' }} />
+                      </TableCell>
+                    </TableRow>
+                  ))
                 )}
                 {!isLoading && products.length === 0 && (
                   <TableRow>

@@ -94,7 +94,8 @@
     "serviceCases": "Service Cases",
     "importData": "Import Data",
     "saving": "Saving...",
-    "noData": "No data available"
+    "noData": "No data available",
+    "next": "Next"
   },
   "replacement": {
     "details": "Replacement Details",
@@ -462,9 +463,9 @@
       "titleEmphasis": " made clearer.",
       "description": "A cleaner Zezva storefront for parts discovery, repair bundles, and the checkout flow you will expand next.",
       "trust": [
-        "Service bundles ready",
-        "OEM and third-party stock",
-        "Fast local delivery flow"
+        "Find with ease",
+        "Pay with Card or Installments",
+        "Quality Assured"
       ]
     },
     "journey": [
@@ -520,13 +521,13 @@
       "reset": "Reset",
       "brandKicker": "Brand",
       "brandTitle": "Manufacturer",
-      "allBrands": "All brands",
+      "allBrands": "All Brands",
       "partTypeKicker": "Part Type",
-      "partTypeTitle": "Component Family",
+      "partTypeTitle": "Component",
       "sourceKicker": "Source",
-      "sourceTitle": "Inventory Origin",
-      "priceKicker": "Price Filter",
-      "priceTitle": "Budget Range",
+      "sourceTitle": "Inventory",
+      "priceKicker": "Price",
+      "priceTitle": "Budget",
       "min": "Min",
       "max": "Max",
       "minPlaceholder": "0",
@@ -545,7 +546,7 @@
     "tabs": {
       "ariaLabel": "Device tabs"
     },
-    "searchPlaceholder": "Search parts, models, issue tags...",
+    "searchPlaceholder": "Search parts, models, issue tags…",
     "visible": "visible",
     "badges": {
       "sale": "Sale"
@@ -563,10 +564,10 @@
       "description": "Try another tab, adjust price range, or reset the source selection."
     },
     "cart": {
-      "kicker": "Customer Cart",
+      "kicker": "Cart",
       "title": "Repair order",
       "emptyTitle": "No parts added yet",
-      "emptyDescription": "Add a part or open quick view for service pricing."
+      "emptyDescription": "Add a part or open quick view for  service pricing"
     },
     "choiceLabels": {
       "productOnly": "Buy only product",
@@ -575,14 +576,69 @@
     "choiceDescriptions": {
       "productOnly": "Part only, no installation included.",
       "productOnlyUnavailable": "This product is available only when booked together with service.",
-      "withService": "Part plus fitting and diagnostics handoff.",
+      "withService": "Part plus fitting and diagnostics handoff",
       "serviceUnavailable": "Service is currently not available for this product."
     },
     "summary": {
       "subtotal": "Subtotal",
-      "serviceUplift": "Service uplift",
-      "prototypeTotal": "Prototype total",
-      "checkoutDisabled": "Prototype only, checkout stays disabled for now"
+      "serviceUplift": "Service fee",
+      "prototypeTotal": "Total",
+      "checkoutDisabled": "Order"
+    },
+    "orderFlow": {
+      "stepLabels": {
+        "1": "Who are you",
+        "2": "A few details",
+        "3": "Payment"
+      },
+      "common": {
+        "yes": "Yes",
+        "no": "No"
+      },
+      "heardAbout": {
+        "facebook": "Facebook",
+        "instagram": "Instagram",
+        "tiktok": "Tik-tok",
+        "friend": "Friend",
+        "google": "Google Search",
+        "ai": "AI"
+      },
+      "errors": {
+        "required": "This field is required.",
+        "email": "Enter a valid email address.",
+        "createFailed": "Failed to create order."
+      },
+      "stepOne": {
+        "title": "Who are you",
+        "fields": {
+          "firstName": "Name",
+          "lastName": "Last Name",
+          "phone": "Phone",
+          "email": "E-mail"
+        }
+      },
+      "stepTwo": {
+        "title": "A few details",
+        "heardAbout": "From where did you hear about us?",
+        "selectPlaceholder": "Select one",
+        "partnerWarranty": "Do you have Active Warranty from Our Partner Shop?",
+        "warrantyId": "Enter Warranty ID"
+      },
+      "stepThree": {
+        "title": "Payment",
+        "payOnline": "Pay Online",
+        "payOnsite": "Pay On-site",
+        "onlineDisabled": "Available after payment integration.",
+        "payOnsiteDescription": "Creates your order with processing status.",
+        "processing": "Creating order..."
+      },
+      "success": {
+        "kicker": "Order received",
+        "title": "{{customer_name}}, Your order has been received",
+        "orderNumber": "Your Order number is {{order_number}}",
+        "contact": "For further details our representative will contact you on {{customer_phone_number}} within 1 business day.",
+        "thankYou": "Thank you for Choosing Us"
+      }
     }
   },
   "apiKeys": {

@@ -9,8 +9,13 @@ import * as csvParser from 'csv-parser';
 import * as fs from 'fs';
 import { mkdir, readFile, unlink, writeFile } from 'fs/promises';
 import * as path from 'path';
-import { LessThan, Repository } from 'typeorm';
+import { In, LessThan, Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
+import {
+  CreatePublicShopOrderDto,
+  ShopOrderItemMode,
+  ShopOrderPaymentChoice,
+} from './dto/create-public-shop-order.dto';
 import { CreateShopProductDto } from './dto/create-shop-product.dto';
 import { PublicShopProductsDto } from './dto/public-shop-products.dto';
 import { UpdateShopOrderDto } from './dto/update-shop-order.dto';
@@ -21,7 +26,7 @@ import {
   ShopPartCategory,
   ShopProduct,
 } from './entities/shop-product.entity';
-import { ShopOrder } from './entities/shop-order.entity';
+import { ShopOrder, ShopOrderStatus } from './entities/shop-order.entity';
 
 type ShopScope = 'active' | 'trash';
 
@@ -256,6 +261,115 @@ export class ShopService {
     };
   }
 
+  async createPublicOrder(createDto: CreatePublicShopOrderDto) {
+    await this.purgeExpiredTrash();
+
+    if (createDto.payment_method !== ShopOrderPaymentChoice.ONSITE) {
+      throw new BadRequestException('Online payment is not available yet.');
+    }
+
+    if (createDto.has_partner_warranty && !createDto.partner_warranty_id?.trim()) {
+      throw new BadRequestException('Partner warranty ID is required.');
+    }
+
+    const normalizedItems = createDto.items.map((item) => ({
+      product_id: item.product_id,
+      mode: item.mode,
+      quantity: item.quantity,
+    }));
+
+    const productIds = Array.from(new Set(normalizedItems.map((item) => item.product_id)));
+    const products = productIds.length
+      ? await this.shopProductsRepository.find({
+          where: { id: In(productIds) },
+        })
+      : [];
+    const productMap = new Map(products.map((product) => [product.id, product]));
+
+    if (productMap.size !== productIds.length) {
+      throw new BadRequestException('One or more selected products are no longer available.');
+    }
+
+    const items_json = normalizedItems.map((item) => {
+      const product = productMap.get(item.product_id);
+      if (!product || !product.is_active || product.deleted_at) {
+        throw new BadRequestException('One or more selected products are no longer available.');
+      }
+
+      const unitPrice =
+        item.mode === ShopOrderItemMode.SERVICE
+          ? this.toNullableNumber(product.service_price)
+          : this.toNullableNumber(product.sale_price ?? product.price);
+
+      if (unitPrice == null) {
+        throw new BadRequestException(`Selected purchase option is unavailable for "${product.title}".`);
+      }
+
+      return {
+        product_id: product.id,
+        title: product.title,
+        mode: item.mode,
+        quantity: item.quantity,
+        unit_price: unitPrice,
+        line_total: Number((unitPrice * item.quantity).toFixed(2)),
+      };
+    });
+
+    const subtotal_amount = items_json.reduce((sum, item) => {
+      if (item.mode === ShopOrderItemMode.PRODUCT) {
+        return sum + item.line_total;
+      }
+
+      const product = productMap.get(item.product_id);
+      const productOnlyPrice = this.toNullableNumber(product?.sale_price ?? product?.price) ?? 0;
+      return sum + Number((productOnlyPrice * item.quantity).toFixed(2));
+    }, 0);
+
+    const total_amount = items_json.reduce((sum, item) => sum + item.line_total, 0);
+    const service_amount = Number((total_amount - subtotal_amount).toFixed(2));
+
+    const orderPayload: Partial<ShopOrder> = {
+      order_number: await this.generateOrderNumber(),
+      status: ShopOrderStatus.PROCESSING,
+      customer_name: createDto.customer_name.trim(),
+      customer_last_name: createDto.customer_last_name.trim(),
+      customer_phone: createDto.customer_phone.trim(),
+      customer_email: createDto.customer_email.trim().toLowerCase(),
+      heard_about: createDto.heard_about,
+      has_partner_warranty: createDto.has_partner_warranty,
+      partner_warranty_id: createDto.has_partner_warranty
+        ? createDto.partner_warranty_id?.trim() || null
+        : null,
+      items_json,
+      subtotal_amount: subtotal_amount.toFixed(2),
+      service_amount: service_amount.toFixed(2),
+      total_amount: total_amount.toFixed(2),
+      currency: 'GEL',
+      payment_method: ShopOrderPaymentChoice.ONSITE,
+      customer_note: createDto.customer_note?.trim() || null,
+      source: 'shop_public_onsite',
+      deleted_at: null,
+    };
+
+    const order = this.shopOrdersRepository.create(orderPayload);
+
+    const saved = await this.shopOrdersRepository.save(order);
+
+    return {
+      id: saved.id,
+      order_number: saved.order_number,
+      status: saved.status,
+      customer_name: saved.customer_name,
+      customer_phone: saved.customer_phone,
+      total_amount: Number(saved.total_amount),
+      payment_method: saved.payment_method,
+      heard_about: saved.heard_about,
+      has_partner_warranty: saved.has_partner_warranty,
+      partner_warranty_id: saved.partner_warranty_id,
+      created_at: saved.created_at,
+    };
+  }
+
   generateProductsTemplateCsv() {
     const header = [
       'title',
@@ -475,6 +589,23 @@ export class ShopService {
     };
   }
 
+  private async generateOrderNumber() {
+    let orderNumber = '';
+
+    while (!orderNumber) {
+      const candidate = `ZZV-${Date.now().toString().slice(-8)}-${Math.floor(100 + Math.random() * 900)}`;
+      const existing = await this.shopOrdersRepository.findOne({
+        where: { order_number: candidate },
+      });
+
+      if (!existing) {
+        orderNumber = candidate;
+      }
+    }
+
+    return orderNumber;
+  }
+
   private async ensureUniqueSlug(value: string, excludeId?: number) {
     const normalized = this.slugify(value);
     let candidate = normalized;
@@ -520,6 +651,15 @@ export class ShopService {
     }
 
     return Number(value).toFixed(2);
+  }
+
+  private toNullableNumber(value?: string | number | null) {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    const numeric = Number(value);
+    return Number.isNaN(numeric) ? null : numeric;
   }
 
   private async prepareImageUrl(value?: string | null) {

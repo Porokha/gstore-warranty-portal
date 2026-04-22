@@ -94,7 +94,8 @@
     "serviceCases": "სერვისის შემთხვევები",
     "importData": "მონაცემების იმპორტი",
     "noData": "მონაცემები არ არის",
-    "saving": "შენახვა..."
+    "saving": "შენახვა...",
+    "next": "შემდეგ"
   },
   "replacement": {
     "details": "შეცვლის დეტალები",
@@ -456,7 +457,7 @@
     "aria": {
       "process": "მაღაზიის პროცესი",
       "highlights": "მაღაზიის უპირატესობები",
-      "filters": "ფილტრები",
+      "filters": "ფილტრი",
       "cart": "კალათა"
     },
     "imageAlt": {
@@ -468,9 +469,9 @@
       "titleEmphasis": " უფრო მარტივად.",
       "description": "განახლებული Zezva ვიტრინა ნაწილების ძიებისთვის, სერვის პაკეტებისთვის და იმ checkout flow-სთვის, რომელსაც შემდეგ ეტაპზე გააფართოებთ.",
       "trust": [
-        "სერვის პაკეტები მზადაა",
-        "OEM და third-party მარაგი",
-        "სწრაფი ლოკალური მიწოდების პროცესი"
+        "მოძებნე მარტივად",
+        "გადაიხადე ერთიანად ან განვადებით",
+        "ხარისხი გარანტირებულია"
       ]
     },
     "journey": [
@@ -496,7 +497,7 @@
       }
     ],
     "deviceTitles": {
-      "all": "ყველა სარემონტო ნაწილი",
+      "all": "ყველა ნაწილი",
       "smartphones": "სმარტფონის სარემონტო ნაწილები",
       "laptops": "ლეპტოპის სარემონტო ნაწილები",
       "accessories": "აქსესუარები"
@@ -507,13 +508,13 @@
       "accessories": "აქსესუარები"
     },
     "partLabels": {
-      "board": "დაფა",
+      "board": "Board",
       "screen": "ეკრანი",
       "sensor": "სენსორი",
-      "battery": "ბატარეა",
+      "battery": "ელემენტი",
       "camera": "კამერა",
-      "speaker": "დინამიკი",
-      "charging": "დამუხტვა",
+      "speaker": "Speaker",
+      "charging": "Charging",
       "accessory": "აქსესუარი"
     },
     "sourceLabels": {
@@ -521,20 +522,20 @@
       "thirdParty": "Third Party"
     },
     "filters": {
-      "kicker": "ფილტრები",
-      "title": "პროდუქტის ფილტრები",
+      "kicker": "ფილტრი",
+      "title": "გაფილტრე",
       "reset": "გასუფთავება",
       "brandKicker": "ბრენდი",
       "brandTitle": "მწარმოებელი",
-      "allBrands": "ყველა ბრენდი",
+      "allBrands": "ყველა",
       "partTypeKicker": "ნაწილის ტიპი",
-      "partTypeTitle": "კომპონენტის ოჯახი",
-      "sourceKicker": "წყარო",
-      "sourceTitle": "მარაგის წარმომავლობა",
-      "priceKicker": "ფასის ფილტრი",
-      "priceTitle": "ბიუჯეტის დიაპაზონი",
-      "min": "მინ",
-      "max": "მაქს",
+      "partTypeTitle": "კომპონენტი",
+      "sourceKicker": "ხარისხი",
+      "sourceTitle": "წარმომავლობა",
+      "priceKicker": "ფასი",
+      "priceTitle": "ბიუჯეტი",
+      "min": "მინ. ",
+      "max": "მაქს.",
       "minPlaceholder": "0",
       "maxPlaceholder": "900",
       "open": "ფილტრების გახსნა"
@@ -551,7 +552,7 @@
     "tabs": {
       "ariaLabel": "მოწყობილობის ჩანართები"
     },
-    "searchPlaceholder": "მოძებნეთ ნაწილები, მოდელები, პრობლემის ტეგები...",
+    "searchPlaceholder": "ნაწილები, მოდელები...",
     "visible": "ნაჩვენებია",
     "badges": {
       "sale": "ფასდაკლება"
@@ -569,26 +570,81 @@
       "description": "სცადეთ სხვა ჩანართი, შეცვალეთ ფასის დიაპაზონი ან გაასუფთავეთ წყაროს არჩევანი."
     },
     "cart": {
-      "kicker": "კლიენტის კალათა",
-      "title": "სარემონტო შეკვეთა",
-      "emptyTitle": "ნაწილები ჯერ არ არის დამატებული",
-      "emptyDescription": "დაამატეთ ნაწილი ან გახსენით quick view სერვისის ფასების სანახავად."
+      "kicker": "კალათი",
+      "title": "შეკვეთა",
+      "emptyTitle": "კალათი ცარიელია",
+      "emptyDescription": "დაამატეთ სასურველი ნაწილი"
     },
     "choiceLabels": {
       "productOnly": "მხოლოდ პროდუქტის ყიდვა",
-      "withService": "ყიდვა სერვისთან ერთად"
+      "withService": "შეიძინე სერვისთან ერთად"
     },
     "choiceDescriptions": {
       "productOnly": "მხოლოდ ნაწილი, მონტაჟის გარეშე.",
-      "productOnlyUnavailable": "ეს პროდუქტი ხელმისაწვდომია მხოლოდ სერვისთან ერთად დაჯავშნისას.",
-      "withService": "ნაწილი მონტაჟით და დიაგნოსტიკის გადაცემით.",
+      "productOnlyUnavailable": "ეს პროდუქტი ხელმისაწვდომია მხოლოდ სერვისთან ერთად",
+      "withService": "ნაწილის მონტაჟი და დიაგნოსტიკა",
       "serviceUnavailable": "ამ პროდუქტისთვის სერვისი ამ ეტაპზე ხელმისაწვდომი არ არის."
     },
     "summary": {
-      "subtotal": "ქვეს ჯამი",
-      "serviceUplift": "სერვისის ნამატი",
-      "prototypeTotal": "პროტოტიპის ჯამი",
-      "checkoutDisabled": "მხოლოდ პროტოტიპი, checkout ამ ეტაპზე გამორთულია"
+      "subtotal": "ქვე-ჯამი",
+      "serviceUplift": "სერვისის საფასური",
+      "prototypeTotal": "ჯამი",
+      "checkoutDisabled": "შეკვეთა"
+    },
+    "orderFlow": {
+      "stepLabels": {
+        "1": "გაგვეცანი",
+        "2": "დეტალები",
+        "3": "ანგარიშსწორება"
+      },
+      "common": {
+        "yes": "დიახ",
+        "no": "არა"
+      },
+      "heardAbout": {
+        "facebook": "ფეისბუქი",
+        "instagram": "ინსტაგრამი",
+        "tiktok": "ტიკ-ტოკი",
+        "friend": "მეგობარი",
+        "google": "Google ძიება",
+        "ai": "AI"
+      },
+      "errors": {
+        "required": "ეს ველი სავალდებულოა.",
+        "email": "შეიყვანეთ სწორი ელ-ფოსტა.",
+        "createFailed": "შეკვეთის შექმნა ვერ მოხერხდა."
+      },
+      "stepOne": {
+        "title": "გაგვეცანი",
+        "fields": {
+          "firstName": "სახელი",
+          "lastName": "გვარი",
+          "phone": "ტელეფონი",
+          "email": "ელ-ფოსტა"
+        }
+      },
+      "stepTwo": {
+        "title": "დეტალები",
+        "heardAbout": "საიდან გაიგეთ ჩვენ შესახებ?",
+        "selectPlaceholder": "აირჩიე",
+        "partnerWarranty": "გაქვთ ჩვენი რომელიმე პარტნიორი მაღაზიის აქტიური გარანტია?",
+        "warrantyId": "გარანტიის ID"
+      },
+      "stepThree": {
+        "title": "ანგარიშსწორება",
+        "payOnline": "გადაიხადე ონლაინ",
+        "payOnsite": "გადაიხადე ადგილზე",
+        "onlineDisabled": "გააქტიურდება გადახდის ინტეგრაციის შემდეგ.",
+        "payOnsiteDescription": "შეკვეთა შეიქმნება processing სტატუსით.",
+        "processing": "შეკვეთა იქმნება..."
+      },
+      "success": {
+        "kicker": "შეკვეთა მიღებულია",
+        "title": "{{customer_name}}, შენი შეკვეთა მიღებულია",
+        "orderNumber": "შეკვეთის ნომერია {{order_number}}",
+        "contact": "დამატებითი დეტალებისთვის ჩვენი წარმომადგენელი დაგიკავშირდება მითითებულ ნომერზე - {{customer_phone_number}} 1 დღის მანძილზე.",
+        "thankYou": "მადლობა, რომ აგვირჩიე!"
+      }
     }
   },
   "apiKeys": {
