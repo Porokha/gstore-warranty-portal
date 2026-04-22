@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery } from 'react-query';
 import { useTranslation } from 'react-i18next';
 import '../../styles/shop.css';
@@ -51,7 +51,6 @@ const getServicePrice = (product) => product.service_price;
 const getDisplayPrice = (product) => getProductOnlyPrice(product) ?? getServicePrice(product);
 const canBuyProductOnly = (product) => getProductOnlyPrice(product) != null;
 const canBuyWithService = (product) => getServicePrice(product) != null;
-const GRID_TRANSITION_MS = 180;
 const MODAL_CLOSE_MS = 260;
 const CART_REMOVE_MS = 220;
 const ORDER_MODAL_CLOSE_MS = 260;
@@ -81,23 +80,19 @@ const ShopPage = () => {
   const [modalProduct, setModalProduct] = useState(null);
   const [modalState, setModalState] = useState('closed');
   const [gridProducts, setGridProducts] = useState([]);
-  const [gridStage, setGridStage] = useState('idle');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [tabIndicatorStyle, setTabIndicatorStyle] = useState({});
   const [removingCartIds, setRemovingCartIds] = useState([]);
+  const [loadedImages, setLoadedImages] = useState({});
   const [orderModalState, setOrderModalState] = useState('closed');
   const [orderStep, setOrderStep] = useState(1);
   const [orderForm, setOrderForm] = useState(createInitialOrderForm);
   const [orderErrors, setOrderErrors] = useState({});
   const [createdOrder, setCreatedOrder] = useState(null);
   const tabsRef = useRef(null);
-  const gridRenderTokenRef = useRef(0);
-  const didInitGridRef = useRef(false);
   const modalCloseTimerRef = useRef(null);
   const orderModalCloseTimerRef = useRef(null);
   const cartRemoveTimersRef = useRef(new Map());
-  const cartItemRefs = useRef(new Map());
-  const cartPositionsRef = useRef(new Map());
 
   const { data: products = [], isLoading: isProductsLoading } = useQuery(['shop-public-products'], () =>
     shopService.getPublicProducts(),
@@ -131,7 +126,7 @@ const ShopPage = () => {
     };
   }, []);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const updateIndicator = () => {
       const tabsNode = tabsRef.current;
       if (!tabsNode) {
@@ -224,43 +219,6 @@ const ShopPage = () => {
     orderForm.has_partner_warranty !== null &&
     (!orderForm.has_partner_warranty || orderForm.partner_warranty_id.trim());
 
-  useLayoutEffect(() => {
-    const nextPositions = new Map();
-    const entries = Array.from(cartItemRefs.current.entries());
-
-    entries.forEach(([id, node], index) => {
-      const previous = cartPositionsRef.current.get(id);
-      const current = node.getBoundingClientRect();
-      node.style.transition = 'none';
-
-      if (previous) {
-        const deltaY = previous.top - current.top;
-        if (deltaY) {
-          node.style.transform = `translateY(${deltaY}px)`;
-        }
-      } else {
-        node.style.opacity = '0';
-        node.style.transform = 'translateY(14px) scale(0.985)';
-        node.style.transitionDelay = `${index * 26}ms`;
-      }
-
-      nextPositions.set(id, current);
-    });
-
-    if (entries.length > 0) {
-      window.requestAnimationFrame(() => {
-        entries.forEach(([, node]) => {
-          node.style.transition = '';
-          node.style.transform = '';
-          node.style.opacity = '';
-          node.style.transitionDelay = '';
-        });
-      });
-    }
-
-    cartPositionsRef.current = nextPositions;
-  }, [cart]);
-
   const visibleProducts = useMemo(() => {
     return products.filter((product) => {
       const activePrice = getDisplayPrice(product);
@@ -302,40 +260,14 @@ const ShopPage = () => {
   }, [cart]);
 
   useEffect(() => {
-    if (isProductsLoading) {
-      return undefined;
-    }
-
-    const token = ++gridRenderTokenRef.current;
-    if (!didInitGridRef.current) {
-      didInitGridRef.current = true;
+    if (!isProductsLoading) {
       setGridProducts(visibleProducts);
-      setGridStage('enter');
-      const frame = window.requestAnimationFrame(() => {
-        if (token === gridRenderTokenRef.current) {
-          setGridStage('idle');
-        }
-      });
-      return () => window.cancelAnimationFrame(frame);
     }
-
-    setGridStage('leave');
-    const timeout = window.setTimeout(() => {
-      if (token !== gridRenderTokenRef.current) {
-        return;
-      }
-
-      setGridProducts(visibleProducts);
-      setGridStage('enter');
-      window.requestAnimationFrame(() => {
-        if (token === gridRenderTokenRef.current) {
-          setGridStage('idle');
-        }
-      });
-    }, GRID_TRANSITION_MS);
-
-    return () => window.clearTimeout(timeout);
   }, [isProductsLoading, visibleProducts]);
+
+  const handleImageReady = (key) => {
+    setLoadedImages((current) => (current[key] ? current : { ...current, [key]: true }));
+  };
 
   const togglePart = (part) => {
     if (part === 'all') {
@@ -758,7 +690,7 @@ const ShopPage = () => {
           <div className="zpos-grid-scroll">
             <div
               id="zpos-grid"
-              className={`zpos-grid ${gridStage === 'leave' ? 'is-switching' : ''}`}
+              className="zpos-grid"
               aria-live="polite"
             >
               {isProductsLoading &&
@@ -780,21 +712,20 @@ const ShopPage = () => {
                 ))}
 
               {!isProductsLoading && gridProducts.length === 0 && (
-                <div className={`zpos-empty zpos-empty--grid ${gridStage === 'leave' ? '' : 'is-visible'}`}>
+                <div className="zpos-empty zpos-empty--grid is-visible">
                   <strong>{t('shop.empty.title')}</strong>
                   <p>{t('shop.empty.description')}</p>
                 </div>
               )}
 
-              {!isProductsLoading && gridProducts.map((product, index) => {
+              {!isProductsLoading && gridProducts.map((product) => {
                 const displayPrice = getDisplayPrice(product);
                 const productOnlyAvailable = canBuyProductOnly(product);
                 const serviceAvailable = canBuyWithService(product);
                 return (
                   <article
                     key={product.id}
-                    className={`zpos-card ${gridStage === 'leave' ? 'is-leaving' : 'is-visible'}`}
-                    style={{ '--zpos-stagger': index }}
+                    className="zpos-card is-visible"
                     tabIndex="0"
                     onClick={() => openModal(product)}
                     onKeyDown={(event) => {
@@ -804,14 +735,19 @@ const ShopPage = () => {
                       }
                     }}
                   >
-                    <div className="zpos-thumb">
+                    <div className={`zpos-thumb ${loadedImages[`product:${product.id}`] ? 'is-loaded' : ''}`}>
                       {product.sale_price != null && product.price != null && (
                         <span className="zpos-badge">{t('shop.badges.sale')}</span>
+                      )}
+                      {!loadedImages[`product:${product.id}`] && (
+                        <div className="zpos-skeleton zpos-skeleton--thumb zpos-image-skeleton" />
                       )}
                       <img
                         src={product.image_url}
                         alt={t('shop.imageAlt.thumbnail', { title: product.title })}
                         loading="lazy"
+                        onLoad={() => handleImageReady(`product:${product.id}`)}
+                        onError={() => handleImageReady(`product:${product.id}`)}
                       />
                     </div>
                     <div className="zpos-card-body">
@@ -880,19 +816,17 @@ const ShopPage = () => {
               <div
                 key={item.id}
                 className={`zpos-cart-item ${removingCartIds.includes(item.id) ? 'is-removing' : ''}`}
-                ref={(node) => {
-                  if (node) {
-                    cartItemRefs.current.set(item.id, node);
-                  } else {
-                    cartItemRefs.current.delete(item.id);
-                  }
-                }}
               >
-                <div className="zpos-cart-item-thumb">
+                <div className={`zpos-cart-item-thumb ${loadedImages[`cart:${item.id}`] ? 'is-loaded' : ''}`}>
+                  {!loadedImages[`cart:${item.id}`] && (
+                    <div className="zpos-skeleton zpos-image-skeleton" />
+                  )}
                   <img
                     src={item.image_url}
                     alt={t('shop.imageAlt.thumbnail', { title: item.title })}
                     loading="lazy"
+                    onLoad={() => handleImageReady(`cart:${item.id}`)}
+                    onError={() => handleImageReady(`cart:${item.id}`)}
                   />
                 </div>
                 <div className="zpos-cart-item-main">
@@ -977,10 +911,18 @@ const ShopPage = () => {
               </svg>
             </button>
 
-            <div id="zpos-modal-visual" className="zpos-modal-visual">
+            <div
+              id="zpos-modal-visual"
+              className={`zpos-modal-visual ${loadedImages[`modal:${modalProduct.id}`] ? 'is-loaded' : ''}`}
+            >
+              {!loadedImages[`modal:${modalProduct.id}`] && (
+                <div className="zpos-skeleton zpos-image-skeleton" />
+              )}
               <img
                 src={modalProduct.image_url}
                 alt={t('shop.imageAlt.preview', { title: modalProduct.title })}
+                onLoad={() => handleImageReady(`modal:${modalProduct.id}`)}
+                onError={() => handleImageReady(`modal:${modalProduct.id}`)}
               />
             </div>
 

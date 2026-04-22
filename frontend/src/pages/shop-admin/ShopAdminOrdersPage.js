@@ -157,13 +157,8 @@ const ShopAdminOrdersPage = () => {
       return;
     }
 
-    if (filteredOrders.length === 0) {
-      setSelectedOrderId(null);
-      return;
-    }
-
     setSelectedOrderId((current) =>
-      current && filteredOrders.some((order) => order.id === current) ? current : filteredOrders[0].id,
+      current && filteredOrders.some((order) => order.id === current) ? current : null,
     );
   }, [filteredOrders, scope]);
 
@@ -496,24 +491,37 @@ const ShopAdminOrdersPage = () => {
                                 </MenuItem>
                               ))}
                             </TextField>
-                            <Button
-                              color="error"
-                              variant="outlined"
-                              startIcon={<DeleteOutline />}
-                              onClick={() =>
-                                setConfirmState({
-                                  open: true,
-                                  title: 'Move Order To Trash',
-                                  message: 'This order will be moved to trash and hidden from the active inbox.',
-                                  confirmText: 'Delete',
-                                  severity: 'warning',
-                                  onConfirm: () => deleteMutation.mutate(selectedOrder.id),
-                                })
-                              }
-                              sx={{ textTransform: 'none', fontWeight: 800, borderRadius: 3 }}
+                            <Stack
+                              direction="row"
+                              spacing={1.25}
+                              sx={{
+                                flexWrap: 'wrap',
+                                rowGap: 1.25,
+                                justifyContent: { xs: 'stretch', sm: 'flex-end' },
+                                '& > *': {
+                                  flexShrink: 0,
+                                },
+                              }}
                             >
-                              Move to Trash
-                            </Button>
+                              <Button
+                                color="error"
+                                variant="outlined"
+                                startIcon={<DeleteOutline />}
+                                onClick={() =>
+                                  setConfirmState({
+                                    open: true,
+                                    title: 'Move Order To Trash',
+                                    message: 'This order will be moved to trash and hidden from the active inbox.',
+                                    confirmText: 'Delete',
+                                    severity: 'warning',
+                                    onConfirm: () => deleteMutation.mutate(selectedOrder.id),
+                                  })
+                                }
+                                sx={{ textTransform: 'none', fontWeight: 800, borderRadius: 3 }}
+                              >
+                                Move to Trash
+                              </Button>
+                            </Stack>
                           </Stack>
                         </Stack>
                       </Paper>

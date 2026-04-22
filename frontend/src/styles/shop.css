@@ -1024,24 +1024,19 @@ body.zpos-fullscreen .container {
   border-radius: var(--zpos-radius-lg);
   background: var(--zpos-panel);
   cursor: pointer;
-  opacity: 0;
-  transform: translateY(18px);
-  transition:
-    opacity 0.22s ease,
-    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.16s ease;
-  transition-delay: calc(var(--zpos-stagger, 0) * 14ms);
+  opacity: 1;
+  transform: none;
+  transition: border-color 0.14s ease, background-color 0.14s ease;
 }
 
 .zpos-card.is-visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: none;
 }
 
 .zpos-card.is-leaving {
-  opacity: 0;
-  transform: translateY(-10px) scale(0.985);
-  transition-delay: var(--zpos-exit-delay, 0ms);
+  opacity: 1;
+  transform: none;
 }
 
 .zpos-card--skeleton {
@@ -1061,7 +1056,7 @@ body.zpos-fullscreen .container {
   border-radius: 12px;
   background: linear-gradient(90deg, #eef2f7 0%, #f7f9fc 50%, #eef2f7 100%);
   background-size: 200% 100%;
-  animation: zposSkeletonPulse 1.25s ease-in-out infinite;
+  animation: zposSkeletonPulse 1.45s ease-in-out infinite;
 }
 
 .zpos-skeleton--thumb {
@@ -1105,9 +1100,8 @@ body.zpos-fullscreen .container {
 }
 
 .zpos-card:hover {
-  transform: translateY(-2px);
   border-color: #c7d4ff;
-  box-shadow: 0 14px 28px rgba(20, 30, 46, 0.08);
+  box-shadow: 0 6px 14px rgba(20, 30, 46, 0.05);
 }
 
 .zpos-card:focus-visible {
@@ -1120,6 +1114,7 @@ body.zpos-fullscreen .container {
   height: 144px;
   padding: 12px;
   background: linear-gradient(180deg, #eef3ff 0%, #f7fafc 100%);
+  overflow: hidden;
 }
 
 .zpos-thumb img,
@@ -1132,6 +1127,32 @@ body.zpos-fullscreen .container {
   background: #fff;
   border-radius: 12px;
   border: 1px solid var(--zpos-border-soft);
+  opacity: 0;
+  transition: opacity 0.14s ease;
+}
+
+.zpos-thumb.is-loaded img,
+.zpos-cart-item-thumb.is-loaded img,
+.zpos-modal-visual.is-loaded img {
+  opacity: 1;
+}
+
+.zpos-image-skeleton {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.zpos-thumb .zpos-image-skeleton,
+.zpos-modal-visual .zpos-image-skeleton {
+  inset: 12px;
+}
+
+.zpos-thumb img,
+.zpos-modal-visual img,
+.zpos-cart-item-thumb img {
+  position: relative;
+  z-index: 1;
 }
 
 .zpos-badge {
@@ -1283,14 +1304,12 @@ body.zpos-fullscreen .container {
   overflow: hidden;
   opacity: 1;
   transform: translateY(0);
-  transition:
-    transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.18s ease;
+  transition: opacity 0.16s ease;
 }
 
 .zpos-cart-item.is-removing {
   opacity: 0;
-  transform: translateX(28px) scale(0.965);
+  transform: none;
   pointer-events: none;
 }
 
@@ -1306,6 +1325,7 @@ body.zpos-fullscreen .container {
 
 .zpos-cart-item-thumb {
   grid-area: thumb;
+  position: relative;
   width: 65px;
   min-width: 65px;
   height: 65px;
@@ -1524,7 +1544,7 @@ body.zpos-fullscreen .container {
   background: rgba(18, 27, 38, 0.42);
   z-index: 9999;
   opacity: 0;
-  transition: opacity 0.22s ease;
+  transition: opacity 0.14s ease;
   pointer-events: none;
 }
 
@@ -1546,20 +1566,18 @@ body.zpos-fullscreen .container {
   padding: 18px;
   border-radius: var(--zpos-radius-xl);
   opacity: 0;
-  transform: translateY(18px) scale(0.985);
-  transition:
-    opacity 0.24s ease,
-    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  transform: translateY(8px);
+  transition: opacity 0.16s ease, transform 0.18s ease;
 }
 
 .zpos-modal-backdrop.is-open .zpos-modal {
   opacity: 1;
-  transform: translateY(0) scale(1);
+  transform: translateY(0);
 }
 
 .zpos-modal-backdrop.is-closing .zpos-modal {
   opacity: 0;
-  transform: translateY(14px) scale(0.985);
+  transform: translateY(8px);
 }
 
 .zpos-modal-close {
@@ -1585,6 +1603,7 @@ body.zpos-fullscreen .container {
   width: 300px;
   height: 300px;
   min-height: 300px;
+  position: relative;
   padding: 8px;
   border-radius: 14px;
   background: linear-gradient(180deg, #eef3ff 0%, #f7fafc 100%);
