@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   AppBar,
   Avatar,
+  Badge,
   Box,
   Button,
   Container,
@@ -11,7 +12,9 @@ import {
   Typography,
 } from '@mui/material';
 import { Inventory2, ReceiptLong } from '@mui/icons-material';
+import { useQuery } from 'react-query';
 import { useAuth } from '../../contexts/AuthContext';
+import { shopService } from '../../services/shopService';
 
 const navItems = [
   { path: '/shop/admin/products', label: 'Products', icon: <Inventory2 fontSize="small" /> },
@@ -24,16 +27,38 @@ const ShopAdminLayout = () => {
   const { user, logout } = useAuth();
   const displayName = [user?.name, user?.last_name].filter(Boolean).join(' ').trim() || user?.username || 'Admin';
   const displayInitial = displayName.charAt(0).toUpperCase() || 'A';
+  const { data: activeOrders = [] } = useQuery(
+    ['shop-admin-orders-badge'],
+    () => shopService.getOrders('active'),
+    {
+      refetchInterval: 15000,
+      refetchOnWindowFocus: true,
+    },
+  );
+  const unreadOrdersCount = activeOrders.filter((order) => !order.viewed_at).length;
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fb' }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: '#f4f6fb',
+        '& .MuiPaper-root': {
+          borderRadius: '24px !important',
+        },
+        '& .MuiButton-root, & .MuiChip-root, & .MuiOutlinedInput-root, & .MuiAlert-root, & .MuiTabs-root .MuiTab-root': {
+          borderRadius: '18px !important',
+        },
+        '& .MuiAvatar-root': {
+          borderRadius: '18px !important',
+        },
+      }}
+    >
       <AppBar
         position="sticky"
         elevation={0}
         sx={{
           bgcolor: 'rgba(255,255,255,0.95)',
           color: '#172033',
-          backdropFilter: 'blur(12px)',
           borderBottom: '1px solid #dce4f0',
         }}
       >
@@ -68,11 +93,33 @@ const ShopAdminLayout = () => {
                   <Button
                     key={item.path}
                     onClick={() => navigate(item.path)}
-                    startIcon={item.icon}
+                    startIcon={
+                      item.path === '/shop/admin/orders' ? (
+                        <Badge
+                          color="error"
+                          badgeContent={unreadOrdersCount}
+                          invisible={unreadOrdersCount === 0}
+                          max={99}
+                          sx={{
+                            '& .MuiBadge-badge': {
+                              minWidth: 18,
+                              height: 18,
+                              px: 0.5,
+                              borderRadius: '10px',
+                              fontSize: '10px',
+                              fontWeight: 800,
+                            },
+                          }}
+                        >
+                          {item.icon}
+                        </Badge>
+                      ) : (
+                        item.icon
+                      )
+                    }
                     sx={{
                       textTransform: 'none',
                       fontWeight: 700,
-                      borderRadius: 3,
                       px: 2,
                       color: active ? '#ffffff' : '#26334d',
                       bgcolor: active ? '#172033' : 'transparent',
@@ -93,7 +140,6 @@ const ShopAdminLayout = () => {
                 sx={{
                   px: 1.5,
                   py: 0.75,
-                  borderRadius: 3,
                   bgcolor: '#eef3fb',
                   border: '1px solid #dbe4f3',
                   display: 'flex',
@@ -105,7 +151,6 @@ const ShopAdminLayout = () => {
                   sx={{
                     width: 28,
                     height: 28,
-                    borderRadius: 2.5,
                     bgcolor: '#172033',
                     color: '#ffffff',
                     fontSize: '13px',
@@ -127,7 +172,6 @@ const ShopAdminLayout = () => {
                   textTransform: 'none',
                   fontWeight: 700,
                   color: '#172033',
-                  borderRadius: 3,
                 }}
               >
                 Logout

@@ -61,6 +61,7 @@ const ShopAdminOrdersPage = () => {
 
   const invalidateOrders = async () => {
     await queryClient.invalidateQueries(['shop-admin-orders']);
+    await queryClient.invalidateQueries(['shop-admin-orders-badge']);
   };
 
   const updateMutation = useMutation(({ id, payload }) => shopService.updateOrder(id, payload), {
