@@ -348,6 +348,7 @@ export class ShopService {
       payment_method: ShopOrderPaymentChoice.ONSITE,
       customer_note: createDto.customer_note?.trim() || null,
       source: 'shop_public_onsite',
+      viewed_at: null,
       deleted_at: null,
     };
 
@@ -457,7 +458,14 @@ export class ShopService {
 
     const qb = this.shopOrdersRepository.createQueryBuilder('order');
     this.applyScope(qb, 'order', scope);
-    qb.orderBy('order.created_at', 'DESC').addOrderBy('order.id', 'DESC');
+    if (scope === 'active') {
+      qb
+        .orderBy('CASE WHEN order.viewed_at IS NULL THEN 0 ELSE 1 END', 'ASC')
+        .addOrderBy('order.created_at', 'DESC')
+        .addOrderBy('order.id', 'DESC');
+    } else {
+      qb.orderBy('order.created_at', 'DESC').addOrderBy('order.id', 'DESC');
+    }
 
     const orders = await qb.getMany();
 
@@ -473,6 +481,7 @@ export class ShopService {
     if (updateDto.status !== undefined) order.status = updateDto.status;
     if (updateDto.admin_note !== undefined) order.admin_note = updateDto.admin_note;
     if (updateDto.payment_method !== undefined) order.payment_method = updateDto.payment_method;
+    if (updateDto.viewed !== undefined) order.viewed_at = updateDto.viewed ? new Date() : null;
 
     const updated = await this.shopOrdersRepository.save(order);
     return this.serializeOrder(updated);

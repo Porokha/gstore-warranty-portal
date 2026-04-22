@@ -85,6 +85,9 @@ export class ShopOrder {
   source: string;
 
   @Column({ type: 'datetime', nullable: true })
+  viewed_at: Date | null;
+
+  @Column({ type: 'datetime', nullable: true })
   deleted_at: Date | null;
 
   @CreateDateColumn()

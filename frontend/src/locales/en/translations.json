@@ -632,14 +632,16 @@
         "payOnsiteDescription": "Creates your order with processing status.",
         "processing": "Creating order..."
       },
-      "success": {
-        "kicker": "Order received",
-        "title": "{{customer_name}}, Your order has been received",
-        "orderNumber": "Your Order number is {{order_number}}",
-        "contact": "For further details our representative will contact you on {{customer_phone_number}} within 1 business day.",
-        "thankYou": "Thank you for Choosing Us"
-      }
-    }
+    "success": {
+      "kicker": "Order received",
+      "title": "{{customer_name}}, Your order has been received",
+      "orderNumber": "Your Order number is {{order_number}}",
+      "contact": "For further details our representative will contact you on {{customer_phone_number}} within 1 business day.",
+      "thankYou": "Thank you for Choosing Us"
+    },
+    "summaryLine": "{{count}} products ready for checkout.",
+    "summaryCount": "{{count}} selected"
+  }
   },
   "apiKeys": {
     "title": "API Keys",

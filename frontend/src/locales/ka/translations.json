@@ -638,14 +638,16 @@
         "payOnsiteDescription": "შეკვეთა შეიქმნება processing სტატუსით.",
         "processing": "შეკვეთა იქმნება..."
       },
-      "success": {
-        "kicker": "შეკვეთა მიღებულია",
-        "title": "{{customer_name}}, შენი შეკვეთა მიღებულია",
-        "orderNumber": "შეკვეთის ნომერია {{order_number}}",
-        "contact": "დამატებითი დეტალებისთვის ჩვენი წარმომადგენელი დაგიკავშირდება მითითებულ ნომერზე - {{customer_phone_number}} 1 დღის მანძილზე.",
-        "thankYou": "მადლობა, რომ აგვირჩიე!"
-      }
-    }
+    "success": {
+      "kicker": "შეკვეთა მიღებულია",
+      "title": "{{customer_name}}, შენი შეკვეთა მიღებულია",
+      "orderNumber": "შეკვეთის ნომერია {{order_number}}",
+      "contact": "დამატებითი დეტალებისთვის ჩვენი წარმომადგენელი დაგიკავშირდება მითითებულ ნომერზე - {{customer_phone_number}} 1 დღის მანძილზე.",
+      "thankYou": "მადლობა, რომ აგვირჩიე!"
+    },
+    "summaryLine": "{{count}} პროდუქტი მზად არის შეკვეთისთვის.",
+    "summaryCount": "არჩეულია {{count}}"
+  }
   },
   "apiKeys": {
     "title": "API გასაღებები",

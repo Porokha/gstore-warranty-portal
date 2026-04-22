@@ -192,6 +192,26 @@ const ShopPage = () => {
     () => ['facebook', 'instagram', 'tiktok', 'friend', 'google', 'ai'],
     [],
   );
+  const orderStepMeta = useMemo(
+    () => [
+      {
+        id: 1,
+        label: t('shop.orderFlow.stepLabels.1'),
+        title: t('shop.orderFlow.stepOne.title'),
+      },
+      {
+        id: 2,
+        label: t('shop.orderFlow.stepLabels.2'),
+        title: t('shop.orderFlow.stepTwo.title'),
+      },
+      {
+        id: 3,
+        label: t('shop.orderFlow.stepLabels.3'),
+        title: t('shop.orderFlow.stepThree.title'),
+      },
+    ],
+    [t],
+  );
 
   const stepOneValid =
     orderForm.customer_name.trim() &&
@@ -1042,186 +1062,250 @@ const ShopPage = () => {
             </button>
 
             <div className="zpos-order-modal-body">
-              {orderStep !== 4 && (
-                <div className="zpos-order-steps">
-                  {[1, 2, 3].map((step) => (
-                    <div key={step} className={`zpos-order-step ${orderStep >= step ? 'is-active' : ''}`}>
-                      <span>{step}</span>
+              {orderStep !== 4 ? (
+                <>
+                  <div className="zpos-order-hero">
+                    <div className="zpos-order-hero-copy">
+                      <p className="zpos-modal-kicker">{orderStepMeta[orderStep - 1]?.label}</p>
+                      <h2 id="zpos-order-title">{orderStepMeta[orderStep - 1]?.title}</h2>
+                      <p className="zpos-order-hero-text">
+                        {t('shop.orderFlow.summaryLine', { count: cartSummary.count })}
+                      </p>
                     </div>
-                  ))}
-                </div>
-              )}
-
-              {orderStep === 1 && (
-                <div className="zpos-order-panel">
-                  <p className="zpos-modal-kicker">{t('shop.orderFlow.stepLabels.1')}</p>
-                  <h2 id="zpos-order-title">{t('shop.orderFlow.stepOne.title')}</h2>
-                  <div className="zpos-order-grid">
-                    <label className="zpos-order-field">
-                      <span>{t('shop.orderFlow.stepOne.fields.firstName')}</span>
-                      <input
-                        type="text"
-                        value={orderForm.customer_name}
-                        onChange={(event) => updateOrderForm('customer_name', event.target.value)}
-                      />
-                      {orderErrors.customer_name ? <small>{orderErrors.customer_name}</small> : null}
-                    </label>
-                    <label className="zpos-order-field">
-                      <span>{t('shop.orderFlow.stepOne.fields.lastName')}</span>
-                      <input
-                        type="text"
-                        value={orderForm.customer_last_name}
-                        onChange={(event) => updateOrderForm('customer_last_name', event.target.value)}
-                      />
-                      {orderErrors.customer_last_name ? <small>{orderErrors.customer_last_name}</small> : null}
-                    </label>
-                    <label className="zpos-order-field">
-                      <span>{t('shop.orderFlow.stepOne.fields.phone')}</span>
-                      <input
-                        type="tel"
-                        value={orderForm.customer_phone}
-                        onChange={(event) => updateOrderForm('customer_phone', event.target.value)}
-                      />
-                      {orderErrors.customer_phone ? <small>{orderErrors.customer_phone}</small> : null}
-                    </label>
-                    <label className="zpos-order-field">
-                      <span>{t('shop.orderFlow.stepOne.fields.email')}</span>
-                      <input
-                        type="email"
-                        value={orderForm.customer_email}
-                        onChange={(event) => updateOrderForm('customer_email', event.target.value)}
-                      />
-                      {orderErrors.customer_email ? <small>{orderErrors.customer_email}</small> : null}
-                    </label>
+                    <div className="zpos-order-hero-stats" aria-label="Order summary">
+                      <div className="zpos-order-hero-stat">
+                        <span>{t('shop.cart.title')}</span>
+                        <strong>{cartSummary.count}</strong>
+                      </div>
+                      <div className="zpos-order-hero-stat">
+                        <span>{t('shop.cart.total')}</span>
+                        <strong>{formatMoney(cartSummary.total)}</strong>
+                      </div>
+                    </div>
                   </div>
-                  <div className="zpos-order-actions">
-                    <button type="button" className="zpos-order-next" disabled={!stepOneValid} onClick={goToStepTwo}>
-                      {t('common.next')}
-                    </button>
-                  </div>
-                </div>
-              )}
 
-              {orderStep === 2 && (
-                <div className="zpos-order-panel">
-                  <p className="zpos-modal-kicker">{t('shop.orderFlow.stepLabels.2')}</p>
-                  <h2 id="zpos-order-title">{t('shop.orderFlow.stepTwo.title')}</h2>
-                  <label className="zpos-order-field">
-                    <span>{t('shop.orderFlow.stepTwo.heardAbout')}</span>
-                    <select
-                      value={orderForm.heard_about}
-                      onChange={(event) => updateOrderForm('heard_about', event.target.value)}
-                    >
-                      <option value="">{t('shop.orderFlow.stepTwo.selectPlaceholder')}</option>
-                      {heardAboutOptions.map((value) => (
-                        <option key={value} value={value}>
-                          {t(`shop.orderFlow.heardAbout.${value}`)}
-                        </option>
+                  <div className="zpos-order-progress">
+                    <div className="zpos-order-progress-bar">
+                      <span
+                        style={{
+                          width: `${((orderStep - 1) / (orderStepMeta.length - 1)) * 100}%`,
+                        }}
+                      />
+                    </div>
+                    <div className="zpos-order-steps">
+                      {orderStepMeta.map((step) => (
+                        <div
+                          key={step.id}
+                          className={`zpos-order-step ${orderStep >= step.id ? 'is-active' : ''} ${orderStep === step.id ? 'is-current' : ''}`}
+                        >
+                          <span className="zpos-order-step-index">{step.id}</span>
+                          <div className="zpos-order-step-copy">
+                            <small>{step.label}</small>
+                            <strong>{step.title}</strong>
+                          </div>
+                        </div>
                       ))}
-                    </select>
-                    {orderErrors.heard_about ? <small>{orderErrors.heard_about}</small> : null}
-                  </label>
-
-                  <div className="zpos-order-warranty-block">
-                    <span className="zpos-order-block-title">{t('shop.orderFlow.stepTwo.partnerWarranty')}</span>
-                    <div className="zpos-order-choice-row">
-                      <button
-                        type="button"
-                        className={`zpos-order-choice ${orderForm.has_partner_warranty === true ? 'is-active' : ''}`}
-                        onClick={() => updateOrderForm('has_partner_warranty', true)}
-                      >
-                        {t('shop.orderFlow.common.yes')}
-                      </button>
-                      <button
-                        type="button"
-                        className={`zpos-order-choice ${orderForm.has_partner_warranty === false ? 'is-active' : ''}`}
-                        onClick={() => updateOrderForm('has_partner_warranty', false)}
-                      >
-                        {t('shop.orderFlow.common.no')}
-                      </button>
-                    </div>
-                    {orderErrors.has_partner_warranty ? <small className="zpos-order-error-inline">{orderErrors.has_partner_warranty}</small> : null}
-                    <div className="zpos-order-partners">
-                      <div className="zpos-order-partner">Logo</div>
-                      <div className="zpos-order-partner">Logo</div>
-                      <div className="zpos-order-partner">Logo</div>
                     </div>
                   </div>
 
-                  {orderForm.has_partner_warranty && (
-                    <label className="zpos-order-field">
-                      <span>{t('shop.orderFlow.stepTwo.warrantyId')}</span>
-                      <input
-                        type="text"
-                        value={orderForm.partner_warranty_id}
-                        onChange={(event) => updateOrderForm('partner_warranty_id', event.target.value)}
-                      />
-                      {orderErrors.partner_warranty_id ? <small>{orderErrors.partner_warranty_id}</small> : null}
-                    </label>
-                  )}
+                  <div className="zpos-order-layout">
+                    <div className="zpos-order-panel">
+                      {orderStep === 1 && (
+                        <>
+                          <div className="zpos-order-panel-head">
+                            <h3>{t('shop.orderFlow.stepOne.title')}</h3>
+                          </div>
+                          <div className="zpos-order-grid">
+                            <label className="zpos-order-field">
+                              <span>{t('shop.orderFlow.stepOne.fields.firstName')}</span>
+                              <input
+                                type="text"
+                                value={orderForm.customer_name}
+                                onChange={(event) => updateOrderForm('customer_name', event.target.value)}
+                              />
+                              {orderErrors.customer_name ? <small>{orderErrors.customer_name}</small> : null}
+                            </label>
+                            <label className="zpos-order-field">
+                              <span>{t('shop.orderFlow.stepOne.fields.lastName')}</span>
+                              <input
+                                type="text"
+                                value={orderForm.customer_last_name}
+                                onChange={(event) => updateOrderForm('customer_last_name', event.target.value)}
+                              />
+                              {orderErrors.customer_last_name ? <small>{orderErrors.customer_last_name}</small> : null}
+                            </label>
+                            <label className="zpos-order-field">
+                              <span>{t('shop.orderFlow.stepOne.fields.phone')}</span>
+                              <input
+                                type="tel"
+                                value={orderForm.customer_phone}
+                                onChange={(event) => updateOrderForm('customer_phone', event.target.value)}
+                              />
+                              {orderErrors.customer_phone ? <small>{orderErrors.customer_phone}</small> : null}
+                            </label>
+                            <label className="zpos-order-field">
+                              <span>{t('shop.orderFlow.stepOne.fields.email')}</span>
+                              <input
+                                type="email"
+                                value={orderForm.customer_email}
+                                onChange={(event) => updateOrderForm('customer_email', event.target.value)}
+                              />
+                              {orderErrors.customer_email ? <small>{orderErrors.customer_email}</small> : null}
+                            </label>
+                          </div>
+                          <div className="zpos-order-actions">
+                            <button type="button" className="zpos-order-next" disabled={!stepOneValid} onClick={goToStepTwo}>
+                              {t('common.next')}
+                            </button>
+                          </div>
+                        </>
+                      )}
 
-                  <div className="zpos-order-actions">
-                    <button type="button" className="zpos-order-back" onClick={() => setOrderStep(1)}>
-                      {t('common.back')}
-                    </button>
-                    <button type="button" className="zpos-order-next" disabled={!stepTwoValid} onClick={goToStepThree}>
-                      {t('common.next')}
-                    </button>
-                  </div>
-                </div>
-              )}
+                      {orderStep === 2 && (
+                        <>
+                          <div className="zpos-order-panel-head">
+                            <h3>{t('shop.orderFlow.stepTwo.title')}</h3>
+                          </div>
+                          <label className="zpos-order-field">
+                            <span>{t('shop.orderFlow.stepTwo.heardAbout')}</span>
+                            <select
+                              value={orderForm.heard_about}
+                              onChange={(event) => updateOrderForm('heard_about', event.target.value)}
+                            >
+                              <option value="">{t('shop.orderFlow.stepTwo.selectPlaceholder')}</option>
+                              {heardAboutOptions.map((value) => (
+                                <option key={value} value={value}>
+                                  {t(`shop.orderFlow.heardAbout.${value}`)}
+                                </option>
+                              ))}
+                            </select>
+                            {orderErrors.heard_about ? <small>{orderErrors.heard_about}</small> : null}
+                          </label>
 
-              {orderStep === 3 && (
-                <div className="zpos-order-panel">
-                  <p className="zpos-modal-kicker">{t('shop.orderFlow.stepLabels.3')}</p>
-                  <h2 id="zpos-order-title">{t('shop.orderFlow.stepThree.title')}</h2>
-                  <div className="zpos-order-payment-grid">
-                    <button type="button" className="zpos-choice is-disabled" disabled>
-                      <span className="zpos-choice-label">{t('shop.orderFlow.stepThree.payOnline')}</span>
-                      <small>{t('shop.orderFlow.stepThree.onlineDisabled')}</small>
-                    </button>
-                    <button
-                      type="button"
-                      className="zpos-choice is-primary"
-                      onClick={submitOnsiteOrder}
-                      disabled={orderMutation.isLoading}
-                    >
-                      <span className="zpos-choice-label">{t('shop.orderFlow.stepThree.payOnsite')}</span>
-                      <small>
-                        {orderMutation.isLoading
-                          ? t('shop.orderFlow.stepThree.processing')
-                          : t('shop.orderFlow.stepThree.payOnsiteDescription')}
-                      </small>
-                    </button>
-                  </div>
-                  {orderErrors.submit ? <p className="zpos-order-submit-error">{orderErrors.submit}</p> : null}
-                  <div className="zpos-order-actions">
-                    <button type="button" className="zpos-order-back" onClick={() => setOrderStep(2)} disabled={orderMutation.isLoading}>
-                      {t('common.back')}
-                    </button>
-                  </div>
-                </div>
-              )}
+                          <div className="zpos-order-warranty-block">
+                            <span className="zpos-order-block-title">{t('shop.orderFlow.stepTwo.partnerWarranty')}</span>
+                            <div className="zpos-order-choice-row">
+                              <button
+                                type="button"
+                                className={`zpos-order-choice ${orderForm.has_partner_warranty === true ? 'is-active' : ''}`}
+                                onClick={() => updateOrderForm('has_partner_warranty', true)}
+                              >
+                                {t('shop.orderFlow.common.yes')}
+                              </button>
+                              <button
+                                type="button"
+                                className={`zpos-order-choice ${orderForm.has_partner_warranty === false ? 'is-active' : ''}`}
+                                onClick={() => updateOrderForm('has_partner_warranty', false)}
+                              >
+                                {t('shop.orderFlow.common.no')}
+                              </button>
+                            </div>
+                            {orderErrors.has_partner_warranty ? <small className="zpos-order-error-inline">{orderErrors.has_partner_warranty}</small> : null}
+                            <div className="zpos-order-partners">
+                              <div className="zpos-order-partner">01</div>
+                              <div className="zpos-order-partner">02</div>
+                              <div className="zpos-order-partner">03</div>
+                            </div>
+                          </div>
 
-              {orderStep === 4 && createdOrder && (
-                <div className="zpos-order-panel zpos-order-success">
-                  <p className="zpos-modal-kicker">{t('shop.orderFlow.success.kicker')}</p>
-                  <h2 id="zpos-order-title">
-                    {t('shop.orderFlow.success.title', { customer_name: createdOrder.customer_name })}
-                  </h2>
-                  <p>{t('shop.orderFlow.success.orderNumber', { order_number: createdOrder.order_number })}</p>
-                  <p>
-                    {t('shop.orderFlow.success.contact', {
-                      customer_phone_number: createdOrder.customer_phone,
-                    })}
-                  </p>
-                  <strong>{t('shop.orderFlow.success.thankYou')}</strong>
-                  <div className="zpos-order-actions">
-                    <button type="button" className="zpos-order-next" onClick={closeOrderModal}>
-                      {t('common.close')}
-                    </button>
+                          {orderForm.has_partner_warranty && (
+                            <label className="zpos-order-field">
+                              <span>{t('shop.orderFlow.stepTwo.warrantyId')}</span>
+                              <input
+                                type="text"
+                                value={orderForm.partner_warranty_id}
+                                onChange={(event) => updateOrderForm('partner_warranty_id', event.target.value)}
+                              />
+                              {orderErrors.partner_warranty_id ? <small>{orderErrors.partner_warranty_id}</small> : null}
+                            </label>
+                          )}
+
+                          <div className="zpos-order-actions">
+                            <button type="button" className="zpos-order-back" onClick={() => setOrderStep(1)}>
+                              {t('common.back')}
+                            </button>
+                            <button type="button" className="zpos-order-next" disabled={!stepTwoValid} onClick={goToStepThree}>
+                              {t('common.next')}
+                            </button>
+                          </div>
+                        </>
+                      )}
+
+                      {orderStep === 3 && (
+                        <>
+                          <div className="zpos-order-panel-head">
+                            <h3>{t('shop.orderFlow.stepThree.title')}</h3>
+                          </div>
+                          <div className="zpos-order-payment-grid">
+                            <button type="button" className="zpos-choice is-disabled" disabled>
+                              <span className="zpos-choice-label">{t('shop.orderFlow.stepThree.payOnline')}</span>
+                              <small>{t('shop.orderFlow.stepThree.onlineDisabled')}</small>
+                            </button>
+                            <button
+                              type="button"
+                              className="zpos-choice is-primary"
+                              onClick={submitOnsiteOrder}
+                              disabled={orderMutation.isLoading}
+                            >
+                              <span className="zpos-choice-label">{t('shop.orderFlow.stepThree.payOnsite')}</span>
+                              <small>
+                                {orderMutation.isLoading
+                                  ? t('shop.orderFlow.stepThree.processing')
+                                  : t('shop.orderFlow.stepThree.payOnsiteDescription')}
+                              </small>
+                            </button>
+                          </div>
+                          {orderErrors.submit ? <p className="zpos-order-submit-error">{orderErrors.submit}</p> : null}
+                          <div className="zpos-order-actions">
+                            <button type="button" className="zpos-order-back" onClick={() => setOrderStep(2)} disabled={orderMutation.isLoading}>
+                              {t('common.back')}
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    <aside className="zpos-order-sidebar">
+                      <div className="zpos-order-sidebar-block">
+                        <p>{t('shop.cart.title')}</p>
+                        <strong>{formatMoney(cartSummary.total)}</strong>
+                        <span>{t('shop.orderFlow.summaryCount', { count: cartSummary.count })}</span>
+                      </div>
+                      <div className="zpos-order-sidebar-list">
+                        {cart.map((item) => (
+                          <div key={`order-summary-${item.id}`} className="zpos-order-sidebar-item">
+                            <div>
+                              <strong>{item.title}</strong>
+                              <small>{item.mode === 'service' ? t('shop.choiceLabels.withService') : t('shop.choiceLabels.productOnly')}</small>
+                            </div>
+                            <span>{formatMoney(item.price * item.qty)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </aside>
                   </div>
-                </div>
+                </>
+              ) : (
+                createdOrder && (
+                  <div className="zpos-order-panel zpos-order-success">
+                    <p className="zpos-modal-kicker">{t('shop.orderFlow.success.kicker')}</p>
+                    <h2 id="zpos-order-title">
+                      {t('shop.orderFlow.success.title', { customer_name: createdOrder.customer_name })}
+                    </h2>
+                    <p>{t('shop.orderFlow.success.orderNumber', { order_number: createdOrder.order_number })}</p>
+                    <p>
+                      {t('shop.orderFlow.success.contact', {
+                        customer_phone_number: createdOrder.customer_phone,
+                      })}
+                    </p>
+                    <strong>{t('shop.orderFlow.success.thankYou')}</strong>
+                    <div className="zpos-order-actions">
+                      <button type="button" className="zpos-order-next" onClick={closeOrderModal}>
+                        {t('common.close')}
+                      </button>
+                    </div>
+                  </div>
+                )
               )}
             </div>
           </div>

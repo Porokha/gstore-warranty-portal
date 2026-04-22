@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator';
 import { ShopOrderStatus } from '../entities/shop-order.entity';
 
 export class UpdateShopOrderDto {
@@ -13,4 +13,8 @@ export class UpdateShopOrderDto {
   @IsOptional()
   @IsString()
   payment_method?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  viewed?: boolean;
 }
