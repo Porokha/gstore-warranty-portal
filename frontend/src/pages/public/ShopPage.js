@@ -282,126 +282,116 @@ const ShopPage = () => {
             </button>
           </div>
 
-          <section className="zpos-filter-section">
-            <div className="zpos-section-head">
-              <p>{t('shop.filters.brandKicker')}</p>
-              <h3>{t('shop.filters.brandTitle')}</h3>
-            </div>
-            <div className="zpos-filter-list">
-              <button
-                type="button"
-                className={`zpos-filter-pill ${brands.length === 0 ? 'is-active' : ''}`}
-                onClick={() => toggleBrand('all')}
-              >
-                <span>{t('shop.filters.allBrands')}</span>
-              </button>
-              {brandOptions.map((brand) => (
+          <div className="zpos-sidebar-scroll">
+            <section className="zpos-filter-section">
+              <div className="zpos-section-head">
+                <p>{t('shop.filters.brandKicker')}</p>
+                <h3>{t('shop.filters.brandTitle')}</h3>
+              </div>
+              <div className="zpos-filter-list">
                 <button
-                  key={brand}
                   type="button"
-                  className={`zpos-filter-pill ${brands.includes(brand) ? 'is-active' : ''}`}
-                  onClick={() => toggleBrand(brand)}
+                  className={`zpos-filter-pill ${brands.length === 0 ? 'is-active' : ''}`}
+                  onClick={() => toggleBrand('all')}
                 >
-                  <span>{brand}</span>
+                  <span>{t('shop.filters.allBrands')}</span>
                 </button>
-              ))}
-            </div>
-          </section>
-
-          <section className="zpos-filter-section">
-            <div className="zpos-section-head">
-              <p>{t('shop.filters.partTypeKicker')}</p>
-              <h3>{t('shop.filters.partTypeTitle')}</h3>
-            </div>
-            <div className="zpos-filter-list">
-              {partOptions.map(([value, label]) => {
-                const active = value === 'all' ? parts.length === 0 : parts.includes(value);
-                return (
+                {brandOptions.map((brand) => (
                   <button
-                    key={value}
+                    key={brand}
                     type="button"
-                    className={`zpos-filter-pill ${active ? 'is-active' : ''}`}
-                    onClick={() => togglePart(value)}
+                    className={`zpos-filter-pill ${brands.includes(brand) ? 'is-active' : ''}`}
+                    onClick={() => toggleBrand(brand)}
                   >
-                    <span>{t(label)}</span>
+                    <span>{brand}</span>
                   </button>
-                );
-              })}
-            </div>
-          </section>
+                ))}
+              </div>
+            </section>
 
-          <section className="zpos-filter-section">
-            <div className="zpos-section-head">
-              <p>{t('shop.filters.sourceKicker')}</p>
-              <h3>{t('shop.filters.sourceTitle')}</h3>
-            </div>
-            {['oem', 'third-party'].map((value) => (
-              <label className="zpos-check" key={value}>
-                <input
-                  type="checkbox"
-                  checked={sources.includes(value)}
-                  onChange={() =>
-                    setSources((current) =>
-                      current.includes(value)
-                        ? current.filter((source) => source !== value)
-                        : [...current, value],
-                    )
-                  }
-                />
-                <span className="zpos-checkmark" aria-hidden="true">
-                  <svg viewBox="0 0 24 24">
-                    <path d="M5 12.5l4.2 4.2L19 7.5"></path>
-                  </svg>
-                </span>
-                <span className="zpos-check-label">{t(labelForSource[value])}</span>
-              </label>
-            ))}
-          </section>
+            <section className="zpos-filter-section">
+              <div className="zpos-section-head">
+                <p>{t('shop.filters.partTypeKicker')}</p>
+                <h3>{t('shop.filters.partTypeTitle')}</h3>
+              </div>
+              <div className="zpos-filter-list">
+                {partOptions.map(([value, label]) => {
+                  const active = value === 'all' ? parts.length === 0 : parts.includes(value);
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      className={`zpos-filter-pill ${active ? 'is-active' : ''}`}
+                      onClick={() => togglePart(value)}
+                    >
+                      <span>{t(label)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
 
-          <section className="zpos-filter-section">
-            <div className="zpos-section-head">
-              <p>{t('shop.filters.priceKicker')}</p>
-              <h3>{t('shop.filters.priceTitle')}</h3>
-            </div>
-            <div className="zpos-price-grid">
-              <label>
-                <span>{t('shop.filters.min')}</span>
-                <input
-                  id="zpos-price-min"
-                  type="number"
-                  min="0"
-                  step="1"
-                  placeholder={t('shop.filters.minPlaceholder')}
-                  value={priceMin}
-                  onChange={(event) => setPriceMin(event.target.value)}
-                />
-              </label>
-              <label>
-                <span>{t('shop.filters.max')}</span>
-                <input
-                  id="zpos-price-max"
-                  type="number"
-                  min="0"
-                  step="1"
-                  placeholder={t('shop.filters.maxPlaceholder')}
-                  value={priceMax}
-                  onChange={(event) => setPriceMax(event.target.value)}
-                />
-              </label>
-            </div>
-          </section>
+            <section className="zpos-filter-section">
+              <div className="zpos-section-head">
+                <p>{t('shop.filters.sourceKicker')}</p>
+                <h3>{t('shop.filters.sourceTitle')}</h3>
+              </div>
+              {['oem', 'third-party'].map((value) => (
+                <label className="zpos-check" key={value}>
+                  <input
+                    type="checkbox"
+                    checked={sources.includes(value)}
+                    onChange={() =>
+                      setSources((current) =>
+                        current.includes(value)
+                          ? current.filter((source) => source !== value)
+                          : [...current, value],
+                      )
+                    }
+                  />
+                  <span className="zpos-checkmark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M5 12.5l4.2 4.2L19 7.5"></path>
+                    </svg>
+                  </span>
+                  <span className="zpos-check-label">{t(labelForSource[value])}</span>
+                </label>
+              ))}
+            </section>
 
-          <section className="zpos-filter-section">
-            <div className="zpos-section-head">
-              <p>{t('shop.scope.kicker')}</p>
-              <h3>{t('shop.scope.title')}</h3>
-            </div>
-            <ul className="zpos-note-list">
-              <li>{t('shop.scope.points.0')}</li>
-              <li>{t('shop.scope.points.1')}</li>
-              <li>{t('shop.scope.points.2')}</li>
-            </ul>
-          </section>
+            <section className="zpos-filter-section">
+              <div className="zpos-section-head">
+                <p>{t('shop.filters.priceKicker')}</p>
+                <h3>{t('shop.filters.priceTitle')}</h3>
+              </div>
+              <div className="zpos-price-grid">
+                <label>
+                  <span>{t('shop.filters.min')}</span>
+                  <input
+                    id="zpos-price-min"
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder={t('shop.filters.minPlaceholder')}
+                    value={priceMin}
+                    onChange={(event) => setPriceMin(event.target.value)}
+                  />
+                </label>
+                <label>
+                  <span>{t('shop.filters.max')}</span>
+                  <input
+                    id="zpos-price-max"
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder={t('shop.filters.maxPlaceholder')}
+                    value={priceMax}
+                    onChange={(event) => setPriceMax(event.target.value)}
+                  />
+                </label>
+              </div>
+            </section>
+          </div>
         </aside>
 
         <main className="zpos-main">

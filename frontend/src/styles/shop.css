@@ -449,7 +449,7 @@ body.zpos-fullscreen .container {
 
 .zpos-sidebar {
   border-right: 1px solid var(--zpos-border);
-  overflow: auto;
+  overflow: hidden;
 }
 
 .zpos-cart {
@@ -534,15 +534,39 @@ body.zpos-fullscreen .container {
 
 .zpos-sidebar-head {
   flex: 0 0 auto;
-  position: sticky;
-  top: 0;
-  z-index: 3;
   align-items: flex-end;
   gap: 12px;
   margin: 0 0 10px;
   padding: 0 0 12px;
-  background: var(--zpos-panel);
   border-bottom: 1px solid var(--zpos-border);
+}
+
+.zpos-sidebar-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 6px;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(24, 33, 43, 0.14) transparent;
+}
+
+.zpos-sidebar-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.zpos-sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.zpos-sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(24, 33, 43, 0.12);
+  border-radius: 999px;
+}
+
+.zpos-sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(24, 33, 43, 0.2);
 }
 
 .zpos-sidebar-head h2,
@@ -1779,7 +1803,7 @@ body.zpos-fullscreen .container {
     transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
     box-shadow: 18px 0 36px rgba(20, 30, 46, 0.12);
     background: var(--zpos-panel);
-    overflow: auto;
+    overflow: hidden;
   }
 
   .zpos-root::before {
