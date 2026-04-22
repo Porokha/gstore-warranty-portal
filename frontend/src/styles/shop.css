@@ -274,17 +274,20 @@ body.zpos-fullscreen .container {
 
 .zpos-shop-banner-trust {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: center;
   gap: 10px 18px;
   text-align: center;
+  min-height: 20px;
+  white-space: nowrap;
 }
 
 .zpos-shop-banner-trust span {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  flex: 0 0 auto;
   color: #4d4660;
   font-size: 13px;
   font-weight: 600;
@@ -529,7 +532,7 @@ body.zpos-fullscreen .container {
 }
 
 .zpos-filter-section + .zpos-filter-section {
-  margin-top: 18px;
+  margin-top: 0;
 }
 
 .zpos-sidebar-head {
