@@ -188,42 +188,6 @@ const ShopPage = () => {
     };
   }, []);
 
-  useEffect(() => {
-    if (isProductsLoading) {
-      return undefined;
-    }
-
-    const token = ++gridRenderTokenRef.current;
-    if (!didInitGridRef.current) {
-      didInitGridRef.current = true;
-      setGridProducts(visibleProducts);
-      setGridStage('enter');
-      const frame = window.requestAnimationFrame(() => {
-        if (token === gridRenderTokenRef.current) {
-          setGridStage('idle');
-        }
-      });
-      return () => window.cancelAnimationFrame(frame);
-    }
-
-    setGridStage('leave');
-    const timeout = window.setTimeout(() => {
-      if (token !== gridRenderTokenRef.current) {
-        return;
-      }
-
-      setGridProducts(visibleProducts);
-      setGridStage('enter');
-      window.requestAnimationFrame(() => {
-        if (token === gridRenderTokenRef.current) {
-          setGridStage('idle');
-        }
-      });
-    }, GRID_TRANSITION_MS);
-
-    return () => window.clearTimeout(timeout);
-  }, [isProductsLoading, visibleProducts]);
-
   const heardAboutOptions = useMemo(
     () => ['facebook', 'instagram', 'tiktok', 'friend', 'google', 'ai'],
     [],
@@ -316,6 +280,42 @@ const ShopPage = () => {
 
     return { subtotal, total, serviceTotal, count };
   }, [cart]);
+
+  useEffect(() => {
+    if (isProductsLoading) {
+      return undefined;
+    }
+
+    const token = ++gridRenderTokenRef.current;
+    if (!didInitGridRef.current) {
+      didInitGridRef.current = true;
+      setGridProducts(visibleProducts);
+      setGridStage('enter');
+      const frame = window.requestAnimationFrame(() => {
+        if (token === gridRenderTokenRef.current) {
+          setGridStage('idle');
+        }
+      });
+      return () => window.cancelAnimationFrame(frame);
+    }
+
+    setGridStage('leave');
+    const timeout = window.setTimeout(() => {
+      if (token !== gridRenderTokenRef.current) {
+        return;
+      }
+
+      setGridProducts(visibleProducts);
+      setGridStage('enter');
+      window.requestAnimationFrame(() => {
+        if (token === gridRenderTokenRef.current) {
+          setGridStage('idle');
+        }
+      });
+    }, GRID_TRANSITION_MS);
+
+    return () => window.clearTimeout(timeout);
+  }, [isProductsLoading, visibleProducts]);
 
   const togglePart = (part) => {
     if (part === 'all') {
