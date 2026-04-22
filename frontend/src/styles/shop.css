@@ -79,6 +79,7 @@ body.zpos-fullscreen .container {
 .zpos-shop-banner {
   position: relative;
   display: grid;
+  flex: 0 0 auto;
   gap: 22px;
   padding: 5px 0 15px;
   border: none;
@@ -943,6 +944,7 @@ body.zpos-fullscreen .container {
   align-items: center;
   gap: 8px;
   flex: 0 0 auto;
+  min-width: 240px;
   padding: 0;
   border-radius: 0;
   background: transparent;
