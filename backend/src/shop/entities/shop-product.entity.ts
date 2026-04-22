@@ -39,6 +39,9 @@ export class ShopProduct {
   @Column()
   title: string;
 
+  @Column({ nullable: true })
+  brand: string | null;
+
   @Column({
     type: 'enum',
     enum: ['smartphones', 'laptops', 'accessories'],

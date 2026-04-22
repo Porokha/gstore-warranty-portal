@@ -35,6 +35,7 @@ import ConfirmDialog from '../../components/common/ConfirmDialog';
 
 const emptyForm = {
   title: '',
+  brand: '',
   slug: '',
   device_category: 'smartphones',
   part_category: 'screen',
@@ -237,6 +238,7 @@ const ShopAdminProductsPage = () => {
     setSelectedIds([product.id]);
     setForm({
       title: product.title || '',
+      brand: product.brand || '',
       slug: product.slug || '',
       device_category: product.device_category || 'smartphones',
       part_category: product.part_category || 'screen',
@@ -567,7 +569,7 @@ const ShopAdminProductsPage = () => {
                               {product.title}
                             </Typography>
                             <Typography sx={{ fontSize: '12px', color: '#667085' }}>
-                              {product.slug}
+                              {[product.brand, product.slug].filter(Boolean).join(' • ')}
                             </Typography>
                           </Box>
                         </Stack>
@@ -711,6 +713,15 @@ const ShopAdminProductsPage = () => {
                   value={form.title}
                   onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
                   required
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Brand"
+                  value={form.brand}
+                  onChange={(event) => setForm((prev) => ({ ...prev, brand: event.target.value }))}
+                  helperText="Used in the public shop brand filter and CSV imports."
                 />
               </Grid>
               <Grid item xs={12}>

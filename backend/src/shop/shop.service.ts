@@ -49,6 +49,12 @@ export class ShopService {
       qb.andWhere('product.device_category = :device', { device: filters.device });
     }
 
+    if (filters.brand) {
+      qb.andWhere('LOWER(COALESCE(product.brand, "")) = :brand', {
+        brand: filters.brand.toLowerCase(),
+      });
+    }
+
     if (filters.part) {
       qb.andWhere('product.part_category = :part', { part: filters.part });
     }
@@ -59,7 +65,7 @@ export class ShopService {
 
     if (filters.search) {
       qb.andWhere(
-        '(LOWER(product.title) LIKE :search OR LOWER(COALESCE(product.issue_label, "")) LIKE :search OR LOWER(COALESCE(product.description, "")) LIKE :search)',
+        '(LOWER(product.title) LIKE :search OR LOWER(COALESCE(product.brand, "")) LIKE :search OR LOWER(COALESCE(product.issue_label, "")) LIKE :search OR LOWER(COALESCE(product.description, "")) LIKE :search)',
         { search: `%${filters.search.toLowerCase()}%` },
       );
     }
@@ -87,6 +93,7 @@ export class ShopService {
     const product = this.shopProductsRepository.create({
       ...createDto,
       image_url: imageUrl,
+      brand: createDto.brand?.trim() || null,
       slug: await this.ensureUniqueSlug(createDto.slug || createDto.title),
       price: this.toNullableMoney(createDto.price),
       sale_price: this.toNullableMoney(createDto.sale_price),
@@ -113,6 +120,7 @@ export class ShopService {
     }
 
     if (updateDto.title !== undefined) product.title = updateDto.title;
+    if (updateDto.brand !== undefined) product.brand = updateDto.brand?.trim() || null;
     if (updateDto.device_category !== undefined) product.device_category = updateDto.device_category;
     if (updateDto.part_category !== undefined) product.part_category = updateDto.part_category;
     if (updateDto.inventory_source !== undefined) {
@@ -178,6 +186,7 @@ export class ShopService {
     const errors: Array<{ row: number; message: string }> = [];
     let created = 0;
     let updated = 0;
+    let nextAutoSortOrder = await this.getNextSortOrder();
 
     for (let index = 0; index < rows.length; index += 1) {
       const row = rows[index];
@@ -193,6 +202,7 @@ export class ShopService {
 
         if (existing) {
           existing.title = parsed.title;
+          existing.brand = parsed.brand?.trim() || null;
           existing.slug = canonicalSlug;
           existing.device_category = parsed.device_category;
           existing.part_category = parsed.part_category;
@@ -204,7 +214,7 @@ export class ShopService {
           existing.sale_price = this.toNullableMoney(parsed.sale_price);
           existing.service_price = this.toNullableMoney(parsed.service_price);
           existing.stock_quantity = parsed.stock_quantity ?? 0;
-          existing.sort_order = parsed.sort_order ?? 0;
+          existing.sort_order = parsed.sort_order ?? existing.sort_order;
           existing.is_active = parsed.is_active ?? true;
           existing.deleted_at = null;
           await this.shopProductsRepository.save(existing);
@@ -220,11 +230,14 @@ export class ShopService {
           sale_price: this.toNullableMoney(parsed.sale_price),
           service_price: this.toNullableMoney(parsed.service_price),
           stock_quantity: parsed.stock_quantity ?? 0,
-          sort_order: parsed.sort_order ?? 0,
+          sort_order: parsed.sort_order ?? nextAutoSortOrder,
           is_active: parsed.is_active ?? true,
           deleted_at: null,
         });
         await this.shopProductsRepository.save(product);
+        if (parsed.sort_order == null) {
+          nextAutoSortOrder += 10;
+        }
         created += 1;
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown import error';
@@ -246,6 +259,7 @@ export class ShopService {
   generateProductsTemplateCsv() {
     const header = [
       'title',
+      'brand',
       'slug',
       'device_category',
       'part_category',
@@ -264,6 +278,7 @@ export class ShopService {
     const rows = [
       [
         'iPhone 15 OLED Display',
+        'Apple',
         'iphone-15-oled-display',
         'smartphones',
         'screen',
@@ -280,6 +295,7 @@ export class ShopService {
       ],
       [
         'MacBook Air M2 Battery Pack',
+        'Apple',
         'macbook-air-m2-battery-pack',
         'laptops',
         'battery',
@@ -296,6 +312,7 @@ export class ShopService {
       ],
       [
         'iPhone 15 Back Glass Service Bundle',
+        'Apple',
         'iphone-15-back-glass-service-bundle',
         'smartphones',
         'screen',
@@ -425,6 +442,7 @@ export class ShopService {
       id: product.id,
       slug: product.slug,
       title: product.title,
+      brand: product.brand,
       device_category: product.device_category,
       part_category: product.part_category,
       inventory_source: product.inventory_source,
@@ -474,6 +492,16 @@ export class ShopService {
       suffix += 1;
       candidate = `${normalized}-${suffix}`;
     }
+  }
+
+  private async getNextSortOrder() {
+    const result = await this.shopProductsRepository
+      .createQueryBuilder('product')
+      .select('MAX(product.sort_order)', 'maxSortOrder')
+      .getRawOne<{ maxSortOrder: string | null }>();
+
+    const currentMax = Number(result?.maxSortOrder ?? 0);
+    return Number.isFinite(currentMax) ? currentMax + 10 : 10;
   }
 
   private slugify(value: string) {
@@ -581,6 +609,7 @@ export class ShopService {
 
     return {
       title,
+      brand: String(row.brand || '').trim() || undefined,
       slug: String(row.slug || '').trim() || undefined,
       device_category: device,
       part_category: part,
@@ -592,7 +621,7 @@ export class ShopService {
       sale_price: this.parseOptionalNumber(row.sale_price),
       service_price: this.parseOptionalNumber(row.service_price),
       stock_quantity: this.parseOptionalInteger(row.stock_quantity) ?? 0,
-      sort_order: this.parseOptionalInteger(row.sort_order) ?? 0,
+      sort_order: this.parseOptionalInteger(row.sort_order) ?? undefined,
       is_active: this.parseOptionalBoolean(row.is_active) ?? true,
     };
   }

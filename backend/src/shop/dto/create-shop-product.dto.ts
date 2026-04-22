@@ -22,6 +22,11 @@ export class CreateShopProductDto {
   @IsOptional()
   @IsString()
   @MaxLength(255)
+  brand?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
   slug?: string;
 
   @IsEnum(ShopDeviceCategory)

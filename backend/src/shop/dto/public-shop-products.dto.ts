@@ -7,6 +7,10 @@ import {
 
 export class PublicShopProductsDto {
   @IsOptional()
+  @IsString()
+  brand?: string;
+
+  @IsOptional()
   @IsEnum(ShopDeviceCategory)
   device?: ShopDeviceCategory;
 

@@ -140,6 +140,7 @@ const canBuyWithService = (product) => getServicePrice(product) != null;
 const ShopPage = () => {
   const { t } = useTranslation();
   const [tab, setTab] = useState('all');
+  const [brands, setBrands] = useState([]);
   const [parts, setParts] = useState([]);
   const [search, setSearch] = useState('');
   const [priceMin, setPriceMin] = useState('');
@@ -229,11 +230,12 @@ const ShopPage = () => {
   const visibleProducts = useMemo(() => {
     return products.filter((product) => {
       const activePrice = getDisplayPrice(product);
-      const haystack = `${product.title} ${product.issue_label || ''} ${product.part_category} ${product.device_category}`.toLowerCase();
+      const haystack = `${product.title} ${product.brand || ''} ${product.issue_label || ''} ${product.part_category} ${product.device_category}`.toLowerCase();
       const numericMin = priceMin === '' ? null : Number(priceMin);
       const numericMax = priceMax === '' ? null : Number(priceMax);
 
       if (tab !== 'all' && product.device_category !== tab) return false;
+      if (brands.length > 0 && !brands.includes(product.brand || '')) return false;
       if (parts.length > 0 && !parts.includes(product.part_category)) return false;
       if (search && !haystack.includes(search.toLowerCase())) return false;
       if (!sources.includes(product.inventory_source)) return false;
@@ -242,7 +244,19 @@ const ShopPage = () => {
       if (numericMax !== null && activePrice !== null && activePrice > numericMax) return false;
       return true;
     });
-  }, [parts, priceMax, priceMin, products, search, sources, tab]);
+  }, [brands, parts, priceMax, priceMin, products, search, sources, tab]);
+
+  const brandOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          products
+            .map((product) => String(product.brand || '').trim())
+            .filter(Boolean),
+        ),
+      ).sort((left, right) => left.localeCompare(right)),
+    [products],
+  );
 
   const cartSummary = useMemo(() => {
     const subtotal = cart.reduce((sum, item) => sum + item.basePrice * item.qty, 0);
@@ -264,8 +278,20 @@ const ShopPage = () => {
     );
   };
 
+  const toggleBrand = (brand) => {
+    if (brand === 'all') {
+      setBrands([]);
+      return;
+    }
+
+    setBrands((current) =>
+      current.includes(brand) ? current.filter((value) => value !== brand) : [...current, brand],
+    );
+  };
+
   const resetFilters = () => {
     setTab('all');
+    setBrands([]);
     setParts([]);
     setSearch('');
     setPriceMin('');
@@ -374,6 +400,32 @@ const ShopPage = () => {
               {t('shop.filters.reset')}
             </button>
           </div>
+
+          <section className="zpos-filter-section">
+            <div className="zpos-section-head">
+              <p>{t('shop.filters.brandKicker')}</p>
+              <h3>{t('shop.filters.brandTitle')}</h3>
+            </div>
+            <div className="zpos-filter-list">
+              <button
+                type="button"
+                className={`zpos-filter-pill ${brands.length === 0 ? 'is-active' : ''}`}
+                onClick={() => toggleBrand('all')}
+              >
+                <span>{t('shop.filters.allBrands')}</span>
+              </button>
+              {brandOptions.map((brand) => (
+                <button
+                  key={brand}
+                  type="button"
+                  className={`zpos-filter-pill ${brands.includes(brand) ? 'is-active' : ''}`}
+                  onClick={() => toggleBrand(brand)}
+                >
+                  <span>{brand}</span>
+                </button>
+              ))}
+            </div>
+          </section>
 
           <section className="zpos-filter-section">
             <div className="zpos-section-head">
@@ -569,8 +621,9 @@ const ShopPage = () => {
                     </div>
                     <div className="zpos-card-body">
                       <p className="zpos-meta">
-                        {t(labelForDevice[product.device_category])} • {t(labelForPart[product.part_category])} •{' '}
-                        {t(labelForSource[product.inventory_source])}
+                        {[product.brand, t(labelForDevice[product.device_category]), t(labelForPart[product.part_category]), t(labelForSource[product.inventory_source])]
+                          .filter(Boolean)
+                          .join(' • ')}
                       </p>
                       <h3>{product.title}</h3>
                       <p className="zpos-issue">{product.issue_label}</p>
@@ -723,8 +776,9 @@ const ShopPage = () => {
 
             <div className="zpos-modal-content">
               <p id="zpos-modal-kicker" className="zpos-modal-kicker">
-                {t(labelForDevice[activeProduct.device_category])} • {t(labelForPart[activeProduct.part_category])} •{' '}
-                {t(labelForSource[activeProduct.inventory_source])}
+                {[activeProduct.brand, t(labelForDevice[activeProduct.device_category]), t(labelForPart[activeProduct.part_category]), t(labelForSource[activeProduct.inventory_source])]
+                  .filter(Boolean)
+                  .join(' • ')}
               </p>
               <h2 id="zpos-modal-title">{activeProduct.title}</h2>
               <p id="zpos-modal-desc" className="zpos-modal-desc">
