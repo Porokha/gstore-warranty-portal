@@ -386,16 +386,16 @@ const ShopPage = () => {
     closeModal();
   };
 
-  const openModal = (product) => {
+  function openModal(product) {
     window.clearTimeout(modalCloseTimerRef.current);
     setModalProduct(product);
     setModalState('closing');
     window.requestAnimationFrame(() => {
       setModalState('open');
     });
-  };
+  }
 
-  const closeModal = () => {
+  function closeModal() {
     if (!modalProduct) {
       return;
     }
@@ -406,9 +406,9 @@ const ShopPage = () => {
       setModalProduct(null);
       setModalState('closed');
     }, MODAL_CLOSE_MS);
-  };
+  }
 
-  const openOrderModal = () => {
+  function openOrderModal() {
     window.clearTimeout(orderModalCloseTimerRef.current);
     setCreatedOrder(null);
     setOrderErrors({});
@@ -424,9 +424,9 @@ const ShopPage = () => {
     window.requestAnimationFrame(() => {
       setOrderModalState('open');
     });
-  };
+  }
 
-  const closeOrderModal = () => {
+  function closeOrderModal() {
     if (orderModalState === 'closed') {
       return;
     }
@@ -442,7 +442,7 @@ const ShopPage = () => {
         setOrderForm(createInitialOrderForm());
       }
     }, ORDER_MODAL_CLOSE_MS);
-  };
+  }
 
   const updateOrderForm = (field, value) => {
     setOrderForm((current) => ({ ...current, [field]: value }));
