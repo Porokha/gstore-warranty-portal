@@ -47,9 +47,10 @@ export class CreateShopProductDto {
   @MaxLength(500)
   image_url?: string;
 
+  @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  price: number;
+  price?: number | null;
 
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })

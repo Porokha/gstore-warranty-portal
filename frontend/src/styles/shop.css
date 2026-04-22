@@ -1079,6 +1079,13 @@ body.zpos-fullscreen .container {
   color: var(--zpos-muted);
 }
 
+.zpos-price-note {
+  display: block;
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--zpos-muted);
+}
+
 .zpos-price strong,
 .zpos-summary-row strong,
 .zpos-cart-item strong,
@@ -1498,6 +1505,15 @@ body.zpos-fullscreen .container {
   text-align: left;
   border-radius: 14px;
   background: var(--zpos-panel-muted);
+}
+
+.zpos-choice.is-disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+.zpos-choice:disabled {
+  pointer-events: none;
 }
 
 .zpos-choice.is-primary {

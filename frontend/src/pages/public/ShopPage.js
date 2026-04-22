@@ -1,46 +1,47 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from 'react-query';
+import { useTranslation } from 'react-i18next';
 import '../../styles/shop.css';
 import { shopService } from '../../services/shopService';
 
 const partOptions = [
-  ['all', 'All Parts'],
-  ['board', 'Board'],
-  ['screen', 'Screen'],
-  ['sensor', 'Sensor'],
-  ['battery', 'Battery'],
-  ['camera', 'Camera'],
-  ['speaker', 'Speaker'],
-  ['charging', 'Charging'],
+  ['all', 'common.all'],
+  ['board', 'shop.partLabels.board'],
+  ['screen', 'shop.partLabels.screen'],
+  ['sensor', 'shop.partLabels.sensor'],
+  ['battery', 'shop.partLabels.battery'],
+  ['camera', 'shop.partLabels.camera'],
+  ['speaker', 'shop.partLabels.speaker'],
+  ['charging', 'shop.partLabels.charging'],
 ];
 
 const deviceTitles = {
-  all: 'All repair parts',
-  smartphones: 'Smartphone repair parts',
-  laptops: 'Laptop repair parts',
-  accessories: 'Accessories',
+  all: 'shop.deviceTitles.all',
+  smartphones: 'shop.deviceTitles.smartphones',
+  laptops: 'shop.deviceTitles.laptops',
+  accessories: 'shop.deviceTitles.accessories',
 };
 
 const labelForDevice = {
-  smartphones: 'Smartphones',
-  laptops: 'Laptops',
-  accessories: 'Accessories',
+  smartphones: 'shop.deviceLabels.smartphones',
+  laptops: 'shop.deviceLabels.laptops',
+  accessories: 'shop.deviceLabels.accessories',
 };
 
 const labelForPart = {
-  board: 'Board',
-  screen: 'Screen',
-  sensor: 'Sensor',
-  battery: 'Battery',
-  camera: 'Camera',
-  speaker: 'Speaker',
-  charging: 'Charging',
-  accessory: 'Accessory',
+  board: 'shop.partLabels.board',
+  screen: 'shop.partLabels.screen',
+  sensor: 'shop.partLabels.sensor',
+  battery: 'shop.partLabels.battery',
+  camera: 'shop.partLabels.camera',
+  speaker: 'shop.partLabels.speaker',
+  charging: 'shop.partLabels.charging',
+  accessory: 'shop.partLabels.accessory',
 };
 
 const labelForSource = {
-  oem: 'OEM',
-  'third-party': 'Third Party',
+  oem: 'shop.sourceLabels.oem',
+  'third-party': 'shop.sourceLabels.thirdParty',
 };
 
 const formatMoney = (value) => `₾${Number(value || 0).toFixed(2)}`;
@@ -48,9 +49,6 @@ const formatMoney = (value) => `₾${Number(value || 0).toFixed(2)}`;
 const shopJourney = [
   {
     step: '01',
-    label: 'Browse',
-    title: 'Choose your device',
-    description: 'Start with the right family and narrow down the catalog before you compare parts.',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path
@@ -71,9 +69,6 @@ const shopJourney = [
   },
   {
     step: '02',
-    label: 'Match',
-    title: 'Find the exact part',
-    description: 'Search by issue, component family, and repair flow to avoid mismatched replacements.',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path
@@ -94,9 +89,6 @@ const shopJourney = [
   },
   {
     step: '03',
-    label: 'Select',
-    title: 'Pick OEM or service-ready',
-    description: 'Compare origin, bundled repair pricing, and future payment options before checkout.',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path
@@ -118,9 +110,6 @@ const shopJourney = [
   },
   {
     step: '04',
-    label: 'Receive',
-    title: 'Get it fast across Georgia',
-    description: 'Orders move into fulfillment quickly, with the shop prepared for checkout and delivery expansion.',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path
@@ -142,7 +131,14 @@ const shopJourney = [
   },
 ];
 
+const getProductOnlyPrice = (product) => product.sale_price ?? product.price;
+const getServicePrice = (product) => product.service_price;
+const getDisplayPrice = (product) => getProductOnlyPrice(product) ?? getServicePrice(product);
+const canBuyProductOnly = (product) => getProductOnlyPrice(product) != null;
+const canBuyWithService = (product) => getServicePrice(product) != null;
+
 const ShopPage = () => {
+  const { t } = useTranslation();
   const [tab, setTab] = useState('all');
   const [parts, setParts] = useState([]);
   const [search, setSearch] = useState('');
@@ -157,6 +153,17 @@ const ShopPage = () => {
 
   const { data: products = [] } = useQuery(['shop-public-products'], () =>
     shopService.getPublicProducts(),
+  );
+
+  const shopJourneyContent = useMemo(
+    () =>
+      shopJourney.map((item, index) => ({
+        ...item,
+        label: t(`shop.journey.${index}.label`),
+        title: t(`shop.journey.${index}.title`),
+        description: t(`shop.journey.${index}.description`),
+      })),
+    [t],
   );
 
   useEffect(() => {
@@ -221,7 +228,7 @@ const ShopPage = () => {
 
   const visibleProducts = useMemo(() => {
     return products.filter((product) => {
-      const activePrice = product.sale_price ?? product.price;
+      const activePrice = getDisplayPrice(product);
       const haystack = `${product.title} ${product.issue_label || ''} ${product.part_category} ${product.device_category}`.toLowerCase();
       const numericMin = priceMin === '' ? null : Number(priceMin);
       const numericMax = priceMax === '' ? null : Number(priceMax);
@@ -230,8 +237,9 @@ const ShopPage = () => {
       if (parts.length > 0 && !parts.includes(product.part_category)) return false;
       if (search && !haystack.includes(search.toLowerCase())) return false;
       if (!sources.includes(product.inventory_source)) return false;
-      if (numericMin !== null && activePrice < numericMin) return false;
-      if (numericMax !== null && activePrice > numericMax) return false;
+      if (numericMin !== null && activePrice !== null && activePrice < numericMin) return false;
+      if (numericMin !== null && activePrice === null) return false;
+      if (numericMax !== null && activePrice !== null && activePrice > numericMax) return false;
       return true;
     });
   }, [parts, priceMax, priceMin, products, search, sources, tab]);
@@ -267,8 +275,12 @@ const ShopPage = () => {
   };
 
   const addToCart = (product, mode) => {
-    const activePrice = mode === 'service' ? product.service_price ?? product.price : product.sale_price ?? product.price;
-    const basePrice = product.sale_price ?? product.price;
+    const activePrice = mode === 'service' ? getServicePrice(product) : getProductOnlyPrice(product);
+    if (activePrice == null) {
+      return;
+    }
+
+    const basePrice = getProductOnlyPrice(product) ?? 0;
     const itemId = `${product.id}:${mode}`;
 
     setCart((current) => {
@@ -290,7 +302,7 @@ const ShopPage = () => {
           price: activePrice,
           basePrice,
           image_url: product.image_url,
-          subtitle: `${labelForDevice[product.device_category]} • ${labelForPart[product.part_category]}`,
+          subtitle: `${t(labelForDevice[product.device_category])} • ${t(labelForPart[product.part_category])}`,
         },
       ];
     });
@@ -318,22 +330,19 @@ const ShopPage = () => {
     <div
       id="zpos-root"
       className={`zpos-root ${filtersOpen ? 'zpos-filters-open' : ''}`}
-      aria-label="ZEZVA shop"
+      aria-label={t('shop.ariaLabel')}
     >
       <div className="zpos-shop-banner">
         <div className="zpos-shop-banner-copy">
           <h1>
-            Parts sourcing,
-            <em> made clearer.</em>
+            {t('shop.banner.titleLead')}
+            <em>{t('shop.banner.titleEmphasis')}</em>
           </h1>
-          <p>
-            A cleaner Zezva storefront for parts discovery, repair bundles, and the checkout flow
-            you will expand next.
-          </p>
+          <p>{t('shop.banner.description')}</p>
         </div>
 
-        <div className="zpos-shop-banner-grid" aria-label="Shop process">
-          {shopJourney.map((item, index) => (
+        <div className="zpos-shop-banner-grid" aria-label={t('shop.aria.process')}>
+          {shopJourneyContent.map((item, index) => (
             <article className="zpos-shop-step" key={item.step}>
               <div className="zpos-shop-step-mark">{item.step}</div>
               <div className="zpos-shop-step-icon">{item.icon}</div>
@@ -347,29 +356,29 @@ const ShopPage = () => {
           ))}
         </div>
 
-        <div className="zpos-shop-banner-trust" aria-label="Shop highlights">
-          <span>Service bundles ready</span>
-          <span>OEM and third-party stock</span>
-          <span>Fast local delivery flow</span>
+        <div className="zpos-shop-banner-trust" aria-label={t('shop.aria.highlights')}>
+          <span>{t('shop.banner.trust.0')}</span>
+          <span>{t('shop.banner.trust.1')}</span>
+          <span>{t('shop.banner.trust.2')}</span>
         </div>
       </div>
 
       <div className="zpos-shell">
-        <aside className="zpos-sidebar" aria-label="Filters">
+        <aside className="zpos-sidebar" aria-label={t('shop.aria.filters')}>
           <div className="zpos-sidebar-head">
             <div>
-              <p>Filters</p>
-              <h2>Product Filters</h2>
+              <p>{t('shop.filters.kicker')}</p>
+              <h2>{t('shop.filters.title')}</h2>
             </div>
             <button className="zpos-reset-btn" type="button" onClick={resetFilters}>
-              Reset
+              {t('shop.filters.reset')}
             </button>
           </div>
 
           <section className="zpos-filter-section">
             <div className="zpos-section-head">
-              <p>Part Type</p>
-              <h3>Component Family</h3>
+              <p>{t('shop.filters.partTypeKicker')}</p>
+              <h3>{t('shop.filters.partTypeTitle')}</h3>
             </div>
             <div className="zpos-filter-list">
               {partOptions.map(([value, label]) => {
@@ -381,7 +390,7 @@ const ShopPage = () => {
                     className={`zpos-filter-pill ${active ? 'is-active' : ''}`}
                     onClick={() => togglePart(value)}
                   >
-                    <span>{label}</span>
+                    <span>{t(label)}</span>
                   </button>
                 );
               })}
@@ -390,8 +399,8 @@ const ShopPage = () => {
 
           <section className="zpos-filter-section">
             <div className="zpos-section-head">
-              <p>Source</p>
-              <h3>Inventory Origin</h3>
+              <p>{t('shop.filters.sourceKicker')}</p>
+              <h3>{t('shop.filters.sourceTitle')}</h3>
             </div>
             {['oem', 'third-party'].map((value) => (
               <label className="zpos-check" key={value}>
@@ -411,37 +420,37 @@ const ShopPage = () => {
                     <path d="M5 12.5l4.2 4.2L19 7.5"></path>
                   </svg>
                 </span>
-                <span className="zpos-check-label">{labelForSource[value]}</span>
+                <span className="zpos-check-label">{t(labelForSource[value])}</span>
               </label>
             ))}
           </section>
 
           <section className="zpos-filter-section">
             <div className="zpos-section-head">
-              <p>Price Filter</p>
-              <h3>Budget Range</h3>
+              <p>{t('shop.filters.priceKicker')}</p>
+              <h3>{t('shop.filters.priceTitle')}</h3>
             </div>
             <div className="zpos-price-grid">
               <label>
-                <span>Min</span>
+                <span>{t('shop.filters.min')}</span>
                 <input
                   id="zpos-price-min"
                   type="number"
                   min="0"
                   step="1"
-                  placeholder="0"
+                  placeholder={t('shop.filters.minPlaceholder')}
                   value={priceMin}
                   onChange={(event) => setPriceMin(event.target.value)}
                 />
               </label>
               <label>
-                <span>Max</span>
+                <span>{t('shop.filters.max')}</span>
                 <input
                   id="zpos-price-max"
                   type="number"
                   min="0"
                   step="1"
-                  placeholder="900"
+                  placeholder={t('shop.filters.maxPlaceholder')}
                   value={priceMax}
                   onChange={(event) => setPriceMax(event.target.value)}
                 />
@@ -451,13 +460,13 @@ const ShopPage = () => {
 
           <section className="zpos-filter-section">
             <div className="zpos-section-head">
-              <p>Checkout Status</p>
-              <h3>Current Scope</h3>
+              <p>{t('shop.scope.kicker')}</p>
+              <h3>{t('shop.scope.title')}</h3>
             </div>
             <ul className="zpos-note-list">
-              <li>Catalog and cart are live for preview and admin management.</li>
-              <li>Checkout remains prototype-only until payment options are integrated.</li>
-              <li>Shop admin is available only through the direct hidden URL.</li>
+              <li>{t('shop.scope.points.0')}</li>
+              <li>{t('shop.scope.points.1')}</li>
+              <li>{t('shop.scope.points.2')}</li>
             </ul>
           </section>
         </aside>
@@ -469,17 +478,17 @@ const ShopPage = () => {
                 type="button"
                 className="zpos-filter-toggle"
                 onClick={() => setFiltersOpen(true)}
-                aria-label="Open filters"
+                aria-label={t('shop.filters.open')}
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M4 7h16"></path>
                   <path d="M7 12h10"></path>
                   <path d="M10 17h4"></path>
                 </svg>
-                <span>Filters</span>
+                <span>{t('shop.filters.title')}</span>
               </button>
 
-              <div className="zpos-tabs" role="tablist" aria-label="Device tabs" ref={tabsRef}>
+              <div className="zpos-tabs" role="tablist" aria-label={t('shop.tabs.ariaLabel')} ref={tabsRef}>
                 {['all', 'smartphones', 'laptops'].map((value) => (
                   <button
                     key={value}
@@ -487,7 +496,7 @@ const ShopPage = () => {
                     className={`zpos-tab ${tab === value ? 'is-active' : ''}`}
                     onClick={() => setTab(value)}
                   >
-                    <span>{value === 'all' ? 'All' : labelForDevice[value]}</span>
+                    <span>{value === 'all' ? t('common.all') : t(labelForDevice[value])}</span>
                   </button>
                 ))}
                 <span
@@ -505,7 +514,7 @@ const ShopPage = () => {
                 <input
                   id="zpos-search"
                   type="search"
-                  placeholder="Search parts, models, issue tags..."
+                  placeholder={t('shop.searchPlaceholder')}
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                 />
@@ -513,10 +522,10 @@ const ShopPage = () => {
 
               <div className="zpos-results-meta">
                 <span className="zpos-results-label" id="zpos-results-title">
-                  {deviceTitles[tab] || deviceTitles.all}
+                  {t(deviceTitles[tab] || deviceTitles.all)}
                 </span>
                 <strong id="zpos-results-count">{visibleProducts.length}</strong>
-                <span>visible</span>
+                <span>{t('shop.visible')}</span>
               </div>
             </div>
           </div>
@@ -525,13 +534,15 @@ const ShopPage = () => {
             <div id="zpos-grid" className="zpos-grid" aria-live="polite">
               {visibleProducts.length === 0 && (
                 <div className="zpos-empty zpos-empty--grid is-visible">
-                  <strong>No parts match these filters</strong>
-                  <p>Try another tab, adjust price range, or reset the source selection.</p>
+                  <strong>{t('shop.empty.title')}</strong>
+                  <p>{t('shop.empty.description')}</p>
                 </div>
               )}
 
               {visibleProducts.map((product, index) => {
-                const activePrice = product.sale_price ?? product.price;
+                const displayPrice = getDisplayPrice(product);
+                const productOnlyAvailable = canBuyProductOnly(product);
+                const serviceAvailable = canBuyWithService(product);
                 return (
                   <article
                     key={product.id}
@@ -547,22 +558,37 @@ const ShopPage = () => {
                     }}
                   >
                     <div className="zpos-thumb">
-                      {product.sale_price != null && <span className="zpos-badge">Sale</span>}
-                      <img src={product.image_url} alt={`${product.title} thumbnail`} loading="lazy" />
+                      {product.sale_price != null && product.price != null && (
+                        <span className="zpos-badge">{t('shop.badges.sale')}</span>
+                      )}
+                      <img
+                        src={product.image_url}
+                        alt={t('shop.imageAlt.thumbnail', { title: product.title })}
+                        loading="lazy"
+                      />
                     </div>
                     <div className="zpos-card-body">
                       <p className="zpos-meta">
-                        {labelForDevice[product.device_category]} • {labelForPart[product.part_category]} •{' '}
-                        {labelForSource[product.inventory_source]}
+                        {t(labelForDevice[product.device_category])} • {t(labelForPart[product.part_category])} •{' '}
+                        {t(labelForSource[product.inventory_source])}
                       </p>
                       <h3>{product.title}</h3>
                       <p className="zpos-issue">{product.issue_label}</p>
                       <div className="zpos-card-footer">
                         <div className="zpos-price">
-                          {product.sale_price != null && (
+                          {product.sale_price != null && product.price != null && (
                             <span className="zpos-old-price">{formatMoney(product.price)}</span>
                           )}
-                          <strong>{formatMoney(activePrice)}</strong>
+                          {displayPrice != null ? (
+                            <strong>{formatMoney(displayPrice)}</strong>
+                          ) : (
+                            <span className="zpos-price-note">{t('shop.availability.unavailable')}</span>
+                          )}
+                          {!productOnlyAvailable && serviceAvailable ? (
+                            <span className="zpos-price-note">
+                              {t('shop.availability.productOnlyWithService')}
+                            </span>
+                          ) : null}
                         </div>
                         <button
                           type="button"
@@ -572,7 +598,7 @@ const ShopPage = () => {
                             setActiveProduct(product);
                           }}
                         >
-                          Add
+                          {t('shop.actions.add')}
                         </button>
                       </div>
                     </div>
@@ -583,11 +609,11 @@ const ShopPage = () => {
           </div>
         </main>
 
-        <aside className="zpos-cart" aria-label="Cart">
+        <aside className="zpos-cart" aria-label={t('shop.aria.cart')}>
           <div className="zpos-cart-head">
             <div>
-              <p>Customer Cart</p>
-              <h2>Repair order</h2>
+              <p>{t('shop.cart.kicker')}</p>
+              <h2>{t('shop.cart.title')}</h2>
             </div>
             <span id="zpos-cart-count" className="zpos-cart-count">
               {cartSummary.count}
@@ -597,19 +623,25 @@ const ShopPage = () => {
           <div id="zpos-cart-items" className="zpos-cart-items">
             {cart.length === 0 && (
               <div className="zpos-empty">
-                <strong>No parts added yet</strong>
-                <p>Add a part or open quick view for service pricing.</p>
+                <strong>{t('shop.cart.emptyTitle')}</strong>
+                <p>{t('shop.cart.emptyDescription')}</p>
               </div>
             )}
 
             {cart.map((item) => (
               <div key={item.id} className="zpos-cart-item">
                 <div className="zpos-cart-item-thumb">
-                  <img src={item.image_url} alt={`${item.title} thumbnail`} loading="lazy" />
+                  <img
+                    src={item.image_url}
+                    alt={t('shop.imageAlt.thumbnail', { title: item.title })}
+                    loading="lazy"
+                  />
                 </div>
                 <div className="zpos-cart-item-main">
                   <p className="zpos-cart-mode">
-                    {item.mode === 'service' ? 'With repair service' : 'Product only'}
+                    {item.mode === 'service'
+                      ? t('shop.choiceLabels.withService')
+                      : t('shop.choiceLabels.productOnly')}
                   </p>
                   <h3 title={item.title}>{item.title}</h3>
                   <p className="zpos-cart-item-sub">{item.subtitle}</p>
@@ -641,19 +673,19 @@ const ShopPage = () => {
 
           <div className="zpos-summary">
             <div className="zpos-summary-row">
-              <span>Subtotal</span>
+              <span>{t('shop.summary.subtotal')}</span>
               <strong id="zpos-subtotal">{formatMoney(cartSummary.subtotal)}</strong>
             </div>
             <div className="zpos-summary-row">
-              <span>Service uplift</span>
+              <span>{t('shop.summary.serviceUplift')}</span>
               <strong id="zpos-service-total">{formatMoney(cartSummary.serviceTotal)}</strong>
             </div>
             <div className="zpos-summary-row is-total">
-              <span>Prototype total</span>
+              <span>{t('shop.summary.prototypeTotal')}</span>
               <strong id="zpos-total">{formatMoney(cartSummary.total)}</strong>
             </div>
             <button className="zpos-checkout" type="button">
-              Prototype only, checkout stays disabled for now
+              {t('shop.summary.checkoutDisabled')}
             </button>
           </div>
         </aside>
@@ -674,7 +706,7 @@ const ShopPage = () => {
               type="button"
               className="zpos-modal-close"
               onClick={() => setActiveProduct(null)}
-              aria-label="Close"
+              aria-label={t('common.close')}
             >
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M6 6l12 12"></path>
@@ -683,13 +715,16 @@ const ShopPage = () => {
             </button>
 
             <div id="zpos-modal-visual" className="zpos-modal-visual">
-              <img src={activeProduct.image_url} alt={`${activeProduct.title} preview`} />
+              <img
+                src={activeProduct.image_url}
+                alt={t('shop.imageAlt.preview', { title: activeProduct.title })}
+              />
             </div>
 
             <div className="zpos-modal-content">
               <p id="zpos-modal-kicker" className="zpos-modal-kicker">
-                {labelForDevice[activeProduct.device_category]} • {labelForPart[activeProduct.part_category]} •{' '}
-                {labelForSource[activeProduct.inventory_source]}
+                {t(labelForDevice[activeProduct.device_category])} • {t(labelForPart[activeProduct.part_category])} •{' '}
+                {t(labelForSource[activeProduct.inventory_source])}
               </p>
               <h2 id="zpos-modal-title">{activeProduct.title}</h2>
               <p id="zpos-modal-desc" className="zpos-modal-desc">
@@ -699,22 +734,40 @@ const ShopPage = () => {
               <div className="zpos-modal-prices">
                 <button
                   type="button"
-                  className="zpos-choice is-primary"
+                  className={`zpos-choice is-primary ${canBuyProductOnly(activeProduct) ? '' : 'is-disabled'}`}
                   onClick={() => addToCart(activeProduct, 'product')}
+                  disabled={!canBuyProductOnly(activeProduct)}
                 >
-                  <span className="zpos-choice-label">Buy only product</span>
-                  <strong>{formatMoney(activeProduct.sale_price ?? activeProduct.price)}</strong>
-                  <small>Part only, no installation included.</small>
+                  <span className="zpos-choice-label">{t('shop.choiceLabels.productOnly')}</span>
+                  <strong>
+                    {canBuyProductOnly(activeProduct)
+                      ? formatMoney(getProductOnlyPrice(activeProduct))
+                      : t('shop.availability.productOnlyWithService')}
+                  </strong>
+                  <small>
+                    {canBuyProductOnly(activeProduct)
+                      ? t('shop.choiceDescriptions.productOnly')
+                      : t('shop.choiceDescriptions.productOnlyUnavailable')}
+                  </small>
                 </button>
 
                 <button
                   type="button"
-                  className="zpos-choice"
+                  className={`zpos-choice ${canBuyWithService(activeProduct) ? '' : 'is-disabled'}`}
                   onClick={() => addToCart(activeProduct, 'service')}
+                  disabled={!canBuyWithService(activeProduct)}
                 >
-                  <span className="zpos-choice-label">Buy with repair service</span>
-                  <strong>{formatMoney(activeProduct.service_price ?? activeProduct.price)}</strong>
-                  <small>Part plus fitting and diagnostics handoff.</small>
+                  <span className="zpos-choice-label">{t('shop.choiceLabels.withService')}</span>
+                  <strong>
+                    {canBuyWithService(activeProduct)
+                      ? formatMoney(getServicePrice(activeProduct))
+                      : t('shop.availability.serviceUnavailable')}
+                  </strong>
+                  <small>
+                    {canBuyWithService(activeProduct)
+                      ? t('shop.choiceDescriptions.withService')
+                      : t('shop.choiceDescriptions.serviceUnavailable')}
+                  </small>
                 </button>
               </div>
             </div>

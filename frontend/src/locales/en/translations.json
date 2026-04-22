@@ -445,6 +445,143 @@
       "failed": "Failed"
     }
   },
+  "shop": {
+    "ariaLabel": "ZEZVA shop",
+    "aria": {
+      "process": "Shop process",
+      "highlights": "Shop highlights",
+      "filters": "Filters",
+      "cart": "Cart"
+    },
+    "imageAlt": {
+      "thumbnail": "{{title}} thumbnail",
+      "preview": "{{title}} preview"
+    },
+    "banner": {
+      "titleLead": "Parts sourcing,",
+      "titleEmphasis": " made clearer.",
+      "description": "A cleaner Zezva storefront for parts discovery, repair bundles, and the checkout flow you will expand next.",
+      "trust": [
+        "Service bundles ready",
+        "OEM and third-party stock",
+        "Fast local delivery flow"
+      ]
+    },
+    "journey": [
+      {
+        "label": "Browse",
+        "title": "Choose your device",
+        "description": "Start with the right family and narrow down the catalog before you compare parts."
+      },
+      {
+        "label": "Match",
+        "title": "Find the exact part",
+        "description": "Search by issue, component family, and repair flow to avoid mismatched replacements."
+      },
+      {
+        "label": "Select",
+        "title": "Pick OEM or service-ready",
+        "description": "Compare origin, bundled repair pricing, and future payment options before checkout."
+      },
+      {
+        "label": "Receive",
+        "title": "Get it fast across Georgia",
+        "description": "Orders move into fulfillment quickly, with the shop prepared for checkout and delivery expansion."
+      }
+    ],
+    "deviceTitles": {
+      "all": "All repair parts",
+      "smartphones": "Smartphone repair parts",
+      "laptops": "Laptop repair parts",
+      "accessories": "Accessories"
+    },
+    "deviceLabels": {
+      "smartphones": "Smartphones",
+      "laptops": "Laptops",
+      "accessories": "Accessories"
+    },
+    "partLabels": {
+      "board": "Board",
+      "screen": "Screen",
+      "sensor": "Sensor",
+      "battery": "Battery",
+      "camera": "Camera",
+      "speaker": "Speaker",
+      "charging": "Charging",
+      "accessory": "Accessory"
+    },
+    "sourceLabels": {
+      "oem": "OEM",
+      "thirdParty": "Third Party"
+    },
+    "filters": {
+      "kicker": "Filters",
+      "title": "Product Filters",
+      "reset": "Reset",
+      "partTypeKicker": "Part Type",
+      "partTypeTitle": "Component Family",
+      "sourceKicker": "Source",
+      "sourceTitle": "Inventory Origin",
+      "priceKicker": "Price Filter",
+      "priceTitle": "Budget Range",
+      "min": "Min",
+      "max": "Max",
+      "minPlaceholder": "0",
+      "maxPlaceholder": "900",
+      "open": "Open filters"
+    },
+    "scope": {
+      "kicker": "Checkout Status",
+      "title": "Current Scope",
+      "points": [
+        "Catalog and cart are live for preview and admin management.",
+        "Checkout remains prototype-only until payment options are integrated.",
+        "Shop admin is available only through the direct hidden URL."
+      ]
+    },
+    "tabs": {
+      "ariaLabel": "Device tabs"
+    },
+    "searchPlaceholder": "Search parts, models, issue tags...",
+    "visible": "visible",
+    "badges": {
+      "sale": "Sale"
+    },
+    "availability": {
+      "productOnlyWithService": "Available only with service",
+      "serviceUnavailable": "Service unavailable",
+      "unavailable": "Unavailable"
+    },
+    "actions": {
+      "add": "Add"
+    },
+    "empty": {
+      "title": "No parts match these filters",
+      "description": "Try another tab, adjust price range, or reset the source selection."
+    },
+    "cart": {
+      "kicker": "Customer Cart",
+      "title": "Repair order",
+      "emptyTitle": "No parts added yet",
+      "emptyDescription": "Add a part or open quick view for service pricing."
+    },
+    "choiceLabels": {
+      "productOnly": "Buy only product",
+      "withService": "Buy with repair service"
+    },
+    "choiceDescriptions": {
+      "productOnly": "Part only, no installation included.",
+      "productOnlyUnavailable": "This product is available only when booked together with service.",
+      "withService": "Part plus fitting and diagnostics handoff.",
+      "serviceUnavailable": "Service is currently not available for this product."
+    },
+    "summary": {
+      "subtotal": "Subtotal",
+      "serviceUplift": "Service uplift",
+      "prototypeTotal": "Prototype total",
+      "checkoutDisabled": "Prototype only, checkout stays disabled for now"
+    }
+  },
   "apiKeys": {
     "title": "API Keys",
     "wooSection": "WooCommerce Integration",

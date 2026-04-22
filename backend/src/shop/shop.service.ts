@@ -88,7 +88,7 @@ export class ShopService {
       ...createDto,
       image_url: imageUrl,
       slug: await this.ensureUniqueSlug(createDto.slug || createDto.title),
-      price: this.toMoney(createDto.price),
+      price: this.toNullableMoney(createDto.price),
       sale_price: this.toNullableMoney(createDto.sale_price),
       service_price: this.toNullableMoney(createDto.service_price),
       stock_quantity: createDto.stock_quantity ?? 0,
@@ -123,7 +123,7 @@ export class ShopService {
     if (updateDto.image_url !== undefined) {
       product.image_url = await this.prepareImageUrl(updateDto.image_url);
     }
-    if (updateDto.price !== undefined) product.price = this.toMoney(updateDto.price);
+    if (updateDto.price !== undefined) product.price = this.toNullableMoney(updateDto.price);
     if (updateDto.sale_price !== undefined) product.sale_price = this.toNullableMoney(updateDto.sale_price);
     if (updateDto.service_price !== undefined) {
       product.service_price = this.toNullableMoney(updateDto.service_price);
@@ -200,7 +200,7 @@ export class ShopService {
           existing.issue_label = parsed.issue_label;
           existing.description = parsed.description;
           existing.image_url = imageUrl;
-          existing.price = this.toMoney(parsed.price);
+          existing.price = this.toNullableMoney(parsed.price);
           existing.sale_price = this.toNullableMoney(parsed.sale_price);
           existing.service_price = this.toNullableMoney(parsed.service_price);
           existing.stock_quantity = parsed.stock_quantity ?? 0;
@@ -216,7 +216,7 @@ export class ShopService {
           ...parsed,
           image_url: imageUrl,
           slug: await this.ensureUniqueSlug(parsed.slug || parsed.title),
-          price: this.toMoney(parsed.price),
+          price: this.toNullableMoney(parsed.price),
           sale_price: this.toNullableMoney(parsed.sale_price),
           service_price: this.toNullableMoney(parsed.service_price),
           stock_quantity: parsed.stock_quantity ?? 0,
@@ -292,6 +292,22 @@ export class ShopService {
         '349',
         '5',
         '20',
+        'true',
+      ],
+      [
+        'iPhone 15 Back Glass Service Bundle',
+        'iphone-15-back-glass-service-bundle',
+        'smartphones',
+        'screen',
+        'third-party',
+        'Back glass damage',
+        'Available only when booked with service installation.',
+        '',
+        '',
+        '',
+        '189',
+        '4',
+        '30',
         'true',
       ],
     ];
@@ -415,7 +431,7 @@ export class ShopService {
       issue_label: product.issue_label,
       description: product.description,
       image_url: product.image_url,
-      price: Number(product.price),
+      price: product.price !== null ? Number(product.price) : null,
       sale_price: product.sale_price !== null ? Number(product.sale_price) : null,
       service_price: product.service_price !== null ? Number(product.service_price) : null,
       stock_quantity: product.stock_quantity,
@@ -468,10 +484,6 @@ export class ShopService {
         .replace(/^-+|-+$/g, '')
         .slice(0, 120) || 'product'
     );
-  }
-
-  private toMoney(value: number) {
-    return Number(value).toFixed(2);
   }
 
   private toNullableMoney(value?: number | null) {
@@ -576,7 +588,7 @@ export class ShopService {
       issue_label: String(row.issue_label || '').trim() || undefined,
       description: String(row.description || '').trim() || undefined,
       image_url: String(row.image_url || '').trim() || undefined,
-      price: this.parseRequiredNumber(row.price, 'price'),
+      price: this.parseOptionalNumber(row.price),
       sale_price: this.parseOptionalNumber(row.sale_price),
       service_price: this.parseOptionalNumber(row.service_price),
       stock_quantity: this.parseOptionalInteger(row.stock_quantity) ?? 0,
@@ -597,14 +609,6 @@ export class ShopService {
     }
 
     return normalized;
-  }
-
-  private parseRequiredNumber(value: string, field: string) {
-    const parsed = Number(value);
-    if (Number.isNaN(parsed)) {
-      throw new BadRequestException(`Invalid "${field}" value.`);
-    }
-    return parsed;
   }
 
   private parseOptionalNumber(value: string) {

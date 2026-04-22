@@ -69,8 +69,8 @@ export class ShopProduct {
   @Column({ nullable: true })
   image_url: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  price: string;
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true, default: null })
+  price: string | null;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   sale_price: string | null;

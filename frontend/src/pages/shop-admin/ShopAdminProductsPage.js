@@ -42,7 +42,7 @@ const emptyForm = {
   issue_label: '',
   description: '',
   image_url: '',
-  price: '0',
+  price: '',
   sale_price: '',
   service_price: '',
   stock_quantity: '0',
@@ -54,6 +54,25 @@ const productScopes = [
   { value: 'active', label: 'Catalog' },
   { value: 'trash', label: 'Trash' },
 ];
+
+const productOnlyStatusLabelKa = 'ხელმისაწვდომია, მხოლოდ სერვისთან ერთად';
+const serviceUnavailableLabelKa = 'სერვისი არ არის ხელმისაწვდომი';
+
+const formatAdminProductPrice = (product) => {
+  if (product.sale_price != null) {
+    return `₾${Number(product.sale_price).toFixed(2)}`;
+  }
+
+  if (product.price != null) {
+    return `₾${Number(product.price).toFixed(2)}`;
+  }
+
+  if (product.service_price != null) {
+    return productOnlyStatusLabelKa;
+  }
+
+  return 'Unavailable';
+};
 
 const ShopAdminProductsPage = () => {
   const queryClient = useQueryClient();
@@ -225,7 +244,7 @@ const ShopAdminProductsPage = () => {
       issue_label: product.issue_label || '',
       description: product.description || '',
       image_url: product.image_url || '',
-      price: String(product.price ?? '0'),
+      price: product.price == null ? '' : String(product.price),
       sale_price: product.sale_price == null ? '' : String(product.sale_price),
       service_price: product.service_price == null ? '' : String(product.service_price),
       stock_quantity: String(product.stock_quantity ?? 0),
@@ -236,7 +255,7 @@ const ShopAdminProductsPage = () => {
 
   const buildPayload = () => ({
     ...form,
-    price: Number(form.price || 0),
+    price: form.price === '' ? null : Number(form.price),
     sale_price: form.sale_price === '' ? null : Number(form.sale_price),
     service_price: form.service_price === '' ? null : Number(form.service_price),
     stock_quantity: Number(form.stock_quantity || 0),
@@ -564,7 +583,7 @@ const ShopAdminProductsPage = () => {
                           />
                         </Stack>
                       </TableCell>
-                      <TableCell>₾{Number(product.sale_price ?? product.price).toFixed(2)}</TableCell>
+                      <TableCell>{formatAdminProductPrice(product)}</TableCell>
                       <TableCell>
                         {scope === 'trash' ? (
                           <Typography sx={{ fontSize: '12px', color: '#667085' }}>
@@ -805,6 +824,11 @@ const ShopAdminProductsPage = () => {
                   label="Price"
                   value={form.price}
                   onChange={(event) => setForm((prev) => ({ ...prev, price: event.target.value }))}
+                  helperText={
+                    form.price === '' && form.service_price !== ''
+                      ? productOnlyStatusLabelKa
+                      : 'Leave empty to make this product available only with service.'
+                  }
                 />
               </Grid>
               <Grid item xs={4}>
@@ -826,6 +850,11 @@ const ShopAdminProductsPage = () => {
                   value={form.service_price}
                   onChange={(event) =>
                     setForm((prev) => ({ ...prev, service_price: event.target.value }))
+                  }
+                  helperText={
+                    form.service_price === ''
+                      ? serviceUnavailableLabelKa
+                      : 'Leave empty to disable the service-bundle option.'
                   }
                 />
               </Grid>
