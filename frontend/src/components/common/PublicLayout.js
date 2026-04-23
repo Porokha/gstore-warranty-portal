@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Box, AppBar, Toolbar, Button, Drawer, IconButton } from '@mui/material';
-import { Language as LanguageIcon, Menu as MenuIcon } from '@mui/icons-material';
+import { Menu as MenuIcon } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import ZevaLogo from './ZevaLogo';
 import CookieConsentBanner from './CookieConsentBanner';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const PublicLayout = () => {
   const navigate = useNavigate();
@@ -145,39 +146,9 @@ const PublicLayout = () => {
             })}
           </Box>
 
-          <Button
-            onClick={() => {
-              const newLang = i18n.language === 'en' ? 'ka' : 'en';
-              i18n.changeLanguage(newLang);
-            }}
-            startIcon={<LanguageIcon />}
-            sx={{
-              color: '#18181b',
-              textTransform: 'none',
-              fontWeight: 700,
-              fontSize: '14px',
-              border: '1px solid #e3d7ff',
-              borderRadius: '999px',
-              px: 1.5,
-              justifySelf: 'end',
-              minWidth: 'auto',
-              '@media (max-width:920px)': {
-                fontSize: '11px',
-                px: 0.85,
-                '& .MuiButton-startIcon': {
-                  marginRight: 0.35,
-                },
-                '& .MuiSvgIcon-root': {
-                  fontSize: '14px',
-                },
-              },
-              '&:hover': {
-                bgcolor: '#f3ecff',
-              },
-            }}
-          >
-            {i18n.language === 'en' ? 'EN' : 'KA'}
-          </Button>
+          <Box sx={{ justifySelf: 'end' }}>
+            <LanguageSwitcher compact />
+          </Box>
         </Toolbar>
       </AppBar>
 
@@ -218,28 +189,7 @@ const PublicLayout = () => {
             <Box sx={{ '& img': { width: '82px !important', maxWidth: '82px' } }}>
               <ZevaLogo size="large" variant="default" />
             </Box>
-            <Button
-              onClick={() => {
-                const newLang = i18n.language === 'en' ? 'ka' : 'en';
-                i18n.changeLanguage(newLang);
-              }}
-              startIcon={<LanguageIcon />}
-              sx={{
-                color: '#18181b',
-                textTransform: 'none',
-                fontWeight: 700,
-                fontSize: '11px',
-                border: '1px solid #e3d7ff',
-                borderRadius: '999px',
-                px: 1,
-                minWidth: 'auto',
-                '& .MuiButton-startIcon': {
-                  marginRight: 0.35,
-                },
-              }}
-            >
-              {i18n.language === 'en' ? 'EN' : 'KA'}
-            </Button>
+            <LanguageSwitcher compact />
           </Box>
 
           <Box sx={{ display: 'grid', gap: 0.5 }}>

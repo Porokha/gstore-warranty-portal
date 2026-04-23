@@ -15,6 +15,7 @@ import { Inventory2, ReceiptLong } from '@mui/icons-material';
 import { useQuery } from 'react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import { shopService } from '../../services/shopService';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const navItems = [
   { path: '/shop/admin/products', label: 'Products', icon: <Inventory2 fontSize="small" /> },
@@ -135,6 +136,7 @@ const ShopAdminLayout = () => {
             </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+              <LanguageSwitcher compact />
               <Paper
                 elevation={0}
                 sx={{
