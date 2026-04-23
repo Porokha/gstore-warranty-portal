@@ -61,6 +61,8 @@ body.zpos-fullscreen .container {
 .zpos-root {
   height: calc(100vh - 60px);
   max-height: calc(100vh - 60px);
+  height: calc(100dvh - 60px);
+  max-height: calc(100dvh - 60px);
   padding: 16px;
   color: var(--zpos-text);
   font-family: var(--zpos-font);
@@ -2832,7 +2834,7 @@ body.zpos-fullscreen .container {
   }
 
   .zpos-cart.zpos-cart--compact.is-expanded {
-    max-height: calc(min(38vh, 360px) + 30px);
+    max-height: calc(min(38vh, 360px) + 50px);
   }
 
   .zpos-cart.zpos-cart--compact .zpos-cart-head {
@@ -2917,7 +2919,7 @@ body.zpos-fullscreen .container {
   }
 
   .zpos-cart.zpos-cart--compact.is-expanded {
-    max-height: calc(min(43vh, 430px) + 30px);
+    max-height: calc(min(43vh, 430px) + 50px);
   }
 
   .zpos-main-sticky {
@@ -3054,6 +3056,8 @@ body.zpos-fullscreen .container {
   .zpos-root {
     height: calc(100vh - 52px);
     max-height: calc(100vh - 52px);
+    height: calc(100dvh - 52px);
+    max-height: calc(100dvh - 52px);
     padding: 10px;
     width: calc(100vw - 20px);
   }
@@ -3072,7 +3076,7 @@ body.zpos-fullscreen .container {
   }
 
   .zpos-cart.zpos-cart--compact.is-expanded {
-    max-height: calc(min(42vh, 440px) + 30px);
+    max-height: calc(min(42vh, 440px) + 50px);
   }
 
   .zpos-toolbar,
@@ -3803,7 +3807,7 @@ body.zpos-fullscreen .container {
   }
 
   .zpos-cart.zpos-cart--compact.is-expanded {
-    max-height: calc(min(42vh, 420px) + 30px);
+    max-height: calc(min(42vh, 420px) + 50px);
   }
 
   .zpos-main-sticky {
@@ -3875,7 +3879,7 @@ body.zpos-fullscreen .container {
 
   .zpos-checkout {
     margin-top: 12px;
-    margin-bottom: max(2px, env(safe-area-inset-bottom, 0px));
+    margin-bottom: max(14px, env(safe-area-inset-bottom, 0px));
     padding: 11px 12px;
   }
 }
