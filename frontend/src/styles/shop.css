@@ -3112,6 +3112,26 @@ body.zpos-fullscreen .container {
   }
 }
 
+@media (max-width: 560px) {
+  .zpos-modal-kicker {
+    line-height: normal;
+  }
+
+  .zpos-modal-content h2 {
+    line-height: normal;
+  }
+
+  .zpos-modal-desc {
+    line-height: normal;
+    margin: 8px 0 0;
+    padding: 0 0 5px;
+  }
+
+  .zpos-modal-prices {
+    display: grid;
+  }
+}
+
 @media (max-width: 480px) {
   .zpos-price-grid {
     grid-template-columns: 1fr;
