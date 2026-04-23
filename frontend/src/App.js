@@ -62,7 +62,7 @@ const theme = createTheme({
     borderRadius: 16,
   },
   typography: {
-    fontFamily: '"Segoe UI", "Helvetica Neue", sans-serif',
+    fontFamily: '"BPG Banner Quadrosquare", sans-serif',
     h4: {
       fontWeight: 700,
       letterSpacing: '-0.02em',
@@ -77,6 +77,7 @@ const theme = createTheme({
     button: {
       textTransform: 'none',
       fontWeight: 700,
+      fontFamily: '"BPG Banner Quadrosquare Caps", sans-serif',
     },
   },
   components: {

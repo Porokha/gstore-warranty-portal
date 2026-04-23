@@ -16,6 +16,8 @@
   --zpos-radius-lg: 16px;
   --zpos-radius-md: 12px;
   --zpos-radius-sm: 10px;
+  --zpos-font: var(--font-platform, 'BPG Banner Quadrosquare', sans-serif);
+  --zpos-font-caps: var(--font-platform-caps, 'BPG Banner Quadrosquare Caps', sans-serif);
 }
 
 html,
@@ -61,7 +63,7 @@ body.zpos-fullscreen .container {
   max-height: calc(100vh - 60px);
   padding: 16px;
   color: var(--zpos-text);
-  font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+  font-family: var(--zpos-font);
   width: min(90vw, 2000px);
   margin: 0 auto;
   display: flex;
@@ -111,6 +113,7 @@ body.zpos-fullscreen .container {
   line-height: 1;
   max-width: none;
   white-space: nowrap;
+  font-family: var(--zpos-font-caps);
 }
 
 .zpos-shop-banner-copy h1 em {
@@ -233,6 +236,7 @@ body.zpos-fullscreen .container {
   font-weight: 700;
   letter-spacing: 0.13em;
   text-transform: uppercase;
+  font-family: var(--zpos-font-caps);
 }
 
 .zpos-shop-step h2 {
@@ -292,6 +296,7 @@ body.zpos-fullscreen .container {
   color: #4d4660;
   font-size: 13px;
   font-weight: 600;
+  font-family: var(--zpos-font-caps);
 }
 
 .zpos-shop-banner-trust span::before {
@@ -498,6 +503,7 @@ body.zpos-fullscreen .container {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  font-family: var(--zpos-font-caps);
 }
 
 .zpos-reset-btn,
@@ -512,6 +518,7 @@ body.zpos-fullscreen .container {
   border: none;
   cursor: pointer;
   font: inherit;
+  font-family: var(--zpos-font-caps);
 }
 
 .zpos-reset-btn {
@@ -611,6 +618,7 @@ body.zpos-fullscreen .container {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--zpos-muted);
+  font-family: var(--zpos-font-caps);
 }
 
 .zpos-section-head h3 {
@@ -967,6 +975,7 @@ body.zpos-fullscreen .container {
   font-size: 12px;
   font-weight: 700;
   color: var(--zpos-text);
+  font-family: var(--zpos-font-caps);
 }
 
 .zpos-results-meta span {
@@ -1236,8 +1245,9 @@ body.zpos-fullscreen .container {
   border-radius: 10px;
   background: linear-gradient(180deg, #ffffff 0%, #f1f4f7 100%);
   color: #4d5a6d;
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 700;
   border: 1px solid #d7dee6;
   box-shadow: 0 1px 2px rgba(20, 30, 46, 0.05);
   transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
@@ -1354,6 +1364,7 @@ body.zpos-fullscreen .container {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #66738a;
+  font-family: var(--zpos-font-caps);
 }
 
 .zpos-cart-item h3 {
@@ -1684,6 +1695,7 @@ body.zpos-fullscreen .container {
 .zpos-choice-label {
   font-size: 13px;
   font-weight: 700;
+  font-family: var(--zpos-font-caps);
 }
 
 .zpos-choice small {
@@ -1752,6 +1764,7 @@ body.zpos-fullscreen .container {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #7b6c9c;
+  font-family: var(--zpos-font-caps);
 }
 
 .zpos-order-hero-stat strong {
@@ -1825,6 +1838,7 @@ body.zpos-fullscreen .container {
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  font-family: var(--zpos-font-caps);
 }
 
 .zpos-order-step-copy strong {
@@ -2049,6 +2063,7 @@ body.zpos-fullscreen .container {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #7b6c9c;
+  font-family: var(--zpos-font-caps);
 }
 
 .zpos-order-sidebar-block strong {

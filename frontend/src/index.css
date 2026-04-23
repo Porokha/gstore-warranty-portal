@@ -4,6 +4,26 @@
   box-sizing: border-box;
 }
 
+@font-face {
+  font-family: 'BPG Banner Quadrosquare';
+  src:
+    url('./assets/fonts/bpg-banner-quadrosquare-webfont.woff2') format('woff2'),
+    url('./assets/fonts/bpg-banner-quadrosquare-webfont.woff') format('woff');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'BPG Banner Quadrosquare Caps';
+  src:
+    url('./assets/fonts/bpg-banner-quadrosquare-caps-webfont.woff2') format('woff2'),
+    url('./assets/fonts/bpg-banner-quadrosquare-caps-webfont.woff') format('woff');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
 :root {
   --brand-primary: #a576ff;
   --brand-primary-soft: #d4befe;
@@ -13,12 +33,13 @@
   --brand-surface: #f7f3ff;
   --brand-surface-strong: #efe7ff;
   --brand-border: #e3d7ff;
+  --font-platform: 'BPG Banner Quadrosquare', sans-serif;
+  --font-platform-caps: 'BPG Banner Quadrosquare Caps', sans-serif;
 }
 
 body {
   margin: 0;
-  font-family: 'Segoe UI', 'Helvetica Neue',
-    sans-serif;
+  font-family: var(--font-platform);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: linear-gradient(180deg, #fbf9ff 0%, #f3ecff 100%);

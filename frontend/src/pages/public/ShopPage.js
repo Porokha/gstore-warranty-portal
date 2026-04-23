@@ -777,12 +777,13 @@ const ShopPage = () => {
                         <button
                           type="button"
                           className="zpos-add"
+                          aria-label={t('shop.actions.add')}
                           onClick={(event) => {
                             event.stopPropagation();
                             openModal(product);
                           }}
                         >
-                          {t('shop.actions.add')}
+                          +
                         </button>
                       </div>
                     </div>
