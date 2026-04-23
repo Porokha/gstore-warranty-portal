@@ -827,9 +827,6 @@ const ShopPage = () => {
                   <path d="M7 10l5-5 5 5"></path>
                 </svg>
               </span>
-              <span className="zpos-pull-indicator-text">
-                {pullRefresh.ready ? 'Release to refresh' : 'Pull to refresh'}
-              </span>
             </div>
             <div
               id="zpos-grid"

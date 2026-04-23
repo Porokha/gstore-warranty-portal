@@ -1029,12 +1029,13 @@ body.zpos-fullscreen .container {
   left: 50%;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 999px;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid rgba(217, 224, 231, 0.9);
-  box-shadow: 0 8px 18px rgba(20, 30, 46, 0.08);
+  box-shadow: 0 6px 14px rgba(20, 30, 46, 0.08);
   transform: translate(-50%, calc(-100% + var(--zpos-pull-distance, 0px)));
   opacity: 0;
   pointer-events: none;
@@ -1054,10 +1055,6 @@ body.zpos-fullscreen .container {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: rgba(91, 124, 255, 0.08);
   color: var(--zpos-brand-deep);
 }
 
@@ -1074,14 +1071,6 @@ body.zpos-fullscreen .container {
 
 .zpos-pull-indicator.is-ready .zpos-pull-indicator-icon svg {
   transform: rotate(180deg);
-}
-
-.zpos-pull-indicator-text {
-  font-family: var(--zpos-font-caps);
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--zpos-brand-deep);
 }
 
 .zpos-grid {
@@ -3288,7 +3277,7 @@ body.zpos-fullscreen .container {
   }
 }
 
-@media (max-width: 680px) {
+@media (max-width: 680px) and (min-width: 561px) {
   .zpos-modal-backdrop {
     padding: 10px;
   }
