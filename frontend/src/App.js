@@ -109,7 +109,7 @@ function AppRoutes() {
     ['public-flags'],
     () => shopService.getPublicFlags(),
     {
-      initialData: { public_maintenance_mode: buildTimePublicMaintenanceMode },
+      initialData: { public_maintenance_mode: false },
       staleTime: 30000,
       refetchInterval: 60000,
       refetchOnWindowFocus: true,
@@ -117,7 +117,9 @@ function AppRoutes() {
   );
 
   const isPublicMaintenanceMode =
-    publicFlags?.public_maintenance_mode ?? buildTimePublicMaintenanceMode;
+    typeof publicFlags?.public_maintenance_mode === 'boolean'
+      ? publicFlags.public_maintenance_mode
+      : buildTimePublicMaintenanceMode;
 
   return (
     <AuthProvider>
