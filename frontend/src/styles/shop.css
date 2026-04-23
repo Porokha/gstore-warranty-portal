@@ -2724,7 +2724,7 @@ body.zpos-fullscreen .container {
   }
 
   .zpos-cart {
-    max-height: min(39vh, 380px);
+    max-height: min(43vh, 430px);
   }
 
   .zpos-main-sticky {
@@ -2767,6 +2767,15 @@ body.zpos-fullscreen .container {
   .zpos-cart-item {
     flex: 0 0 calc((100% - 12px) / 1.8);
     min-width: calc((100% - 12px) / 1.8);
+    padding: 11px;
+    border-radius: 17px;
+  }
+
+  .zpos-cart-item-thumb {
+    width: 60px;
+    min-width: 60px;
+    height: 60px;
+    padding: 7px;
   }
 }
 
@@ -2956,6 +2965,60 @@ body.zpos-fullscreen .container {
   .zpos-qty {
     min-width: 76px;
   }
+
+  .zpos-modal {
+    width: min(560px, calc(100vw - 20px));
+    max-height: calc(100vh - 20px);
+    grid-template-columns: minmax(118px, 150px) minmax(0, 1fr);
+    grid-template-areas:
+      "kicker kicker"
+      "title title"
+      "desc desc"
+      "visual prices";
+    gap: 12px;
+    padding: 14px;
+    align-items: start;
+  }
+
+  .zpos-modal-content {
+    display: contents;
+  }
+
+  .zpos-modal-kicker {
+    grid-area: kicker;
+  }
+
+  .zpos-modal-content h2 {
+    grid-area: title;
+    font-size: 18px;
+  }
+
+  .zpos-modal-desc {
+    grid-area: desc;
+    font-size: 8px;
+    margin: 8px 0 0;
+  }
+
+  .zpos-modal-visual {
+    grid-area: visual;
+    width: clamp(118px, 26vw, 150px);
+    height: clamp(118px, 26vw, 150px);
+    min-height: clamp(118px, 26vw, 150px);
+    justify-self: start;
+  }
+
+  .zpos-modal-prices {
+    grid-area: prices;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 10px 12px;
+  }
+
+  .zpos-choice {
+    min-height: 100%;
+    padding: 12px;
+  }
 }
 
 @media (max-width: 680px) {
@@ -3087,6 +3150,11 @@ body.zpos-fullscreen .container {
     width: clamp(120px, 31vw, 156px);
     height: clamp(120px, 31vw, 156px);
     min-height: clamp(120px, 31vw, 156px);
+  }
+
+  .zpos-modal-prices {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 10px;
   }
 
   .zpos-card-body h3 {
