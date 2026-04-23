@@ -245,6 +245,43 @@
     "termsPlaceholder": "Terms page is temporarily empty.",
     "privacyPlaceholder": "Privacy page is temporarily empty.",
     "reviewsPlaceholder": "Reviews page is temporarily empty.",
+    "cookieConsent": {
+      "message": "By continuing to use the site, you agree to the use of cookies and local storage features.",
+      "linkLabel": "Privacy Policy",
+      "accept": "Accept",
+      "close": "Close"
+    },
+    "privacy": {
+      "eyebrow": "Privacy",
+      "title": "Privacy Policy",
+      "collectTitle": "Information We Collect",
+      "collectDescription": "To process and support your order, we may collect the following information:",
+      "collectedItems": {
+        "fullName": "Full Name",
+        "phone": "Phone Number",
+        "email": "Email Address",
+        "deliveryAddress": "Delivery Address"
+      },
+      "useTitle": "How We Use Your Information",
+      "useItems": [
+        "Processing and delivering your orders.",
+        "Communicating about your order status.",
+        "Providing customer support.",
+        "Improving the site experience and internal operations."
+      ],
+      "protectionTitle": "Data Protection",
+      "protectionLabel": "Your data is secure",
+      "protectionDescription": "We implement standard security measures to protect your personal information. We do not sell your data and only share the minimum necessary details required to process payments, deliveries, and support requests.",
+      "cookiesTitle": "Cookies",
+      "cookiesDescription": "We use cookies and local storage features to improve your browsing experience, including remembering cart contents and language preferences. Disabling them may affect some site functionality.",
+      "rightsTitle": "Your Rights",
+      "rightsIntro": "You have the right to:",
+      "rightsItems": [
+        "Request access to your personal data.",
+        "Request correction of inaccurate data.",
+        "Request deletion of your data where applicable."
+      ]
+    },
     "checkWarrantyStatus": "Check your warranty status and service cases",
     "searchWarranty": "Search Warranty",
     "searchWarrantyDescription": "Find your warranty information by warranty ID and phone number",

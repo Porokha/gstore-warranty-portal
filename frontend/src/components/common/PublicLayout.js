@@ -4,6 +4,7 @@ import { Box, AppBar, Toolbar, Button, Drawer, IconButton } from '@mui/material'
 import { Language as LanguageIcon, Menu as MenuIcon } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import ZevaLogo from './ZevaLogo';
+import CookieConsentBanner from './CookieConsentBanner';
 
 const PublicLayout = () => {
   const navigate = useNavigate();
@@ -183,6 +184,8 @@ const PublicLayout = () => {
       <Box sx={{ flex: 1, bgcolor: '#fbf9ff' }}>
         <Outlet />
       </Box>
+
+      <CookieConsentBanner />
 
       <Drawer
         anchor="left"
