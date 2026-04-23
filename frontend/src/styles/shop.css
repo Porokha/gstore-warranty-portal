@@ -3246,6 +3246,8 @@ body.zpos-fullscreen .container {
 
   .zpos-order-modal-body {
     gap: 12px;
+    width: 100%;
+    min-width: 0;
   }
 
   .zpos-order-hero,
@@ -3256,18 +3258,45 @@ body.zpos-fullscreen .container {
     border-radius: 18px;
   }
 
+  .zpos-order-hero {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .zpos-order-hero-copy,
+  .zpos-order-layout,
+  .zpos-order-panel,
+  .zpos-order-sidebar {
+    width: 100%;
+    min-width: 0;
+  }
+
   .zpos-order-hero-stats {
+    min-width: 0;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
+  }
+
+  .zpos-order-layout {
+    grid-template-columns: 1fr;
+    gap: 10px;
   }
 
   .zpos-order-progress-bar {
     height: 4px;
   }
 
+  .zpos-order-steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
   .zpos-order-step {
     padding: 10px;
     border-radius: 16px;
+    align-items: flex-start;
+    gap: 8px;
   }
 
   .zpos-order-step-index {
@@ -3284,6 +3313,10 @@ body.zpos-fullscreen .container {
   .zpos-order-step-copy strong {
     font-size: 11px;
     line-height: 1.25;
+  }
+
+  .zpos-order-grid {
+    grid-template-columns: 1fr;
   }
 
   .zpos-order-panel-head h3 {
@@ -3324,6 +3357,80 @@ body.zpos-fullscreen .container {
   .zpos-order-sidebar-item strong,
   .zpos-order-sidebar-item span {
     font-size: 11px;
+  }
+}
+
+@media (max-width: 420px) {
+  .zpos-order-modal {
+    width: calc(100vw - 12px);
+    max-height: calc(100vh - 12px);
+    padding: 10px;
+    border-radius: 20px;
+  }
+
+  .zpos-order-hero,
+  .zpos-order-panel,
+  .zpos-order-sidebar-block,
+  .zpos-order-sidebar-list {
+    padding: 10px;
+    border-radius: 16px;
+  }
+
+  .zpos-order-hero-copy h2 {
+    font-size: 18px;
+  }
+
+  .zpos-order-hero-text {
+    font-size: 10px;
+  }
+
+  .zpos-order-hero-stat {
+    padding: 10px;
+  }
+
+  .zpos-order-hero-stat strong {
+    font-size: 14px;
+  }
+
+  .zpos-order-steps {
+    gap: 6px;
+  }
+
+  .zpos-order-step {
+    padding: 9px 8px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .zpos-order-step-index {
+    width: 24px;
+    height: 24px;
+    flex-basis: 24px;
+    font-size: 10px;
+  }
+
+  .zpos-order-step-copy small {
+    font-size: 7px;
+  }
+
+  .zpos-order-step-copy strong {
+    font-size: 10px;
+  }
+
+  .zpos-order-panel-head h3 {
+    font-size: 15px;
+  }
+
+  .zpos-order-field input,
+  .zpos-order-field select,
+  .zpos-order-choice,
+  .zpos-order-back,
+  .zpos-order-next {
+    padding: 11px;
+  }
+
+  .zpos-order-sidebar-list {
+    max-height: 180px;
   }
 }
 
