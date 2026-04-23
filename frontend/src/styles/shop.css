@@ -1618,7 +1618,7 @@ body.zpos-fullscreen .container {
   stroke: var(--zpos-text);
   stroke-width: 2.2;
   fill: none;
-  transform: translateY(2px);
+  transform: translateY(4px);
 }
 
 .zpos-modal-visual {
@@ -3091,6 +3091,12 @@ body.zpos-fullscreen .container {
   .zpos-order-modal {
     width: min(560px, calc(100vw - 20px));
     padding: 14px;
+    max-height: calc(100vh - 20px);
+    overflow: auto;
+  }
+
+  .zpos-order-modal-body {
+    gap: 14px;
   }
 
   .zpos-order-hero,
@@ -3101,14 +3107,223 @@ body.zpos-fullscreen .container {
     padding: 14px;
   }
 
+  .zpos-order-hero {
+    gap: 14px;
+  }
+
+  .zpos-order-hero-copy h2 {
+    margin-top: 2px;
+    font-size: 20px;
+  }
+
+  .zpos-order-hero-text {
+    margin-top: 4px;
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  .zpos-order-hero-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .zpos-order-hero-stat {
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .zpos-order-hero-stat strong {
+    font-size: 16px;
+  }
+
+  .zpos-order-progress {
+    gap: 10px;
+  }
+
+  .zpos-order-steps {
+    gap: 8px;
+  }
+
   .zpos-order-step {
     padding: 12px;
+    gap: 10px;
   }
 
   .zpos-order-step-index {
     width: 30px;
     height: 30px;
     flex-basis: 30px;
+  }
+
+  .zpos-order-step-copy small {
+    font-size: 9px;
+  }
+
+  .zpos-order-step-copy strong {
+    font-size: 12px;
+  }
+
+  .zpos-order-panel {
+    gap: 14px;
+  }
+
+  .zpos-order-panel-head {
+    gap: 4px;
+  }
+
+  .zpos-order-panel-head h3 {
+    font-size: 17px;
+  }
+
+  .zpos-order-grid {
+    gap: 10px;
+  }
+
+  .zpos-order-field {
+    gap: 5px;
+  }
+
+  .zpos-order-field span,
+  .zpos-order-block-title {
+    font-size: 11px;
+  }
+
+  .zpos-order-field input,
+  .zpos-order-field select {
+    padding: 12px;
+    border-radius: 14px;
+    font-size: 12px;
+  }
+
+  .zpos-order-choice-row,
+  .zpos-order-payment-grid,
+  .zpos-order-partners,
+  .zpos-order-actions {
+    gap: 8px;
+  }
+
+  .zpos-order-choice,
+  .zpos-order-back,
+  .zpos-order-next {
+    min-width: 0;
+    padding: 12px 14px;
+    border-radius: 14px;
+    font-size: 12px;
+  }
+
+  .zpos-order-partner {
+    width: calc((100% - 16px) / 3);
+    min-width: 0;
+    height: 48px;
+    border-radius: 14px;
+  }
+
+  .zpos-order-sidebar {
+    gap: 8px;
+  }
+
+  .zpos-order-sidebar-block strong {
+    font-size: 20px;
+  }
+
+  .zpos-order-sidebar-list {
+    max-height: 220px;
+  }
+
+  .zpos-order-sidebar-item strong,
+  .zpos-order-sidebar-item span {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 560px) {
+  .zpos-order-modal {
+    width: min(100%, calc(100vw - 16px));
+    padding: 12px;
+    border-radius: 22px;
+    max-height: calc(100vh - 16px);
+  }
+
+  .zpos-order-modal-body {
+    gap: 12px;
+  }
+
+  .zpos-order-hero,
+  .zpos-order-panel,
+  .zpos-order-sidebar-block,
+  .zpos-order-sidebar-list {
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .zpos-order-hero-stats {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .zpos-order-progress-bar {
+    height: 4px;
+  }
+
+  .zpos-order-step {
+    padding: 10px;
+    border-radius: 16px;
+  }
+
+  .zpos-order-step-index {
+    width: 28px;
+    height: 28px;
+    flex-basis: 28px;
+    font-size: 11px;
+  }
+
+  .zpos-order-step-copy small {
+    font-size: 8px;
+  }
+
+  .zpos-order-step-copy strong {
+    font-size: 11px;
+    line-height: 1.25;
+  }
+
+  .zpos-order-panel-head h3 {
+    font-size: 16px;
+  }
+
+  .zpos-order-choice-row,
+  .zpos-order-payment-grid,
+  .zpos-order-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .zpos-order-choice,
+  .zpos-order-back,
+  .zpos-order-next {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .zpos-order-partners {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .zpos-order-partner {
+    width: 100%;
+    height: 44px;
+    font-size: 10px;
+  }
+
+  .zpos-order-sidebar-block p,
+  .zpos-order-sidebar-item small {
+    font-size: 10px;
+  }
+
+  .zpos-order-sidebar-block span,
+  .zpos-order-sidebar-item strong,
+  .zpos-order-sidebar-item span {
+    font-size: 11px;
   }
 }
 
