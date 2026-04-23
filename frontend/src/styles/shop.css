@@ -3227,7 +3227,7 @@ body.zpos-fullscreen .container {
       "title title"
       "desc desc"
       "visual prices";
-    gap: 2px;
+    gap: 6px;
     padding: 14px;
     align-items: start;
   }
@@ -3258,9 +3258,9 @@ body.zpos-fullscreen .container {
 
   .zpos-modal-visual {
     grid-area: visual;
-    width: clamp(104px, 24vw, 124px);
-    height: clamp(104px, 24vw, 124px);
-    min-height: clamp(104px, 24vw, 124px);
+    width: clamp(100px, 23vw, 120px);
+    height: clamp(100px, 23vw, 120px);
+    min-height: clamp(100px, 23vw, 120px);
     justify-self: start;
   }
 
@@ -3269,7 +3269,7 @@ body.zpos-fullscreen .container {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
-    gap: 4px;
+    gap: 6px;
   }
 
   .zpos-choice {
