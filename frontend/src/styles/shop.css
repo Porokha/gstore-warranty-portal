@@ -71,6 +71,10 @@ body.zpos-fullscreen .container {
   overflow: hidden;
 }
 
+.zpos-filter-overlay {
+  display: none;
+}
+
 .zpos-shop-banner,
 .zpos-modal {
   background: var(--zpos-panel);
@@ -561,6 +565,8 @@ body.zpos-fullscreen .container {
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: rgba(24, 33, 43, 0.14) transparent;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .zpos-sidebar-scroll::-webkit-scrollbar {
@@ -993,6 +999,8 @@ body.zpos-fullscreen .container {
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: rgba(24, 33, 43, 0.14) transparent;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .zpos-grid-scroll::-webkit-scrollbar {
@@ -1295,6 +1303,8 @@ body.zpos-fullscreen .container {
   padding: 2px 0 0;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .zpos-cart-item {
@@ -2373,13 +2383,15 @@ body.zpos-fullscreen .container {
     transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
     box-shadow: 12px 0 24px rgba(20, 30, 46, 0.08);
     background: var(--zpos-panel);
-    overflow: hidden;
+    overflow: auto;
   }
 
-  .zpos-root::before {
-    content: "";
+  .zpos-filter-overlay {
+    display: block;
     position: fixed;
     inset: 0;
+    padding: 0;
+    border: none;
     background: rgba(18, 27, 38, 0.34);
     opacity: 0;
     pointer-events: none;
@@ -2387,9 +2399,13 @@ body.zpos-fullscreen .container {
     z-index: 24;
   }
 
-  .zpos-root.zpos-filters-open::before {
-    opacity: 1;
+  .zpos-root.zpos-filters-open .zpos-filter-overlay,
+  .zpos-root.zpos-filters-closing .zpos-filter-overlay {
     pointer-events: auto;
+  }
+
+  .zpos-root.zpos-filters-open .zpos-filter-overlay {
+    opacity: 1;
   }
 
   .zpos-cart {

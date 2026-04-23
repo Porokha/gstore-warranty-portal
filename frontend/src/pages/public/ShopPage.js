@@ -54,6 +54,7 @@ const canBuyWithService = (product) => getServicePrice(product) != null;
 const MODAL_CLOSE_MS = 260;
 const CART_REMOVE_MS = 220;
 const ORDER_MODAL_CLOSE_MS = 260;
+const FILTER_DRAWER_CLOSE_MS = 220;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const createInitialOrderForm = () => ({
@@ -81,6 +82,7 @@ const ShopPage = () => {
   const [modalState, setModalState] = useState('closed');
   const [gridProducts, setGridProducts] = useState([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filtersClosing, setFiltersClosing] = useState(false);
   const [tabIndicatorStyle, setTabIndicatorStyle] = useState({});
   const [removingCartIds, setRemovingCartIds] = useState([]);
   const [loadedImages, setLoadedImages] = useState({});
@@ -92,6 +94,7 @@ const ShopPage = () => {
   const tabsRef = useRef(null);
   const modalCloseTimerRef = useRef(null);
   const orderModalCloseTimerRef = useRef(null);
+  const filterDrawerCloseTimerRef = useRef(null);
   const cartRemoveTimersRef = useRef(new Map());
 
   const { data: products = [], isLoading: isProductsLoading } = useQuery(['shop-public-products'], () =>
@@ -121,6 +124,7 @@ const ShopPage = () => {
       document.body.classList.remove('zpos-fullscreen');
       window.clearTimeout(modalCloseTimerRef.current);
       window.clearTimeout(orderModalCloseTimerRef.current);
+      window.clearTimeout(filterDrawerCloseTimerRef.current);
       cartRemoveTimersRef.current.forEach((timer) => window.clearTimeout(timer));
       cartRemoveTimersRef.current.clear();
     };
@@ -159,6 +163,7 @@ const ShopPage = () => {
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth > 920) {
+        setFiltersClosing(false);
         setFiltersOpen(false);
       }
     };
@@ -170,7 +175,7 @@ const ShopPage = () => {
         } else {
           closeModal();
         }
-        setFiltersOpen(false);
+        closeFilters();
       }
     };
 
@@ -299,7 +304,26 @@ const ShopPage = () => {
     setPriceMin('');
     setPriceMax('');
     setSources(['oem', 'third-party']);
+    closeFilters();
+  };
+
+  const openFilters = () => {
+    window.clearTimeout(filterDrawerCloseTimerRef.current);
+    setFiltersClosing(false);
+    setFiltersOpen(true);
+  };
+
+  const closeFilters = () => {
+    if (!filtersOpen && !filtersClosing) {
+      return;
+    }
+
+    setFiltersClosing(true);
     setFiltersOpen(false);
+    window.clearTimeout(filterDrawerCloseTimerRef.current);
+    filterDrawerCloseTimerRef.current = window.setTimeout(() => {
+      setFiltersClosing(false);
+    }, FILTER_DRAWER_CLOSE_MS);
   };
 
   const addToCart = (product, mode) => {
@@ -493,9 +517,17 @@ const ShopPage = () => {
   return (
     <div
       id="zpos-root"
-      className={`zpos-root ${filtersOpen ? 'zpos-filters-open' : ''}`}
+      className={`zpos-root ${filtersOpen ? 'zpos-filters-open' : ''} ${filtersClosing ? 'zpos-filters-closing' : ''}`}
       aria-label={t('shop.ariaLabel')}
     >
+      <button
+        type="button"
+        className="zpos-filter-overlay"
+        aria-label={t('shop.filters.close')}
+        onClick={closeFilters}
+        tabIndex={filtersOpen || filtersClosing ? 0 : -1}
+      />
+
       <div className="zpos-shop-banner">
         <div className="zpos-shop-banner-trust" aria-label={t('shop.aria.highlights')}>
           <span>{t('shop.banner.trust.0')}</span>
@@ -634,7 +666,7 @@ const ShopPage = () => {
               <button
                 type="button"
                 className="zpos-filter-toggle"
-                onClick={() => setFiltersOpen(true)}
+                onClick={openFilters}
                 aria-label={t('shop.filters.open')}
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true">
