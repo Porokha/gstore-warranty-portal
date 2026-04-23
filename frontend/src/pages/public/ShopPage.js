@@ -96,6 +96,8 @@ const ShopPage = () => {
   const [createdOrder, setCreatedOrder] = useState(null);
   const [compactCart, setCompactCart] = useState(false);
   const [cartExpanded, setCartExpanded] = useState(true);
+  const rootRef = useRef(null);
+  const gridScrollRef = useRef(null);
   const tabsRef = useRef(null);
   const modalCloseTimerRef = useRef(null);
   const orderModalCloseTimerRef = useRef(null);
@@ -203,6 +205,64 @@ const ShopPage = () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
+
+  useEffect(() => {
+    const scrollNode = gridScrollRef.current;
+    if (!scrollNode) {
+      return undefined;
+    }
+
+    let startY = 0;
+    let pullDistance = 0;
+    let shouldTrack = false;
+
+    const onTouchStart = (event) => {
+      if (window.innerWidth > 920 || modalProduct || orderModalState !== 'closed' || filtersOpen) {
+        shouldTrack = false;
+        return;
+      }
+
+      shouldTrack = scrollNode.scrollTop <= 0;
+      if (!shouldTrack) {
+        return;
+      }
+
+      startY = event.touches[0]?.clientY || 0;
+      pullDistance = 0;
+    };
+
+    const onTouchMove = (event) => {
+      if (!shouldTrack) {
+        return;
+      }
+
+      const currentY = event.touches[0]?.clientY || 0;
+      pullDistance = currentY - startY;
+
+      if (pullDistance > 0) {
+        event.preventDefault();
+      }
+    };
+
+    const onTouchEnd = () => {
+      if (shouldTrack && pullDistance > 72) {
+        window.location.reload();
+      }
+
+      shouldTrack = false;
+      pullDistance = 0;
+    };
+
+    scrollNode.addEventListener('touchstart', onTouchStart, { passive: true });
+    scrollNode.addEventListener('touchmove', onTouchMove, { passive: false });
+    scrollNode.addEventListener('touchend', onTouchEnd, { passive: true });
+
+    return () => {
+      scrollNode.removeEventListener('touchstart', onTouchStart);
+      scrollNode.removeEventListener('touchmove', onTouchMove);
+      scrollNode.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [filtersOpen, modalProduct, orderModalState]);
 
   const heardAboutOptions = useMemo(
     () => ['facebook', 'instagram', 'tiktok', 'friend', 'google', 'ai'],
@@ -540,6 +600,7 @@ const ShopPage = () => {
   return (
     <div
       id="zpos-root"
+      ref={rootRef}
       className={`zpos-root ${filtersOpen ? 'zpos-filters-open' : ''} ${filtersClosing ? 'zpos-filters-closing' : ''} ${compactCart ? 'zpos-compact-cart-mode' : ''}`}
       aria-label={t('shop.ariaLabel')}
     >
@@ -742,7 +803,7 @@ const ShopPage = () => {
             </div>
           </div>
 
-          <div className="zpos-grid-scroll">
+          <div className="zpos-grid-scroll" ref={gridScrollRef}>
             <div
               id="zpos-grid"
               className="zpos-grid"

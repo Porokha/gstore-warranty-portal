@@ -3170,13 +3170,13 @@ body.zpos-fullscreen .container {
   .zpos-modal {
     width: min(560px, calc(100vw - 20px));
     max-height: calc(100vh - 20px);
-    grid-template-columns: minmax(118px, 150px) minmax(0, 1fr);
+    grid-template-columns: minmax(126px, 150px) minmax(0, 1fr);
     grid-template-areas:
       "kicker kicker"
       "title title"
       "desc desc"
       "visual prices";
-    gap: 8px;
+    gap: 4px;
     padding: 14px;
     align-items: start;
   }
@@ -3217,7 +3217,7 @@ body.zpos-fullscreen .container {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
-    gap: 8px;
+    gap: 6px;
   }
 
   .zpos-choice {
