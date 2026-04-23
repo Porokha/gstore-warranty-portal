@@ -7,6 +7,7 @@ const ShopAdminSettingsPage = () => {
   const queryClient = useQueryClient();
   const [publicMaintenanceEnabled, setPublicMaintenanceEnabled] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const { data, isLoading } = useQuery(['shop-admin-settings'], () => shopService.getAdminSettings(), {
     refetchOnWindowFocus: true,
@@ -24,8 +25,17 @@ const ShopAdminSettingsPage = () => {
       onSuccess: () => {
         queryClient.invalidateQueries(['shop-admin-settings']);
         queryClient.invalidateQueries(['public-flags']);
+        setSaveError('');
         setSaved(true);
         window.setTimeout(() => setSaved(false), 3000);
+      },
+      onError: (error) => {
+        const message =
+          error?.response?.data?.message ||
+          error?.message ||
+          'Failed to save settings. Please try again.';
+        setSaved(false);
+        setSaveError(Array.isArray(message) ? message.join(', ') : message);
       },
     },
   );
@@ -42,6 +52,7 @@ const ShopAdminSettingsPage = () => {
       </Box>
 
       {saved ? <Alert severity="success">Settings saved successfully.</Alert> : null}
+      {saveError ? <Alert severity="error">{saveError}</Alert> : null}
 
       <Paper
         elevation={0}
@@ -87,7 +98,11 @@ const ShopAdminSettingsPage = () => {
           </Box>
           <Switch
             checked={publicMaintenanceEnabled}
-            onChange={(event) => setPublicMaintenanceEnabled(event.target.checked)}
+            onChange={(event) => {
+              setSaved(false);
+              setSaveError('');
+              setPublicMaintenanceEnabled(event.target.checked);
+            }}
             disabled={isLoading || updateMutation.isLoading}
           />
         </Box>

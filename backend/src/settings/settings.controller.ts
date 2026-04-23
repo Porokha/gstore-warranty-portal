@@ -51,6 +51,10 @@ export class SettingsController {
       body.enabled ? 'true' : 'false',
       'Enable/disable public maintenance mode'
     );
-    return { success: true, message: 'Public maintenance mode updated successfully' };
+    return {
+      success: true,
+      enabled: body.enabled,
+      message: 'Public maintenance mode updated successfully',
+    };
   }
 }
