@@ -3115,20 +3115,24 @@ body.zpos-fullscreen .container {
 @media (max-width: 560px) {
   .zpos-modal-kicker {
     line-height: normal;
+    margin: 0;
   }
 
   .zpos-modal-content h2 {
     line-height: normal;
+    margin: 2px 0 0;
   }
 
   .zpos-modal-desc {
     line-height: normal;
-    margin: 8px 0 0;
+    margin: 2px 0 0;
     padding: 0 0 5px;
   }
 
   .zpos-modal-prices {
     display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
 }
 
