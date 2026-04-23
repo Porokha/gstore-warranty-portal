@@ -374,7 +374,7 @@ body.zpos-fullscreen .container {
 .zpos-cart-head h2,
 .zpos-modal-content h2 {
   margin: 0;
-  font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+  font-family: var(--zpos-font);
   letter-spacing: -0.03em;
 }
 
@@ -1236,7 +1236,7 @@ body.zpos-fullscreen .container {
 .zpos-cart-item strong,
 .zpos-choice strong {
   font-size: 16px;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--zpos-font);
 }
 
 .zpos-add {
@@ -1404,7 +1404,7 @@ body.zpos-fullscreen .container {
 }
 
 .zpos-cart-item-price {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--zpos-font);
   font-size: 13px;
   font-weight: 700;
   line-height: 1;
