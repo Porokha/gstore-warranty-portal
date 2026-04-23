@@ -235,9 +235,9 @@
     "price": "Price"
   },
   "public": {
-    "menuShop": "Shop",
+    "menuShop": "SHOP",
     "menuService": "WARRANTY | SERVICE",
-    "menuTerms": "Terms",
+    "menuTerms": "TERMS",
     "shopPlaceholder": "Shop page is temporarily empty.",
     "termsPlaceholder": "Terms page is temporarily empty.",
     "checkWarrantyStatus": "Check your warranty status and service cases",
