@@ -2872,29 +2872,30 @@ body.zpos-fullscreen .container {
   }
 
   .zpos-cart-item {
-    flex: 0 0 calc((100% - 12px) / 1.8);
-    min-width: calc((100% - 12px) / 1.8);
+    flex: 0 0 calc((100% - 12px) / 1.68);
+    min-width: calc((100% - 12px) / 1.68);
     padding: 10px;
     border-radius: 16px;
   }
 
   .zpos-cart-item-thumb {
-    width: 58px;
-    min-width: 58px;
-    height: 58px;
-    padding: 7px;
+    width: 56px;
+    min-width: 56px;
+    height: 56px;
+    padding: 6px;
     border-radius: 14px;
   }
 
   .zpos-cart-item-footer {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
   }
 
   .zpos-cart-item-actions {
-    width: 100%;
-    justify-content: space-between;
-    margin-left: 0;
+    width: auto;
+    justify-content: flex-end;
+    margin-left: auto;
+    gap: 6px;
   }
 
   .zpos-card-body h3 {
@@ -2905,6 +2906,10 @@ body.zpos-fullscreen .container {
   .zpos-issue,
   .zpos-price-note {
     font-size: 6.5px;
+  }
+
+  .zpos-qty {
+    min-width: 76px;
   }
 }
 
@@ -3006,8 +3011,8 @@ body.zpos-fullscreen .container {
   }
 
   .zpos-cart-item {
-    flex-basis: calc((100% - 10px) / 1.2);
-    min-width: calc((100% - 10px) / 1.2);
+    flex-basis: calc((100% - 10px) / 1.42);
+    min-width: calc((100% - 10px) / 1.42);
   }
 
   .zpos-modal-visual {
@@ -3024,6 +3029,27 @@ body.zpos-fullscreen .container {
   .zpos-issue,
   .zpos-price-note {
     font-size: 6px;
+  }
+
+  .zpos-cart-item-thumb {
+    width: 54px;
+    min-width: 54px;
+    height: 54px;
+    padding: 6px;
+  }
+
+  .zpos-cart-item-footer {
+    flex-wrap: nowrap;
+  }
+
+  .zpos-cart-item-actions {
+    width: auto;
+    margin-left: auto;
+    gap: 6px;
+  }
+
+  .zpos-qty {
+    min-width: 72px;
   }
 }
 

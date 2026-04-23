@@ -92,7 +92,7 @@ const PublicLayout = () => {
               sx={{
                 '& img': { width: '110px !important', maxWidth: '110px' },
                 '@media (max-width:560px)': {
-                  '& img': { width: '76px !important', maxWidth: '76px' },
+                  '& img': { width: '94px !important', maxWidth: '94px' },
                 },
               }}
             >
