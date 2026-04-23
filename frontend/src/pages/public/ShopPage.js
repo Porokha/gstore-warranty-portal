@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery } from 'react-query';
 import { useTranslation } from 'react-i18next';
 import '../../styles/shop.css';
+import gstoreLogo from '../../assets/gstore-logo.svg';
 import { shopService } from '../../services/shopService';
 
 const partOptions = [
@@ -1071,7 +1072,7 @@ const ShopPage = () => {
                       {orderStepMeta.map((step) => (
                         <div
                           key={step.id}
-                          className={`zpos-order-step ${orderStep >= step.id ? 'is-active' : ''} ${orderStep === step.id ? 'is-current' : ''}`}
+                          className={`zpos-order-step ${orderStep > step.id ? 'is-complete' : ''} ${orderStep === step.id ? 'is-current' : ''}`}
                         >
                           <span className="zpos-order-step-index">{step.id}</span>
                           <div className="zpos-order-step-copy">
@@ -1176,11 +1177,13 @@ const ShopPage = () => {
                               </button>
                             </div>
                             {orderErrors.has_partner_warranty ? <small className="zpos-order-error-inline">{orderErrors.has_partner_warranty}</small> : null}
-                            <div className="zpos-order-partners">
-                              <div className="zpos-order-partner">01</div>
-                              <div className="zpos-order-partner">02</div>
-                              <div className="zpos-order-partner">03</div>
-                            </div>
+                            {gstoreLogo ? (
+                              <div className="zpos-order-partners">
+                                <div className="zpos-order-partner">
+                                  <img src={gstoreLogo} alt="Gstore" />
+                                </div>
+                              </div>
+                            ) : null}
                           </div>
 
                           {orderForm.has_partner_warranty && (
@@ -1263,21 +1266,29 @@ const ShopPage = () => {
               ) : (
                 createdOrder && (
                   <div className="zpos-order-panel zpos-order-success">
-                    <p className="zpos-modal-kicker">{t('shop.orderFlow.success.kicker')}</p>
-                    <h2 id="zpos-order-title">
-                      {t('shop.orderFlow.success.title', { customer_name: createdOrder.customer_name })}
-                    </h2>
-                    <p>{t('shop.orderFlow.success.orderNumber', { order_number: createdOrder.order_number })}</p>
-                    <p>
+                    <div className="zpos-order-success-head">
+                      <p className="zpos-order-success-kicker">{t('shop.orderFlow.success.kicker')}</p>
+                      <h2 id="zpos-order-title">
+                        {t('shop.orderFlow.success.title', { customer_name: createdOrder.customer_name })}
+                      </h2>
+                    </div>
+                    <div className="zpos-order-success-grid">
+                      <div className="zpos-order-success-card">
+                        <span>{t('shop.orderFlow.success.kicker')}</span>
+                        <strong>{t('shop.orderFlow.success.orderNumber', { order_number: createdOrder.order_number })}</strong>
+                      </div>
+                      <div className="zpos-order-success-card">
+                        <span>{t('shop.orderFlow.stepOne.fields.phone')}</span>
+                        <strong>{createdOrder.customer_phone}</strong>
+                      </div>
+                    </div>
+                    <p className="zpos-order-success-copy">
                       {t('shop.orderFlow.success.contact', {
                         customer_phone_number: createdOrder.customer_phone,
                       })}
                     </p>
-                    <strong>{t('shop.orderFlow.success.thankYou')}</strong>
-                    <div className="zpos-order-actions">
-                      <button type="button" className="zpos-order-next" onClick={closeOrderModal}>
-                        {t('common.close')}
-                      </button>
+                    <div className="zpos-order-success-foot">
+                      <strong>{t('shop.orderFlow.success.thankYou')}</strong>
                     </div>
                   </div>
                 )
