@@ -96,6 +96,7 @@ const ShopPage = () => {
   const [createdOrder, setCreatedOrder] = useState(null);
   const [compactCart, setCompactCart] = useState(false);
   const [cartExpanded, setCartExpanded] = useState(true);
+  const [pullRefresh, setPullRefresh] = useState({ active: false, ready: false, distance: 0 });
   const rootRef = useRef(null);
   const gridScrollRef = useRef(null);
   const tabsRef = useRef(null);
@@ -215,6 +216,7 @@ const ShopPage = () => {
     let startY = 0;
     let pullDistance = 0;
     let shouldTrack = false;
+    const threshold = 72;
 
     const onTouchStart = (event) => {
       if (window.innerWidth > 920 || modalProduct || orderModalState !== 'closed' || filtersOpen) {
@@ -229,6 +231,7 @@ const ShopPage = () => {
 
       startY = event.touches[0]?.clientY || 0;
       pullDistance = 0;
+      setPullRefresh({ active: true, ready: false, distance: 0 });
     };
 
     const onTouchMove = (event) => {
@@ -241,16 +244,25 @@ const ShopPage = () => {
 
       if (pullDistance > 0) {
         event.preventDefault();
+        const distance = Math.min(pullDistance, 96);
+        setPullRefresh({
+          active: true,
+          ready: distance >= threshold,
+          distance,
+        });
       }
     };
 
     const onTouchEnd = () => {
-      if (shouldTrack && pullDistance > 72) {
+      if (shouldTrack && pullDistance > threshold) {
+        setPullRefresh({ active: true, ready: true, distance: threshold });
         window.location.reload();
+        return;
       }
 
       shouldTrack = false;
       pullDistance = 0;
+      setPullRefresh({ active: false, ready: false, distance: 0 });
     };
 
     scrollNode.addEventListener('touchstart', onTouchStart, { passive: true });
@@ -804,6 +816,21 @@ const ShopPage = () => {
           </div>
 
           <div className="zpos-grid-scroll" ref={gridScrollRef}>
+            <div
+              className={`zpos-pull-indicator ${pullRefresh.active ? 'is-active' : ''} ${pullRefresh.ready ? 'is-ready' : ''}`}
+              style={{ '--zpos-pull-distance': `${pullRefresh.distance}px` }}
+              aria-hidden="true"
+            >
+              <span className="zpos-pull-indicator-icon">
+                <svg viewBox="0 0 24 24">
+                  <path d="M12 5v14"></path>
+                  <path d="M7 10l5-5 5 5"></path>
+                </svg>
+              </span>
+              <span className="zpos-pull-indicator-text">
+                {pullRefresh.ready ? 'Release to refresh' : 'Pull to refresh'}
+              </span>
+            </div>
             <div
               id="zpos-grid"
               className="zpos-grid"

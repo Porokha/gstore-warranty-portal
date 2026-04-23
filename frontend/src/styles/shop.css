@@ -995,6 +995,7 @@ body.zpos-fullscreen .container {
   min-height: 0;
   overflow-x: hidden;
   overflow-y: scroll;
+  position: relative;
   width: calc(100% + 12px);
   margin-right: -12px;
   padding-right: 12px;
@@ -1020,6 +1021,67 @@ body.zpos-fullscreen .container {
 
 .zpos-grid-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(24, 33, 43, 0.2);
+}
+
+.zpos-pull-indicator {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(217, 224, 231, 0.9);
+  box-shadow: 0 8px 18px rgba(20, 30, 46, 0.08);
+  transform: translate(-50%, calc(-100% + var(--zpos-pull-distance, 0px)));
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.16s ease, opacity 0.16s ease, border-color 0.16s ease;
+  z-index: 3;
+}
+
+.zpos-pull-indicator.is-active {
+  opacity: 1;
+}
+
+.zpos-pull-indicator.is-ready {
+  border-color: rgba(91, 124, 255, 0.28);
+}
+
+.zpos-pull-indicator-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(91, 124, 255, 0.08);
+  color: var(--zpos-brand-deep);
+}
+
+.zpos-pull-indicator-icon svg {
+  width: 12px;
+  height: 12px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.16s ease;
+}
+
+.zpos-pull-indicator.is-ready .zpos-pull-indicator-icon svg {
+  transform: rotate(180deg);
+}
+
+.zpos-pull-indicator-text {
+  font-family: var(--zpos-font-caps);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--zpos-brand-deep);
 }
 
 .zpos-grid {
@@ -3170,13 +3232,13 @@ body.zpos-fullscreen .container {
   .zpos-modal {
     width: min(560px, calc(100vw - 20px));
     max-height: calc(100vh - 20px);
-    grid-template-columns: minmax(126px, 150px) minmax(0, 1fr);
+    grid-template-columns: minmax(104px, 124px) minmax(0, 1fr);
     grid-template-areas:
       "kicker kicker"
       "title title"
       "desc desc"
       "visual prices";
-    gap: 4px;
+    gap: 2px;
     padding: 14px;
     align-items: start;
   }
@@ -3206,9 +3268,9 @@ body.zpos-fullscreen .container {
 
   .zpos-modal-visual {
     grid-area: visual;
-    width: clamp(118px, 26vw, 150px);
-    height: clamp(118px, 26vw, 150px);
-    min-height: clamp(118px, 26vw, 150px);
+    width: clamp(104px, 24vw, 124px);
+    height: clamp(104px, 24vw, 124px);
+    min-height: clamp(104px, 24vw, 124px);
     justify-self: start;
   }
 
@@ -3217,7 +3279,7 @@ body.zpos-fullscreen .container {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
-    gap: 6px;
+    gap: 4px;
   }
 
   .zpos-choice {
