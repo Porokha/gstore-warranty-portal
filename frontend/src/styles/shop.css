@@ -2834,7 +2834,7 @@ body.zpos-fullscreen .container {
   }
 
   .zpos-cart.zpos-cart--compact.is-expanded {
-    max-height: calc(min(38vh, 360px) + 50px);
+    max-height: calc(min(38vh, 360px) + 70px);
   }
 
   .zpos-cart.zpos-cart--compact .zpos-cart-head {
@@ -2919,7 +2919,7 @@ body.zpos-fullscreen .container {
   }
 
   .zpos-cart.zpos-cart--compact.is-expanded {
-    max-height: calc(min(43vh, 430px) + 50px);
+    max-height: calc(min(43vh, 430px) + 70px);
   }
 
   .zpos-main-sticky {
@@ -3076,7 +3076,7 @@ body.zpos-fullscreen .container {
   }
 
   .zpos-cart.zpos-cart--compact.is-expanded {
-    max-height: calc(min(42vh, 440px) + 50px);
+    max-height: calc(min(42vh, 440px) + 70px);
   }
 
   .zpos-toolbar,
@@ -3176,7 +3176,7 @@ body.zpos-fullscreen .container {
       "title title"
       "desc desc"
       "visual prices";
-    gap: 12px;
+    gap: 8px;
     padding: 14px;
     align-items: start;
   }
@@ -3217,7 +3217,7 @@ body.zpos-fullscreen .container {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
-    gap: 10px 12px;
+    gap: 8px;
   }
 
   .zpos-choice {
@@ -3807,7 +3807,7 @@ body.zpos-fullscreen .container {
   }
 
   .zpos-cart.zpos-cart--compact.is-expanded {
-    max-height: calc(min(42vh, 420px) + 50px);
+    max-height: calc(min(42vh, 420px) + 70px);
   }
 
   .zpos-main-sticky {
