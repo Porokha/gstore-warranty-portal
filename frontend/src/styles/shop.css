@@ -3239,6 +3239,7 @@ body.zpos-fullscreen .container {
   .zpos-modal-kicker {
     grid-area: kicker;
     line-height: normal;
+    font-size: 8px;
   }
 
   .zpos-modal-content h2 {
@@ -3274,6 +3275,27 @@ body.zpos-fullscreen .container {
   .zpos-choice {
     min-height: 100%;
     padding: 12px;
+  }
+
+  .zpos-cart-head p,
+  .zpos-meta,
+  .zpos-sidebar-head p {
+    font-size: 8px;
+  }
+
+  .zpos-price strong,
+  .zpos-summary-row strong,
+  .zpos-cart-item strong,
+  .zpos-choice strong {
+    font-size: 12px;
+  }
+
+  .zpos-choice-label {
+    font-size: 6px;
+  }
+
+  .zpos-choice small {
+    font-size: 8px;
   }
 }
 
