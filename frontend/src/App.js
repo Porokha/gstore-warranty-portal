@@ -25,6 +25,8 @@ import WarrantySearchPage from './pages/public/WarrantySearchPage';
 import CaseSearchPage from './pages/public/CaseSearchPage';
 import ShopPage from './pages/public/ShopPage';
 import TermsPage from './pages/public/TermsPage';
+import PrivacyPage from './pages/public/PrivacyPage';
+import ReviewsPage from './pages/public/ReviewsPage';
 import MaintenancePage from './pages/public/MaintenancePage';
 import { AuthProvider } from './contexts/AuthContext';
 import PrivateRoute from './components/common/PrivateRoute';
@@ -114,6 +116,8 @@ function App() {
                   <Route path="/maintenance" element={<MaintenancePage />} />
                   <Route path="/warranty-service" element={<Navigate to="/maintenance" replace />} />
                   <Route path="/terms" element={<Navigate to="/maintenance" replace />} />
+                  <Route path="/privacy" element={<Navigate to="/maintenance" replace />} />
+                  <Route path="/reviews" element={<Navigate to="/maintenance" replace />} />
                   <Route path="/search/warranty" element={<Navigate to="/maintenance" replace />} />
                   <Route path="/search/case" element={<Navigate to="/maintenance" replace />} />
                 </>
@@ -122,6 +126,8 @@ function App() {
                   <Route index element={<ShopPage />} />
                   <Route path="warranty-service" element={<PublicHomePage />} />
                   <Route path="terms" element={<TermsPage />} />
+                  <Route path="privacy" element={<PrivacyPage />} />
+                  <Route path="reviews" element={<ReviewsPage />} />
                   <Route path="search/warranty" element={<WarrantySearchPage />} />
                   <Route path="search/case" element={<CaseSearchPage />} />
                 </Route>
@@ -132,6 +138,8 @@ function App() {
                   <Route index element={<ShopPage />} />
                   <Route path="warranty-service" element={<PublicHomePage />} />
                   <Route path="terms" element={<TermsPage />} />
+                  <Route path="privacy" element={<PrivacyPage />} />
+                  <Route path="reviews" element={<ReviewsPage />} />
                   <Route path="search/warranty" element={<WarrantySearchPage />} />
                   <Route path="search/case" element={<CaseSearchPage />} />
                 </Route>

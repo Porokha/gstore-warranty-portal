@@ -15,6 +15,8 @@ const PublicLayout = () => {
     { label: t('public.menuShop'), path: '/' },
     { label: t('public.menuService'), path: '/warranty-service' },
     { label: t('public.menuTerms'), path: '/terms' },
+    { label: t('public.menuPrivacy'), path: '/privacy' },
+    { label: t('public.menuReviews'), path: '/reviews' },
   ];
 
   const trustItems = [t('shop.banner.trust.0'), t('shop.banner.trust.1'), t('shop.banner.trust.2')];
@@ -42,7 +44,7 @@ const PublicLayout = () => {
             display: 'grid',
             gridTemplateColumns: '1fr auto 1fr',
             alignItems: 'center',
-            '@media (max-width:560px)': {
+            '@media (max-width:920px)': {
               minHeight: '52px !important',
               gap: 0.75,
               gridTemplateColumns: 'auto 1fr auto',
@@ -53,7 +55,7 @@ const PublicLayout = () => {
             sx={{
               display: 'none',
               justifySelf: 'start',
-              '@media (max-width:560px)': {
+              '@media (max-width:920px)': {
                 display: 'inline-flex',
               },
             }}
@@ -80,7 +82,7 @@ const PublicLayout = () => {
               justifyContent: 'flex-start',
               justifySelf: 'start',
               cursor: 'pointer',
-              '@media (max-width:560px)': {
+              '@media (max-width:920px)': {
                 justifyContent: 'center',
                 justifySelf: 'center',
               },
@@ -91,7 +93,7 @@ const PublicLayout = () => {
             <Box
               sx={{
                 '& img': { width: '110px !important', maxWidth: '110px' },
-                '@media (max-width:560px)': {
+                '@media (max-width:920px)': {
                   '& img': { width: '94px !important', maxWidth: '94px' },
                 },
               }}
@@ -107,7 +109,7 @@ const PublicLayout = () => {
               alignItems: 'center',
               gap: { xs: 1, md: 2.5 },
               justifySelf: 'center',
-              '@media (max-width:560px)': {
+              '@media (max-width:920px)': {
                 display: 'none',
               },
             }}
@@ -158,7 +160,7 @@ const PublicLayout = () => {
               px: 1.5,
               justifySelf: 'end',
               minWidth: 'auto',
-              '@media (max-width:560px)': {
+              '@media (max-width:920px)': {
                 fontSize: '11px',
                 px: 0.85,
                 '& .MuiButton-startIcon': {
@@ -194,7 +196,7 @@ const PublicLayout = () => {
             p: 2,
             background: 'rgba(255,255,255,0.96)',
             backdropFilter: 'blur(14px)',
-            '@media (min-width:561px)': {
+            '@media (min-width:921px)': {
               display: 'none',
             },
           },
