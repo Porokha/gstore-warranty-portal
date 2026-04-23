@@ -236,7 +236,7 @@
   },
   "public": {
     "menuShop": "Shop",
-    "menuService": "Warranty&Service",
+    "menuService": "WARRANTY | SERVICE",
     "menuTerms": "Terms",
     "shopPlaceholder": "Shop page is temporarily empty.",
     "termsPlaceholder": "Terms page is temporarily empty.",

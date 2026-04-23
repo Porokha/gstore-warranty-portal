@@ -242,7 +242,7 @@
   },
   "public": {
     "menuShop": "მაღაზია",
-    "menuService": "გარანტია&სერვისი",
+    "menuService": "გარანტია | სერვისი",
     "menuTerms": "წესები",
     "shopPlaceholder": "მაღაზიის გვერდი დროებით ცარიელია.",
     "termsPlaceholder": "წესების გვერდი დროებით ცარიელია.",
