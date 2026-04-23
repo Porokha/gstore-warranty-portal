@@ -37,4 +37,20 @@ export class SettingsController {
     );
     return { success: true, message: 'WooCommerce automation setting updated successfully' };
   }
+
+  @Get('public-maintenance')
+  async getPublicMaintenance() {
+    const enabled = await this.settingsService.get('PUBLIC_MAINTENANCE_MODE');
+    return { enabled: enabled === 'true' };
+  }
+
+  @Post('public-maintenance')
+  async setPublicMaintenance(@Body() body: { enabled: boolean }) {
+    await this.settingsService.set(
+      'PUBLIC_MAINTENANCE_MODE',
+      body.enabled ? 'true' : 'false',
+      'Enable/disable public maintenance mode'
+    );
+    return { success: true, message: 'Public maintenance mode updated successfully' };
+  }
 }

@@ -1,6 +1,11 @@
 import api from './api';
 
 export const shopService = {
+  getPublicFlags: async () => {
+    const response = await api.get('/public/app-flags');
+    return response.data;
+  },
+
   getPublicProducts: async () => {
     const response = await api.get('/public/shop/products');
     return response.data;
@@ -92,6 +97,16 @@ export const shopService = {
 
   permanentlyDeleteOrder: async (id) => {
     const response = await api.delete(`/shop/admin/orders/${id}/permanent`);
+    return response.data;
+  },
+
+  getAdminSettings: async () => {
+    const response = await api.get('/settings/public-maintenance');
+    return response.data;
+  },
+
+  updateAdminSettings: async (payload) => {
+    const response = await api.post('/settings/public-maintenance', payload);
     return response.data;
   },
 };

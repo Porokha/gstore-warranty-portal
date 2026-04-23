@@ -35,9 +35,12 @@ import ShopAdminLayout from './components/common/ShopAdminLayout';
 import ShopAdminLoginPage from './pages/shop-admin/ShopAdminLoginPage';
 import ShopAdminProductsPage from './pages/shop-admin/ShopAdminProductsPage';
 import ShopAdminOrdersPage from './pages/shop-admin/ShopAdminOrdersPage';
+import ShopAdminSettingsPage from './pages/shop-admin/ShopAdminSettingsPage';
+import { useQuery } from 'react-query';
+import { shopService } from './services/shopService';
 
 const queryClient = new QueryClient();
-const isPublicMaintenanceMode = process.env.REACT_APP_PUBLIC_MAINTENANCE_MODE === 'true';
+const buildTimePublicMaintenanceMode = process.env.REACT_APP_PUBLIC_MAINTENANCE_MODE === 'true';
 
 const theme = createTheme({
   palette: {
@@ -101,87 +104,108 @@ const theme = createTheme({
   },
 });
 
+function AppRoutes() {
+  const { data: publicFlags } = useQuery(
+    ['public-flags'],
+    () => shopService.getPublicFlags(),
+    {
+      initialData: { public_maintenance_mode: buildTimePublicMaintenanceMode },
+      staleTime: 30000,
+      refetchInterval: 60000,
+      refetchOnWindowFocus: true,
+    }
+  );
+
+  const isPublicMaintenanceMode =
+    publicFlags?.public_maintenance_mode ?? buildTimePublicMaintenanceMode;
+
+  return (
+    <AuthProvider>
+      <Router>
+        <Routes>
+          {/* Public Routes */}
+          {isPublicMaintenanceMode ? (
+            <>
+              <Route path="/" element={<MaintenancePage />} />
+              <Route path="/maintenance" element={<MaintenancePage />} />
+              <Route path="/warranty-service" element={<Navigate to="/maintenance" replace />} />
+              <Route path="/terms" element={<Navigate to="/maintenance" replace />} />
+              <Route path="/privacy" element={<Navigate to="/maintenance" replace />} />
+              <Route path="/reviews" element={<Navigate to="/maintenance" replace />} />
+              <Route path="/search/warranty" element={<Navigate to="/maintenance" replace />} />
+              <Route path="/search/case" element={<Navigate to="/maintenance" replace />} />
+            </>
+          ) : (
+            <Route path="/" element={<PublicLayout />}>
+              <Route index element={<ShopPage />} />
+              <Route path="warranty-service" element={<PublicHomePage />} />
+              <Route path="terms" element={<TermsPage />} />
+              <Route path="privacy" element={<PrivacyPage />} />
+              <Route path="reviews" element={<ReviewsPage />} />
+              <Route path="search/warranty" element={<WarrantySearchPage />} />
+              <Route path="search/case" element={<CaseSearchPage />} />
+            </Route>
+          )}
+
+          <Route path="/preview" element={<PrivateRoute />}>
+            <Route element={<PublicLayout />}>
+              <Route index element={<ShopPage />} />
+              <Route path="warranty-service" element={<PublicHomePage />} />
+              <Route path="terms" element={<TermsPage />} />
+              <Route path="privacy" element={<PrivacyPage />} />
+              <Route path="reviews" element={<ReviewsPage />} />
+              <Route path="search/warranty" element={<WarrantySearchPage />} />
+              <Route path="search/case" element={<CaseSearchPage />} />
+            </Route>
+          </Route>
+
+          {/* Staff Routes */}
+          <Route path="/staff/login" element={<LoginPage />} />
+          <Route path="/staff" element={<PrivateRoute />}>
+            <Route element={<StaffLayout />}>
+              <Route path="dashboard" element={<DashboardPage />} />
+              <Route path="cases" element={<CasesPage />} />
+              <Route path="cases/closed" element={<ClosedCasesPage />} />
+              <Route path="cases/new" element={<CreateCasePage />} />
+              <Route path="cases/:id" element={<CaseDetailPage />} />
+              <Route path="warranties" element={<WarrantiesPage />} />
+              <Route path="warranties/:id" element={<WarrantyDetailPage />} />
+              <Route path="warranties/:id/edit" element={<WarrantyEditPage />} />
+              <Route path="warranties/new" element={<CreateWarrantyPage />} />
+              <Route path="import" element={<ImportPage />} />
+              <Route path="finance" element={<FinancePage />} />
+              <Route path="statistics" element={<StatisticsPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+              <Route path="audit" element={<AuditPage />} />
+            </Route>
+          </Route>
+
+          <Route path="/shop/admin/login" element={<ShopAdminLoginPage />} />
+          <Route path="/shop/admin" element={<ShopAdminRoute />}>
+            <Route element={<ShopAdminLayout />}>
+              <Route index element={<Navigate to="/shop/admin/products" replace />} />
+              <Route path="products" element={<ShopAdminProductsPage />} />
+              <Route path="orders" element={<ShopAdminOrdersPage />} />
+              <Route path="settings" element={<ShopAdminSettingsPage />} />
+            </Route>
+          </Route>
+
+          <Route
+            path="*"
+            element={<Navigate to={isPublicMaintenanceMode ? '/maintenance' : '/'} replace />}
+          />
+        </Routes>
+      </Router>
+    </AuthProvider>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <AuthProvider>
-          <Router>
-            <Routes>
-              {/* Public Routes */}
-              {isPublicMaintenanceMode ? (
-                <>
-                  <Route path="/" element={<MaintenancePage />} />
-                  <Route path="/maintenance" element={<MaintenancePage />} />
-                  <Route path="/warranty-service" element={<Navigate to="/maintenance" replace />} />
-                  <Route path="/terms" element={<Navigate to="/maintenance" replace />} />
-                  <Route path="/privacy" element={<Navigate to="/maintenance" replace />} />
-                  <Route path="/reviews" element={<Navigate to="/maintenance" replace />} />
-                  <Route path="/search/warranty" element={<Navigate to="/maintenance" replace />} />
-                  <Route path="/search/case" element={<Navigate to="/maintenance" replace />} />
-                </>
-              ) : (
-                <Route path="/" element={<PublicLayout />}>
-                  <Route index element={<ShopPage />} />
-                  <Route path="warranty-service" element={<PublicHomePage />} />
-                  <Route path="terms" element={<TermsPage />} />
-                  <Route path="privacy" element={<PrivacyPage />} />
-                  <Route path="reviews" element={<ReviewsPage />} />
-                  <Route path="search/warranty" element={<WarrantySearchPage />} />
-                  <Route path="search/case" element={<CaseSearchPage />} />
-                </Route>
-              )}
-
-              <Route path="/preview" element={<PrivateRoute />}>
-                <Route element={<PublicLayout />}>
-                  <Route index element={<ShopPage />} />
-                  <Route path="warranty-service" element={<PublicHomePage />} />
-                  <Route path="terms" element={<TermsPage />} />
-                  <Route path="privacy" element={<PrivacyPage />} />
-                  <Route path="reviews" element={<ReviewsPage />} />
-                  <Route path="search/warranty" element={<WarrantySearchPage />} />
-                  <Route path="search/case" element={<CaseSearchPage />} />
-                </Route>
-              </Route>
-
-              {/* Staff Routes */}
-              <Route path="/staff/login" element={<LoginPage />} />
-              <Route path="/staff" element={<PrivateRoute />}>
-                <Route element={<StaffLayout />}>
-                  <Route path="dashboard" element={<DashboardPage />} />
-                  <Route path="cases" element={<CasesPage />} />
-                  <Route path="cases/closed" element={<ClosedCasesPage />} />
-                  <Route path="cases/new" element={<CreateCasePage />} />
-                  <Route path="cases/:id" element={<CaseDetailPage />} />
-                  <Route path="warranties" element={<WarrantiesPage />} />
-                  <Route path="warranties/:id" element={<WarrantyDetailPage />} />
-                  <Route path="warranties/:id/edit" element={<WarrantyEditPage />} />
-                  <Route path="warranties/new" element={<CreateWarrantyPage />} />
-                  <Route path="import" element={<ImportPage />} />
-                  <Route path="finance" element={<FinancePage />} />
-                  <Route path="statistics" element={<StatisticsPage />} />
-                  <Route path="settings" element={<SettingsPage />} />
-                  <Route path="audit" element={<AuditPage />} />
-                </Route>
-              </Route>
-
-              <Route path="/shop/admin/login" element={<ShopAdminLoginPage />} />
-              <Route path="/shop/admin" element={<ShopAdminRoute />}>
-                <Route element={<ShopAdminLayout />}>
-                  <Route index element={<Navigate to="/shop/admin/products" replace />} />
-                  <Route path="products" element={<ShopAdminProductsPage />} />
-                  <Route path="orders" element={<ShopAdminOrdersPage />} />
-                </Route>
-              </Route>
-
-              <Route
-                path="*"
-                element={<Navigate to={isPublicMaintenanceMode ? '/maintenance' : '/'} replace />}
-              />
-            </Routes>
-          </Router>
-        </AuthProvider>
+        <AppRoutes />
       </ThemeProvider>
     </QueryClientProvider>
   );

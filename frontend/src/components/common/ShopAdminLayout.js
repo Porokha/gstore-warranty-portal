@@ -11,7 +11,7 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material';
-import { Inventory2, ReceiptLong } from '@mui/icons-material';
+import { Inventory2, ReceiptLong, Settings } from '@mui/icons-material';
 import { useQuery } from 'react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import { shopService } from '../../services/shopService';
@@ -20,6 +20,7 @@ import LanguageSwitcher from './LanguageSwitcher';
 const navItems = [
   { path: '/shop/admin/products', label: 'Products', icon: <Inventory2 fontSize="small" /> },
   { path: '/shop/admin/orders', label: 'Orders', icon: <ReceiptLong fontSize="small" /> },
+  { path: '/shop/admin/settings', label: 'Settings', icon: <Settings fontSize="small" /> },
 ];
 
 const ShopAdminLayout = () => {
