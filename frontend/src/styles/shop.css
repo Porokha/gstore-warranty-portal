@@ -1715,6 +1715,51 @@ body.zpos-fullscreen .container {
   line-height: 1.45;
 }
 
+@media (max-width: 920px) and (min-width: 681px) {
+  .zpos-cart-head p,
+  .zpos-meta,
+  .zpos-modal-kicker,
+  .zpos-sidebar-head p {
+    font-size: clamp(8px, calc(2.3px + 0.84vw), 10px);
+  }
+
+  .zpos-price strong,
+  .zpos-summary-row strong,
+  .zpos-cart-item strong,
+  .zpos-choice strong {
+    font-size: clamp(12px, calc(0.59px + 1.67vw), 16px);
+  }
+
+  .zpos-choice-label {
+    font-size: clamp(6px, calc(-13.96px + 2.93vw), 13px);
+  }
+
+  .zpos-choice small {
+    font-size: clamp(8px, calc(-0.54px + 1.25vw), 11px);
+  }
+
+  .zpos-modal-content h2 {
+    font-size: clamp(18px, calc(0.92px + 2.5vw), 24px);
+  }
+
+  .zpos-modal-desc {
+    font-size: clamp(8px, calc(-6.25px + 2.09vw), 13px);
+  }
+
+  .zpos-modal {
+    gap: clamp(12px, calc(-5.08px + 2.51vw), 18px);
+    padding: clamp(14px, calc(2.62px + 1.67vw), 18px);
+    grid-template-columns: minmax(180px, clamp(220px, calc(105.9px + 16.75vw), 260px)) minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .zpos-modal-visual {
+    width: clamp(220px, calc(105.9px + 16.75vw), 260px);
+    height: clamp(220px, calc(105.9px + 16.75vw), 260px);
+    min-height: clamp(220px, calc(105.9px + 16.75vw), 260px);
+  }
+}
+
 .zpos-order-modal {
   width: min(1040px, 100%);
   grid-template-columns: minmax(0, 1fr);
@@ -2921,27 +2966,28 @@ body.zpos-fullscreen .container {
   .zpos-modal {
     width: min(560px, calc(100vw - 20px));
     max-height: calc(100vh - 20px);
-    grid-template-columns: 1fr;
-    gap: 12px;
+    grid-template-columns: minmax(140px, 180px) minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
     padding: 14px;
     overflow: auto;
   }
 
   .zpos-modal-visual {
-    width: 220px;
-    height: 220px;
-    min-height: 220px;
-    justify-self: center;
+    width: clamp(140px, 28vw, 180px);
+    height: clamp(140px, 28vw, 180px);
+    min-height: clamp(140px, 28vw, 180px);
+    justify-self: start;
   }
 
   .zpos-modal-content h2 {
-    font-size: 20px;
+    font-size: 18px;
     line-height: 1.16;
   }
 
   .zpos-modal-desc {
     margin: 8px 0 14px;
-    font-size: 12px;
+    font-size: 8px;
     line-height: 1.5;
   }
 
@@ -2951,6 +2997,28 @@ body.zpos-fullscreen .container {
 
   .zpos-choice {
     padding: 12px;
+  }
+
+  .zpos-cart-head p,
+  .zpos-meta,
+  .zpos-modal-kicker,
+  .zpos-sidebar-head p {
+    font-size: 8px;
+  }
+
+  .zpos-price strong,
+  .zpos-summary-row strong,
+  .zpos-cart-item strong,
+  .zpos-choice strong {
+    font-size: 12px;
+  }
+
+  .zpos-choice-label {
+    font-size: 6px;
+  }
+
+  .zpos-choice small {
+    font-size: 8px;
   }
 
   .zpos-order-modal {
@@ -3016,9 +3084,9 @@ body.zpos-fullscreen .container {
   }
 
   .zpos-modal-visual {
-    width: 180px;
-    height: 180px;
-    min-height: 180px;
+    width: clamp(120px, 31vw, 156px);
+    height: clamp(120px, 31vw, 156px);
+    min-height: clamp(120px, 31vw, 156px);
   }
 
   .zpos-card-body h3 {
