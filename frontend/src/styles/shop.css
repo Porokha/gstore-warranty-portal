@@ -2986,17 +2986,21 @@ body.zpos-fullscreen .container {
 
   .zpos-modal-kicker {
     grid-area: kicker;
+    line-height: normal;
   }
 
   .zpos-modal-content h2 {
     grid-area: title;
     font-size: 18px;
+    line-height: normal;
   }
 
   .zpos-modal-desc {
     grid-area: desc;
     font-size: 8px;
+    line-height: normal;
     margin: 8px 0 0;
+    padding: 0 0 5px;
   }
 
   .zpos-modal-visual {
