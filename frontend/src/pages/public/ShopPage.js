@@ -1207,8 +1207,7 @@ const ShopPage = () => {
                         >
                           <span className="zpos-order-step-index">{step.id}</span>
                           <div className="zpos-order-step-copy">
-                            <small>{step.label}</small>
-                            <strong>{step.title}</strong>
+                            <small>{step.title}</small>
                           </div>
                         </div>
                       ))}
@@ -1223,37 +1222,41 @@ const ShopPage = () => {
                             <h3>{t('shop.orderFlow.stepOne.title')}</h3>
                           </div>
                           <div className="zpos-order-grid">
-                            <label className="zpos-order-field">
+                            <label className={`zpos-order-field zpos-order-field--floating ${orderForm.customer_name ? 'has-value' : ''}`}>
                               <span>{t('shop.orderFlow.stepOne.fields.firstName')}</span>
                               <input
                                 type="text"
+                                placeholder=" "
                                 value={orderForm.customer_name}
                                 onChange={(event) => updateOrderForm('customer_name', event.target.value)}
                               />
                               {orderErrors.customer_name ? <small>{orderErrors.customer_name}</small> : null}
                             </label>
-                            <label className="zpos-order-field">
+                            <label className={`zpos-order-field zpos-order-field--floating ${orderForm.customer_last_name ? 'has-value' : ''}`}>
                               <span>{t('shop.orderFlow.stepOne.fields.lastName')}</span>
                               <input
                                 type="text"
+                                placeholder=" "
                                 value={orderForm.customer_last_name}
                                 onChange={(event) => updateOrderForm('customer_last_name', event.target.value)}
                               />
                               {orderErrors.customer_last_name ? <small>{orderErrors.customer_last_name}</small> : null}
                             </label>
-                            <label className="zpos-order-field">
+                            <label className={`zpos-order-field zpos-order-field--floating ${orderForm.customer_phone ? 'has-value' : ''}`}>
                               <span>{t('shop.orderFlow.stepOne.fields.phone')}</span>
                               <input
                                 type="tel"
+                                placeholder=" "
                                 value={orderForm.customer_phone}
                                 onChange={(event) => updateOrderForm('customer_phone', event.target.value)}
                               />
                               {orderErrors.customer_phone ? <small>{orderErrors.customer_phone}</small> : null}
                             </label>
-                            <label className="zpos-order-field">
+                            <label className={`zpos-order-field zpos-order-field--floating ${orderForm.customer_email ? 'has-value' : ''}`}>
                               <span>{t('shop.orderFlow.stepOne.fields.email')}</span>
                               <input
                                 type="email"
+                                placeholder=" "
                                 value={orderForm.customer_email}
                                 onChange={(event) => updateOrderForm('customer_email', event.target.value)}
                               />

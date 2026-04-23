@@ -1,14 +1,19 @@
 {
   "files": {
-    "main.css": "/static/css/main.612ec1ed.css",
-    "main.js": "/static/js/main.bdf0afd5.js",
+    "main.css": "/static/css/main.745a8183.css",
+    "main.js": "/static/js/main.c70ab329.js",
     "static/js/660.7660d4ce.chunk.js": "/static/js/660.7660d4ce.chunk.js",
     "static/js/874.c1536d4a.chunk.js": "/static/js/874.c1536d4a.chunk.js",
-    "static/js/551.b7633241.chunk.js": "/static/js/551.b7633241.chunk.js",
+    "static/js/551.81c7de63.chunk.js": "/static/js/551.81c7de63.chunk.js",
+    "static/media/bpg-banner-quadrosquare-caps-webfont.woff": "/static/media/bpg-banner-quadrosquare-caps-webfont.6e0a7a7bf43003cd7600.woff",
+    "static/media/bpg-banner-quadrosquare-webfont.woff": "/static/media/bpg-banner-quadrosquare-webfont.f7c5cb7973ff07c45d1a.woff",
+    "static/media/bpg-banner-quadrosquare-caps-webfont.woff2": "/static/media/bpg-banner-quadrosquare-caps-webfont.19b647c06687065b1eef.woff2",
+    "static/media/bpg-banner-quadrosquare-webfont.woff2": "/static/media/bpg-banner-quadrosquare-webfont.3321610920c428aa7e6d.woff2",
+    "static/media/gstore-logo.svg": "/static/media/gstore-logo.b5b8999492e300d1267935ae316b451d.svg",
     "index.html": "/index.html"
   },
   "entrypoints": [
-    "static/css/main.612ec1ed.css",
-    "static/js/main.bdf0afd5.js"
+    "static/css/main.745a8183.css",
+    "static/js/main.c70ab329.js"
   ]
 }
