@@ -170,6 +170,8 @@ const ShopPage = () => {
 
   useEffect(() => {
     const handleResize = () => {
+      document.documentElement.style.setProperty('--zpos-app-height', `${window.innerHeight}px`);
+
       const shouldUseCompactCart =
         window.innerWidth <= COMPACT_CART_WIDTH && window.innerHeight <= COMPACT_CART_HEIGHT;
 
@@ -204,6 +206,7 @@ const ShopPage = () => {
     return () => {
       window.removeEventListener('resize', handleResize);
       document.removeEventListener('keydown', handleKeyDown);
+      document.documentElement.style.removeProperty('--zpos-app-height');
     };
   }, []);
 

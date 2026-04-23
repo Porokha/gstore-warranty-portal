@@ -49,7 +49,7 @@ const PublicLayout = () => {
             '@media (max-width:920px)': {
               minHeight: '52px !important',
               gap: 0.75,
-              gridTemplateColumns: 'auto 1fr auto',
+              gridTemplateColumns: '76px minmax(0, 1fr) 76px',
             },
           }}
         >
@@ -59,6 +59,7 @@ const PublicLayout = () => {
               justifySelf: 'start',
               '@media (max-width:920px)': {
                 display: 'inline-flex',
+                width: '76px',
               },
             }}
           >
@@ -87,6 +88,7 @@ const PublicLayout = () => {
               '@media (max-width:920px)': {
                 justifyContent: 'center',
                 justifySelf: 'center',
+                width: '100%',
               },
               '&:hover': { opacity: 0.9 },
             }}
@@ -146,7 +148,16 @@ const PublicLayout = () => {
             })}
           </Box>
 
-          <Box sx={{ justifySelf: 'end' }}>
+          <Box
+            sx={{
+              justifySelf: 'end',
+              '@media (max-width:920px)': {
+                width: '76px',
+                display: 'flex',
+                justifyContent: 'flex-end',
+              },
+            }}
+          >
             <LanguageSwitcher compact />
           </Box>
         </Toolbar>
