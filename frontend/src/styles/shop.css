@@ -2679,7 +2679,7 @@ body.zpos-fullscreen .container {
   }
 
   .zpos-cart {
-    max-height: min(34vh, 300px);
+    max-height: min(39vh, 380px);
   }
 
   .zpos-main-sticky {
@@ -2741,7 +2741,7 @@ body.zpos-fullscreen .container {
   }
 
   .zpos-cart {
-    max-height: min(32vh, 286px);
+    max-height: min(41vh, 420px);
   }
 
   .zpos-main-sticky {
@@ -2821,7 +2821,7 @@ body.zpos-fullscreen .container {
   }
 
   .zpos-cart {
-    max-height: min(32vh, 280px);
+    max-height: min(42vh, 440px);
   }
 
   .zpos-toolbar,
@@ -3043,7 +3043,7 @@ body.zpos-fullscreen .container {
   }
 
   .zpos-cart {
-    max-height: min(30vh, 250px);
+    max-height: min(42vh, 420px);
   }
 
   .zpos-main-sticky {

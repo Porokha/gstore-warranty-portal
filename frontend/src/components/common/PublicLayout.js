@@ -249,15 +249,30 @@ const PublicLayout = () => {
                   key={item.path}
                   onClick={() => navigate(item.path)}
                   sx={{
-                    justifyContent: 'flex-start',
+                    justifyContent: 'space-between',
                     color: isActive ? '#18181b' : '#5b5568',
                     textTransform: 'none',
                     fontWeight: isActive ? 800 : 700,
                     fontSize: '14px',
-                    px: 1,
-                    py: 1,
-                    borderRadius: '14px',
-                    bgcolor: isActive ? '#f3ecff' : 'transparent',
+                    px: 1.25,
+                    py: 1.1,
+                    borderRadius: '16px',
+                    border: '1px solid',
+                    borderColor: isActive ? '#d8c7ff' : '#ece6f8',
+                    bgcolor: isActive ? '#f3ecff' : '#ffffff',
+                    boxShadow: isActive ? '0 8px 18px rgba(140, 99, 255, 0.12)' : '0 2px 6px rgba(17,17,17,0.04)',
+                    '&::after': {
+                      content: '""',
+                      width: 6,
+                      height: 6,
+                      borderRadius: '999px',
+                      bgcolor: isActive ? '#744de0' : '#d3c7eb',
+                      flexShrink: 0,
+                    },
+                    '&:hover': {
+                      bgcolor: '#f7f1ff',
+                      borderColor: '#dccfff',
+                    },
                   }}
                 >
                   {item.label}
@@ -271,14 +286,16 @@ const PublicLayout = () => {
               <Box
                 key={item}
                 sx={{
-                  px: 1.25,
-                  py: 1,
-                  borderRadius: '14px',
-                  bgcolor: '#f7f1ff',
+                  px: 1.4,
+                  py: 1.1,
+                  borderRadius: '16px',
+                  border: '1px solid #eee6fb',
+                  bgcolor: '#faf7ff',
                   color: '#5d5670',
                   fontSize: '11px',
                   fontWeight: 700,
                   lineHeight: 1.35,
+                  textAlign: 'center',
                 }}
               >
                 {item}
