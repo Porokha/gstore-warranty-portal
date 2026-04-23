@@ -57,6 +57,8 @@ const CART_REMOVE_MS = 220;
 const ORDER_MODAL_CLOSE_MS = 260;
 const FILTER_DRAWER_CLOSE_MS = 220;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const COMPACT_CART_WIDTH = 920;
+const COMPACT_CART_HEIGHT = 919;
 
 const createInitialOrderForm = () => ({
   customer_name: '',
@@ -92,6 +94,8 @@ const ShopPage = () => {
   const [orderForm, setOrderForm] = useState(createInitialOrderForm);
   const [orderErrors, setOrderErrors] = useState({});
   const [createdOrder, setCreatedOrder] = useState(null);
+  const [compactCart, setCompactCart] = useState(false);
+  const [cartExpanded, setCartExpanded] = useState(true);
   const tabsRef = useRef(null);
   const modalCloseTimerRef = useRef(null);
   const orderModalCloseTimerRef = useRef(null);
@@ -163,6 +167,16 @@ const ShopPage = () => {
 
   useEffect(() => {
     const handleResize = () => {
+      const shouldUseCompactCart =
+        window.innerWidth <= COMPACT_CART_WIDTH && window.innerHeight <= COMPACT_CART_HEIGHT;
+
+      setCompactCart((current) => {
+        if (current !== shouldUseCompactCart) {
+          setCartExpanded(!shouldUseCompactCart);
+        }
+        return shouldUseCompactCart;
+      });
+
       if (window.innerWidth > 920) {
         setFiltersClosing(false);
         setFiltersOpen(false);
@@ -182,6 +196,7 @@ const ShopPage = () => {
 
     window.addEventListener('resize', handleResize);
     document.addEventListener('keydown', handleKeyDown);
+    handleResize();
 
     return () => {
       window.removeEventListener('resize', handleResize);
@@ -515,10 +530,17 @@ const ShopPage = () => {
     });
   };
 
+  const toggleCartExpanded = () => {
+    if (!compactCart) {
+      return;
+    }
+    setCartExpanded((current) => !current);
+  };
+
   return (
     <div
       id="zpos-root"
-      className={`zpos-root ${filtersOpen ? 'zpos-filters-open' : ''} ${filtersClosing ? 'zpos-filters-closing' : ''}`}
+      className={`zpos-root ${filtersOpen ? 'zpos-filters-open' : ''} ${filtersClosing ? 'zpos-filters-closing' : ''} ${compactCart ? 'zpos-compact-cart-mode' : ''}`}
       aria-label={t('shop.ariaLabel')}
     >
       <button
@@ -827,15 +849,36 @@ const ShopPage = () => {
           </div>
         </main>
 
-        <aside className="zpos-cart" aria-label={t('shop.aria.cart')}>
+        <aside
+          className={`zpos-cart ${compactCart ? 'zpos-cart--compact' : ''} ${compactCart && cartExpanded ? 'is-expanded' : ''}`}
+          aria-label={t('shop.aria.cart')}
+        >
           <div className="zpos-cart-head">
-            <div>
+            <div className="zpos-cart-head-main">
               <p>{t('shop.cart.kicker')}</p>
               <h2>{t('shop.cart.title')}</h2>
             </div>
-            <span id="zpos-cart-count" className="zpos-cart-count">
-              {cartSummary.count}
-            </span>
+            {compactCart ? (
+              <div className="zpos-cart-head-side">
+                <strong className="zpos-cart-head-total">{formatMoney(cartSummary.total)}</strong>
+                <button
+                  id="zpos-cart-count"
+                  type="button"
+                  className={`zpos-cart-count zpos-cart-toggle ${cartExpanded ? 'is-expanded' : ''}`}
+                  aria-label={cartExpanded ? t('common.close') : t('shop.aria.cart')}
+                  aria-expanded={cartExpanded}
+                  onClick={toggleCartExpanded}
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M7 14l5-5 5 5"></path>
+                  </svg>
+                </button>
+              </div>
+            ) : (
+              <span id="zpos-cart-count" className="zpos-cart-count">
+                {cartSummary.count}
+              </span>
+            )}
           </div>
 
           <div id="zpos-cart-items" className="zpos-cart-items">
