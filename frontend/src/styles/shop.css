@@ -3332,12 +3332,9 @@ body.zpos-fullscreen .container {
     justify-items: center;
   }
 
-  .zpos-modal-backdrop {
-    padding: 10px;
-  }
-
   .zpos-modal {
-    width: min(560px, calc(100vw - 20px));
+    width: 100%;
+    max-width: 560px;
     max-height: calc(100vh - 20px);
     grid-template-columns: minmax(140px, 180px) minmax(0, 1fr);
     align-items: center;
@@ -3395,7 +3392,8 @@ body.zpos-fullscreen .container {
   }
 
   .zpos-order-modal {
-    width: min(520px, calc(100vw - 24px));
+    width: 100%;
+    max-width: 520px;
     justify-self: center;
     margin-inline: auto;
     grid-template-columns: minmax(0, 1fr);
@@ -3599,8 +3597,20 @@ body.zpos-fullscreen .container {
 }
 
 @media (max-width: 560px) {
+  .zpos-modal-backdrop {
+    padding: 10px;
+    align-items: center;
+    justify-items: center;
+  }
+
+  .zpos-modal {
+    width: 100%;
+    max-width: 100%;
+  }
+
   .zpos-order-modal {
-    width: min(100%, calc(100vw - 16px));
+    width: 100%;
+    max-width: 100%;
     justify-self: center;
     margin-inline: auto;
     grid-template-columns: minmax(0, 1fr);
@@ -3764,7 +3774,7 @@ body.zpos-fullscreen .container {
 
 @media (max-width: 420px) {
   .zpos-order-modal {
-    width: calc(100vw - 12px);
+    width: 100%;
     grid-template-columns: minmax(0, 1fr);
     align-items: stretch;
     max-height: calc(100vh - 12px);
@@ -3774,7 +3784,7 @@ body.zpos-fullscreen .container {
 
   .zpos-modal,
   .zpos-order-modal {
-    max-width: calc(100vw - 12px);
+    max-width: 100%;
   }
 
   .zpos-order-hero,
