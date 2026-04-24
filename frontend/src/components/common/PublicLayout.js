@@ -8,6 +8,7 @@ import CookieConsentBanner from './CookieConsentBanner';
 import LanguageSwitcher from './LanguageSwitcher';
 
 const CLARITY_PROJECT_ID = 'wf9ncn570j';
+const GTM_CONTAINER_ID = 'GTM-567T4CBG';
 
 const PublicLayout = () => {
   const navigate = useNavigate();
@@ -59,8 +60,46 @@ const PublicLayout = () => {
     return undefined;
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return undefined;
+    }
+
+    if (window.google_tag_manager || document.getElementById('gtm-script')) {
+      return undefined;
+    }
+
+    (function installGtm(w, d, s, l, i) {
+      w[l] = w[l] || [];
+      w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+      const firstScript = d.getElementsByTagName(s)[0];
+      const script = d.createElement(s);
+      const dataLayerSuffix = l !== 'dataLayer' ? `&l=${l}` : '';
+      script.async = true;
+      script.src = `https://www.googletagmanager.com/gtm.js?id=${i}${dataLayerSuffix}`;
+      script.id = 'gtm-script';
+      if (firstScript?.parentNode) {
+        firstScript.parentNode.insertBefore(script, firstScript);
+      } else {
+        d.head.appendChild(script);
+      }
+    })(window, document, 'script', 'dataLayer', GTM_CONTAINER_ID);
+
+    return undefined;
+  }, []);
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <noscript>
+        <iframe
+          src={`https://www.googletagmanager.com/ns.html?id=${GTM_CONTAINER_ID}`}
+          height="0"
+          width="0"
+          style={{ display: 'none', visibility: 'hidden' }}
+          title="Google Tag Manager"
+        />
+      </noscript>
+
       <AppBar
         position="sticky"
         sx={{
