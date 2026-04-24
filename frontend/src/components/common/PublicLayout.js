@@ -7,6 +7,8 @@ import ZevaLogo from './ZevaLogo';
 import CookieConsentBanner from './CookieConsentBanner';
 import LanguageSwitcher from './LanguageSwitcher';
 
+const CLARITY_PROJECT_ID = 'wf9ncn570j';
+
 const PublicLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -26,6 +28,36 @@ const PublicLayout = () => {
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return undefined;
+    }
+
+    if (window.clarity || document.getElementById('clarity-script')) {
+      return undefined;
+    }
+
+    (function installClarity(c, l, a, r, i) {
+      c[a] =
+        c[a] ||
+        function clarityProxy() {
+          (c[a].q = c[a].q || []).push(arguments);
+        };
+      const script = l.createElement(r);
+      script.async = true;
+      script.src = `https://www.clarity.ms/tag/${i}`;
+      script.id = 'clarity-script';
+      const firstScript = l.getElementsByTagName(r)[0];
+      if (firstScript?.parentNode) {
+        firstScript.parentNode.insertBefore(script, firstScript);
+      } else {
+        l.head.appendChild(script);
+      }
+    })(window, document, 'clarity', 'script', CLARITY_PROJECT_ID);
+
+    return undefined;
+  }, []);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
