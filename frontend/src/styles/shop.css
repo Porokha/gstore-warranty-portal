@@ -1673,6 +1673,7 @@ body.zpos-fullscreen .container {
 
 .zpos-modal {
   position: relative;
+  box-sizing: border-box;
   width: min(860px, 100%);
   justify-self: center;
   margin-inline: auto;
@@ -1855,6 +1856,7 @@ body.zpos-fullscreen .container {
 }
 
 .zpos-order-modal {
+  box-sizing: border-box;
   width: min(1040px, 100%);
   grid-template-columns: minmax(0, 1fr);
   padding: 22px;
@@ -3434,12 +3436,11 @@ body.zpos-fullscreen .container {
   }
 
   .zpos-order-hero-copy h2 {
-    margin-top: 2px;
-    font-size: 18px;
+    display: none;
   }
 
   .zpos-order-hero-text {
-    margin-top: 4px;
+    margin-top: 2px;
     font-size: 10px;
     line-height: 1.4;
   }
@@ -3609,6 +3610,10 @@ body.zpos-fullscreen .container {
     max-height: calc(100vh - 16px);
   }
 
+  .zpos-order-hero-copy h2 {
+    display: none;
+  }
+
   .zpos-order-modal-body {
     gap: 12px;
     width: 100%;
@@ -3765,6 +3770,11 @@ body.zpos-fullscreen .container {
     max-height: calc(100vh - 12px);
     padding: 10px;
     border-radius: 20px;
+  }
+
+  .zpos-modal,
+  .zpos-order-modal {
+    max-width: calc(100vw - 12px);
   }
 
   .zpos-order-hero,
