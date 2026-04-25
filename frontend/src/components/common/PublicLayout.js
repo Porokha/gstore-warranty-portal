@@ -10,6 +10,7 @@ import LanguageSwitcher from './LanguageSwitcher';
 const CLARITY_PROJECT_ID = 'wf9ncn570j';
 const GTM_CONTAINER_ID = 'GTM-567T4CBG';
 const RESPOND_IO_WIDGET_ID = 'c324653688760c8dfe6500959a79ea0';
+const RESPOND_IO_SCRIPT_ID = 'respondio-widget-script';
 
 const PublicLayout = () => {
   const navigate = useNavigate();
@@ -61,27 +62,57 @@ const PublicLayout = () => {
     return undefined;
   }, []);
 
-  useEffect(() => {
-    if (typeof window === 'undefined' || typeof document === 'undefined') {
-      return undefined;
-    }
+  const ensureRespondChatLoaded = () =>
+    new Promise((resolve, reject) => {
+      if (typeof window === 'undefined' || typeof document === 'undefined') {
+        reject(new Error('Respond.io widget requires a browser environment'));
+        return;
+      }
 
-    if (document.getElementById('respondio-widget-script')) {
-      return undefined;
-    }
+      if (window.$respond?.do) {
+        resolve();
+        return;
+      }
 
-    const script = document.createElement('script');
-    script.id = 'respondio-widget-script';
-    script.async = true;
-    script.src = `https://cdn.respond.io/webchat/widget/widget.js?cId=${RESPOND_IO_WIDGET_ID}`;
-    document.body.appendChild(script);
+      if (window.__respondIoWidgetPromise) {
+        window.__respondIoWidgetPromise.then(resolve).catch(reject);
+        return;
+      }
 
-    return undefined;
-  }, []);
+      const existingScript = document.getElementById(RESPOND_IO_SCRIPT_ID);
+      if (existingScript) {
+        window.__respondIoWidgetPromise = new Promise((scriptResolve, scriptReject) => {
+          existingScript.addEventListener('load', () => scriptResolve(), { once: true });
+          existingScript.addEventListener('error', () => scriptReject(new Error('Respond.io widget failed to load')), {
+            once: true,
+          });
+        });
+        window.__respondIoWidgetPromise.then(resolve).catch(reject);
+        return;
+      }
 
-  const openRespondChat = () => {
-    if (typeof window !== 'undefined' && window.$respond?.do) {
-      window.$respond.do('chat:open');
+      const script = document.createElement('script');
+      script.id = RESPOND_IO_SCRIPT_ID;
+      script.async = true;
+      script.src = `https://cdn.respond.io/webchat/widget/widget.js?cId=${RESPOND_IO_WIDGET_ID}`;
+
+      window.__respondIoWidgetPromise = new Promise((scriptResolve, scriptReject) => {
+        script.onload = () => scriptResolve();
+        script.onerror = () => scriptReject(new Error('Respond.io widget failed to load'));
+      });
+
+      document.body.appendChild(script);
+      window.__respondIoWidgetPromise.then(resolve).catch(reject);
+    });
+
+  const openRespondChat = async () => {
+    try {
+      await ensureRespondChatLoaded();
+      if (window.$respond?.do) {
+        window.$respond.do('chat:open');
+      }
+    } catch (error) {
+      console.error('Respond.io widget failed to initialize.', error);
     }
   };
 
@@ -306,6 +337,7 @@ const PublicLayout = () => {
             maxWidth: 320,
             minWidth: 260,
             p: 2,
+            display: 'flex',
             background: 'rgba(255,255,255,0.96)',
             backdropFilter: 'blur(14px)',
             '@media (min-width:921px)': {
@@ -314,7 +346,7 @@ const PublicLayout = () => {
           },
         }}
       >
-        <Box sx={{ display: 'grid', gap: 1.5, pt: 1 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: 1, minHeight: '100%' }}>
           <Box
             sx={{
               display: 'flex',
@@ -400,29 +432,34 @@ const PublicLayout = () => {
             sx={{
               display: 'flex',
               justifyContent: 'center',
-              pt: 1,
-              mt: 0.5,
+              mt: 'auto',
+              pt: 1.25,
               borderTop: '1px solid #efe8ff',
             }}
           >
-            <IconButton
-              aria-label="Open chat"
+            <Button
               onClick={openRespondChat}
+              startIcon={<ChatBubbleRoundedIcon sx={{ fontSize: 22 }} />}
               sx={{
-                width: 54,
-                height: 54,
-                borderRadius: '999px',
+                minWidth: 0,
+                px: 1.6,
+                py: 1,
+                gap: 0.75,
+                borderRadius: '18px',
                 border: '1px solid #e2d4ff',
-                bgcolor: '#744de0',
-                color: '#ffffff',
-                boxShadow: '0 14px 28px rgba(116, 77, 224, 0.2)',
+                bgcolor: '#f5efff',
+                color: '#744de0',
+                fontWeight: 800,
+                fontSize: '12px',
+                textTransform: 'none',
+                boxShadow: '0 12px 24px rgba(116, 77, 224, 0.12)',
                 '&:hover': {
-                  bgcolor: '#653dd8',
+                  bgcolor: '#efe5ff',
                 },
               }}
             >
-              <ChatBubbleRoundedIcon sx={{ fontSize: 24 }} />
-            </IconButton>
+              {i18n.language === 'ka' ? 'კითხვა გაქვს? მოგვწერე' : 'Chat with us'}
+            </Button>
           </Box>
         </Box>
       </Drawer>
