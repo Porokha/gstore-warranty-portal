@@ -15,6 +15,12 @@ interface SendTemplateTestOptions {
     language: Language;
     phones: string[];
 }
+interface SendBulkSmsTestOptions {
+    phones: string[];
+    templateKey?: string;
+    language?: Language;
+    messageText?: string;
+}
 export declare class SmsService {
     private configService;
     private templatesRepository;
@@ -30,6 +36,8 @@ export declare class SmsService {
     private loadSettings;
     private getSettings;
     private renderTemplate;
+    private normalizePhones;
+    private deliverSms;
     getTemplate(key: string, language?: Language): Promise<SmsTemplate>;
     sendSms(options: SendSmsOptions): Promise<SmsLog>;
     private isEventEnabled;
@@ -43,6 +51,13 @@ export declare class SmsService {
     sendTemplateTest(options: SendTemplateTestOptions): Promise<{
         template_key: string;
         language: Language;
+        total: number;
+        sent: number;
+        failed: number;
+        skipped: number;
+        results: SmsLog[];
+    }>;
+    sendBulkSmsTest(options: SendBulkSmsTestOptions): Promise<{
         total: number;
         sent: number;
         failed: number;

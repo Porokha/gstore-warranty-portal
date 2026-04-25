@@ -30,18 +30,39 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Chip,
+  Stack,
 } from '@mui/material';
 import {
   Save as SaveIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon,
   Add as AddIcon,
+  Sms as SmsIcon,
 } from '@mui/icons-material';
 import { smsService } from '../../services/smsService';
 import { usersService } from '../../services/usersService';
 import { useAuth } from '../../contexts/AuthContext';
 import ApiKeysSettings from '../../components/settings/ApiKeysSettings';
 import api from '../../services/api';
+
+const SMS_SETTINGS_KEYS = [
+  'global_enabled',
+  'send_on_warranty_created',
+  'send_on_case_opened',
+  'send_on_status_change',
+  'send_on_offer_created',
+  'send_on_payment_confirmed',
+  'send_on_case_completed',
+  'send_on_sla_due',
+  'send_on_sla_stalled',
+  'send_on_sla_deadline_1day',
+];
+
+const pickSmsSettingsPayload = (settings) =>
+  SMS_SETTINGS_KEYS.reduce((acc, key) => {
+    acc[key] = Boolean(settings?.[key]);
+    return acc;
+  }, {});
 
 const SettingsPage = () => {
   const { t } = useTranslation();
@@ -54,8 +75,11 @@ const SettingsPage = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [testTemplateSelection, setTestTemplateSelection] = useState('');
+  const [testMode, setTestMode] = useState('template');
   const [testPhones, setTestPhones] = useState('');
+  const [testCustomMessage, setTestCustomMessage] = useState('');
   const [testSendResult, setTestSendResult] = useState(null);
+  const [saveError, setSaveError] = useState('');
 
   const { data: settings, isLoading: settingsLoading } = useQuery('sms-settings', () =>
     smsService.getSettings()
@@ -67,6 +91,10 @@ const SettingsPage = () => {
 
   const { data: users, isLoading: usersLoading } = useQuery('users', () =>
     usersService.getAll()
+  );
+
+  const { data: smsLogs, isLoading: logsLoading } = useQuery('sms-logs', () =>
+    smsService.getLogs(25)
   );
 
   const { data: wooCommerceAutomationData } = useQuery('woocommerce-automation', async () => {
@@ -156,17 +184,22 @@ const SettingsPage = () => {
 
   React.useEffect(() => {
     if (settings) {
-      setLocalSettings(settings);
+      setLocalSettings(pickSmsSettingsPayload(settings));
     }
   }, [settings]);
 
   const updateMutation = useMutation(
     (newSettings) => smsService.updateSettings(newSettings),
     {
-      onSuccess: () => {
+      onSuccess: (savedSettings) => {
         queryClient.invalidateQueries('sms-settings');
+        setLocalSettings(pickSmsSettingsPayload(savedSettings));
+        setSaveError('');
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 3000);
+      },
+      onError: (error) => {
+        setSaveError(error.response?.data?.message || 'Failed to save SMS settings');
       },
     }
   );
@@ -185,13 +218,21 @@ const SettingsPage = () => {
         setEditingTemplate(null);
         setTemplateForm({ key: '', language: 'ka', template_text: '' });
       },
+      onError: (error) => {
+        setTestSendResult({
+          severity: 'error',
+          message: error.response?.data?.message || 'Failed to save SMS template',
+        });
+      },
     }
   );
 
   const testTemplateMutation = useMutation(
-    ({ template_key, language, phones }) => smsService.sendTemplateTest({ template_key, language, phones }),
+    ({ template_key, language, phones, message_text }) =>
+      smsService.sendBulkTest({ template_key, language, phones, message_text }),
     {
       onSuccess: (result) => {
+        queryClient.invalidateQueries('sms-logs');
         setTestSendResult({
           severity: result.failed > 0 ? 'warning' : 'success',
           message: `Test send finished. Sent: ${result.sent}, failed: ${result.failed}, skipped: ${result.skipped}.`,
@@ -214,7 +255,8 @@ const SettingsPage = () => {
   };
 
   const handleSave = () => {
-    updateMutation.mutate(localSettings);
+    setSaveError('');
+    updateMutation.mutate(pickSmsSettingsPayload(localSettings));
   };
 
   const handleEditTemplate = (template) => {
@@ -247,16 +289,37 @@ const SettingsPage = () => {
       .map((phone) => phone.trim())
       .filter(Boolean);
 
-    if (!template_key || !language || phones.length === 0) {
+    if (phones.length === 0) {
       setTestSendResult({
         severity: 'error',
-        message: 'Choose a template and enter at least one phone number.',
+        message: 'Enter at least one phone number.',
+      });
+      return;
+    }
+
+    if (testMode === 'template' && (!template_key || !language)) {
+      setTestSendResult({
+        severity: 'error',
+        message: 'Choose a template before sending.',
+      });
+      return;
+    }
+
+    if (testMode === 'custom' && !testCustomMessage.trim()) {
+      setTestSendResult({
+        severity: 'error',
+        message: 'Enter custom SMS text before sending.',
       });
       return;
     }
 
     setTestSendResult(null);
-    testTemplateMutation.mutate({ template_key, language, phones });
+    testTemplateMutation.mutate({
+      template_key: testMode === 'template' ? template_key : undefined,
+      language: testMode === 'template' ? language : undefined,
+      message_text: testMode === 'custom' ? testCustomMessage.trim() : undefined,
+      phones,
+    });
   };
 
   if (user?.role !== 'admin') {
@@ -287,7 +350,7 @@ const SettingsPage = () => {
         </Alert>
       )}
 
-      <Paper sx={{ p: 3 }}>
+      <Paper sx={{ p: 3, borderRadius: 3 }}>
         <Tabs value={tab} onChange={(e, newValue) => setTab(newValue)} sx={{ mb: 3 }}>
           <Tab label={t('settings.smsNotifications') || 'SMS Notifications'} />
           <Tab label={t('settings.smsTemplates') || 'SMS Templates'} />
@@ -309,6 +372,12 @@ const SettingsPage = () => {
                 {updateMutation.isLoading ? <CircularProgress size={20} /> : t('common.save')}
               </Button>
             </Box>
+
+            {saveError ? (
+              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setSaveError('')}>
+                {saveError}
+              </Alert>
+            ) : null}
 
             <Typography variant="h6" gutterBottom>
               {t('settings.smsNotifications') || 'SMS Notifications'}
@@ -414,23 +483,57 @@ const SettingsPage = () => {
                   </Alert>
                 ) : null}
 
+                <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap' }}>
+                  <Button
+                    variant={testMode === 'template' ? 'contained' : 'outlined'}
+                    color="primary"
+                    onClick={() => setTestMode('template')}
+                    sx={{ borderRadius: 2 }}
+                  >
+                    {t('settings.useTemplate') || 'Use Template'}
+                  </Button>
+                  <Button
+                    variant={testMode === 'custom' ? 'contained' : 'outlined'}
+                    color="primary"
+                    onClick={() => setTestMode('custom')}
+                    sx={{ borderRadius: 2 }}
+                  >
+                    {t('settings.customText') || 'Custom Text'}
+                  </Button>
+                </Stack>
+
                 <Grid container spacing={2}>
-                  <Grid item xs={12} md={4}>
-                    <FormControl fullWidth>
-                      <InputLabel>{t('settings.template') || 'Template'}</InputLabel>
-                      <Select
-                        value={testTemplateSelection}
-                        label={t('settings.template') || 'Template'}
-                        onChange={(e) => setTestTemplateSelection(e.target.value)}
-                      >
-                        {(templates || []).map((template) => (
-                          <MenuItem key={template.id} value={`${template.key}__${template.language}`}>
-                            {template.key} ({String(template.language).toUpperCase()})
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
+                  {testMode === 'template' ? (
+                    <Grid item xs={12} md={4}>
+                      <FormControl fullWidth>
+                        <InputLabel>{t('settings.template') || 'Template'}</InputLabel>
+                        <Select
+                          value={testTemplateSelection}
+                          label={t('settings.template') || 'Template'}
+                          onChange={(e) => setTestTemplateSelection(e.target.value)}
+                          sx={{ borderRadius: 2 }}
+                        >
+                          {(templates || []).map((template) => (
+                            <MenuItem key={template.id} value={`${template.key}__${template.language}`}>
+                              {template.key} ({String(template.language).toUpperCase()})
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                  ) : (
+                    <Grid item xs={12} md={4}>
+                      <TextField
+                        fullWidth
+                        multiline
+                        minRows={3}
+                        label={t('settings.messageText') || 'Message text'}
+                        value={testCustomMessage}
+                        onChange={(e) => setTestCustomMessage(e.target.value)}
+                        helperText={t('settings.messageTextHint') || 'This text will be sent exactly as written.'}
+                      />
+                    </Grid>
+                  )}
                   <Grid item xs={12} md={6}>
                     <TextField
                       fullWidth
@@ -453,6 +556,63 @@ const SettingsPage = () => {
                     </Button>
                   </Grid>
                 </Grid>
+              </Paper>
+
+              <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3 }}>
+                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} gap={2}>
+                  <Box>
+                    <Typography variant="h6">
+                      {t('settings.sentMessagesLog') || 'Sent Messages Log'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {t('settings.sentMessagesLogDescription') || 'Latest SMS send attempts and delivery statuses.'}
+                    </Typography>
+                  </Box>
+                </Box>
+
+                <TableContainer>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>{t('common.status') || 'Status'}</TableCell>
+                        <TableCell>{t('settings.phone') || 'Phone'}</TableCell>
+                        <TableCell>{t('settings.templateOrType') || 'Template / Type'}</TableCell>
+                        <TableCell>{t('common.date') || 'Date'}</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {smsLogs && smsLogs.length > 0 ? (
+                        smsLogs.map((log) => (
+                          <TableRow key={log.id}>
+                            <TableCell>
+                              <Chip
+                                size="small"
+                                label={String(log.status).toUpperCase()}
+                                color={
+                                  log.status === 'sent'
+                                    ? 'success'
+                                    : log.status === 'failed'
+                                      ? 'error'
+                                      : 'default'
+                                }
+                                sx={{ borderRadius: 2 }}
+                              />
+                            </TableCell>
+                            <TableCell>{log.phone}</TableCell>
+                            <TableCell>{log.template_key}</TableCell>
+                            <TableCell>{new Date(log.created_at).toLocaleString()}</TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={4} align="center">
+                            {logsLoading ? <CircularProgress size={20} /> : (t('settings.noSmsLogs') || 'No SMS logs yet')}
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
               </Paper>
 
               <TableContainer>
@@ -637,7 +797,13 @@ const SettingsPage = () => {
       </Paper>
 
       {/* Template Dialog */}
-      <Dialog open={templateDialogOpen} onClose={() => setTemplateDialogOpen(false)} maxWidth="md" fullWidth>
+      <Dialog
+        open={templateDialogOpen}
+        onClose={() => setTemplateDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
         <DialogTitle>
           {editingTemplate ? t('common.editTemplate') || 'Edit Template' : t('common.createTemplate') || 'Create Template'}
         </DialogTitle>
@@ -686,7 +852,13 @@ const SettingsPage = () => {
       </Dialog>
 
       {/* User Dialog */}
-      <Dialog open={userDialogOpen} onClose={() => setUserDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={userDialogOpen}
+        onClose={() => setUserDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
         <DialogTitle>
           {editingUser ? t('common.editUser') || 'Edit User' : t('common.createUser') || 'Create User'}
         </DialogTitle>

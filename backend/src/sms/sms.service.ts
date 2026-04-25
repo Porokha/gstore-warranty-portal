@@ -26,6 +26,13 @@ interface SendTemplateTestOptions {
   phones: string[];
 }
 
+interface SendBulkSmsTestOptions {
+  phones: string[];
+  templateKey?: string;
+  language?: Language;
+  messageText?: string;
+}
+
 @Injectable()
 export class SmsService {
   private readonly logger = new Logger(SmsService.name);
@@ -111,6 +118,48 @@ export class SmsService {
     return rendered;
   }
 
+  private normalizePhones(phones: string[]): string[] {
+    return Array.from(
+      new Set(
+        phones
+          .map((phone) => phone.trim())
+          .filter(Boolean),
+      ),
+    );
+  }
+
+  private async deliverSms(
+    phone: string,
+    message: string,
+    templateKey: string,
+    payload: Record<string, any>,
+  ): Promise<SmsLog> {
+    if (!this.apiKey) {
+      this.logger.warn('SMS API key not configured, skipping send');
+      return this.createLog(phone, templateKey, payload, SmsStatus.SKIPPED, 'API key not configured');
+    }
+
+    try {
+      const response = await this.api.post('/v1/sms/send', {
+        phone,
+        message,
+        sender: this.senderName,
+      });
+
+      this.logger.log(`SMS sent successfully to ${phone} (template: ${templateKey})`);
+      return this.createLog(phone, templateKey, payload, SmsStatus.SENT, JSON.stringify(response.data));
+    } catch (error) {
+      this.logger.error(`Failed to send SMS to ${phone}:`, error.message);
+      return this.createLog(
+        phone,
+        templateKey,
+        payload,
+        SmsStatus.FAILED,
+        error.response?.data || error.message,
+      );
+    }
+  }
+
   async getTemplate(key: string, language: Language = Language.KA): Promise<SmsTemplate> {
     const template = await this.templatesRepository.findOne({
       where: { key, language },
@@ -161,32 +210,7 @@ export class SmsService {
     // Render template
     const message = this.renderTemplate(template.template_text, variables);
 
-    // Send SMS via Sender API
-    if (!this.apiKey) {
-      this.logger.warn('SMS API key not configured, skipping send');
-      return this.createLog(phone, templateKey, variables, SmsStatus.SKIPPED, 'API key not configured');
-    }
-
-    try {
-      // Note: Adjust the API endpoint and request format based on Sender API documentation
-      const response = await this.api.post('/v1/sms/send', {
-        phone: phone,
-        message: message,
-        sender: this.senderName,
-      });
-
-      this.logger.log(`SMS sent successfully to ${phone} (template: ${templateKey})`);
-      return this.createLog(phone, templateKey, variables, SmsStatus.SENT, JSON.stringify(response.data));
-    } catch (error) {
-      this.logger.error(`Failed to send SMS to ${phone}:`, error.message);
-      return this.createLog(
-        phone,
-        templateKey,
-        variables,
-        SmsStatus.FAILED,
-        error.response?.data || error.message,
-      );
-    }
+    return this.deliverSms(phone, message, templateKey, variables);
   }
 
   private isEventEnabled(templateKey: string, settings: SmsSettings): boolean {
@@ -304,13 +328,7 @@ export class SmsService {
   async sendTemplateTest(options: SendTemplateTestOptions) {
     const { templateKey, language, phones } = options;
 
-    const normalizedPhones = Array.from(
-      new Set(
-        phones
-          .map((phone) => phone.trim())
-          .filter(Boolean),
-      ),
-    );
+    const normalizedPhones = this.normalizePhones(phones);
 
     if (normalizedPhones.length === 0) {
       throw new BadRequestException('At least one phone number is required');
@@ -332,6 +350,54 @@ export class SmsService {
       template_key: templateKey,
       language,
       total: normalizedPhones.length,
+      sent: results.filter((item) => item.status === SmsStatus.SENT).length,
+      failed: results.filter((item) => item.status === SmsStatus.FAILED).length,
+      skipped: results.filter((item) => item.status === SmsStatus.SKIPPED).length,
+      results,
+    };
+  }
+
+  async sendBulkSmsTest(options: SendBulkSmsTestOptions) {
+    const { templateKey, language = Language.KA, messageText } = options;
+    const phones = this.normalizePhones(options.phones);
+
+    if (phones.length === 0) {
+      throw new BadRequestException('At least one phone number is required');
+    }
+
+    const usingTemplate = Boolean(templateKey);
+    const usingManualText = Boolean(messageText && messageText.trim());
+
+    if (!usingTemplate && !usingManualText) {
+      throw new BadRequestException('Choose a template or enter custom text');
+    }
+
+    if (usingTemplate && usingManualText) {
+      throw new BadRequestException('Use either template mode or custom text mode');
+    }
+
+    const results: SmsLog[] = [];
+
+    if (usingTemplate) {
+      const template = await this.getTemplate(templateKey!, language);
+      const renderedText = this.renderTemplate(template.template_text, {});
+
+      for (const phone of phones) {
+        results.push(
+          await this.deliverSms(phone, renderedText, templateKey!, { mode: 'template_test', language }),
+        );
+      }
+    } else {
+      const trimmedMessage = messageText!.trim();
+      for (const phone of phones) {
+        results.push(
+          await this.deliverSms(phone, trimmedMessage, 'manual.test', { mode: 'manual_test' }),
+        );
+      }
+    }
+
+    return {
+      total: phones.length,
       sent: results.filter((item) => item.status === SmsStatus.SENT).length,
       failed: results.filter((item) => item.status === SmsStatus.FAILED).length,
       skipped: results.filter((item) => item.status === SmsStatus.SKIPPED).length,

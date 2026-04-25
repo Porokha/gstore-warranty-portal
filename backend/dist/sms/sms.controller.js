@@ -21,6 +21,7 @@ const create_template_dto_1 = require("./dto/create-template.dto");
 const update_settings_dto_1 = require("./dto/update-settings.dto");
 const send_sms_dto_1 = require("./dto/send-sms.dto");
 const send_template_test_dto_1 = require("./dto/send-template-test.dto");
+const send_bulk_sms_test_dto_1 = require("./dto/send-bulk-sms-test.dto");
 let SmsController = class SmsController {
     constructor(smsService) {
         this.smsService = smsService;
@@ -43,6 +44,14 @@ let SmsController = class SmsController {
         return this.smsService.sendTemplateTest({
             templateKey: dto.template_key,
             language: dto.language,
+            phones: dto.phones,
+        });
+    }
+    sendBulkSmsTest(dto) {
+        return this.smsService.sendBulkSmsTest({
+            templateKey: dto.template_key,
+            language: dto.language,
+            messageText: dto.message_text,
             phones: dto.phones,
         });
     }
@@ -90,6 +99,13 @@ __decorate([
     __metadata("design:paramtypes", [send_template_test_dto_1.SendTemplateTestDto]),
     __metadata("design:returntype", void 0)
 ], SmsController.prototype, "sendTemplateTest", null);
+__decorate([
+    (0, common_1.Post)('test'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [send_bulk_sms_test_dto_1.SendBulkSmsTestDto]),
+    __metadata("design:returntype", void 0)
+], SmsController.prototype, "sendBulkSmsTest", null);
 __decorate([
     (0, common_1.Post)('templates'),
     __param(0, (0, common_1.Body)()),

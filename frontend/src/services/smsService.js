@@ -42,6 +42,16 @@ export const smsService = {
     return response.data;
   },
 
+  sendBulkTest: async ({ template_key, language, message_text, phones }) => {
+    const response = await api.post('/sms/test', {
+      template_key,
+      language,
+      message_text,
+      phones,
+    });
+    return response.data;
+  },
+
   getLogs: async (limit = 100) => {
     const response = await api.get(`/sms/logs?limit=${limit}`);
     return response.data;
