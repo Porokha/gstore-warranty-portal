@@ -10,6 +10,11 @@ interface SendSmsOptions {
     variables?: Record<string, any>;
     skipIfDisabled?: boolean;
 }
+interface SendTemplateTestOptions {
+    templateKey: string;
+    language: Language;
+    phones: string[];
+}
 export declare class SmsService {
     private configService;
     private templatesRepository;
@@ -35,5 +40,14 @@ export declare class SmsService {
     getSettingsConfig(): Promise<SmsSettings>;
     updateSettings(settingsData: Partial<SmsSettings>, updatedBy: number): Promise<SmsSettings>;
     getLogs(limit?: number): Promise<SmsLog[]>;
+    sendTemplateTest(options: SendTemplateTestOptions): Promise<{
+        template_key: string;
+        language: Language;
+        total: number;
+        sent: number;
+        failed: number;
+        skipped: number;
+        results: SmsLog[];
+    }>;
 }
 export {};

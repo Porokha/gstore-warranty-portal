@@ -20,6 +20,12 @@ interface SendSmsOptions {
   skipIfDisabled?: boolean;
 }
 
+interface SendTemplateTestOptions {
+  templateKey: string;
+  language: Language;
+  phones: string[];
+}
+
 @Injectable()
 export class SmsService {
   private readonly logger = new Logger(SmsService.name);
@@ -293,5 +299,43 @@ export class SmsService {
       order: { created_at: 'DESC' },
       take: limit,
     });
+  }
+
+  async sendTemplateTest(options: SendTemplateTestOptions) {
+    const { templateKey, language, phones } = options;
+
+    const normalizedPhones = Array.from(
+      new Set(
+        phones
+          .map((phone) => phone.trim())
+          .filter(Boolean),
+      ),
+    );
+
+    if (normalizedPhones.length === 0) {
+      throw new BadRequestException('At least one phone number is required');
+    }
+
+    const results: SmsLog[] = [];
+    for (const phone of normalizedPhones) {
+      const log = await this.sendSms({
+        phone,
+        templateKey,
+        language,
+        variables: {},
+        skipIfDisabled: false,
+      });
+      results.push(log);
+    }
+
+    return {
+      template_key: templateKey,
+      language,
+      total: normalizedPhones.length,
+      sent: results.filter((item) => item.status === SmsStatus.SENT).length,
+      failed: results.filter((item) => item.status === SmsStatus.FAILED).length,
+      skipped: results.filter((item) => item.status === SmsStatus.SKIPPED).length,
+      results,
+    };
   }
 }

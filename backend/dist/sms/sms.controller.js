@@ -20,6 +20,7 @@ const sms_service_1 = require("./sms.service");
 const create_template_dto_1 = require("./dto/create-template.dto");
 const update_settings_dto_1 = require("./dto/update-settings.dto");
 const send_sms_dto_1 = require("./dto/send-sms.dto");
+const send_template_test_dto_1 = require("./dto/send-template-test.dto");
 let SmsController = class SmsController {
     constructor(smsService) {
         this.smsService = smsService;
@@ -37,6 +38,13 @@ let SmsController = class SmsController {
     }
     getTemplate(id) {
         return this.smsService.getTemplateById(id);
+    }
+    sendTemplateTest(dto) {
+        return this.smsService.sendTemplateTest({
+            templateKey: dto.template_key,
+            language: dto.language,
+            phones: dto.phones,
+        });
     }
     createTemplate(createDto, user) {
         return this.smsService.createOrUpdateTemplate(createDto.key, createDto.language, createDto.template_text, user.id);
@@ -75,6 +83,13 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], SmsController.prototype, "getTemplate", null);
+__decorate([
+    (0, common_1.Post)('templates/test'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [send_template_test_dto_1.SendTemplateTestDto]),
+    __metadata("design:returntype", void 0)
+], SmsController.prototype, "sendTemplateTest", null);
 __decorate([
     (0, common_1.Post)('templates'),
     __param(0, (0, common_1.Body)()),

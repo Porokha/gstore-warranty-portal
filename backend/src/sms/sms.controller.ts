@@ -15,6 +15,7 @@ import { SmsService } from './sms.service';
 import { CreateTemplateDto } from './dto/create-template.dto';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
 import { SendSmsDto } from './dto/send-sms.dto';
+import { SendTemplateTestDto } from './dto/send-template-test.dto';
 
 @Controller('sms')
 @UseGuards(JwtAuthGuard)
@@ -39,6 +40,15 @@ export class SmsController {
   @Get('templates/:id')
   getTemplate(@Param('id', ParseIntPipe) id: number) {
     return this.smsService.getTemplateById(id);
+  }
+
+  @Post('templates/test')
+  sendTemplateTest(@Body() dto: SendTemplateTestDto) {
+    return this.smsService.sendTemplateTest({
+      templateKey: dto.template_key,
+      language: dto.language,
+      phones: dto.phones,
+    });
   }
 
   @Post('templates')

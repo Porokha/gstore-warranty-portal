@@ -33,9 +33,17 @@ export const smsService = {
     return response.data;
   },
 
+  sendTemplateTest: async ({ template_key, language, phones }) => {
+    const response = await api.post('/sms/templates/test', {
+      template_key,
+      language,
+      phones,
+    });
+    return response.data;
+  },
+
   getLogs: async (limit = 100) => {
     const response = await api.get(`/sms/logs?limit=${limit}`);
     return response.data;
   },
 };
-

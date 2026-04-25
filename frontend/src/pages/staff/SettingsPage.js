@@ -53,6 +53,9 @@ const SettingsPage = () => {
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [editingTemplate, setEditingTemplate] = useState(null);
+  const [testTemplateSelection, setTestTemplateSelection] = useState('');
+  const [testPhones, setTestPhones] = useState('');
+  const [testSendResult, setTestSendResult] = useState(null);
 
   const { data: settings, isLoading: settingsLoading } = useQuery('sms-settings', () =>
     smsService.getSettings()
@@ -185,6 +188,24 @@ const SettingsPage = () => {
     }
   );
 
+  const testTemplateMutation = useMutation(
+    ({ template_key, language, phones }) => smsService.sendTemplateTest({ template_key, language, phones }),
+    {
+      onSuccess: (result) => {
+        setTestSendResult({
+          severity: result.failed > 0 ? 'warning' : 'success',
+          message: `Test send finished. Sent: ${result.sent}, failed: ${result.failed}, skipped: ${result.skipped}.`,
+        });
+      },
+      onError: (error) => {
+        setTestSendResult({
+          severity: 'error',
+          message: error.response?.data?.message || 'Failed to send test SMS messages',
+        });
+      },
+    }
+  );
+
   const handleToggle = (key) => {
     setLocalSettings((prev) => ({
       ...prev,
@@ -217,6 +238,25 @@ const SettingsPage = () => {
       language_preference: user.language_pref || user.language_preference || 'ka',
     });
     setUserDialogOpen(true);
+  };
+
+  const handleSendTemplateTest = () => {
+    const [template_key, language] = testTemplateSelection.split('__');
+    const phones = testPhones
+      .split(',')
+      .map((phone) => phone.trim())
+      .filter(Boolean);
+
+    if (!template_key || !language || phones.length === 0) {
+      setTestSendResult({
+        severity: 'error',
+        message: 'Choose a template and enter at least one phone number.',
+      });
+      return;
+    }
+
+    setTestSendResult(null);
+    testTemplateMutation.mutate({ template_key, language, phones });
   };
 
   if (user?.role !== 'admin') {
@@ -337,61 +377,126 @@ const SettingsPage = () => {
         {/* Tab 2: SMS Templates */}
         {tab === 1 && (
           <Box>
-            <Box display="flex" justifyContent="flex-end" mb={2}>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => {
-                  setEditingTemplate(null);
-                  setTemplateForm({ key: '', language: 'ka', template_text: '' });
-                  setTemplateDialogOpen(true);
-                }}
-              >
-                {t('common.createTemplate') || 'Create Template'}
-              </Button>
-            </Box>
+            <Box display="grid" gap={2.5}>
+              <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3 }}>
+                <Box
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems={{ xs: 'flex-start', md: 'center' }}
+                  gap={2}
+                  flexDirection={{ xs: 'column', md: 'row' }}
+                  mb={2}
+                >
+                  <Box>
+                    <Typography variant="h6">
+                      {t('settings.smsTemplatesTestTitle') || 'Send Test SMS'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {t('settings.smsTemplatesTestDescription') || 'Choose a template, enter one or more phone numbers separated by commas, and send a live test message.'}
+                    </Typography>
+                  </Box>
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={() => {
+                      setEditingTemplate(null);
+                      setTemplateForm({ key: '', language: 'ka', template_text: '' });
+                      setTemplateDialogOpen(true);
+                    }}
+                  >
+                    {t('common.createTemplate') || 'Create Template'}
+                  </Button>
+                </Box>
 
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>{t('template.key') || 'Key'}</TableCell>
-                    <TableCell>{t('template.language') || 'Language'}</TableCell>
-                    <TableCell>{t('template.text') || 'Template Text'}</TableCell>
-                    <TableCell>{t('common.actions')}</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {templates && templates.length > 0 ? (
-                    templates.map((template) => (
-                      <TableRow key={template.id}>
-                        <TableCell>{template.key}</TableCell>
-                        <TableCell>{template.language}</TableCell>
-                        <TableCell>
-                          <Typography variant="body2" noWrap sx={{ maxWidth: 400 }}>
-                            {template.template_text}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleEditTemplate(template)}
-                          >
-                            <EditIcon />
-                          </IconButton>
+                {testSendResult ? (
+                  <Alert severity={testSendResult.severity} sx={{ mb: 2 }} onClose={() => setTestSendResult(null)}>
+                    {testSendResult.message}
+                  </Alert>
+                ) : null}
+
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={4}>
+                    <FormControl fullWidth>
+                      <InputLabel>{t('settings.template') || 'Template'}</InputLabel>
+                      <Select
+                        value={testTemplateSelection}
+                        label={t('settings.template') || 'Template'}
+                        onChange={(e) => setTestTemplateSelection(e.target.value)}
+                      >
+                        {(templates || []).map((template) => (
+                          <MenuItem key={template.id} value={`${template.key}__${template.language}`}>
+                            {template.key} ({String(template.language).toUpperCase()})
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label={t('settings.testPhones') || 'Phone numbers'}
+                      value={testPhones}
+                      onChange={(e) => setTestPhones(e.target.value)}
+                      placeholder="599123456, 599987654"
+                      helperText={t('settings.testPhonesHint') || 'Separate multiple phone numbers with commas'}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={2}>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      onClick={handleSendTemplateTest}
+                      disabled={testTemplateMutation.isLoading}
+                      sx={{ height: '56px' }}
+                    >
+                      {testTemplateMutation.isLoading ? <CircularProgress size={20} color="inherit" /> : (t('settings.sendTest') || 'Send Test')}
+                    </Button>
+                  </Grid>
+                </Grid>
+              </Paper>
+
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>{t('template.key') || 'Key'}</TableCell>
+                      <TableCell>{t('template.language') || 'Language'}</TableCell>
+                      <TableCell>{t('template.text') || 'Template Text'}</TableCell>
+                      <TableCell>{t('common.actions')}</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {templates && templates.length > 0 ? (
+                      templates.map((template) => (
+                        <TableRow key={template.id}>
+                          <TableCell>{template.key}</TableCell>
+                          <TableCell>{template.language}</TableCell>
+                          <TableCell>
+                            <Typography variant="body2" noWrap sx={{ maxWidth: 400 }}>
+                              {template.template_text}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleEditTemplate(template)}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4} align="center">
+                          {t('common.noTemplates') || 'No templates found'}
                         </TableCell>
                       </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={4} align="center">
-                        {t('common.noTemplates') || 'No templates found'}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
           </Box>
         )}
 

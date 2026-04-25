@@ -233,6 +233,35 @@ let SmsService = SmsService_1 = class SmsService {
             take: limit,
         });
     }
+    async sendTemplateTest(options) {
+        const { templateKey, language, phones } = options;
+        const normalizedPhones = Array.from(new Set(phones
+            .map((phone) => phone.trim())
+            .filter(Boolean)));
+        if (normalizedPhones.length === 0) {
+            throw new common_1.BadRequestException('At least one phone number is required');
+        }
+        const results = [];
+        for (const phone of normalizedPhones) {
+            const log = await this.sendSms({
+                phone,
+                templateKey,
+                language,
+                variables: {},
+                skipIfDisabled: false,
+            });
+            results.push(log);
+        }
+        return {
+            template_key: templateKey,
+            language,
+            total: normalizedPhones.length,
+            sent: results.filter((item) => item.status === sms_log_entity_1.SmsStatus.SENT).length,
+            failed: results.filter((item) => item.status === sms_log_entity_1.SmsStatus.FAILED).length,
+            skipped: results.filter((item) => item.status === sms_log_entity_1.SmsStatus.SKIPPED).length,
+            results,
+        };
+    }
 };
 exports.SmsService = SmsService;
 exports.SmsService = SmsService = SmsService_1 = __decorate([
