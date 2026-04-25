@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Box, AppBar, Toolbar, Button, Drawer, IconButton } from '@mui/material';
-import { Menu as MenuIcon } from '@mui/icons-material';
+import { Menu as MenuIcon, ChatBubbleRounded as ChatBubbleRoundedIcon } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import ZevaLogo from './ZevaLogo';
 import CookieConsentBanner from './CookieConsentBanner';
@@ -9,6 +9,7 @@ import LanguageSwitcher from './LanguageSwitcher';
 
 const CLARITY_PROJECT_ID = 'wf9ncn570j';
 const GTM_CONTAINER_ID = 'GTM-567T4CBG';
+const RESPOND_IO_WIDGET_ID = 'c324653688760c8dfe6500959a79ea0';
 
 const PublicLayout = () => {
   const navigate = useNavigate();
@@ -59,6 +60,30 @@ const PublicLayout = () => {
 
     return undefined;
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return undefined;
+    }
+
+    if (document.getElementById('respondio-widget-script')) {
+      return undefined;
+    }
+
+    const script = document.createElement('script');
+    script.id = 'respondio-widget-script';
+    script.async = true;
+    script.src = `https://cdn.respond.io/webchat/widget/widget.js?cId=${RESPOND_IO_WIDGET_ID}`;
+    document.body.appendChild(script);
+
+    return undefined;
+  }, []);
+
+  const openRespondChat = () => {
+    if (typeof window !== 'undefined' && window.$respond?.do) {
+      window.$respond.do('chat:open');
+    }
+  };
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof document === 'undefined') {
@@ -238,6 +263,37 @@ const PublicLayout = () => {
         <Outlet />
       </Box>
 
+      <Box
+        sx={{
+          position: 'fixed',
+          right: 24,
+          bottom: 24,
+          zIndex: 1201,
+          '@media (max-width:920px)': {
+            display: 'none',
+          },
+        }}
+      >
+        <IconButton
+          aria-label="Open chat"
+          onClick={openRespondChat}
+          sx={{
+            width: 60,
+            height: 60,
+            borderRadius: '999px',
+            border: '1px solid #e2d4ff',
+            bgcolor: '#744de0',
+            color: '#ffffff',
+            boxShadow: '0 18px 34px rgba(116, 77, 224, 0.24)',
+            '&:hover': {
+              bgcolor: '#653dd8',
+            },
+          }}
+        >
+          <ChatBubbleRoundedIcon sx={{ fontSize: 28 }} />
+        </IconButton>
+      </Box>
+
       <CookieConsentBanner />
 
       <Drawer
@@ -338,6 +394,35 @@ const PublicLayout = () => {
                 {item}
               </Box>
             ))}
+          </Box>
+
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              pt: 1,
+              mt: 0.5,
+              borderTop: '1px solid #efe8ff',
+            }}
+          >
+            <IconButton
+              aria-label="Open chat"
+              onClick={openRespondChat}
+              sx={{
+                width: 54,
+                height: 54,
+                borderRadius: '999px',
+                border: '1px solid #e2d4ff',
+                bgcolor: '#744de0',
+                color: '#ffffff',
+                boxShadow: '0 14px 28px rgba(116, 77, 224, 0.2)',
+                '&:hover': {
+                  bgcolor: '#653dd8',
+                },
+              }}
+            >
+              <ChatBubbleRoundedIcon sx={{ fontSize: 24 }} />
+            </IconButton>
           </Box>
         </Box>
       </Drawer>
