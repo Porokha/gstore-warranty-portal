@@ -38,6 +38,7 @@ export class SmsService {
   private readonly logger = new Logger(SmsService.name);
   private readonly api: AxiosInstance;
   private readonly apiUrl: string;
+  private readonly sendPath: string;
   private readonly apiKey: string;
   private readonly smsNo: number;
   private readonly priority: number;
@@ -52,7 +53,14 @@ export class SmsService {
     @InjectRepository(SmsLog)
     private logsRepository: Repository<SmsLog>,
   ) {
-    this.apiUrl = (this.configService.get<string>('SENDER_API_URL') || 'https://sender.ge').replace(/\/+$/, '');
+    const configuredApiUrl = (this.configService.get<string>('SENDER_API_URL') || 'https://sender.ge').replace(/\/+$/, '');
+    if (configuredApiUrl.endsWith('/api/send.php')) {
+      this.apiUrl = configuredApiUrl.replace(/\/api\/send\.php$/, '');
+      this.sendPath = '/api/send.php';
+    } else {
+      this.apiUrl = configuredApiUrl;
+      this.sendPath = '/api/send.php';
+    }
     this.apiKey = this.configService.get<string>('SENDER_API_KEY');
     this.smsNo = Number(this.configService.get<string>('SENDER_SMSNO') || '1');
     this.priority = Number(this.configService.get<string>('SENDER_PRIORITY') || '0');
@@ -169,7 +177,7 @@ export class SmsService {
         content,
         priority: String(this.priority),
       });
-      const response = await this.api.post('/api/send.php', requestPayload.toString(), {
+      const response = await this.api.post(this.sendPath, requestPayload.toString(), {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
