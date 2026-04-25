@@ -5,12 +5,12 @@ import { SmsController } from './sms.controller';
 import { SmsTemplate } from './entities/sms-template.entity';
 import { SmsSettings } from './entities/sms-settings.entity';
 import { SmsLog } from './entities/sms-log.entity';
+import { Setting } from '../settings/settings.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([SmsTemplate, SmsSettings, SmsLog])],
+  imports: [TypeOrmModule.forFeature([SmsTemplate, SmsSettings, SmsLog, Setting])],
   controllers: [SmsController],
   providers: [SmsService],
   exports: [SmsService],
 })
 export class SmsModule {}
-

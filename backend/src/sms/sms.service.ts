@@ -11,6 +11,7 @@ import axios, { AxiosInstance } from 'axios';
 import { SmsTemplate, Language } from './entities/sms-template.entity';
 import { SmsSettings } from './entities/sms-settings.entity';
 import { SmsLog, SmsStatus } from './entities/sms-log.entity';
+import { Setting } from '../settings/settings.entity';
 
 interface SendSmsOptions {
   phone: string;
@@ -37,9 +38,9 @@ interface SendBulkSmsTestOptions {
 export class SmsService {
   private readonly logger = new Logger(SmsService.name);
   private readonly api: AxiosInstance;
-  private readonly apiUrl: string;
-  private readonly sendPath: string;
-  private readonly apiKey: string;
+  private readonly defaultApiUrl: string;
+  private readonly defaultSendPath: string;
+  private readonly defaultApiKey: string;
   private readonly smsNo: number;
   private readonly priority: number;
   private settings: SmsSettings | null = null;
@@ -52,26 +53,26 @@ export class SmsService {
     private settingsRepository: Repository<SmsSettings>,
     @InjectRepository(SmsLog)
     private logsRepository: Repository<SmsLog>,
+    @InjectRepository(Setting)
+    private appSettingsRepository: Repository<Setting>,
   ) {
     const configuredApiUrl = (this.configService.get<string>('SENDER_API_URL') || 'https://sender.ge').replace(/\/+$/, '');
     if (configuredApiUrl.endsWith('/api/send.php')) {
-      this.apiUrl = configuredApiUrl.replace(/\/api\/send\.php$/, '');
-      this.sendPath = '/api/send.php';
+      this.defaultApiUrl = configuredApiUrl.replace(/\/api\/send\.php$/, '');
+      this.defaultSendPath = '/api/send.php';
     } else {
-      this.apiUrl = configuredApiUrl;
-      this.sendPath = '/api/send.php';
+      this.defaultApiUrl = configuredApiUrl;
+      this.defaultSendPath = '/api/send.php';
     }
-    this.apiKey = this.configService.get<string>('SENDER_API_KEY');
+    this.defaultApiKey = this.configService.get<string>('SENDER_API_KEY');
     this.smsNo = Number(this.configService.get<string>('SENDER_SMSNO') || '1');
     this.priority = Number(this.configService.get<string>('SENDER_PRIORITY') || '0');
 
-    if (!this.apiKey) {
+    if (!this.defaultApiKey) {
       this.logger.warn('SMS API key not configured');
-      return;
     }
 
     this.api = axios.create({
-      baseURL: this.apiUrl,
       timeout: 30000,
     });
 
@@ -156,13 +157,42 @@ export class SmsService {
     return normalized;
   }
 
+  private normalizeSenderUrl(configuredApiUrl?: string | null) {
+    const normalized = String(configuredApiUrl || this.defaultApiUrl || 'https://sender.ge').trim().replace(/\/+$/, '');
+    if (normalized.endsWith('/api/send.php')) {
+      return {
+        apiUrl: normalized.replace(/\/api\/send\.php$/, ''),
+        sendPath: '/api/send.php',
+      };
+    }
+    return {
+      apiUrl: normalized,
+      sendPath: this.defaultSendPath,
+    };
+  }
+
+  private async getSenderRuntimeConfig() {
+    const [apiKeySetting, apiUrlSetting] = await Promise.all([
+      this.appSettingsRepository.findOne({ where: { key: 'SENDER_API_KEY' } }),
+      this.appSettingsRepository.findOne({ where: { key: 'SENDER_API_URL' } }),
+    ]);
+
+    const { apiUrl, sendPath } = this.normalizeSenderUrl(apiUrlSetting?.value);
+    return {
+      apiKey: apiKeySetting?.value || this.defaultApiKey,
+      apiUrl,
+      sendPath,
+    };
+  }
+
   private async deliverSms(
     phone: string,
     message: string,
     templateKey: string,
     payload: Record<string, any>,
   ): Promise<SmsLog> {
-    if (!this.apiKey) {
+    const senderConfig = await this.getSenderRuntimeConfig();
+    if (!senderConfig.apiKey) {
       this.logger.warn('SMS API key not configured, skipping send');
       return this.createLog(phone, templateKey, payload, SmsStatus.SKIPPED, 'API key not configured');
     }
@@ -171,13 +201,13 @@ export class SmsService {
       const destination = this.formatPhoneNumber(phone);
       const content = this.validateMessage(message);
       const requestPayload = new URLSearchParams({
-        apikey: this.apiKey,
+        apikey: senderConfig.apiKey,
         smsno: String(this.smsNo),
         destination,
         content,
         priority: String(this.priority),
       });
-      const response = await this.api.post(this.sendPath, requestPayload.toString(), {
+      const response = await this.api.post(`${senderConfig.apiUrl}${senderConfig.sendPath}`, requestPayload.toString(), {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
@@ -192,7 +222,13 @@ export class SmsService {
       return this.createLog(
         phone,
         templateKey,
-        { ...payload, destination, smsno: this.smsNo, priority: this.priority },
+        {
+          ...payload,
+          destination,
+          smsno: this.smsNo,
+          priority: this.priority,
+          api_url: `${senderConfig.apiUrl}${senderConfig.sendPath}`,
+        },
         SmsStatus.SENT,
         JSON.stringify(response.data),
       );
@@ -201,7 +237,12 @@ export class SmsService {
       return this.createLog(
         phone,
         templateKey,
-        { ...payload, smsno: this.smsNo, priority: this.priority },
+        {
+          ...payload,
+          smsno: this.smsNo,
+          priority: this.priority,
+          api_url: `${senderConfig.apiUrl}${senderConfig.sendPath}`,
+        },
         SmsStatus.FAILED,
         typeof error.response?.data === 'string'
           ? error.response.data
