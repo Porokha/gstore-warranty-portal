@@ -9,8 +9,6 @@ import LanguageSwitcher from './LanguageSwitcher';
 
 const CLARITY_PROJECT_ID = 'wf9ncn570j';
 const GTM_CONTAINER_ID = 'GTM-567T4CBG';
-const RESPOND_IO_WIDGET_ID = 'c324653688760c8dfe6500959a79ea0';
-const RESPOND_IO_SCRIPT_ID = 'respondio-widget-script';
 
 const PublicLayout = () => {
   const navigate = useNavigate();
@@ -62,57 +60,9 @@ const PublicLayout = () => {
     return undefined;
   }, []);
 
-  const ensureRespondChatLoaded = () =>
-    new Promise((resolve, reject) => {
-      if (typeof window === 'undefined' || typeof document === 'undefined') {
-        reject(new Error('Respond.io widget requires a browser environment'));
-        return;
-      }
-
-      if (window.$respond?.do) {
-        resolve();
-        return;
-      }
-
-      if (window.__respondIoWidgetPromise) {
-        window.__respondIoWidgetPromise.then(resolve).catch(reject);
-        return;
-      }
-
-      const existingScript = document.getElementById(RESPOND_IO_SCRIPT_ID);
-      if (existingScript) {
-        window.__respondIoWidgetPromise = new Promise((scriptResolve, scriptReject) => {
-          existingScript.addEventListener('load', () => scriptResolve(), { once: true });
-          existingScript.addEventListener('error', () => scriptReject(new Error('Respond.io widget failed to load')), {
-            once: true,
-          });
-        });
-        window.__respondIoWidgetPromise.then(resolve).catch(reject);
-        return;
-      }
-
-      const script = document.createElement('script');
-      script.id = RESPOND_IO_SCRIPT_ID;
-      script.async = true;
-      script.src = `https://cdn.respond.io/webchat/widget/widget.js?cId=${RESPOND_IO_WIDGET_ID}`;
-
-      window.__respondIoWidgetPromise = new Promise((scriptResolve, scriptReject) => {
-        script.onload = () => scriptResolve();
-        script.onerror = () => scriptReject(new Error('Respond.io widget failed to load'));
-      });
-
-      document.body.appendChild(script);
-      window.__respondIoWidgetPromise.then(resolve).catch(reject);
-    });
-
-  const openRespondChat = async () => {
-    try {
-      await ensureRespondChatLoaded();
-      if (window.$respond?.do) {
-        window.$respond.do('chat:open');
-      }
-    } catch (error) {
-      console.error('Respond.io widget failed to initialize.', error);
+  const openRespondChat = () => {
+    if (typeof window !== 'undefined' && window.$respond?.do) {
+      window.$respond.do('chat:open');
     }
   };
 
