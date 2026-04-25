@@ -61,9 +61,28 @@ const PublicLayout = () => {
   }, []);
 
   const openRespondChat = () => {
-    if (typeof window !== 'undefined' && window.$respond?.do) {
-      window.$respond.do('chat:open');
+    if (typeof window === 'undefined') {
+      return;
     }
+
+    setMobileMenuOpen(false);
+
+    let attempts = 0;
+    const maxAttempts = 20;
+
+    const tryOpen = () => {
+      if (window.$respond?.do) {
+        window.$respond.do('chat:open');
+        return;
+      }
+
+      attempts += 1;
+      if (attempts < maxAttempts) {
+        window.setTimeout(tryOpen, 150);
+      }
+    };
+
+    tryOpen();
   };
 
   useEffect(() => {
