@@ -39,7 +39,8 @@ export class SmsService {
   private readonly api: AxiosInstance;
   private readonly apiUrl: string;
   private readonly apiKey: string;
-  private readonly senderName: string;
+  private readonly smsNo: number;
+  private readonly priority: number;
   private settings: SmsSettings | null = null;
 
   constructor(
@@ -51,9 +52,10 @@ export class SmsService {
     @InjectRepository(SmsLog)
     private logsRepository: Repository<SmsLog>,
   ) {
-    this.apiUrl = this.configService.get<string>('SENDER_API_URL') || 'https://api.sender.ge';
+    this.apiUrl = (this.configService.get<string>('SENDER_API_URL') || 'https://sender.ge').replace(/\/+$/, '');
     this.apiKey = this.configService.get<string>('SENDER_API_KEY');
-    this.senderName = this.configService.get<string>('SENDER_SENDER_NAME') || 'ZEZVA';
+    this.smsNo = Number(this.configService.get<string>('SENDER_SMSNO') || '1');
+    this.priority = Number(this.configService.get<string>('SENDER_PRIORITY') || '0');
 
     if (!this.apiKey) {
       this.logger.warn('SMS API key not configured');
@@ -62,11 +64,7 @@ export class SmsService {
 
     this.api = axios.create({
       baseURL: this.apiUrl,
-      timeout: 10000,
-      headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
-      },
+      timeout: 30000,
     });
 
     // Load settings
@@ -128,6 +126,28 @@ export class SmsService {
     );
   }
 
+  private formatPhoneNumber(phone: string): string {
+    const digits = String(phone || '').replace(/\D/g, '');
+    if (digits.startsWith('995') && digits.length === 12) {
+      return digits.slice(3);
+    }
+    if (digits.length === 9 && digits.startsWith('5')) {
+      return digits;
+    }
+    throw new BadRequestException('Invalid Georgian mobile number format. Expected: 5xxxxxxxx');
+  }
+
+  private validateMessage(message: string): string {
+    const normalized = String(message || '').trim();
+    if (!normalized) {
+      throw new BadRequestException('Message content is required');
+    }
+    if (normalized.length > 1000) {
+      throw new BadRequestException('Message is too long (max 1000 characters)');
+    }
+    return normalized;
+  }
+
   private async deliverSms(
     phone: string,
     message: string,
@@ -140,22 +160,44 @@ export class SmsService {
     }
 
     try {
-      const response = await this.api.post('/v1/sms/send', {
-        phone,
-        message,
-        sender: this.senderName,
+      const destination = this.formatPhoneNumber(phone);
+      const content = this.validateMessage(message);
+      const requestPayload = new URLSearchParams({
+        apikey: this.apiKey,
+        smsno: String(this.smsNo),
+        destination,
+        content,
+        priority: String(this.priority),
+      });
+      const response = await this.api.post('/api/send.php', requestPayload.toString(), {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
       });
 
+      const providerData = response?.data?.data?.[0];
+      if (!providerData) {
+        throw new Error(`Invalid response format from API: ${JSON.stringify(response?.data)}`);
+      }
+
       this.logger.log(`SMS sent successfully to ${phone} (template: ${templateKey})`);
-      return this.createLog(phone, templateKey, payload, SmsStatus.SENT, JSON.stringify(response.data));
+      return this.createLog(
+        phone,
+        templateKey,
+        { ...payload, destination, smsno: this.smsNo, priority: this.priority },
+        SmsStatus.SENT,
+        JSON.stringify(response.data),
+      );
     } catch (error) {
       this.logger.error(`Failed to send SMS to ${phone}:`, error.message);
       return this.createLog(
         phone,
         templateKey,
-        payload,
+        { ...payload, smsno: this.smsNo, priority: this.priority },
         SmsStatus.FAILED,
-        error.response?.data || error.message,
+        typeof error.response?.data === 'string'
+          ? error.response.data
+          : JSON.stringify(error.response?.data || { message: error.message }),
       );
     }
   }
