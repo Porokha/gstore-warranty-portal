@@ -57,6 +57,11 @@ const productScopes = [
   { value: 'trash', label: 'Trash' },
 ];
 
+const productSources = [
+  { value: 'manual', label: 'Manual Catalog' },
+  { value: 'mobilesentrix', label: 'MobileSentrix' },
+];
+
 const productOnlyStatusLabelKa = 'ხელმისაწვდომია, მხოლოდ სერვისთან ერთად';
 const serviceUnavailableLabelKa = 'სერვისი არ არის ხელმისაწვდომი';
 
@@ -80,6 +85,7 @@ const ShopAdminProductsPage = () => {
   const queryClient = useQueryClient();
   const csvInputRef = useRef(null);
   const imageInputRef = useRef(null);
+  const [productSource, setProductSource] = useState('manual');
   const [scope, setScope] = useState('active');
   const [selectedId, setSelectedId] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
@@ -103,7 +109,7 @@ const ShopAdminProductsPage = () => {
     setSelectedId(null);
     setSelectedIds([]);
     setForm(emptyForm);
-  }, [scope]);
+  }, [scope, productSource]);
 
   const invalidateProducts = async () => {
     await queryClient.invalidateQueries(['shop-admin-products']);
@@ -381,101 +387,12 @@ const ShopAdminProductsPage = () => {
       <Grid item xs={12} lg={7}>
         <Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid #dce4f0', overflow: 'hidden' }}>
           <Box sx={{ p: 3, borderBottom: '1px solid #e6edf7' }}>
-            <Stack
-              direction={{ xs: 'column', md: 'row' }}
-              spacing={2}
-              justifyContent="space-between"
-              alignItems={{ xs: 'flex-start', md: 'center' }}
-            >
-              <Box>
-                <Typography sx={{ fontSize: '24px', fontWeight: 800, color: '#172033' }}>
-                  Products
-                </Typography>
-                <Typography sx={{ color: '#667085', mt: 0.75 }}>
-                  Catalog management, CSV import, image handling, and trash recovery.
-                </Typography>
-              </Box>
-              <Stack direction="row" spacing={1.25} flexWrap="wrap">
-                <Button
-                  variant="outlined"
-                  startIcon={<UploadFile />}
-                  onClick={() => csvInputRef.current?.click()}
-                  disabled={importMutation.isLoading}
-                  sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
-                >
-                  {importMutation.isLoading ? 'Importing...' : 'Import CSV'}
-                </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<Download />}
-                  onClick={() => downloadTemplateMutation.mutate()}
-                  disabled={downloadTemplateMutation.isLoading}
-                  sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
-                >
-                  {downloadTemplateMutation.isLoading ? 'Preparing...' : 'Download Template'}
-                </Button>
-                <Button
-                  onClick={() => applyProductToForm(null)}
-                  startIcon={<Add />}
-                  sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
-                >
-                  New Product
-                </Button>
-                {scope === 'active' ? (
-                  <Button
-                    color="warning"
-                    variant="outlined"
-                    disabled={selectedIds.length === 0}
-                    onClick={handleBulkDelete}
-                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
-                  >
-                    Delete Selected
-                  </Button>
-                ) : (
-                  <>
-                    <Button
-                      color="primary"
-                      variant="outlined"
-                      disabled={selectedIds.length === 0}
-                      onClick={handleBulkRestore}
-                      sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
-                    >
-                      Restore Selected
-                    </Button>
-                    <Button
-                      color="error"
-                      variant="outlined"
-                      disabled={selectedIds.length === 0}
-                      onClick={handleBulkPermanentDelete}
-                      sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
-                    >
-                      Delete Permanently
-                    </Button>
-                  </>
-                )}
-              </Stack>
-            </Stack>
-
-            <input
-              ref={csvInputRef}
-              type="file"
-              accept=".csv,text/csv"
-              hidden
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) {
-                  importMutation.mutate(file);
-                }
-                event.target.value = '';
-              }}
-            />
-
             <Tabs
-              value={scope}
-              onChange={(event, value) => setScope(value)}
-              sx={{ mt: 2, minHeight: 40 }}
+              value={productSource}
+              onChange={(event, value) => setProductSource(value)}
+              sx={{ mb: 2, minHeight: 40 }}
             >
-              {productScopes.map((item) => (
+              {productSources.map((item) => (
                 <Tab
                   key={item.value}
                   value={item.value}
@@ -485,21 +402,139 @@ const ShopAdminProductsPage = () => {
               ))}
             </Tabs>
 
+            <Stack
+              direction={{ xs: 'column', md: 'row' }}
+              spacing={2}
+              justifyContent="space-between"
+              alignItems={{ xs: 'flex-start', md: 'center' }}
+            >
+              <Box>
+                <Typography sx={{ fontSize: '24px', fontWeight: 800, color: '#172033' }}>
+                  {productSource === 'manual' ? 'Products' : 'MobileSentrix Products'}
+                </Typography>
+                <Typography sx={{ color: '#667085', mt: 0.75 }}>
+                  {productSource === 'manual'
+                    ? 'Catalog management, CSV import, image handling, and trash recovery.'
+                    : 'Separate workspace reserved for MobileSentrix products while the API contract is being finalized.'}
+                </Typography>
+              </Box>
+              {productSource === 'manual' ? (
+                <Stack direction="row" spacing={1.25} flexWrap="wrap">
+                  <Button
+                    variant="outlined"
+                    startIcon={<UploadFile />}
+                    onClick={() => csvInputRef.current?.click()}
+                    disabled={importMutation.isLoading}
+                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
+                  >
+                    {importMutation.isLoading ? 'Importing...' : 'Import CSV'}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    startIcon={<Download />}
+                    onClick={() => downloadTemplateMutation.mutate()}
+                    disabled={downloadTemplateMutation.isLoading}
+                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
+                  >
+                    {downloadTemplateMutation.isLoading ? 'Preparing...' : 'Download Template'}
+                  </Button>
+                  <Button
+                    onClick={() => applyProductToForm(null)}
+                    startIcon={<Add />}
+                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
+                  >
+                    New Product
+                  </Button>
+                  {scope === 'active' ? (
+                    <Button
+                      color="warning"
+                      variant="outlined"
+                      disabled={selectedIds.length === 0}
+                      onClick={handleBulkDelete}
+                      sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
+                    >
+                      Delete Selected
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        color="primary"
+                        variant="outlined"
+                        disabled={selectedIds.length === 0}
+                        onClick={handleBulkRestore}
+                        sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
+                      >
+                        Restore Selected
+                      </Button>
+                      <Button
+                        color="error"
+                        variant="outlined"
+                        disabled={selectedIds.length === 0}
+                        onClick={handleBulkPermanentDelete}
+                        sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
+                      >
+                        Delete Permanently
+                      </Button>
+                    </>
+                  )}
+                </Stack>
+              ) : null}
+            </Stack>
+
+            {productSource === 'manual' ? (
+              <input
+                ref={csvInputRef}
+                type="file"
+                accept=".csv,text/csv"
+                hidden
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) {
+                    importMutation.mutate(file);
+                  }
+                  event.target.value = '';
+                }}
+              />
+            ) : null}
+
+            {productSource === 'manual' ? (
+              <Tabs
+                value={scope}
+                onChange={(event, value) => setScope(value)}
+                sx={{ mt: 2, minHeight: 40 }}
+              >
+                {productScopes.map((item) => (
+                  <Tab
+                    key={item.value}
+                    value={item.value}
+                    label={item.label}
+                    sx={{ textTransform: 'none', minHeight: 40, fontWeight: 700 }}
+                  />
+                ))}
+              </Tabs>
+            ) : null}
+
             {message && <Alert sx={{ mt: 2 }}>{message}</Alert>}
             {error && (
               <Alert severity="error" sx={{ mt: 2 }}>
                 {error}
               </Alert>
             )}
-            {selectedIds.length > 0 && (
+            {productSource === 'manual' && selectedIds.length > 0 && (
               <Alert severity="info" sx={{ mt: 2 }}>
                 {selectedIds.length} product{selectedIds.length === 1 ? '' : 's'} selected.
               </Alert>
             )}
+            {productSource === 'mobilesentrix' && (
+              <Alert severity="info" sx={{ mt: 2 }}>
+                This tab is intentionally empty for now. We will connect the real product feed only after MobileSentrix confirms the API payload and callback format.
+              </Alert>
+            )}
           </Box>
 
-          <Box sx={{ overflowX: 'auto' }}>
-            <Table>
+          {productSource === 'manual' ? (
+            <Box sx={{ overflowX: 'auto' }}>
+              <Table>
               <TableHead>
                 <TableRow>
                   <TableCell padding="checkbox">
@@ -666,13 +701,52 @@ const ShopAdminProductsPage = () => {
                     </TableRow>
                   ))}
               </TableBody>
-            </Table>
-          </Box>
+              </Table>
+            </Box>
+          ) : (
+            <Box sx={{ p: 3 }}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  border: '1px dashed #c7d4e6',
+                  background: '#f8fbff',
+                }}
+              >
+                <Typography sx={{ fontSize: '18px', fontWeight: 800, color: '#172033' }}>
+                  MobileSentrix workspace reserved
+                </Typography>
+                <Typography sx={{ color: '#667085', mt: 1 }}>
+                  The manual product form stays unchanged. This separate area will hold MobileSentrix-sourced products once we see their actual API response shape, inventory fields, and image structure.
+                </Typography>
+                <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 2 }}>
+                  <Chip label="Separate catalog tab" sx={{ borderRadius: 2 }} />
+                  <Chip label="No sync active yet" sx={{ borderRadius: 2 }} />
+                  <Chip label="Waiting for API contract" sx={{ borderRadius: 2 }} />
+                </Stack>
+              </Paper>
+            </Box>
+          )}
         </Paper>
       </Grid>
 
       <Grid item xs={12} lg={5}>
         <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: '1px solid #dce4f0' }}>
+          {productSource === 'mobilesentrix' ? (
+            <Stack spacing={2}>
+              <Typography sx={{ fontSize: '22px', fontWeight: 800, color: '#172033' }}>
+                MobileSentrix product management
+              </Typography>
+              <Typography sx={{ color: '#667085' }}>
+                This side panel is intentionally on standby. Once MobileSentrix shares the live payload, we can decide whether these products should remain read-only, sync into a separate table, or be partially editable after import.
+              </Typography>
+              <Alert severity="info">
+                Current scope: create a separate tab only. No import, mapping, or data mutation logic is enabled yet.
+              </Alert>
+            </Stack>
+          ) : (
+            <>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Box>
               <Typography sx={{ fontSize: '22px', fontWeight: 800, color: '#172033' }}>
@@ -973,6 +1047,8 @@ const ShopAdminProductsPage = () => {
               )}
             </Grid>
           </Box>
+            </>
+          )}
         </Paper>
       </Grid>
       <ConfirmDialog

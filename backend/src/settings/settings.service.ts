@@ -46,6 +46,11 @@ export class SettingsService {
     bog_api_url?: string;
     sender_api_key?: string;
     sender_api_url?: string;
+    mobilesentrix_api_url?: string;
+    mobilesentrix_api_key?: string;
+    mobilesentrix_username?: string;
+    mobilesentrix_password?: string;
+    mobilesentrix_webhook_secret?: string;
   }> {
     const settings = await this.getAll();
     return {
@@ -57,6 +62,11 @@ export class SettingsService {
       bog_api_url: settings.BOG_API_URL,
       sender_api_key: settings.SENDER_API_KEY,
       sender_api_url: settings.SENDER_API_URL,
+      mobilesentrix_api_url: settings.MOBILESENTRIX_API_URL,
+      mobilesentrix_api_key: settings.MOBILESENTRIX_API_KEY,
+      mobilesentrix_username: settings.MOBILESENTRIX_USERNAME,
+      mobilesentrix_password: settings.MOBILESENTRIX_PASSWORD,
+      mobilesentrix_webhook_secret: settings.MOBILESENTRIX_WEBHOOK_SECRET,
     };
   }
 
@@ -69,6 +79,11 @@ export class SettingsService {
     bog_api_url?: string;
     sender_api_key?: string;
     sender_api_url?: string;
+    mobilesentrix_api_url?: string;
+    mobilesentrix_api_key?: string;
+    mobilesentrix_username?: string;
+    mobilesentrix_password?: string;
+    mobilesentrix_webhook_secret?: string;
   }): Promise<void> {
     const mappings = [
       { key: 'WOOCOMMERCE_URL', value: keys.woocommerce_url },
@@ -79,6 +94,11 @@ export class SettingsService {
       { key: 'BOG_API_URL', value: keys.bog_api_url },
       { key: 'SENDER_API_KEY', value: keys.sender_api_key },
       { key: 'SENDER_API_URL', value: keys.sender_api_url },
+      { key: 'MOBILESENTRIX_API_URL', value: keys.mobilesentrix_api_url },
+      { key: 'MOBILESENTRIX_API_KEY', value: keys.mobilesentrix_api_key },
+      { key: 'MOBILESENTRIX_USERNAME', value: keys.mobilesentrix_username },
+      { key: 'MOBILESENTRIX_PASSWORD', value: keys.mobilesentrix_password },
+      { key: 'MOBILESENTRIX_WEBHOOK_SECRET', value: keys.mobilesentrix_webhook_secret },
     ];
 
     for (const mapping of mappings) {

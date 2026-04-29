@@ -26,6 +26,11 @@ const ApiKeysSettings = () => {
     bog_api_url: '',
     sender_api_key: '',
     sender_api_url: '',
+    mobilesentrix_api_url: '',
+    mobilesentrix_api_key: '',
+    mobilesentrix_username: '',
+    mobilesentrix_password: '',
+    mobilesentrix_webhook_secret: '',
   });
 
   const { data: apiKeys, isLoading } = useQuery('api-keys', async () => {
@@ -44,6 +49,11 @@ const ApiKeysSettings = () => {
         bog_api_url: apiKeys.bog_api_url || '',
         sender_api_key: apiKeys.sender_api_key || '',
         sender_api_url: apiKeys.sender_api_url || '',
+        mobilesentrix_api_url: apiKeys.mobilesentrix_api_url || '',
+        mobilesentrix_api_key: apiKeys.mobilesentrix_api_key || '',
+        mobilesentrix_username: apiKeys.mobilesentrix_username || '',
+        mobilesentrix_password: apiKeys.mobilesentrix_password || '',
+        mobilesentrix_webhook_secret: apiKeys.mobilesentrix_webhook_secret || '',
       });
     }
   }, [apiKeys]);
@@ -223,6 +233,79 @@ const ApiKeysSettings = () => {
           />
         </Grid>
 
+        <Grid item xs={12} sx={{ mt: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            {t('apiKeys.mobileSentrixSection')}
+          </Typography>
+          <Divider sx={{ mb: 2 }} />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label={t('apiKeys.mobileSentrixApiUrl')}
+            value={formData.mobilesentrix_api_url}
+            onChange={(e) => handleChange('mobilesentrix_api_url', e.target.value)}
+            helperText={t('apiKeys.mobileSentrixApiUrlHint')}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label={t('apiKeys.mobileSentrixApiKey')}
+            value={formData.mobilesentrix_api_key}
+            onChange={(e) => handleChange('mobilesentrix_api_key', e.target.value)}
+            type="password"
+            helperText={t('apiKeys.mobileSentrixApiKeyHint')}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label={t('apiKeys.mobileSentrixUsername')}
+            value={formData.mobilesentrix_username}
+            onChange={(e) => handleChange('mobilesentrix_username', e.target.value)}
+            helperText={t('apiKeys.mobileSentrixUsernameHint')}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label={t('apiKeys.mobileSentrixPassword')}
+            value={formData.mobilesentrix_password}
+            onChange={(e) => handleChange('mobilesentrix_password', e.target.value)}
+            type="password"
+            helperText={t('apiKeys.mobileSentrixPasswordHint')}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label={t('apiKeys.mobileSentrixWebhookSecret')}
+            value={formData.mobilesentrix_webhook_secret}
+            onChange={(e) => handleChange('mobilesentrix_webhook_secret', e.target.value)}
+            type="password"
+            helperText={t('apiKeys.mobileSentrixWebhookSecretHint')}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label={t('apiKeys.mobileSentrixCallbackUrl')}
+            value="https://zezva.ge/api/integrations/mobilesentrix/webhook"
+            InputProps={{ readOnly: true }}
+            helperText={t('apiKeys.mobileSentrixCallbackUrlHint')}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label={t('apiKeys.mobileSentrixWhitelistIp')}
+            value="3.68.134.145"
+            InputProps={{ readOnly: true }}
+            helperText={t('apiKeys.mobileSentrixWhitelistIpHint')}
+          />
+        </Grid>
+
         <Grid item xs={12}>
           <Button
             type="submit"
@@ -240,4 +323,3 @@ const ApiKeysSettings = () => {
 };
 
 export default ApiKeysSettings;
-
