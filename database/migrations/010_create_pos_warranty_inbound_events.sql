@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS pos_warranty_inbound_events (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  event_id VARCHAR(191) NOT NULL,
+  event_type VARCHAR(120) NOT NULL,
+  source VARCHAR(191) NULL,
+  woo_order_id INT NULL,
+  analytics_order_id INT NULL,
+  payload LONGTEXT NOT NULL,
+  processing_status ENUM('received', 'processed', 'failed') NOT NULL DEFAULT 'received',
+  action_taken VARCHAR(50) NULL,
+  warranty_number VARCHAR(191) NULL,
+  external_response LONGTEXT NULL,
+  error_message TEXT NULL,
+  processed_at DATETIME NULL,
+  received_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uniq_pos_warranty_inbound_events_event_id (event_id),
+  KEY idx_pos_warranty_inbound_events_woo_order_id (woo_order_id),
+  KEY idx_pos_warranty_inbound_events_status (processing_status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

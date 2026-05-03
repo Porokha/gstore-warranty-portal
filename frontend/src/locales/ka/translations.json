@@ -743,6 +743,11 @@
     "mobileSentrixCallbackUrlHint": "ეს callback მისამართი მიაწოდეთ MobileSentrix-ს webhook/event მიწოდებისთვის",
     "mobileSentrixWhitelistIp": "Whitelist IP",
     "mobileSentrixWhitelistIpHint": "ეს სერვერის IP მიაწოდეთ MobileSentrix-ს staging whitelist-ისთვის",
+    "posWarrantySection": "POS warranty sync",
+    "posWarrantyWebhookSecret": "POS webhook secret",
+    "posWarrantyWebhookSecretHint": "საერთო bearer secret, რომელსაც pos.gstore.ge გამოიყენებს order_upserted event-ების გასაგზავნად",
+    "posWarrantyWebhookUrl": "POS order upsert URL",
+    "posWarrantyWebhookUrlHint": "ეს webhook მისამართი მიაწოდეთ POS dispatcher-ს warranty portal sync-ისთვის",
     "saveSuccess": "API გასაღებები წარმატებით შენახულია!",
     "saveError": "API გასაღებების შენახვა ვერ მოხერხდა",
     "saveButton": "გასაღებების შენახვა"

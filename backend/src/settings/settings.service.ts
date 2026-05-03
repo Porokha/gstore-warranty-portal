@@ -51,6 +51,7 @@ export class SettingsService {
     mobilesentrix_username?: string;
     mobilesentrix_password?: string;
     mobilesentrix_webhook_secret?: string;
+    pos_warranty_webhook_secret?: string;
   }> {
     const settings = await this.getAll();
     return {
@@ -67,6 +68,7 @@ export class SettingsService {
       mobilesentrix_username: settings.MOBILESENTRIX_USERNAME,
       mobilesentrix_password: settings.MOBILESENTRIX_PASSWORD,
       mobilesentrix_webhook_secret: settings.MOBILESENTRIX_WEBHOOK_SECRET,
+      pos_warranty_webhook_secret: settings.POS_WARRANTY_WEBHOOK_SECRET,
     };
   }
 
@@ -84,6 +86,7 @@ export class SettingsService {
     mobilesentrix_username?: string;
     mobilesentrix_password?: string;
     mobilesentrix_webhook_secret?: string;
+    pos_warranty_webhook_secret?: string;
   }): Promise<void> {
     const mappings = [
       { key: 'WOOCOMMERCE_URL', value: keys.woocommerce_url },
@@ -99,6 +102,7 @@ export class SettingsService {
       { key: 'MOBILESENTRIX_USERNAME', value: keys.mobilesentrix_username },
       { key: 'MOBILESENTRIX_PASSWORD', value: keys.mobilesentrix_password },
       { key: 'MOBILESENTRIX_WEBHOOK_SECRET', value: keys.mobilesentrix_webhook_secret },
+      { key: 'POS_WARRANTY_WEBHOOK_SECRET', value: keys.pos_warranty_webhook_secret },
     ];
 
     for (const mapping of mappings) {

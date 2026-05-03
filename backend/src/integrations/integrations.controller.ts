@@ -1,11 +1,16 @@
 import { Body, Controller, Headers, HttpCode, HttpStatus, Logger, Post, Query } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PosOrderUpsertDto } from './dto/pos-order-upsert.dto';
+import { IntegrationsService } from './integrations.service';
 
 @Controller('integrations')
 export class IntegrationsController {
   private readonly logger = new Logger(IntegrationsController.name);
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly integrationsService: IntegrationsService,
+  ) {}
 
   @Post('mobilesentrix/webhook')
   @HttpCode(HttpStatus.OK)
@@ -34,5 +39,15 @@ export class IntegrationsController {
       received: true,
       callback: `${this.configService.get<string>('PORTAL_URL') || 'https://zezva.ge'}/api/integrations/mobilesentrix/webhook`,
     };
+  }
+
+  @Post('pos/order-upsert')
+  @HttpCode(HttpStatus.OK)
+  async handlePosOrderUpsert(
+    @Body() payload: PosOrderUpsertDto,
+    @Headers('authorization') authorization?: string,
+  ) {
+    await this.integrationsService.assertPosWebhookAuthorization(authorization);
+    return this.integrationsService.handlePosOrderUpsert(payload);
   }
 }

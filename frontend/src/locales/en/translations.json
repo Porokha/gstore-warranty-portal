@@ -737,6 +737,11 @@
     "mobileSentrixCallbackUrlHint": "Give this callback address to MobileSentrix for webhook/event delivery",
     "mobileSentrixWhitelistIp": "Whitelist IP",
     "mobileSentrixWhitelistIpHint": "Share this server IP with MobileSentrix for staging whitelist access",
+    "posWarrantySection": "POS Warranty Sync",
+    "posWarrantyWebhookSecret": "POS Webhook Secret",
+    "posWarrantyWebhookSecretHint": "Shared bearer secret used by pos.gstore.ge when sending order_upserted events",
+    "posWarrantyWebhookUrl": "POS Order Upsert URL",
+    "posWarrantyWebhookUrlHint": "Give this webhook endpoint to the POS dispatcher for warranty portal sync",
     "saveSuccess": "API keys saved successfully!",
     "saveError": "Failed to save API keys",
     "saveButton": "Save API Keys"

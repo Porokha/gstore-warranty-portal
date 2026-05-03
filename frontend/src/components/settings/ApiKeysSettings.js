@@ -31,6 +31,7 @@ const ApiKeysSettings = () => {
     mobilesentrix_username: '',
     mobilesentrix_password: '',
     mobilesentrix_webhook_secret: '',
+    pos_warranty_webhook_secret: '',
   });
 
   const { data: apiKeys, isLoading } = useQuery('api-keys', async () => {
@@ -54,6 +55,7 @@ const ApiKeysSettings = () => {
         mobilesentrix_username: apiKeys.mobilesentrix_username || '',
         mobilesentrix_password: apiKeys.mobilesentrix_password || '',
         mobilesentrix_webhook_secret: apiKeys.mobilesentrix_webhook_secret || '',
+        pos_warranty_webhook_secret: apiKeys.pos_warranty_webhook_secret || '',
       });
     }
   }, [apiKeys]);
@@ -303,6 +305,32 @@ const ApiKeysSettings = () => {
             value="3.68.134.145"
             InputProps={{ readOnly: true }}
             helperText={t('apiKeys.mobileSentrixWhitelistIpHint')}
+          />
+        </Grid>
+
+        <Grid item xs={12} sx={{ mt: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            {t('apiKeys.posWarrantySection')}
+          </Typography>
+          <Divider sx={{ mb: 2 }} />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label={t('apiKeys.posWarrantyWebhookSecret')}
+            value={formData.pos_warranty_webhook_secret}
+            onChange={(e) => handleChange('pos_warranty_webhook_secret', e.target.value)}
+            type="password"
+            helperText={t('apiKeys.posWarrantyWebhookSecretHint')}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label={t('apiKeys.posWarrantyWebhookUrl')}
+            value="https://zezva.ge/api/integrations/pos/order-upsert"
+            InputProps={{ readOnly: true }}
+            helperText={t('apiKeys.posWarrantyWebhookUrlHint')}
           />
         </Grid>
 
