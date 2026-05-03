@@ -262,12 +262,16 @@ export class WooCommerceService {
     const purchaseDate = new Date(order.date_created);
     const warrantyStart = new Date(purchaseDate);
     const warrantyEnd = new Date(purchaseDate);
-    warrantyEnd.setFullYear(warrantyEnd.getFullYear() + 1);
+    warrantyEnd.setFullYear(warrantyEnd.getFullYear() + 2);
 
     // Get product price (use line item total or product price)
     const price = parseFloat(lineItem.meta_data.find(m => m.key === '_line_total')?.value || '0') ||
                   parseFloat(product.meta_data.find(m => m.key === '_price')?.value || '0') ||
                   0;
+
+    if (price <= 500) {
+      throw new BadRequestException('Warranty is created only for products above 500 GEL');
+    }
 
     // Get thumbnail URL
     const thumbnailUrl = product.images && product.images.length > 0
@@ -615,4 +619,3 @@ export class WooCommerceService {
     }
   }
 }
-

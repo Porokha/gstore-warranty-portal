@@ -23,6 +23,8 @@ type PosOrderUpsertAction = 'created' | 'updated' | 'ignored' | 'deferred';
 export class IntegrationsService {
   private readonly logger = new Logger(IntegrationsService.name);
   private readonly eligibleNonPreorderStatuses = new Set(['pos-success', 'completed']);
+  private readonly minimumWarrantyPrice = 500;
+  private readonly warrantyYears = 2;
 
   constructor(
     @InjectRepository(PosWarrantyInboundEvent)
@@ -125,12 +127,17 @@ export class IntegrationsService {
     const hasPreorder = Boolean(payload.has_preorder);
     const preorderFinished = (payload.preorder_status || '').toLowerCase() === 'finished';
     const eligibleStatus = this.eligibleNonPreorderStatuses.has((payload.order_status || '').toLowerCase());
+    const price = this.resolvePrice(payload);
 
     if (hasPreorder && !preorderFinished) {
       return { action: 'deferred' };
     }
 
     if (!hasPreorder && !eligibleStatus) {
+      return { action: 'ignored' };
+    }
+
+    if (price <= this.minimumWarrantyPrice) {
       return { action: 'ignored' };
     }
 
@@ -171,7 +178,7 @@ export class IntegrationsService {
   private mapPayloadToWarranty(payload: PosOrderUpsertDto) {
     const purchaseDate = this.resolvePurchaseDate(payload);
     const warrantyEnd = new Date(purchaseDate);
-    warrantyEnd.setFullYear(warrantyEnd.getFullYear() + 1);
+    warrantyEnd.setFullYear(warrantyEnd.getFullYear() + this.warrantyYears);
 
     const [firstName, ...restNames] = (payload.customer.name || '').trim().split(/\s+/);
     const lastName = restNames.join(' ').trim() || '-';
@@ -258,6 +265,7 @@ export class IntegrationsService {
       payload.order_number ? `Order number: ${payload.order_number}` : null,
       payload.analytics_order_id ? `Analytics order ID: ${payload.analytics_order_id}` : null,
       payload.payment_type ? `Payment type: ${payload.payment_type}` : null,
+      `Warranty rule: > ${this.minimumWarrantyPrice} GEL, ${this.warrantyYears} years`,
       payload.staff?.cashier ? `Cashier: ${payload.staff.cashier}` : null,
       payload.staff?.salesperson ? `Salesperson: ${payload.staff.salesperson}` : null,
       payload.store?.name ? `Store: ${payload.store.name}` : null,
