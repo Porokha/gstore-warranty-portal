@@ -181,7 +181,19 @@ export class CasesService {
 
       if (filters?.search) {
         query.andWhere(
-          '(sc.case_number LIKE :search OR sc.product_title LIKE :search OR sc.customer_name LIKE :search OR sc.customer_phone LIKE :search)',
+          `(
+            sc.case_number LIKE :search
+            OR warranty.warranty_id LIKE :search
+            OR sc.sku LIKE :search
+            OR sc.serial_number LIKE :search
+            OR sc.imei LIKE :search
+            OR sc.product_title LIKE :search
+            OR sc.customer_name LIKE :search
+            OR sc.customer_last_name LIKE :search
+            OR sc.customer_phone LIKE :search
+            OR sc.customer_email LIKE :search
+            OR warranty.personal_identification_number LIKE :search
+          )`,
           { search: `%${filters.search}%` },
         );
       }

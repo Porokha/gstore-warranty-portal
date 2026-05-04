@@ -42,8 +42,6 @@ const WarrantiesPage = () => {
   
   const [filters, setFilters] = useState({
     search: searchParams.get('search') || '',
-    sku: searchParams.get('sku') || '',
-    serial_number: searchParams.get('serial_number') || '',
     device_type: searchParams.get('device_type') || '',
     customer_phone: searchParams.get('customer_phone') || '',
     active_only: searchParams.get('active_only') || '',
@@ -326,21 +324,7 @@ const WarrantiesPage = () => {
             label={t('common.search')}
             value={filters.search}
             onChange={(e) => handleFilterChange('search', e.target.value)}
-            sx={{ minWidth: 200 }}
-          />
-          <TextField
-            size="small"
-            label={t('case.sku')}
-            value={filters.sku}
-            onChange={(e) => handleFilterChange('sku', e.target.value)}
-            sx={{ minWidth: 150 }}
-          />
-          <TextField
-            size="small"
-            label={t('case.serialNumber')}
-            value={filters.serial_number}
-            onChange={(e) => handleFilterChange('serial_number', e.target.value)}
-            sx={{ minWidth: 150 }}
+            sx={{ minWidth: 320 }}
           />
           <FormControl size="small" sx={{ minWidth: 150 }}>
             <InputLabel>{t('case.deviceType')}</InputLabel>

@@ -74,7 +74,18 @@ export class WarrantiesService {
       // Search across multiple fields
       if (filters.search) {
         queryBuilder.andWhere(
-          '(warranty.warranty_id LIKE :search OR warranty.sku LIKE :search OR warranty.serial_number LIKE :search OR warranty.title LIKE :search OR warranty.customer_name LIKE :search OR warranty.customer_phone LIKE :search)',
+          `(
+            warranty.warranty_id LIKE :search
+            OR warranty.sku LIKE :search
+            OR warranty.serial_number LIKE :search
+            OR warranty.title LIKE :search
+            OR warranty.customer_name LIKE :search
+            OR warranty.customer_last_name LIKE :search
+            OR warranty.customer_phone LIKE :search
+            OR warranty.personal_identification_number LIKE :search
+            OR warranty.customer_email LIKE :search
+            OR warranty.imei LIKE :search
+          )`,
           { search: `%${filters.search}%` }
         );
       }
