@@ -10,6 +10,7 @@ import { CreateWarrantyDto } from './dto/create-warranty.dto';
 import { UpdateWarrantyDto } from './dto/update-warranty.dto';
 import { FilterWarrantyDto } from './dto/filter-warranty.dto';
 import { AuditService } from '../audit/audit.service';
+import { SmsService } from '../sms/sms.service';
 
 @Injectable()
 export class WarrantiesService {
@@ -17,6 +18,7 @@ export class WarrantiesService {
     @InjectRepository(Warranty)
     private warrantiesRepository: Repository<Warranty>,
     private auditService: AuditService,
+    private smsService: SmsService,
   ) {}
 
   async generateWarrantyId(
@@ -64,7 +66,15 @@ export class WarrantiesService {
       extended_days: createDto.extended_days || 0,
     });
 
-    return this.warrantiesRepository.save(warranty);
+    const savedWarranty = await this.warrantiesRepository.save(warranty);
+
+    try {
+      await this.smsService.notifyWarrantyCreated(savedWarranty);
+    } catch (error) {
+      console.error('Failed to send warranty created SMS:', error);
+    }
+
+    return savedWarranty;
   }
 
   async findAll(filters?: FilterWarrantyDto): Promise<Warranty[]> {

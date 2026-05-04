@@ -6,6 +6,7 @@ import axios, { AxiosInstance } from 'axios';
 import { Warranty, CreatedSource } from '../warranties/entities/warranty.entity';
 import { WarrantiesService } from '../warranties/warranties.service';
 import { SettingsService } from '../settings/settings.service';
+import { SmsService } from '../sms/sms.service';
 
 export interface WooCommerceOrder {
   id: number;
@@ -69,6 +70,7 @@ export class WooCommerceService {
     private warrantiesRepository: Repository<Warranty>,
     private warrantiesService: WarrantiesService,
     private settingsService: SettingsService,
+    private smsService: SmsService,
   ) {
     // Don't initialize in constructor - wait for first use to check settings
   }
@@ -311,6 +313,12 @@ export class WooCommerceService {
 
     const savedWarranty = await this.warrantiesRepository.save(warranty);
     this.logger.log(`Created warranty ${savedWarranty.warranty_id} from order ${orderId}`);
+
+    try {
+      await this.smsService.notifyWarrantyCreated(savedWarranty);
+    } catch (error) {
+      this.logger.error(`Failed to send warranty created SMS for ${savedWarranty.warranty_id}:`, error.message);
+    }
 
     return savedWarranty;
   }

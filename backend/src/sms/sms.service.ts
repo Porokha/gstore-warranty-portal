@@ -12,10 +12,12 @@ import { SmsTemplate, Language } from './entities/sms-template.entity';
 import { SmsSettings } from './entities/sms-settings.entity';
 import { SmsLog, SmsStatus } from './entities/sms-log.entity';
 import { Setting } from '../settings/settings.entity';
+import { Warranty } from '../warranties/entities/warranty.entity';
 
 interface SendSmsOptions {
   phone: string;
   templateKey: string;
+  eventType?: string;
   language?: Language;
   variables?: Record<string, any>;
   skipIfDisabled?: boolean;
@@ -92,14 +94,23 @@ export class SmsService {
           id: 1,
           global_enabled: true,
           send_on_warranty_created: true,
+          template_warranty_created_key: 'sms.warranty.created',
           send_on_case_opened: true,
+          template_case_opened_key: 'sms.case.opened',
           send_on_status_change: true,
+          template_status_change_key: 'sms.case.status_change',
           send_on_offer_created: true,
+          template_offer_created_key: 'sms.offer.created',
           send_on_payment_confirmed: true,
+          template_payment_confirmed_key: 'sms.payment.confirmed',
           send_on_case_completed: true,
+          template_case_completed_key: 'sms.case.completed',
           send_on_sla_due: true,
+          template_sla_due_key: 'sms.sla_due',
           send_on_sla_stalled: true,
+          template_sla_stalled_key: 'sms.sla_stalled',
           send_on_sla_deadline_1day: true,
+          template_sla_deadline_1day_key: 'sms.sla_deadline_1day',
         });
         await this.settingsRepository.save(this.settings);
       }
@@ -273,7 +284,14 @@ export class SmsService {
   }
 
   async sendSms(options: SendSmsOptions): Promise<SmsLog> {
-    const { phone, templateKey, language = Language.KA, variables = {}, skipIfDisabled = true } = options;
+    const {
+      phone,
+      templateKey,
+      eventType,
+      language = Language.KA,
+      variables = {},
+      skipIfDisabled = true,
+    } = options;
 
     // Check if SMS is globally enabled
     const settings = await this.getSettings();
@@ -283,56 +301,90 @@ export class SmsService {
     }
 
     // Check if specific event is enabled
-    const eventEnabled = this.isEventEnabled(templateKey, settings);
+    const resolvedEventType = eventType || templateKey;
+    const eventEnabled = this.isEventEnabled(resolvedEventType, settings);
     if (!eventEnabled && skipIfDisabled) {
-      this.logger.log(`SMS sending skipped: event ${templateKey} disabled`);
-      return this.createLog(phone, templateKey, variables, SmsStatus.SKIPPED, `Event ${templateKey} disabled`);
+      this.logger.log(`SMS sending skipped: event ${resolvedEventType} disabled`);
+      return this.createLog(phone, templateKey, variables, SmsStatus.SKIPPED, `Event ${resolvedEventType} disabled`);
     }
+
+    const effectiveTemplateKey = this.resolveTemplateKey(resolvedEventType, templateKey, settings);
 
     // Get template
     let template: SmsTemplate;
     try {
-      template = await this.getTemplate(templateKey, language);
+      template = await this.getTemplate(effectiveTemplateKey, language);
     } catch (error) {
-      this.logger.error(`Template not found: ${templateKey}`, error.message);
-      return this.createLog(phone, templateKey, variables, SmsStatus.FAILED, `Template not found: ${templateKey}`);
+      this.logger.error(`Template not found: ${effectiveTemplateKey}`, error.message);
+      return this.createLog(phone, effectiveTemplateKey, variables, SmsStatus.FAILED, `Template not found: ${effectiveTemplateKey}`);
     }
 
     // Render template
     const message = this.renderTemplate(template.template_text, variables);
 
-    return this.deliverSms(phone, message, templateKey, variables);
+    return this.deliverSms(phone, message, effectiveTemplateKey, variables);
   }
 
-  private isEventEnabled(templateKey: string, settings: SmsSettings): boolean {
-    if (templateKey.includes('warranty_created')) {
+  private isEventEnabled(eventType: string, settings: SmsSettings): boolean {
+    if (eventType.includes('warranty_created')) {
       return settings.send_on_warranty_created;
     }
-    if (templateKey.includes('case_opened')) {
+    if (eventType.includes('case_opened')) {
       return settings.send_on_case_opened;
     }
-    if (templateKey.includes('status_change')) {
+    if (eventType.includes('status_change')) {
       return settings.send_on_status_change;
     }
-    if (templateKey.includes('offer_created')) {
+    if (eventType.includes('offer_created')) {
       return settings.send_on_offer_created;
     }
-    if (templateKey.includes('payment_confirmed')) {
+    if (eventType.includes('payment_confirmed')) {
       return settings.send_on_payment_confirmed;
     }
-    if (templateKey.includes('case_completed')) {
+    if (eventType.includes('case_completed')) {
       return settings.send_on_case_completed;
     }
-    if (templateKey.includes('sla_due')) {
+    if (eventType.includes('sla_due')) {
       return settings.send_on_sla_due;
     }
-    if (templateKey.includes('sla_stalled')) {
+    if (eventType.includes('sla_stalled')) {
       return settings.send_on_sla_stalled;
     }
-    if (templateKey.includes('sla_deadline_1day')) {
+    if (eventType.includes('sla_deadline_1day')) {
       return settings.send_on_sla_deadline_1day;
     }
     return true; // Default to enabled if event type not recognized
+  }
+
+  private resolveTemplateKey(eventType: string, fallbackTemplateKey: string, settings: SmsSettings): string {
+    if (eventType.includes('warranty_created')) {
+      return settings.template_warranty_created_key || fallbackTemplateKey;
+    }
+    if (eventType.includes('case_opened')) {
+      return settings.template_case_opened_key || fallbackTemplateKey;
+    }
+    if (eventType.includes('status_change')) {
+      return settings.template_status_change_key || fallbackTemplateKey;
+    }
+    if (eventType.includes('offer_created')) {
+      return settings.template_offer_created_key || fallbackTemplateKey;
+    }
+    if (eventType.includes('payment_confirmed')) {
+      return settings.template_payment_confirmed_key || fallbackTemplateKey;
+    }
+    if (eventType.includes('case_completed')) {
+      return settings.template_case_completed_key || fallbackTemplateKey;
+    }
+    if (eventType.includes('sla_due')) {
+      return settings.template_sla_due_key || fallbackTemplateKey;
+    }
+    if (eventType.includes('sla_stalled')) {
+      return settings.template_sla_stalled_key || fallbackTemplateKey;
+    }
+    if (eventType.includes('sla_deadline_1day')) {
+      return settings.template_sla_deadline_1day_key || fallbackTemplateKey;
+    }
+    return fallbackTemplateKey;
   }
 
   private async createLog(
@@ -413,6 +465,28 @@ export class SmsService {
     return this.logsRepository.find({
       order: { created_at: 'DESC' },
       take: limit,
+    });
+  }
+
+  async notifyWarrantyCreated(warranty: Warranty): Promise<SmsLog | null> {
+    if (!warranty?.customer_phone) {
+      return null;
+    }
+
+    return this.sendSms({
+      phone: warranty.customer_phone,
+      templateKey: 'sms.warranty.created',
+      eventType: 'sms.warranty_created',
+      language: Language.KA,
+      variables: {
+        warranty_id: warranty.warranty_id,
+        customer_name: warranty.customer_name,
+        customer_last_name: warranty.customer_last_name || '',
+        product_title: warranty.title,
+        serial_number: warranty.serial_number,
+        imei: warranty.imei || '',
+        warranty_end: new Date(warranty.warranty_end).toLocaleDateString('ka-GE'),
+      },
     });
   }
 

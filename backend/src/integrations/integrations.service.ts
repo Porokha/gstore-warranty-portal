@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SettingsService } from '../settings/settings.service';
+import { SmsService } from '../sms/sms.service';
 import { Warranty, CreatedSource } from '../warranties/entities/warranty.entity';
 import { WarrantiesService } from '../warranties/warranties.service';
 import { PosOrderUpsertDto } from './dto/pos-order-upsert.dto';
@@ -32,6 +33,7 @@ export class IntegrationsService {
     @InjectRepository(Warranty)
     private warrantiesRepository: Repository<Warranty>,
     private settingsService: SettingsService,
+    private smsService: SmsService,
     private warrantiesService: WarrantiesService,
     private configService: ConfigService,
   ) {}
@@ -172,6 +174,11 @@ export class IntegrationsService {
     this.logger.log(
       `Created warranty ${saved.warranty_id} from POS order ${payload.woo_order_id}`,
     );
+    try {
+      await this.smsService.notifyWarrantyCreated(saved);
+    } catch (error) {
+      this.logger.error(`Failed to send warranty created SMS for ${saved.warranty_id}:`, error.message);
+    }
     return { action: 'created', warrantyNumber: saved.warranty_id };
   }
 

@@ -122,6 +122,8 @@
     "sendOnSlaDue": "Send when SLA is due",
     "sendOnSlaStalled": "Send when SLA is stalled",
     "sendOnSlaDeadline1day": "Send 1 day before deadline",
+    "templateForNotification": "Template for notification",
+    "noTemplateAssigned": "No template assigned",
     "smsTemplates": "SMS Templates",
     "smsTemplatesTestTitle": "Send Test SMS",
     "smsTemplatesTestDescription": "Choose a template or write custom text, enter one or more phone numbers separated by commas, and send a live test message.",

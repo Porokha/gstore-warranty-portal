@@ -90,10 +90,15 @@ export class CasesService {
         await this.smsService.sendSms({
           phone: savedCase.customer_phone,
           templateKey: 'sms.case.opened',
+          eventType: 'sms.case_opened',
           language: Language.KA,
           variables: {
             case_number: savedCase.case_number,
+            customer_name: savedCase.customer_name,
+            customer_last_name: savedCase.customer_last_name || '',
             product_title: savedCase.product_title,
+            serial_number: savedCase.serial_number,
+            imei: savedCase.imei || '',
             deadline: savedCase.deadline_at.toLocaleDateString('ka-GE'),
           },
         });
@@ -338,9 +343,15 @@ export class CasesService {
         await this.smsService.sendSms({
           phone: case_.customer_phone,
           templateKey: 'sms.case.status_change',
+          eventType: 'sms.status_change',
           language: Language.KA,
           variables: {
             case_number: case_.case_number,
+            customer_name: case_.customer_name,
+            customer_last_name: case_.customer_last_name || '',
+            product_title: case_.product_title,
+            serial_number: case_.serial_number,
+            imei: case_.imei || '',
             status: this.getStatusLabel(newStatus),
             note: changeStatusDto.note_public,
           },
@@ -357,9 +368,15 @@ export class CasesService {
         await this.smsService.sendSms({
           phone: case_.customer_phone,
           templateKey: 'sms.case.completed',
+          eventType: 'sms.case_completed',
           language: Language.KA,
           variables: {
             case_number: case_.case_number,
+            customer_name: case_.customer_name,
+            customer_last_name: case_.customer_last_name || '',
+            product_title: case_.product_title,
+            serial_number: case_.serial_number,
+            imei: case_.imei || '',
             result: newResult || 'completed',
           },
         });

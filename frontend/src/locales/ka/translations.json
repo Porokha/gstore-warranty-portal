@@ -128,6 +128,8 @@
     "sendOnSlaDue": "გაგზავნა SLA-ს ვადის ამოწურვისას",
     "sendOnSlaStalled": "გაგზავნა SLA-ს შეჩერებისას",
     "sendOnSlaDeadline1day": "გაგზავნა 1 დღით ადრე ვადამდე",
+    "templateForNotification": "შაბლონი შეტყობინებისთვის",
+    "noTemplateAssigned": "შაბლონი არჩეული არ არის",
     "smsTemplates": "SMS შაბლონები",
     "smsTemplatesTestTitle": "ტესტური SMS-ის გაგზავნა",
     "smsTemplatesTestDescription": "აირჩიეთ შაბლონი ან დაწერეთ საკუთარი ტექსტი, შეიყვანეთ ერთი ან რამდენიმე ნომერი მძიმეებით და გაგზავნეთ ტესტური შეტყობინება.",

@@ -48,19 +48,32 @@ import api from '../../services/api';
 const SMS_SETTINGS_KEYS = [
   'global_enabled',
   'send_on_warranty_created',
+  'template_warranty_created_key',
   'send_on_case_opened',
+  'template_case_opened_key',
   'send_on_status_change',
+  'template_status_change_key',
   'send_on_offer_created',
+  'template_offer_created_key',
   'send_on_payment_confirmed',
+  'template_payment_confirmed_key',
   'send_on_case_completed',
+  'template_case_completed_key',
   'send_on_sla_due',
+  'template_sla_due_key',
   'send_on_sla_stalled',
+  'template_sla_stalled_key',
   'send_on_sla_deadline_1day',
+  'template_sla_deadline_1day_key',
 ];
 
 const pickSmsSettingsPayload = (settings) =>
   SMS_SETTINGS_KEYS.reduce((acc, key) => {
-    acc[key] = Boolean(settings?.[key]);
+    if (key.startsWith('template_')) {
+      acc[key] = settings?.[key] || '';
+    } else {
+      acc[key] = Boolean(settings?.[key]);
+    }
     return acc;
   }, {});
 
@@ -157,14 +170,23 @@ const SettingsPage = () => {
   const [localSettings, setLocalSettings] = useState({
     global_enabled: true,
     send_on_warranty_created: true,
+    template_warranty_created_key: 'sms.warranty.created',
     send_on_case_opened: true,
+    template_case_opened_key: 'sms.case.opened',
     send_on_status_change: true,
+    template_status_change_key: 'sms.case.status_change',
     send_on_offer_created: true,
+    template_offer_created_key: 'sms.offer.created',
     send_on_payment_confirmed: true,
+    template_payment_confirmed_key: 'sms.payment.confirmed',
     send_on_case_completed: true,
+    template_case_completed_key: 'sms.case.completed',
     send_on_sla_due: true,
+    template_sla_due_key: 'sms.sla_due',
     send_on_sla_stalled: true,
+    template_sla_stalled_key: 'sms.sla_stalled',
     send_on_sla_deadline_1day: true,
+    template_sla_deadline_1day_key: 'sms.sla_deadline_1day',
   });
 
   const [templateForm, setTemplateForm] = useState({
@@ -253,6 +275,18 @@ const SettingsPage = () => {
       [key]: !prev[key],
     }));
   };
+
+  const handleTemplateMappingChange = (key, value) => {
+    setLocalSettings((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+
+  const templateKeyOptions = React.useMemo(() => {
+    const keys = Array.from(new Set((templates || []).map((template) => template.key))).sort();
+    return keys;
+  }, [templates]);
 
   const handleSave = () => {
     setSaveError('');
@@ -416,27 +450,46 @@ const SettingsPage = () => {
 
             <Grid container spacing={2}>
               {[
-                { key: 'send_on_warranty_created', label: t('settings.sendOnWarrantyCreated') },
-                { key: 'send_on_case_opened', label: t('settings.sendOnCaseOpened') },
-                { key: 'send_on_status_change', label: t('settings.sendOnStatusChange') },
-                { key: 'send_on_offer_created', label: t('settings.sendOnOfferCreated') },
-                { key: 'send_on_payment_confirmed', label: t('settings.sendOnPaymentConfirmed') },
-                { key: 'send_on_case_completed', label: t('settings.sendOnCaseCompleted') },
-                { key: 'send_on_sla_due', label: t('settings.sendOnSlaDue') },
-                { key: 'send_on_sla_stalled', label: t('settings.sendOnSlaStalled') },
-                { key: 'send_on_sla_deadline_1day', label: t('settings.sendOnSlaDeadline1day') },
+                { key: 'send_on_warranty_created', templateKey: 'template_warranty_created_key', label: t('settings.sendOnWarrantyCreated') },
+                { key: 'send_on_case_opened', templateKey: 'template_case_opened_key', label: t('settings.sendOnCaseOpened') },
+                { key: 'send_on_status_change', templateKey: 'template_status_change_key', label: t('settings.sendOnStatusChange') },
+                { key: 'send_on_offer_created', templateKey: 'template_offer_created_key', label: t('settings.sendOnOfferCreated') },
+                { key: 'send_on_payment_confirmed', templateKey: 'template_payment_confirmed_key', label: t('settings.sendOnPaymentConfirmed') },
+                { key: 'send_on_case_completed', templateKey: 'template_case_completed_key', label: t('settings.sendOnCaseCompleted') },
+                { key: 'send_on_sla_due', templateKey: 'template_sla_due_key', label: t('settings.sendOnSlaDue') },
+                { key: 'send_on_sla_stalled', templateKey: 'template_sla_stalled_key', label: t('settings.sendOnSlaStalled') },
+                { key: 'send_on_sla_deadline_1day', templateKey: 'template_sla_deadline_1day_key', label: t('settings.sendOnSlaDeadline1day') },
               ].map((item) => (
                 <Grid item xs={12} md={6} key={item.key}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={localSettings[item.key]}
-                        onChange={() => handleToggle(item.key)}
-                        disabled={!localSettings.global_enabled}
-                      />
-                    }
-                    label={item.label}
-                  />
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 2.5 }}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={localSettings[item.key]}
+                          onChange={() => handleToggle(item.key)}
+                          disabled={!localSettings.global_enabled}
+                        />
+                      }
+                      label={item.label}
+                    />
+                    <FormControl fullWidth size="small" sx={{ mt: 1.5 }}>
+                      <InputLabel>{t('settings.templateForNotification') || 'Template for notification'}</InputLabel>
+                      <Select
+                        value={localSettings[item.templateKey] || ''}
+                        label={t('settings.templateForNotification') || 'Template for notification'}
+                        onChange={(e) => handleTemplateMappingChange(item.templateKey, e.target.value)}
+                        disabled={!localSettings.global_enabled || !localSettings[item.key]}
+                        sx={{ borderRadius: 2 }}
+                      >
+                        <MenuItem value="">{t('settings.noTemplateAssigned') || 'No template assigned'}</MenuItem>
+                        {templateKeyOptions.map((templateKey) => (
+                          <MenuItem key={templateKey} value={templateKey}>
+                            {templateKey}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Paper>
                 </Grid>
               ))}
             </Grid>

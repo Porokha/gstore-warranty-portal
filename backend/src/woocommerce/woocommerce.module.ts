@@ -5,16 +5,17 @@ import { WooCommerceController } from './woocommerce.controller';
 import { Warranty } from '../warranties/entities/warranty.entity';
 import { WarrantiesModule } from '../warranties/warranties.module';
 import { SettingsModule } from '../settings/settings.module';
+import { SmsModule } from '../sms/sms.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Warranty]),
     WarrantiesModule,
     SettingsModule,
+    SmsModule,
   ],
   controllers: [WooCommerceController],
   providers: [WooCommerceService],
   exports: [WooCommerceService],
 })
 export class WooCommerceModule {}
-
