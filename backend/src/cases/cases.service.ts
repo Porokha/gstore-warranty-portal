@@ -66,8 +66,10 @@ export class CasesService {
       device_type: createDto.device_type,
       product_title: createDto.product_title,
       customer_name: createDto.customer_name,
+      customer_last_name: createDto.customer_last_name,
       customer_phone: createDto.customer_phone,
       customer_email: createDto.customer_email,
+      customer_initial_note: createDto.customer_initial_note,
       order_id: createDto.order_id,
       product_id: createDto.product_id,
       opened_at: now,
@@ -82,7 +84,16 @@ export class CasesService {
     const savedCase = await this.casesRepository.save(newCase);
 
     // Create initial history entry
-    await this.createHistoryEntry(savedCase.id, createdBy, null, CaseStatusLevel.OPENED, null, null);
+    await this.createHistoryEntry(
+      savedCase.id,
+      createdBy,
+      null,
+      CaseStatusLevel.OPENED,
+      null,
+      null,
+      null,
+      createDto.customer_initial_note || null,
+    );
 
     // Send SMS notification when case is opened
     if (savedCase.customer_phone) {
