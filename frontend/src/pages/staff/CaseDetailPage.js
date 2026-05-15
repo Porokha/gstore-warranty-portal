@@ -96,7 +96,7 @@ const CaseDetailPage = () => {
   );
 
   const handleStatusChange = (data) => {
-    statusChangeMutation.mutate(data);
+    return statusChangeMutation.mutateAsync(data);
   };
 
   const handleFieldChange = (field, value) => {
