@@ -52,10 +52,17 @@ export class CasesService {
       throw new BadRequestException('IMEI is required for phone devices');
     }
 
+    const user = await this.usersService.findById(createdBy);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
     const caseNumber = await this.generateCaseNumber();
     const now = new Date();
     const deadlineDays = createDto.deadline_days || 14; // Default 14 days
     const deadlineAt = new Date(now.getTime() + deadlineDays * 24 * 60 * 60 * 1000);
+    const assignedTechnicianId =
+      user.role === UserRole.TECHNICIAN ? user.id : createDto.assigned_technician_id;
 
     const newCase = this.casesRepository.create({
       case_number: caseNumber,
@@ -77,7 +84,7 @@ export class CasesService {
       status_level: CaseStatusLevel.OPENED,
       priority: createDto.priority || Priority.NORMAL,
       tags: createDto.tags || [],
-      assigned_technician_id: createDto.assigned_technician_id,
+      assigned_technician_id: assignedTechnicianId,
       created_by: createdBy,
     });
 

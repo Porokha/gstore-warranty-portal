@@ -75,6 +75,9 @@ const StaffLayout = () => {
 
   const menuItems = [
     { path: '/staff/dashboard', label: t('common.dashboard'), icon: <DashboardIcon /> },
+    ...(!isAdmin
+      ? [{ path: '/staff/my-cases', label: t('common.myServiceCases') || 'My Service Cases', icon: <OpenCasesIcon /> }]
+      : []),
     { path: '/staff/cases', label: t('common.serviceCases'), icon: <OpenCasesIcon /> },
     { path: '/staff/warranties', label: t('common.warranties'), icon: <WarrantiesIcon /> },
     ...(isAdmin
@@ -167,6 +170,7 @@ const StaffLayout = () => {
           <List sx={{ px: 2, py: 1 }}>
             {menuItems.map((item) => {
               const isActive = location.pathname === item.path || 
+                (item.path === '/staff/my-cases' && location.pathname.startsWith('/staff/my-cases')) ||
                 (item.path === '/staff/cases' && location.pathname.startsWith('/staff/cases') && !location.pathname.includes('/closed') && !location.pathname.includes('/import')) ||
                 (item.path === '/staff/import' && location.pathname.startsWith('/staff/import'));
               return (

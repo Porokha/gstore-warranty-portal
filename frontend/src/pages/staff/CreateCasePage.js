@@ -26,12 +26,15 @@ import { casesService } from '../../services/casesService';
 import { warrantiesService } from '../../services/warrantiesService';
 import { usersService } from '../../services/usersService';
 import { useQueryClient } from 'react-query';
+import { useAuth } from '../../contexts/AuthContext';
 
 const CreateCasePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const isTechnician = user?.role === 'technician';
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
   const [error, setError] = useState('');
@@ -55,7 +58,7 @@ const CreateCasePage = () => {
     customer_initial_note: '',
     order_id: '',
     product_id: '',
-    assigned_technician_id: '',
+    assigned_technician_id: isTechnician && user?.id ? String(user.id) : '',
     priority: 'normal',
     deadline_days: 14,
   });
@@ -85,6 +88,14 @@ const CreateCasePage = () => {
     }
   }, [warrantyIdFromUrl]);
 
+  useEffect(() => {
+    if (!isTechnician || !user?.id) return;
+    setFormData((prev) => ({
+      ...prev,
+      assigned_technician_id: String(user.id),
+    }));
+  }, [isTechnician, user?.id]);
+
   // Fill form from warranty data
   const fillFormFromWarranty = (warranty) => {
     if (!warranty) return;
@@ -104,6 +115,8 @@ const CreateCasePage = () => {
       customer_initial_note: '', // Always start empty for new case
       order_id: warranty.order_id || '',
       product_id: warranty.product_id || '',
+      assigned_technician_id:
+        isTechnician && user?.id ? String(user.id) : prev.assigned_technician_id,
     }));
   };
 
@@ -216,7 +229,7 @@ const CreateCasePage = () => {
         customer_initial_note: '',
         order_id: '',
         product_id: '',
-        assigned_technician_id: '',
+        assigned_technician_id: isTechnician && user?.id ? String(user.id) : '',
         priority: 'normal',
         deadline_days: 14,
       });
@@ -481,8 +494,9 @@ const CreateCasePage = () => {
                     value={formData.assigned_technician_id}
                     onChange={handleChange}
                     label={t('case.technician')}
+                    disabled={isTechnician}
                   >
-                    <MenuItem value="">{t('common.none')}</MenuItem>
+                    {!isTechnician && <MenuItem value="">{t('common.none')}</MenuItem>}
                     {availableTechnicians.map((tech) => (
                       <MenuItem key={tech.id} value={tech.id}>
                         {tech.name} {tech.last_name}
@@ -490,6 +504,11 @@ const CreateCasePage = () => {
                     ))}
                   </Select>
                 </FormControl>
+                {isTechnician && (
+                  <Typography variant="caption" color="text.secondary">
+                    {t('case.technicianAutoAssigned') || 'You are assigned automatically.'}
+                  </Typography>
+                )}
               </Grid>
 
               <Grid item xs={12}>

@@ -7,6 +7,7 @@ import StaffLayout from './components/common/StaffLayout';
 import PublicLayout from './components/common/PublicLayout';
 import LoginPage from './pages/staff/LoginPage';
 import DashboardPage from './pages/staff/DashboardPage';
+import MyCasesPage from './pages/staff/MyCasesPage';
 import CasesPage from './pages/staff/CasesPage';
 import ClosedCasesPage from './pages/staff/ClosedCasesPage';
 import CaseDetailPage from './pages/staff/CaseDetailPage';
@@ -167,6 +168,9 @@ function AppRoutes() {
           <Route path="/staff" element={<PrivateRoute />}>
             <Route element={<StaffLayout />}>
               <Route path="dashboard" element={<DashboardPage />} />
+              <Route element={<StaffRoleRoute allowedRoles={['technician']} />}>
+                <Route path="my-cases" element={<MyCasesPage />} />
+              </Route>
               <Route path="cases" element={<CasesPage />} />
               <Route path="cases/closed" element={<ClosedCasesPage />} />
               <Route path="cases/new" element={<CreateCasePage />} />
