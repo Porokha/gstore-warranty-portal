@@ -81,6 +81,8 @@
     "warrantyId": "გარანტიის ID",
     "closeDate": "დახურვის თარიღი",
     "quickActions": "სწრაფი მოქმედებები",
+    "dueToday": "დღეს ვადაში",
+    "waitingOnCustomer": "მოლოდინი კლიენტზე",
     "markCovered": "მონიშნე გარანტიით",
     "markReturned": "მონიშნე დაბრუნებულად",
     "offerDetails": "შეთავაზების დეტალები",

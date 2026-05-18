@@ -81,6 +81,8 @@
     "warrantyId": "Warranty ID",
     "closeDate": "Close Date",
     "quickActions": "Quick Actions",
+    "dueToday": "Due Today",
+    "waitingOnCustomer": "Waiting on Customer",
     "markCovered": "Mark Covered",
     "markReturned": "Mark Returned",
     "offerDetails": "Offer Details",
