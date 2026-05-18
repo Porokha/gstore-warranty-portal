@@ -71,19 +71,27 @@ const StaffLayout = () => {
     i18n.changeLanguage(newLang);
   };
 
+  const isAdmin = user?.role === 'admin';
+
   const menuItems = [
     { path: '/staff/dashboard', label: t('common.dashboard'), icon: <DashboardIcon /> },
     { path: '/staff/cases', label: t('common.serviceCases'), icon: <OpenCasesIcon /> },
     { path: '/staff/warranties', label: t('common.warranties'), icon: <WarrantiesIcon /> },
-    { path: '/staff/finance', label: t('common.finance'), icon: <FinanceIcon /> },
-    { path: '/staff/statistics', label: t('common.statistics') || 'Statistics', icon: <StatisticsIcon /> },
-    { path: '/staff/import', label: t('common.importData'), icon: <ImportIcon /> },
+    ...(isAdmin
+      ? [
+          { path: '/staff/finance', label: t('common.finance'), icon: <FinanceIcon /> },
+          { path: '/staff/statistics', label: t('common.statistics') || 'Statistics', icon: <StatisticsIcon /> },
+          { path: '/staff/import', label: t('common.importData'), icon: <ImportIcon /> },
+        ]
+      : []),
   ];
 
-  const bottomMenuItems = [
-    { path: '/staff/settings', label: t('common.settings'), icon: <SettingsIcon /> },
-    { path: '/staff/audit', label: t('common.audit'), icon: <AuditIcon /> },
-  ];
+  const bottomMenuItems = isAdmin
+    ? [
+        { path: '/staff/settings', label: t('common.settings'), icon: <SettingsIcon /> },
+        { path: '/staff/audit', label: t('common.audit'), icon: <AuditIcon /> },
+      ]
+    : [];
 
   const getInitials = (name) => {
     if (!name) return 'U';
@@ -212,61 +220,65 @@ const StaffLayout = () => {
             })}
           </List>
 
-          <Divider sx={{ borderColor: 'rgba(165, 118, 255, 0.18)', my: 2, mx: 2 }} />
+          {bottomMenuItems.length > 0 && (
+            <>
+              <Divider sx={{ borderColor: 'rgba(165, 118, 255, 0.18)', my: 2, mx: 2 }} />
 
-          <List sx={{ px: 2, py: 1 }}>
-            {bottomMenuItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              return (
-                <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
-                  <ListItemButton 
-                    component={Link} 
-                    to={item.path}
-                    selected={isActive}
-                    sx={{
-                      borderRadius: 2,
-                    py: 1.5,
-                    justifyContent: isCollapsed ? 'center' : 'flex-start',
-                    px: isCollapsed ? 1.5 : 2,
-                      '&.Mui-selected': {
-                      bgcolor: 'rgba(165, 118, 255, 0.18)',
-                        color: '#ffffff',
-                        '&:hover': {
-                        bgcolor: 'rgba(165, 118, 255, 0.28)',
-                        },
-                      },
-                      '&:hover': {
-                      bgcolor: 'rgba(255,255,255,0.06)',
-                      },
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        mr: isCollapsed ? 0 : 2,
-                        display: 'flex',
-                        alignItems: 'center',
-                        color: isActive ? '#ffffff' : '#c8b6ff',
-                      }}
-                    >
-                      {item.icon}
-                    </Box>
-                    <ListItemText 
-                      primary={item.label}
-                      primaryTypographyProps={{
-                        fontSize: '14px',
-                        fontWeight: isActive ? 600 : 400,
-                      }}
-                      sx={{
-                        opacity: isCollapsed ? 0 : 1,
-                        maxWidth: isCollapsed ? 0 : '100%',
-                        transition: 'opacity 0.2s ease',
-                      }}
-                    />
-                  </ListItemButton>
-                </ListItem>
-              );
-            })}
-          </List>
+              <List sx={{ px: 2, py: 1 }}>
+                {bottomMenuItems.map((item) => {
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
+                      <ListItemButton 
+                        component={Link} 
+                        to={item.path}
+                        selected={isActive}
+                        sx={{
+                          borderRadius: 2,
+                          py: 1.5,
+                          justifyContent: isCollapsed ? 'center' : 'flex-start',
+                          px: isCollapsed ? 1.5 : 2,
+                          '&.Mui-selected': {
+                            bgcolor: 'rgba(165, 118, 255, 0.18)',
+                            color: '#ffffff',
+                            '&:hover': {
+                              bgcolor: 'rgba(165, 118, 255, 0.28)',
+                            },
+                          },
+                          '&:hover': {
+                            bgcolor: 'rgba(255,255,255,0.06)',
+                          },
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            mr: isCollapsed ? 0 : 2,
+                            display: 'flex',
+                            alignItems: 'center',
+                            color: isActive ? '#ffffff' : '#c8b6ff',
+                          }}
+                        >
+                          {item.icon}
+                        </Box>
+                        <ListItemText 
+                          primary={item.label}
+                          primaryTypographyProps={{
+                            fontSize: '14px',
+                            fontWeight: isActive ? 600 : 400,
+                          }}
+                          sx={{
+                            opacity: isCollapsed ? 0 : 1,
+                            maxWidth: isCollapsed ? 0 : '100%',
+                            transition: 'opacity 0.2s ease',
+                          }}
+                        />
+                      </ListItemButton>
+                    </ListItem>
+                  );
+                })}
+              </List>
+            </>
+          )}
         </Box>
 
         {/* User Profile Section */}

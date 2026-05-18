@@ -46,10 +46,13 @@ import {
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { dashboardService } from '../../services/dashboardService';
 import { casesService } from '../../services/casesService';
+import { useAuth } from '../../contexts/AuthContext';
 
 const DashboardPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const brand = {
     violet: '#A576FF',
     violetSoft: '#EFE7FF',
@@ -435,107 +438,108 @@ const DashboardPage = () => {
         </Grid>
       </Grid>
 
-      {/* Summary Cards Row 2 - Smaller */}
-      <Grid container spacing={2} mb={2}>
-        <Grid item xs={12} sm={6} md={4}>
-          <Card
-            sx={{
-              bgcolor: '#10b981',
-              color: '#ffffff',
-              borderRadius: 2,
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-              cursor: 'pointer',
-              '&:hover': { boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)' },
-            }}
-            onClick={() => navigate('/staff/warranties?status=active')}
-          >
-            <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
-              <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
-                <WarrantyIcon sx={{ fontSize: 28, opacity: 0.9 }} />
-                <Chip label={t('common.active')} size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
-              </Box>
-              {isLoading ? (
-                <CircularProgress size={24} sx={{ color: '#ffffff' }} />
-              ) : (
-                <>
-                  <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, fontSize: '28px' }}>
-                    {timeFiltered.activeWarranties || 0}
-                  </Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '13px' }}>
-                    {t('dashboard.cards.activeWarranties')}
-                  </Typography>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
+      {isAdmin && (
+        <Grid container spacing={2} mb={2}>
+          <Grid item xs={12} sm={6} md={4}>
+            <Card
+              sx={{
+                bgcolor: '#10b981',
+                color: '#ffffff',
+                borderRadius: 2,
+                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                cursor: 'pointer',
+                '&:hover': { boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)' },
+              }}
+              onClick={() => navigate('/staff/warranties?status=active')}
+            >
+              <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
+                <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
+                  <WarrantyIcon sx={{ fontSize: 28, opacity: 0.9 }} />
+                  <Chip label={t('common.active')} size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
+                </Box>
+                {isLoading ? (
+                  <CircularProgress size={24} sx={{ color: '#ffffff' }} />
+                ) : (
+                  <>
+                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, fontSize: '28px' }}>
+                      {timeFiltered.activeWarranties || 0}
+                    </Typography>
+                    <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '13px' }}>
+                      {t('dashboard.cards.activeWarranties')}
+                    </Typography>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
 
-        <Grid item xs={12} sm={6} md={4}>
-          <Card
-            sx={{
-              background: `linear-gradient(135deg, #2d2b34 0%, ${brand.black} 100%)`,
-              color: '#ffffff',
-              borderRadius: 2,
-              boxShadow: '0 18px 36px rgba(0, 0, 0, 0.18)',
-              cursor: 'pointer',
-              '&:hover': { boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)' },
-            }}
-            onClick={() => navigate('/staff/warranties?status=expired')}
-          >
-            <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
-              <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
-                <WarrantyIcon sx={{ fontSize: 28, opacity: 0.9 }} />
-                <Chip label={t('common.expired')} size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
-              </Box>
-              {isLoading ? (
-                <CircularProgress size={24} sx={{ color: '#ffffff' }} />
-              ) : (
-                <>
-                  <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, fontSize: '28px' }}>
-                    {timeFiltered.expiredWarranties || 0}
-                  </Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '13px' }}>
-                    {t('dashboard.cards.expiredWarranties')}
-                  </Typography>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <Card
+              sx={{
+                background: `linear-gradient(135deg, #2d2b34 0%, ${brand.black} 100%)`,
+                color: '#ffffff',
+                borderRadius: 2,
+                boxShadow: '0 18px 36px rgba(0, 0, 0, 0.18)',
+                cursor: 'pointer',
+                '&:hover': { boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)' },
+              }}
+              onClick={() => navigate('/staff/warranties?status=expired')}
+            >
+              <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
+                <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
+                  <WarrantyIcon sx={{ fontSize: 28, opacity: 0.9 }} />
+                  <Chip label={t('common.expired')} size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
+                </Box>
+                {isLoading ? (
+                  <CircularProgress size={24} sx={{ color: '#ffffff' }} />
+                ) : (
+                  <>
+                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, fontSize: '28px' }}>
+                      {timeFiltered.expiredWarranties || 0}
+                    </Typography>
+                    <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '13px' }}>
+                      {t('dashboard.cards.expiredWarranties')}
+                    </Typography>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
 
-        <Grid item xs={12} sm={6} md={4}>
-          <Card
-            sx={{
-              background: `linear-gradient(135deg, ${brand.violet} 0%, ${brand.black} 100%)`,
-              color: '#ffffff',
-              borderRadius: 2,
-              boxShadow: '0 18px 36px rgba(63, 30, 120, 0.18)',
-              cursor: 'pointer',
-              '&:hover': { boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)' },
-            }}
-            onClick={() => navigate('/staff/finance')}
-          >
-            <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
-              <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
-                <PaymentIcon sx={{ fontSize: 28, opacity: 0.9 }} />
-                <Chip label={t('dashboard.badges.revenue')} size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
-              </Box>
-              {isLoading ? (
-                <CircularProgress size={24} sx={{ color: '#ffffff' }} />
-              ) : (
-                <>
-                  <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, fontSize: '28px' }}>
-                    ₾{timeFiltered.totalMoneyIn?.toFixed(0) || 0}
-                  </Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '13px' }}>
-                    {t('dashboard.cards.payments')}
-                  </Typography>
-                </>
-              )}
-            </CardContent>
-          </Card>
+          <Grid item xs={12} sm={6} md={4}>
+            <Card
+              sx={{
+                background: `linear-gradient(135deg, ${brand.violet} 0%, ${brand.black} 100%)`,
+                color: '#ffffff',
+                borderRadius: 2,
+                boxShadow: '0 18px 36px rgba(63, 30, 120, 0.18)',
+                cursor: 'pointer',
+                '&:hover': { boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)' },
+              }}
+              onClick={() => navigate('/staff/finance')}
+            >
+              <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
+                <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
+                  <PaymentIcon sx={{ fontSize: 28, opacity: 0.9 }} />
+                  <Chip label={t('dashboard.badges.revenue')} size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
+                </Box>
+                {isLoading ? (
+                  <CircularProgress size={24} sx={{ color: '#ffffff' }} />
+                ) : (
+                  <>
+                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, fontSize: '28px' }}>
+                      ₾{timeFiltered.totalMoneyIn?.toFixed(0) || 0}
+                    </Typography>
+                    <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '13px' }}>
+                      {t('dashboard.cards.payments')}
+                    </Typography>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
         </Grid>
-      </Grid>
+      )}
 
       {/* Charts Section - Same Height */}
       <Grid container spacing={2} mb={2}>
@@ -640,7 +644,7 @@ const DashboardPage = () => {
         </Grid>
       </Grid>
 
-      {/* KPI Section */}
+      {isAdmin && (
       <Grid container spacing={2} mb={2}>
         <Grid item xs={12} md={4}>
           <Paper sx={{ p: 2.5, borderRadius: 2, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
@@ -725,6 +729,7 @@ const DashboardPage = () => {
           </Paper>
         </Grid>
       </Grid>
+      )}
 
       {/* Cases by Category and Average Completion by Category */}
       <Grid container spacing={2} mb={2}>

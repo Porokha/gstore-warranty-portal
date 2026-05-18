@@ -30,6 +30,7 @@ import ReviewsPage from './pages/public/ReviewsPage';
 import MaintenancePage from './pages/public/MaintenancePage';
 import { AuthProvider } from './contexts/AuthContext';
 import PrivateRoute from './components/common/PrivateRoute';
+import StaffRoleRoute from './components/common/StaffRoleRoute';
 import ShopAdminRoute from './components/common/ShopAdminRoute';
 import ShopAdminLayout from './components/common/ShopAdminLayout';
 import ShopAdminLoginPage from './pages/shop-admin/ShopAdminLoginPage';
@@ -172,13 +173,15 @@ function AppRoutes() {
               <Route path="cases/:id" element={<CaseDetailPage />} />
               <Route path="warranties" element={<WarrantiesPage />} />
               <Route path="warranties/:id" element={<WarrantyDetailPage />} />
-              <Route path="warranties/:id/edit" element={<WarrantyEditPage />} />
-              <Route path="warranties/new" element={<CreateWarrantyPage />} />
-              <Route path="import" element={<ImportPage />} />
-              <Route path="finance" element={<FinancePage />} />
-              <Route path="statistics" element={<StatisticsPage />} />
-              <Route path="settings" element={<SettingsPage />} />
-              <Route path="audit" element={<AuditPage />} />
+              <Route element={<StaffRoleRoute allowedRoles={['admin']} />}>
+                <Route path="warranties/:id/edit" element={<WarrantyEditPage />} />
+                <Route path="warranties/new" element={<CreateWarrantyPage />} />
+                <Route path="import" element={<ImportPage />} />
+                <Route path="finance" element={<FinancePage />} />
+                <Route path="statistics" element={<StatisticsPage />} />
+                <Route path="settings" element={<SettingsPage />} />
+                <Route path="audit" element={<AuditPage />} />
+              </Route>
             </Route>
           </Route>
 
