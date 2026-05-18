@@ -10,7 +10,6 @@ import {
   CircularProgress,
   IconButton,
   Tooltip,
-  Button,
 } from '@mui/material';
 import {
   FolderOpen as ActiveCasesIcon,
@@ -68,10 +67,6 @@ const MyCasesPage = () => {
     () => ({ technician_id: technicianId, status: 4 }),
     [technicianId],
   );
-  const pendingFilters = useMemo(
-    () => ({ technician_id: technicianId, status: 3 }),
-    [technicianId],
-  );
   const allFilters = useMemo(
     () => ({ technician_id: technicianId }),
     [technicianId],
@@ -98,12 +93,6 @@ const MyCasesPage = () => {
   const { data: allCases, isLoading: isLoadingAll } = useQuery(
     ['technician-cases', 'all', technicianId],
     () => casesService.getAll(allFilters),
-    { enabled: Boolean(technicianId) },
-  );
-
-  const { data: waitingCases, isLoading: isLoadingWaiting } = useQuery(
-    ['technician-cases', 'waiting', technicianId],
-    () => casesService.getAll(pendingFilters),
     { enabled: Boolean(technicianId) },
   );
 
@@ -188,7 +177,7 @@ const MyCasesPage = () => {
     [navigate, t],
   );
 
-  if (isLoadingActive || isLoadingDue || isLoadingCompleted || isLoadingAll || isLoadingWaiting) {
+  if (isLoadingActive || isLoadingDue || isLoadingCompleted || isLoadingAll) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
@@ -199,7 +188,6 @@ const MyCasesPage = () => {
   const activeCount = normalizeCases(activeCases).length;
   const dueCount = normalizeCases(dueCases).length;
   const completedCount = normalizeCases(completedCases).length;
-  const waitingCount = normalizeCases(waitingCases).length;
 
   return (
     <Box>
@@ -262,43 +250,6 @@ const MyCasesPage = () => {
           </Paper>
         </Grid>
       </Grid>
-
-      <Paper
-        sx={{
-          p: 2.5,
-          mb: 3,
-          borderRadius: 4,
-          border: '1px solid rgba(165, 118, 255, 0.16)',
-          boxShadow: 'none',
-        }}
-      >
-        <Typography variant="h6" sx={{ mb: 0.5 }}>
-          {t('common.quickActions')}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          {t('case.caseListSubtitle') || 'Cases currently assigned to you'}
-        </Typography>
-        <Box display="flex" gap={1.5} flexWrap="wrap">
-          <Button
-            variant="contained"
-            onClick={() => navigate(`/staff/cases?technician_id=${technicianId}&status=1,2,3`)}
-          >
-            {(t('dashboard.cards.openCases') || 'Open Cases') + ` (${activeCount})`}
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={() => navigate(`/staff/cases?technician_id=${technicianId}&closeToDeadline=true`)}
-          >
-            {(t('common.dueToday') || 'Due Today') + ` (${dueCount})`}
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={() => navigate(`/staff/cases?technician_id=${technicianId}&status=3`)}
-          >
-            {(t('common.waitingOnCustomer') || 'Waiting on Customer') + ` (${waitingCount})`}
-          </Button>
-        </Box>
-      </Paper>
 
       <CustomDataTable
         title={t('common.myServiceCases') || 'My Service Cases'}
