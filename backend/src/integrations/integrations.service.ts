@@ -1,10 +1,13 @@
 import {
   BadRequestException,
+  HttpException,
   Injectable,
   Logger,
+  NotFoundException,
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
+import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -19,6 +22,14 @@ import {
 } from './entities/pos-warranty-inbound-event.entity';
 
 type PosOrderUpsertAction = 'created' | 'updated' | 'ignored' | 'deferred';
+type MobileSentrixCredentials = {
+  baseUrl: string;
+  consumerName: string;
+  consumerKey: string;
+  consumerSecret: string;
+  accessToken: string;
+  accessTokenSecret: string;
+};
 
 @Injectable()
 export class IntegrationsService {
@@ -26,6 +37,8 @@ export class IntegrationsService {
   private readonly eligibleNonPreorderStatuses = new Set(['pos-success', 'completed']);
   private readonly minimumWarrantyPrice = 500;
   private readonly warrantyYears = 2;
+  private readonly mobileSentrixCallbackPath = '/api/integrations/mobilesentrix/oauth/callback';
+  private readonly mobileSentrixWebhookPath = '/api/integrations/mobilesentrix/webhook';
 
   constructor(
     @InjectRepository(PosWarrantyInboundEvent)
@@ -57,6 +70,132 @@ export class IntegrationsService {
     if (!token || token !== secret) {
       throw new UnauthorizedException('Invalid bearer token');
     }
+  }
+
+  async connectMobileSentrix(): Promise<{
+    success: true;
+    connected: true;
+    base_url: string;
+    callback_url: string;
+    webhook_url: string;
+  }> {
+    const config = await this.getMobileSentrixBaseConfig();
+
+    const authorizeUrl = `${config.baseUrl}/oauth/authorize/identifier`;
+    const callbackUrl = this.getMobileSentrixCallbackUrl();
+
+    const authorizeResponse = await axios.get(authorizeUrl, {
+      params: {
+        consumer: config.consumerName,
+        authtype: 1,
+        flowentry: 'SignIn',
+        consumer_key: config.consumerKey,
+        consumer_secret: config.consumerSecret,
+        callback: callbackUrl,
+      },
+      maxRedirects: 0,
+      validateStatus: (status) => status >= 200 && status < 400,
+    });
+
+    const redirectLocation =
+      (typeof authorizeResponse.headers.location === 'string' && authorizeResponse.headers.location) ||
+      authorizeResponse.request?.res?.headers?.location ||
+      authorizeResponse.request?.path;
+
+    if (!redirectLocation) {
+      throw new ServiceUnavailableException(
+        'MobileSentrix did not return the OAuth redirect location.',
+      );
+    }
+
+    const callbackData = this.extractMobileSentrixOAuthParams(redirectLocation, callbackUrl);
+    const exchangeResult = await this.exchangeMobileSentrixAccessToken({
+      ...config,
+      oauthToken: callbackData.oauthToken,
+      oauthVerifier: callbackData.oauthVerifier,
+    });
+
+    await this.settingsService.setApiKeys({
+      mobilesentrix_access_token: exchangeResult.accessToken,
+      mobilesentrix_access_token_secret: exchangeResult.accessTokenSecret,
+    });
+
+    return {
+      success: true,
+      connected: true,
+      base_url: config.baseUrl,
+      callback_url: callbackUrl,
+      webhook_url: this.getMobileSentrixWebhookUrl(),
+    };
+  }
+
+  async completeMobileSentrixOAuthFromCallback(
+    oauthToken?: string,
+    oauthVerifier?: string,
+  ): Promise<void> {
+    if (!oauthToken || !oauthVerifier) {
+      throw new BadRequestException('Missing oauth_token or oauth_verifier');
+    }
+
+    const config = await this.getMobileSentrixBaseConfig();
+    const exchangeResult = await this.exchangeMobileSentrixAccessToken({
+      ...config,
+      oauthToken,
+      oauthVerifier,
+    });
+
+    await this.settingsService.setApiKeys({
+      mobilesentrix_access_token: exchangeResult.accessToken,
+      mobilesentrix_access_token_secret: exchangeResult.accessTokenSecret,
+    });
+  }
+
+  async testMobileSentrixSearch(query: string): Promise<{
+    success: true;
+    query: string;
+    total_items: number;
+    categories_count: number;
+    items_count: number;
+    first_items: Array<Record<string, any>>;
+  }> {
+    const normalizedQuery = query.trim();
+    if (!normalizedQuery) {
+      throw new BadRequestException('Search query is required');
+    }
+
+    const config = await this.getMobileSentrixCredentials();
+    const response = await axios.get(`${config.baseUrl}/api/rest/searchproduct`, {
+      params: {
+        q: normalizedQuery,
+        max_results: 5,
+        start_index: 0,
+      },
+      headers: {
+        Authorization: this.buildMobileSentrixOAuthHeader(config),
+        Accept: 'application/json',
+      },
+      validateStatus: (status) => status >= 200 && status < 500,
+    });
+
+    if (response.status >= 400) {
+      throw new HttpException(
+        response.data?.message || 'MobileSentrix search request failed',
+        response.status,
+      );
+    }
+
+    const data = response.data?.data || {};
+    const items = Array.isArray(data.items) ? data.items : [];
+    const categories = Array.isArray(data.categories) ? data.categories : [];
+
+    return {
+      success: true,
+      query: normalizedQuery,
+      total_items: Number(data.total_items || items.length || 0),
+      categories_count: categories.length,
+      items_count: items.length,
+      first_items: items,
+    };
   }
 
   async handlePosOrderUpsert(payload: PosOrderUpsertDto) {
@@ -180,6 +319,139 @@ export class IntegrationsService {
       this.logger.error(`Failed to send warranty created SMS for ${saved.warranty_id}:`, error.message);
     }
     return { action: 'created', warrantyNumber: saved.warranty_id };
+  }
+
+  private async getMobileSentrixBaseConfig(): Promise<{
+    baseUrl: string;
+    consumerName: string;
+    consumerKey: string;
+    consumerSecret: string;
+  }> {
+    const apiKeys = await this.settingsService.getApiKeys();
+    const baseUrl = (apiKeys.mobilesentrix_api_url || 'https://preprod.mobilesentrix.eu')
+      .trim()
+      .replace(/\/+$/, '');
+    const consumerName = (apiKeys.mobilesentrix_consumer_name || '').trim();
+    const consumerKey = (apiKeys.mobilesentrix_consumer_key || '').trim();
+    const consumerSecret = (apiKeys.mobilesentrix_consumer_secret || '').trim();
+
+    if (!consumerName || !consumerKey || !consumerSecret) {
+      throw new ServiceUnavailableException(
+        'MobileSentrix consumer credentials are not configured.',
+      );
+    }
+
+    return { baseUrl, consumerName, consumerKey, consumerSecret };
+  }
+
+  private async getMobileSentrixCredentials(): Promise<MobileSentrixCredentials> {
+    const apiKeys = await this.settingsService.getApiKeys();
+    const baseConfig = await this.getMobileSentrixBaseConfig();
+    const accessToken = (apiKeys.mobilesentrix_access_token || '').trim();
+    const accessTokenSecret = (apiKeys.mobilesentrix_access_token_secret || '').trim();
+
+    if (!accessToken || !accessTokenSecret) {
+      throw new NotFoundException(
+        'MobileSentrix is not connected yet. Complete OAuth first.',
+      );
+    }
+
+    return {
+      ...baseConfig,
+      accessToken,
+      accessTokenSecret,
+    };
+  }
+
+  private async exchangeMobileSentrixAccessToken(input: {
+    baseUrl: string;
+    consumerName: string;
+    consumerKey: string;
+    consumerSecret: string;
+    oauthToken: string;
+    oauthVerifier: string;
+  }): Promise<{ accessToken: string; accessTokenSecret: string }> {
+    const response = await axios.post(
+      `${input.baseUrl}/oauth/authorize/identifiercallback`,
+      {
+        consumer_key: input.consumerKey,
+        consumer_secret: input.consumerSecret,
+        oauth_token: input.oauthToken,
+        oauth_verifier: input.oauthVerifier,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        validateStatus: (status) => status >= 200 && status < 500,
+      },
+    );
+
+    if (response.status >= 400 || response.data?.status !== 1) {
+      throw new ServiceUnavailableException(
+        response.data?.message || 'MobileSentrix access token exchange failed.',
+      );
+    }
+
+    const accessToken = response.data?.data?.access_token;
+    const accessTokenSecret = response.data?.data?.access_token_secret;
+
+    if (!accessToken || !accessTokenSecret) {
+      throw new ServiceUnavailableException(
+        'MobileSentrix did not return access token credentials.',
+      );
+    }
+
+    return { accessToken, accessTokenSecret };
+  }
+
+  private extractMobileSentrixOAuthParams(
+    redirectLocation: string,
+    fallbackBaseUrl: string,
+  ): { oauthToken: string; oauthVerifier: string } {
+    const parsed = new URL(redirectLocation, fallbackBaseUrl);
+    const oauthToken = parsed.searchParams.get('oauth_token') || '';
+    const oauthVerifier = parsed.searchParams.get('oauth_verifier') || '';
+
+    if (!oauthToken || !oauthVerifier) {
+      throw new ServiceUnavailableException(
+        'MobileSentrix OAuth redirect did not include oauth_token and oauth_verifier.',
+      );
+    }
+
+    return { oauthToken, oauthVerifier };
+  }
+
+  private buildMobileSentrixOAuthHeader(credentials: MobileSentrixCredentials): string {
+    const nonce = Math.random().toString(36).slice(2, 14);
+    const timestamp = Math.floor(Date.now() / 1000).toString();
+    const signature = `${credentials.consumerSecret}&${credentials.accessTokenSecret}`;
+    const values = {
+      oauth_consumer_key: credentials.consumerKey,
+      oauth_token: credentials.accessToken,
+      oauth_signature_method: 'PLAINTEXT',
+      oauth_signature: signature,
+      oauth_timestamp: timestamp,
+      oauth_nonce: nonce,
+      oauth_version: '1.0a',
+    };
+
+    return `OAuth ${Object.entries(values)
+      .map(([key, value]) => `${key}="${encodeURIComponent(value)}"`)
+      .join(', ')}`;
+  }
+
+  getMobileSentrixCallbackUrl(): string {
+    return `${this.getPortalBaseUrl()}${this.mobileSentrixCallbackPath}`;
+  }
+
+  getMobileSentrixWebhookUrl(): string {
+    return `${this.getPortalBaseUrl()}${this.mobileSentrixWebhookPath}`;
+  }
+
+  private getPortalBaseUrl(): string {
+    return (this.configService.get<string>('PORTAL_URL') || 'https://zezva.ge').replace(/\/+$/, '');
   }
 
   private mapPayloadToWarranty(payload: PosOrderUpsertDto) {

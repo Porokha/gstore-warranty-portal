@@ -47,9 +47,12 @@ export class SettingsService {
     sender_api_key?: string;
     sender_api_url?: string;
     mobilesentrix_api_url?: string;
-    mobilesentrix_api_key?: string;
-    mobilesentrix_username?: string;
-    mobilesentrix_password?: string;
+    mobilesentrix_consumer_name?: string;
+    mobilesentrix_consumer_key?: string;
+    mobilesentrix_consumer_secret?: string;
+    mobilesentrix_access_token?: string;
+    mobilesentrix_access_token_secret?: string;
+    mobilesentrix_connected?: boolean;
     mobilesentrix_webhook_secret?: string;
     pos_warranty_webhook_secret?: string;
   }> {
@@ -64,9 +67,14 @@ export class SettingsService {
       sender_api_key: settings.SENDER_API_KEY,
       sender_api_url: settings.SENDER_API_URL,
       mobilesentrix_api_url: settings.MOBILESENTRIX_API_URL,
-      mobilesentrix_api_key: settings.MOBILESENTRIX_API_KEY,
-      mobilesentrix_username: settings.MOBILESENTRIX_USERNAME,
-      mobilesentrix_password: settings.MOBILESENTRIX_PASSWORD,
+      mobilesentrix_consumer_name: settings.MOBILESENTRIX_CONSUMER_NAME,
+      mobilesentrix_consumer_key: settings.MOBILESENTRIX_CONSUMER_KEY,
+      mobilesentrix_consumer_secret: settings.MOBILESENTRIX_CONSUMER_SECRET,
+      mobilesentrix_access_token: settings.MOBILESENTRIX_ACCESS_TOKEN,
+      mobilesentrix_access_token_secret: settings.MOBILESENTRIX_ACCESS_TOKEN_SECRET,
+      mobilesentrix_connected:
+        Boolean(settings.MOBILESENTRIX_ACCESS_TOKEN) &&
+        Boolean(settings.MOBILESENTRIX_ACCESS_TOKEN_SECRET),
       mobilesentrix_webhook_secret: settings.MOBILESENTRIX_WEBHOOK_SECRET,
       pos_warranty_webhook_secret: settings.POS_WARRANTY_WEBHOOK_SECRET,
     };
@@ -82,9 +90,11 @@ export class SettingsService {
     sender_api_key?: string;
     sender_api_url?: string;
     mobilesentrix_api_url?: string;
-    mobilesentrix_api_key?: string;
-    mobilesentrix_username?: string;
-    mobilesentrix_password?: string;
+    mobilesentrix_consumer_name?: string;
+    mobilesentrix_consumer_key?: string;
+    mobilesentrix_consumer_secret?: string;
+    mobilesentrix_access_token?: string;
+    mobilesentrix_access_token_secret?: string;
     mobilesentrix_webhook_secret?: string;
     pos_warranty_webhook_secret?: string;
   }): Promise<void> {
@@ -98,9 +108,11 @@ export class SettingsService {
       { key: 'SENDER_API_KEY', value: keys.sender_api_key },
       { key: 'SENDER_API_URL', value: keys.sender_api_url },
       { key: 'MOBILESENTRIX_API_URL', value: keys.mobilesentrix_api_url },
-      { key: 'MOBILESENTRIX_API_KEY', value: keys.mobilesentrix_api_key },
-      { key: 'MOBILESENTRIX_USERNAME', value: keys.mobilesentrix_username },
-      { key: 'MOBILESENTRIX_PASSWORD', value: keys.mobilesentrix_password },
+      { key: 'MOBILESENTRIX_CONSUMER_NAME', value: keys.mobilesentrix_consumer_name },
+      { key: 'MOBILESENTRIX_CONSUMER_KEY', value: keys.mobilesentrix_consumer_key },
+      { key: 'MOBILESENTRIX_CONSUMER_SECRET', value: keys.mobilesentrix_consumer_secret },
+      { key: 'MOBILESENTRIX_ACCESS_TOKEN', value: keys.mobilesentrix_access_token },
+      { key: 'MOBILESENTRIX_ACCESS_TOKEN_SECRET', value: keys.mobilesentrix_access_token_secret },
       { key: 'MOBILESENTRIX_WEBHOOK_SECRET', value: keys.mobilesentrix_webhook_secret },
       { key: 'POS_WARRANTY_WEBHOOK_SECRET', value: keys.pos_warranty_webhook_secret },
     ];

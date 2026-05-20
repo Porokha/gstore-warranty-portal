@@ -10,8 +10,10 @@ import {
   Grid,
   Typography,
   Divider,
+  Chip,
+  Stack,
 } from '@mui/material';
-import { Save as SaveIcon } from '@mui/icons-material';
+import { Save as SaveIcon, Link as LinkIcon, Search as SearchIcon } from '@mui/icons-material';
 import api from '../../services/api';
 
 const ApiKeysSettings = () => {
@@ -27,12 +29,17 @@ const ApiKeysSettings = () => {
     sender_api_key: '',
     sender_api_url: '',
     mobilesentrix_api_url: '',
-    mobilesentrix_api_key: '',
-    mobilesentrix_username: '',
-    mobilesentrix_password: '',
+    mobilesentrix_consumer_name: '',
+    mobilesentrix_consumer_key: '',
+    mobilesentrix_consumer_secret: '',
+    mobilesentrix_access_token: '',
+    mobilesentrix_access_token_secret: '',
+    mobilesentrix_connected: false,
     mobilesentrix_webhook_secret: '',
     pos_warranty_webhook_secret: '',
   });
+  const [mobileSentrixTestQuery, setMobileSentrixTestQuery] = useState('iphone lcd');
+  const [mobileSentrixTestResult, setMobileSentrixTestResult] = useState(null);
 
   const { data: apiKeys, isLoading } = useQuery('api-keys', async () => {
     const response = await api.get('/settings/api-keys');
@@ -51,9 +58,12 @@ const ApiKeysSettings = () => {
         sender_api_key: apiKeys.sender_api_key || '',
         sender_api_url: apiKeys.sender_api_url || '',
         mobilesentrix_api_url: apiKeys.mobilesentrix_api_url || '',
-        mobilesentrix_api_key: apiKeys.mobilesentrix_api_key || '',
-        mobilesentrix_username: apiKeys.mobilesentrix_username || '',
-        mobilesentrix_password: apiKeys.mobilesentrix_password || '',
+        mobilesentrix_consumer_name: apiKeys.mobilesentrix_consumer_name || '',
+        mobilesentrix_consumer_key: apiKeys.mobilesentrix_consumer_key || '',
+        mobilesentrix_consumer_secret: apiKeys.mobilesentrix_consumer_secret || '',
+        mobilesentrix_access_token: apiKeys.mobilesentrix_access_token || '',
+        mobilesentrix_access_token_secret: apiKeys.mobilesentrix_access_token_secret || '',
+        mobilesentrix_connected: Boolean(apiKeys.mobilesentrix_connected),
         mobilesentrix_webhook_secret: apiKeys.mobilesentrix_webhook_secret || '',
         pos_warranty_webhook_secret: apiKeys.pos_warranty_webhook_secret || '',
       });
@@ -62,6 +72,7 @@ const ApiKeysSettings = () => {
 
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [mobileSentrixStatusMessage, setMobileSentrixStatusMessage] = useState('');
 
   const saveMutation = useMutation(
     async (data) => {
@@ -110,6 +121,47 @@ const ApiKeysSettings = () => {
   const handleSave = () => {
     saveMutation.mutate(formData);
   };
+
+  const mobileSentrixConnectMutation = useMutation(
+    async () => {
+      const response = await api.post('/integrations/mobilesentrix/oauth/connect');
+      return response.data;
+    },
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries('api-keys');
+        setMobileSentrixStatusMessage(t('apiKeys.mobileSentrixConnectSuccess'));
+        setSaveError('');
+      },
+      onError: (error) => {
+        setMobileSentrixStatusMessage('');
+        setSaveError(
+          error.response?.data?.message || error.message || t('apiKeys.mobileSentrixConnectError'),
+        );
+      },
+    },
+  );
+
+  const mobileSentrixTestMutation = useMutation(
+    async () => {
+      const response = await api.get('/integrations/mobilesentrix/test-search', {
+        params: { q: mobileSentrixTestQuery },
+      });
+      return response.data;
+    },
+    {
+      onSuccess: (data) => {
+        setMobileSentrixTestResult(data);
+        setSaveError('');
+      },
+      onError: (error) => {
+        setMobileSentrixTestResult(null);
+        setSaveError(
+          error.response?.data?.message || error.message || t('apiKeys.mobileSentrixTestError'),
+        );
+      },
+    },
+  );
 
   if (isLoading) {
     return (
@@ -253,30 +305,30 @@ const ApiKeysSettings = () => {
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
-            label={t('apiKeys.mobileSentrixApiKey')}
-            value={formData.mobilesentrix_api_key}
-            onChange={(e) => handleChange('mobilesentrix_api_key', e.target.value)}
-            type="password"
-            helperText={t('apiKeys.mobileSentrixApiKeyHint')}
+            label={t('apiKeys.mobileSentrixConsumerName')}
+            value={formData.mobilesentrix_consumer_name}
+            onChange={(e) => handleChange('mobilesentrix_consumer_name', e.target.value)}
+            helperText={t('apiKeys.mobileSentrixConsumerNameHint')}
           />
         </Grid>
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
-            label={t('apiKeys.mobileSentrixUsername')}
-            value={formData.mobilesentrix_username}
-            onChange={(e) => handleChange('mobilesentrix_username', e.target.value)}
-            helperText={t('apiKeys.mobileSentrixUsernameHint')}
+            label={t('apiKeys.mobileSentrixConsumerKey')}
+            value={formData.mobilesentrix_consumer_key}
+            onChange={(e) => handleChange('mobilesentrix_consumer_key', e.target.value)}
+            type="password"
+            helperText={t('apiKeys.mobileSentrixConsumerKeyHint')}
           />
         </Grid>
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
-            label={t('apiKeys.mobileSentrixPassword')}
-            value={formData.mobilesentrix_password}
-            onChange={(e) => handleChange('mobilesentrix_password', e.target.value)}
+            label={t('apiKeys.mobileSentrixConsumerSecret')}
+            value={formData.mobilesentrix_consumer_secret}
+            onChange={(e) => handleChange('mobilesentrix_consumer_secret', e.target.value)}
             type="password"
-            helperText={t('apiKeys.mobileSentrixPasswordHint')}
+            helperText={t('apiKeys.mobileSentrixConsumerSecretHint')}
           />
         </Grid>
         <Grid item xs={12} md={6}>
@@ -292,10 +344,10 @@ const ApiKeysSettings = () => {
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
-            label={t('apiKeys.mobileSentrixCallbackUrl')}
-            value="https://zezva.ge/api/integrations/mobilesentrix/webhook"
+            label={t('apiKeys.mobileSentrixOauthCallbackUrl')}
+            value="https://zezva.ge/api/integrations/mobilesentrix/oauth/callback"
             InputProps={{ readOnly: true }}
-            helperText={t('apiKeys.mobileSentrixCallbackUrlHint')}
+            helperText={t('apiKeys.mobileSentrixOauthCallbackUrlHint')}
           />
         </Grid>
         <Grid item xs={12} md={6}>
@@ -307,6 +359,77 @@ const ApiKeysSettings = () => {
             helperText={t('apiKeys.mobileSentrixWhitelistIpHint')}
           />
         </Grid>
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label={t('apiKeys.mobileSentrixWebhookUrl')}
+            value="https://zezva.ge/api/integrations/mobilesentrix/webhook"
+            InputProps={{ readOnly: true }}
+            helperText={t('apiKeys.mobileSentrixCallbackUrlHint')}
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
+            <Chip
+              color={formData.mobilesentrix_connected ? 'success' : 'default'}
+              label={
+                formData.mobilesentrix_connected
+                  ? t('apiKeys.mobileSentrixConnected')
+                  : t('apiKeys.mobileSentrixDisconnected')
+              }
+            />
+            <Button
+              variant="outlined"
+              startIcon={
+                mobileSentrixConnectMutation.isLoading ? (
+                  <CircularProgress size={18} />
+                ) : (
+                  <LinkIcon />
+                )
+              }
+              onClick={() => mobileSentrixConnectMutation.mutate()}
+              disabled={mobileSentrixConnectMutation.isLoading || saveMutation.isLoading}
+            >
+              {t('apiKeys.mobileSentrixConnectButton')}
+            </Button>
+          </Stack>
+          {mobileSentrixStatusMessage && (
+            <Typography variant="body2" color="success.main" sx={{ mt: 1.25 }}>
+              {mobileSentrixStatusMessage}
+            </Typography>
+          )}
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label={t('apiKeys.mobileSentrixTestQuery')}
+            value={mobileSentrixTestQuery}
+            onChange={(e) => setMobileSentrixTestQuery(e.target.value)}
+            helperText={t('apiKeys.mobileSentrixTestQueryHint')}
+          />
+        </Grid>
+        <Grid item xs={12} md={6} display="flex" alignItems="center">
+          <Button
+            variant="outlined"
+            startIcon={
+              mobileSentrixTestMutation.isLoading ? <CircularProgress size={18} /> : <SearchIcon />
+            }
+            onClick={() => mobileSentrixTestMutation.mutate()}
+            disabled={mobileSentrixTestMutation.isLoading}
+          >
+            {t('apiKeys.mobileSentrixTestButton')}
+          </Button>
+        </Grid>
+        {mobileSentrixTestResult && (
+          <Grid item xs={12}>
+            <Alert severity="info">
+              {t('apiKeys.mobileSentrixTestSummary', {
+                total: mobileSentrixTestResult.total_items,
+                shown: mobileSentrixTestResult.items_count,
+              })}
+            </Alert>
+          </Grid>
+        )}
 
         <Grid item xs={12} sx={{ mt: 2 }}>
           <Typography variant="h6" gutterBottom>

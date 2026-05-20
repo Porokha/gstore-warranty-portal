@@ -1,5 +1,22 @@
-import { Body, Controller, Headers, HttpCode, HttpStatus, Logger, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  HttpCode,
+  HttpStatus,
+  Logger,
+  Post,
+  Query,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Response } from 'express';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { UserRole } from '../users/entities/user.entity';
 import { PosOrderUpsertDto } from './dto/pos-order-upsert.dto';
 import { IntegrationsService } from './integrations.service';
 
@@ -11,6 +28,39 @@ export class IntegrationsController {
     private readonly configService: ConfigService,
     private readonly integrationsService: IntegrationsService,
   ) {}
+
+  @Post('mobilesentrix/oauth/connect')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  async connectMobileSentrix() {
+    return this.integrationsService.connectMobileSentrix();
+  }
+
+  @Get('mobilesentrix/oauth/callback')
+  async handleMobileSentrixOAuthCallback(
+    @Query('oauth_token') oauthToken?: string,
+    @Query('oauth_verifier') oauthVerifier?: string,
+    @Res() res?: Response,
+  ) {
+    try {
+      await this.integrationsService.completeMobileSentrixOAuthFromCallback(
+        oauthToken,
+        oauthVerifier,
+      );
+      return res?.redirect('/staff/settings?mobilesentrix=connected');
+    } catch (error) {
+      this.logger.error(`MobileSentrix OAuth callback failed: ${error.message}`);
+      return res?.redirect('/staff/settings?mobilesentrix=failed');
+    }
+  }
+
+  @Get('mobilesentrix/test-search')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async testMobileSentrixSearch(@Query('q') q?: string) {
+    return this.integrationsService.testMobileSentrixSearch(q || 'iphone lcd');
+  }
 
   @Post('mobilesentrix/webhook')
   @HttpCode(HttpStatus.OK)
