@@ -754,7 +754,7 @@
     "mobileSentrixConnected": "დაკავშირებულია",
     "mobileSentrixDisconnected": "არ არის დაკავშირებული",
     "mobileSentrixConnectButton": "MobileSentrix-ის დაკავშირება",
-    "mobileSentrixConnectSuccess": "MobileSentrix OAuth წარმატებით დასრულდა და access token-ები შენახულია.",
+    "mobileSentrixConnectSuccess": "გაიხსნა MobileSentrix-ის ავტორიზაციის გვერდი. შედით იქ და callback access token-ებს ავტომატურად შეინახავს.",
     "mobileSentrixConnectError": "MobileSentrix-ის დაკავშირება ვერ მოხერხდა",
     "mobileSentrixTestQuery": "ტესტური საძიებო მოთხოვნა",
     "mobileSentrixTestQueryHint": "გაუშვით საცდელი /searchproduct მოთხოვნა MobileSentrix-ზე",

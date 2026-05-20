@@ -74,7 +74,8 @@ export class IntegrationsService {
 
   async connectMobileSentrix(): Promise<{
     success: true;
-    connected: true;
+    redirect_required: true;
+    authorize_url: string;
     base_url: string;
     callback_url: string;
     webhook_url: string;
@@ -83,46 +84,19 @@ export class IntegrationsService {
 
     const authorizeUrl = `${config.baseUrl}/oauth/authorize/identifier`;
     const callbackUrl = this.getMobileSentrixCallbackUrl();
-
-    const authorizeResponse = await axios.get(authorizeUrl, {
-      params: {
-        consumer: config.consumerName,
-        authtype: 1,
-        flowentry: 'SignIn',
-        consumer_key: config.consumerKey,
-        consumer_secret: config.consumerSecret,
-        callback: callbackUrl,
-      },
-      maxRedirects: 0,
-      validateStatus: (status) => status >= 200 && status < 400,
-    });
-
-    const redirectLocation =
-      (typeof authorizeResponse.headers.location === 'string' && authorizeResponse.headers.location) ||
-      authorizeResponse.request?.res?.headers?.location ||
-      authorizeResponse.request?.path;
-
-    if (!redirectLocation) {
-      throw new ServiceUnavailableException(
-        'MobileSentrix did not return the OAuth redirect location.',
-      );
-    }
-
-    const callbackData = this.extractMobileSentrixOAuthParams(redirectLocation, callbackUrl);
-    const exchangeResult = await this.exchangeMobileSentrixAccessToken({
-      ...config,
-      oauthToken: callbackData.oauthToken,
-      oauthVerifier: callbackData.oauthVerifier,
-    });
-
-    await this.settingsService.setApiKeys({
-      mobilesentrix_access_token: exchangeResult.accessToken,
-      mobilesentrix_access_token_secret: exchangeResult.accessTokenSecret,
+    const params = new URLSearchParams({
+      consumer: config.consumerName,
+      authtype: '1',
+      flowentry: 'SignIn',
+      consumer_key: config.consumerKey,
+      consumer_secret: config.consumerSecret,
+      callback: callbackUrl,
     });
 
     return {
       success: true,
-      connected: true,
+      redirect_required: true,
+      authorize_url: `${authorizeUrl}?${params.toString()}`,
       base_url: config.baseUrl,
       callback_url: callbackUrl,
       webhook_url: this.getMobileSentrixWebhookUrl(),
@@ -404,23 +378,6 @@ export class IntegrationsService {
     }
 
     return { accessToken, accessTokenSecret };
-  }
-
-  private extractMobileSentrixOAuthParams(
-    redirectLocation: string,
-    fallbackBaseUrl: string,
-  ): { oauthToken: string; oauthVerifier: string } {
-    const parsed = new URL(redirectLocation, fallbackBaseUrl);
-    const oauthToken = parsed.searchParams.get('oauth_token') || '';
-    const oauthVerifier = parsed.searchParams.get('oauth_verifier') || '';
-
-    if (!oauthToken || !oauthVerifier) {
-      throw new ServiceUnavailableException(
-        'MobileSentrix OAuth redirect did not include oauth_token and oauth_verifier.',
-      );
-    }
-
-    return { oauthToken, oauthVerifier };
   }
 
   private buildMobileSentrixOAuthHeader(credentials: MobileSentrixCredentials): string {

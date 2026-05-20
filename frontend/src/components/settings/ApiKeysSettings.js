@@ -128,7 +128,10 @@ const ApiKeysSettings = () => {
       return response.data;
     },
     {
-      onSuccess: () => {
+      onSuccess: (data) => {
+        if (data?.authorize_url) {
+          window.open(data.authorize_url, '_blank', 'noopener,noreferrer');
+        }
         queryClient.invalidateQueries('api-keys');
         setMobileSentrixStatusMessage(t('apiKeys.mobileSentrixConnectSuccess'));
         setSaveError('');

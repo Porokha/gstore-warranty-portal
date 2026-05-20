@@ -748,7 +748,7 @@
     "mobileSentrixConnected": "Connected",
     "mobileSentrixDisconnected": "Not Connected",
     "mobileSentrixConnectButton": "Connect MobileSentrix",
-    "mobileSentrixConnectSuccess": "MobileSentrix OAuth completed and access tokens were saved.",
+    "mobileSentrixConnectSuccess": "MobileSentrix authorization page opened. Complete the sign-in there and the callback will save the access tokens.",
     "mobileSentrixConnectError": "MobileSentrix connection failed",
     "mobileSentrixTestQuery": "Test Search Query",
     "mobileSentrixTestQueryHint": "Run a sample /searchproduct request against MobileSentrix",
