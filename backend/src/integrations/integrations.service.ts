@@ -396,7 +396,7 @@ export class IntegrationsService {
       oauth_signature: signature,
       oauth_timestamp: timestamp,
       oauth_nonce: nonce,
-      oauth_version: '1.0a',
+      oauth_version: '1.0',
     };
 
     return `OAuth ${Object.entries(values)
