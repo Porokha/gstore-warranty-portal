@@ -66,14 +66,12 @@ export class IntegrationsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   async previewMobileSentrixProducts(
-    @Query('q') q?: string,
-    @Query('max_results') maxResults?: string,
-    @Query('start_index') startIndex?: string,
+    @Query('limit') limit?: string,
+    @Query('page') page?: string,
   ) {
     return this.integrationsService.previewMobileSentrixProducts(
-      q || 'iphone lcd',
-      Number(maxResults || 10),
-      Number(startIndex || 0),
+      Number(limit || 10),
+      Number(page || 1),
     );
   }
 
@@ -83,15 +81,15 @@ export class IntegrationsController {
   async syncMobileSentrixProducts(
     @Body()
     body: {
-      q?: string;
-      max_results?: number;
-      start_index?: number;
+      limit?: number;
+      start_page?: number;
+      max_pages?: number;
     },
   ) {
     return this.integrationsService.syncMobileSentrixProducts(
-      body.q || 'iphone lcd',
-      Number(body.max_results || 25),
-      Number(body.start_index || 0),
+      Number(body.limit || 100),
+      Number(body.start_page || 1),
+      body.max_pages ? Number(body.max_pages) : undefined,
     );
   }
 

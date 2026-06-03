@@ -243,25 +243,76 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
-  async previewMobileSentrixProducts(query: string, maxResults = 10, startIndex = 0) {
-    const normalizedQuery = query.trim();
-    if (!normalizedQuery) {
-      throw new BadRequestException('Search query is required');
-    }
+  async previewMobileSentrixProducts(limit = 10, page = 1) {
+    const productPage = await this.fetchMobileSentrixProductPage(limit, page);
+    const mappedProducts = await this.mapMobileSentrixItems(productPage.items);
 
-    const searchResult = await this.searchMobileSentrixProducts(
-      normalizedQuery,
-      maxResults,
-      startIndex,
-    );
-    const enrichedItems = await Promise.all(
-      searchResult.items.map((item) => this.enrichMobileSentrixSearchItem(item)),
-    );
-    const tagMap = await this.fetchMobileSentrixTagsForItems(enrichedItems);
+    return {
+      success: true,
+      page: productPage.page,
+      limit: productPage.limit,
+      total_items: productPage.totalItems,
+      total_pages: productPage.totalPages,
+      exchange_rate: mappedProducts.exchangeRate,
+      exchange_rates: mappedProducts.exchangeRates,
+      pricing_formula:
+        '((supplier currency price * 1.18 VAT) * official NBG currency/GEL rate + 5 GEL handling) * 1.5 margin',
+      items: mappedProducts.items,
+    };
+  }
+
+  async syncMobileSentrixProducts(limit = 100, startPage = 1, maxPages?: number) {
+    const safeLimit = Math.min(Math.max(Number(limit) || 100, 1), 100);
+    let page = Math.max(Number(startPage) || 1, 1);
+    let totalPages = 1;
+    let scanned = 0;
+    let created = 0;
+    let updated = 0;
+    let failed = 0;
+    const synced: Array<{ id: number; title: string; action: 'created' | 'updated' }> = [];
+
+    do {
+      const productPage = await this.fetchMobileSentrixProductPage(safeLimit, page);
+      totalPages = productPage.totalPages || totalPages;
+      scanned += productPage.items.length;
+      const mappedProducts = await this.mapMobileSentrixItems(productPage.items);
+
+      for (const mapped of mappedProducts.items) {
+        try {
+          const result = await this.upsertMobileSentrixProduct(mapped);
+          if (result.action === 'created') created += 1;
+          if (result.action === 'updated') updated += 1;
+          synced.push(result);
+        } catch (error) {
+          failed += 1;
+          this.logger.warn(
+            `Failed to sync MobileSentrix product ${mapped.supplier_product_id}: ${error.message}`,
+          );
+        }
+      }
+
+      page += 1;
+    } while (page <= totalPages && (!maxPages || page < startPage + maxPages));
+
+    return {
+      success: true,
+      mode: 'catalog',
+      scanned,
+      created,
+      updated,
+      failed,
+      synced_count: synced.length,
+      total_pages: totalPages,
+      synced: synced.slice(0, 100),
+    };
+  }
+
+  private async mapMobileSentrixItems(items: MobileSentrixSearchItem[]) {
+    const tagMap = await this.fetchMobileSentrixTagsForItems(items);
     const rateCache = new Map<string, number>();
 
     const mappedProducts: MobileSentrixMappedProduct[] = [];
-    for (const sourceItem of enrichedItems) {
+    for (const sourceItem of items) {
       const item = this.mergeMobileSentrixTags(sourceItem, tagMap);
       const currency = this.getMobileSentrixCurrency(item);
       if (!rateCache.has(currency)) {
@@ -276,88 +327,63 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
     const exchangeRates = Object.fromEntries(rateCache.entries());
 
     return {
-      success: true,
-      query: normalizedQuery,
-      total_items: searchResult.totalItems,
-      exchange_rate: exchangeRates.USD ?? exchangeRates.EUR ?? Object.values(exchangeRates)[0],
+      exchangeRate: exchangeRates.USD ?? exchangeRates.EUR ?? Object.values(exchangeRates)[0],
       exchange_rates: exchangeRates,
-      pricing_formula:
-        '((supplier currency price * 1.18 VAT) * official NBG currency/GEL rate + 5 GEL handling) * 1.5 margin',
+      exchangeRates,
       items: mappedProducts,
     };
   }
 
-  async syncMobileSentrixProducts(query: string, maxResults = 25, startIndex = 0) {
-    const preview = await this.previewMobileSentrixProducts(query, maxResults, startIndex);
-    let created = 0;
-    let updated = 0;
-    const synced: Array<{ id: number; title: string; action: 'created' | 'updated' }> = [];
-
-    for (const mapped of preview.items) {
-      const existing = await this.shopProductsRepository.findOne({
-        where: {
-          supplier: ShopProductSupplier.MOBILESENTRIX,
-          supplier_product_id: mapped.supplier_product_id,
-        },
-      });
-
-      const payload = {
-        title: mapped.title,
-        brand: mapped.brand,
-        slug: existing?.slug || (await this.ensureUniqueProductSlug(mapped.slug)),
-        device_category: mapped.device_category,
-        part_category: mapped.part_category,
-        inventory_source: mapped.inventory_source,
-        issue_label: mapped.issue_label,
-        device_model: mapped.device_model,
-        quality_line: mapped.quality_line,
-        quality_badge: mapped.quality_badge,
-        warranty_line: mapped.warranty_line,
-        description: mapped.description,
-        image_url: mapped.image_url,
-        gallery_images: mapped.gallery_images,
-        compatibility_tags: mapped.compatibility_tags,
-        search_tags: mapped.search_tags,
-        price: mapped.calculated_price_gel.toFixed(2),
-        sale_price: null,
-        service_price: null,
-        stock_quantity: mapped.stock_quantity,
-        sort_order: existing?.sort_order ?? (await this.getNextShopProductSortOrder()),
-        is_active: mapped.stock_quantity > 0,
+  private async upsertMobileSentrixProduct(mapped: MobileSentrixMappedProduct) {
+    const existing = await this.shopProductsRepository.findOne({
+      where: {
         supplier: ShopProductSupplier.MOBILESENTRIX,
         supplier_product_id: mapped.supplier_product_id,
-        supplier_sku: mapped.supplier_sku,
-        supplier_price_usd: mapped.supplier_price_usd.toFixed(2),
-        supplier_currency: mapped.supplier_currency,
-        supplier_exchange_rate: mapped.supplier_exchange_rate.toFixed(4),
-        supplier_payload: mapped.raw,
-        supplier_synced_at: new Date(),
-        deleted_at: null,
-      };
+      },
+    });
 
-      if (existing) {
-        await this.shopProductsRepository.save({ ...existing, ...payload });
-        updated += 1;
-        synced.push({ id: existing.id, title: mapped.title, action: 'updated' });
-        continue;
-      }
+    const payload = {
+      title: mapped.title,
+      brand: mapped.brand,
+      slug: existing?.slug || (await this.ensureUniqueProductSlug(mapped.slug)),
+      device_category: mapped.device_category,
+      part_category: mapped.part_category,
+      inventory_source: mapped.inventory_source,
+      issue_label: mapped.issue_label,
+      device_model: mapped.device_model,
+      quality_line: mapped.quality_line,
+      quality_badge: mapped.quality_badge,
+      warranty_line: mapped.warranty_line,
+      description: mapped.description,
+      image_url: mapped.image_url,
+      gallery_images: mapped.gallery_images,
+      compatibility_tags: mapped.compatibility_tags,
+      search_tags: mapped.search_tags,
+      price: mapped.calculated_price_gel.toFixed(2),
+      sale_price: null,
+      service_price: null,
+      stock_quantity: mapped.stock_quantity,
+      sort_order: existing?.sort_order ?? (await this.getNextShopProductSortOrder()),
+      is_active: mapped.stock_quantity > 0,
+      supplier: ShopProductSupplier.MOBILESENTRIX,
+      supplier_product_id: mapped.supplier_product_id,
+      supplier_sku: mapped.supplier_sku,
+      supplier_price_usd: mapped.supplier_price_usd.toFixed(2),
+      supplier_currency: mapped.supplier_currency,
+      supplier_exchange_rate: mapped.supplier_exchange_rate.toFixed(4),
+      supplier_payload: mapped.raw,
+      supplier_synced_at: new Date(),
+      deleted_at: null,
+    };
 
-      const product = this.shopProductsRepository.create(payload);
-      const saved = await this.shopProductsRepository.save(product);
-      created += 1;
-      synced.push({ id: saved.id, title: mapped.title, action: 'created' });
+    if (existing) {
+      await this.shopProductsRepository.save({ ...existing, ...payload });
+      return { id: existing.id, title: mapped.title, action: 'updated' as const };
     }
 
-    return {
-      success: true,
-      query: preview.query,
-      total_items: preview.total_items,
-      exchange_rate: preview.exchange_rate,
-      created,
-      updated,
-      synced_count: synced.length,
-      synced,
-    };
+    const product = this.shopProductsRepository.create(payload);
+    const saved = await this.shopProductsRepository.save(product);
+    return { id: saved.id, title: mapped.title, action: 'created' as const };
   }
 
   async refreshExistingMobileSentrixProducts() {
@@ -708,6 +734,52 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
 
     return {
       totalItems: Number(data.total_items || items.length || 0),
+      items,
+    };
+  }
+
+  private async fetchMobileSentrixProductPage(limit: number, page: number) {
+    const config = await this.getMobileSentrixCredentials();
+    const safeLimit = Math.min(Math.max(Number(limit) || 100, 1), 100);
+    const safePage = Math.max(Number(page) || 1, 1);
+    const response = await axios.get(`${config.baseUrl}/api/rest/products`, {
+      params: {
+        limit: safeLimit,
+        page: safePage,
+        pageinfo: 1,
+        load: 'image_gallery,related_product',
+      },
+      headers: {
+        Authorization: this.buildMobileSentrixOAuthHeader(config),
+        Accept: 'application/json',
+      },
+      validateStatus: (status) => status >= 200 && status < 500,
+    });
+
+    if (response.status >= 400) {
+      this.logger.warn(
+        `MobileSentrix catalog page ${safePage} failed with status ${response.status}: ${this.formatMobileSentrixProviderResponse(response.data)}`,
+      );
+      throw new BadGatewayException({
+        message: response.data?.message || 'MobileSentrix products catalog request failed',
+        provider: 'mobilesentrix',
+        provider_status: response.status,
+        provider_response: response.data,
+      });
+    }
+
+    const data = response.data || {};
+    const pageInfo = data.page_info || {};
+    const items = Object.entries(data)
+      .filter(([key]) => key !== 'page_info')
+      .map(([, value]) => value)
+      .filter((value) => value && typeof value === 'object') as MobileSentrixSearchItem[];
+
+    return {
+      page: Number(pageInfo.current_page_number || safePage),
+      limit: Number(pageInfo.current_page_size || safeLimit),
+      totalItems: Number(pageInfo.total_records || items.length || 0),
+      totalPages: Number(pageInfo.total_pages || 1),
       items,
     };
   }

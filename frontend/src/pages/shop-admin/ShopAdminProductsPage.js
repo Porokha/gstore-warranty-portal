@@ -92,7 +92,6 @@ const ShopAdminProductsPage = () => {
   const [selectedId, setSelectedId] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [form, setForm] = useState(emptyForm);
-  const [mobileSentrixQuery, setMobileSentrixQuery] = useState('iphone lcd');
   const [mobileSentrixResult, setMobileSentrixResult] = useState(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -250,9 +249,8 @@ const ShopAdminProductsPage = () => {
   const mobileSentrixPreviewMutation = useMutation(
     () =>
       shopService.previewMobileSentrixProducts({
-        query: mobileSentrixQuery,
-        maxResults: 10,
-        startIndex: 0,
+        limit: 10,
+        page: 1,
       }),
     {
       onSuccess: (result) => {
@@ -273,14 +271,13 @@ const ShopAdminProductsPage = () => {
   const mobileSentrixSyncMutation = useMutation(
     () =>
       shopService.syncMobileSentrixProducts({
-        query: mobileSentrixQuery,
-        maxResults: 25,
-        startIndex: 0,
+        limit: 100,
+        startPage: 1,
       }),
     {
       onSuccess: async (result) => {
         setMessage(
-          `MobileSentrix sync finished. ${result.created || 0} created, ${result.updated || 0} updated.`,
+          `MobileSentrix full catalog sync finished. ${result.scanned || 0} scanned, ${result.created || 0} created, ${result.updated || 0} updated, ${result.failed || 0} failed.`,
         );
         setError('');
         await invalidateProducts();
@@ -494,7 +491,7 @@ const ShopAdminProductsPage = () => {
                 <Typography sx={{ color: '#667085', mt: 0.75 }}>
                   {productSource === 'manual'
                     ? 'Catalog management, CSV import, image handling, and trash recovery.'
-                    : 'Preview supplier products, apply Zezva pricing, and sync selected search pages into the shop catalog.'}
+                    : 'Preview the supplier catalog, apply Zezva pricing, and sync all MobileSentrix products into the shop catalog.'}
                 </Typography>
               </Box>
               {productSource === 'manual' ? (
@@ -559,30 +556,23 @@ const ShopAdminProductsPage = () => {
                 </Stack>
               ) : (
                 <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.25} sx={{ minWidth: { md: 420 } }}>
-                  <TextField
-                    size="small"
-                    label="Search MobileSentrix"
-                    value={mobileSentrixQuery}
-                    onChange={(event) => setMobileSentrixQuery(event.target.value)}
-                    sx={{ minWidth: { md: 220 } }}
-                  />
                   <Button
                     variant="outlined"
                     startIcon={<Search />}
                     onClick={() => mobileSentrixPreviewMutation.mutate()}
-                    disabled={mobileSentrixPreviewMutation.isLoading || !mobileSentrixQuery.trim()}
+                    disabled={mobileSentrixPreviewMutation.isLoading}
                     sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
                   >
-                    {mobileSentrixPreviewMutation.isLoading ? 'Loading...' : 'Preview'}
+                    {mobileSentrixPreviewMutation.isLoading ? 'Loading...' : 'Preview Catalog'}
                   </Button>
                   <Button
                     variant="contained"
                     startIcon={<Sync />}
                     onClick={() => mobileSentrixSyncMutation.mutate()}
-                    disabled={mobileSentrixSyncMutation.isLoading || !mobileSentrixQuery.trim()}
+                    disabled={mobileSentrixSyncMutation.isLoading}
                     sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
                   >
-                    {mobileSentrixSyncMutation.isLoading ? 'Syncing...' : 'Sync 25'}
+                    {mobileSentrixSyncMutation.isLoading ? 'Syncing...' : 'Sync Full Catalog'}
                   </Button>
                   <Button
                     variant="outlined"
@@ -854,7 +844,7 @@ const ShopAdminProductsPage = () => {
                     products.length === 0 && (
                       <TableRow>
                         <TableCell colSpan={5}>
-                          No MobileSentrix products synced yet. Search and click Sync 25 to add supplier products.
+                          No MobileSentrix products synced yet. Click Sync Full Catalog to import supplier products.
                         </TableCell>
                       </TableRow>
                     )}
@@ -955,7 +945,7 @@ const ShopAdminProductsPage = () => {
                 Products are matched by MobileSentrix product id. Existing supplier products update in place; new supplier products are added with MobileSentrix metadata.
               </Typography>
               <Alert severity="info">
-                Current sync mode is manual. Use Preview first, then Sync 25 for the first page of the current search. Automatic stock refresh can be scheduled after we validate mappings.
+                Current import mode is full catalog sync. Use Preview Catalog to inspect the first supplier page, then Sync Full Catalog to import/update all MobileSentrix products. Existing products auto-refresh every 12 hours.
               </Alert>
               <Paper elevation={0} sx={{ p: 2, borderRadius: 3, border: '1px solid #dce4f0' }}>
                 <Typography sx={{ fontWeight: 800, color: '#172033', mb: 1 }}>

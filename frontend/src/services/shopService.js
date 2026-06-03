@@ -73,25 +73,24 @@ export const shopService = {
     return response.data;
   },
 
-  previewMobileSentrixProducts: async ({ query, maxResults = 10, startIndex = 0 }) => {
+  previewMobileSentrixProducts: async ({ limit = 10, page = 1 }) => {
     const response = await api.get('/integrations/mobilesentrix/products/preview', {
       params: {
-        q: query,
-        max_results: maxResults,
-        start_index: startIndex,
+        limit,
+        page,
       },
       skipAuthRedirect: true,
     });
     return response.data;
   },
 
-  syncMobileSentrixProducts: async ({ query, maxResults = 25, startIndex = 0 }) => {
+  syncMobileSentrixProducts: async ({ limit = 100, startPage = 1, maxPages }) => {
     const response = await api.post(
       '/integrations/mobilesentrix/products/sync',
       {
-        q: query,
-        max_results: maxResults,
-        start_index: startIndex,
+        limit,
+        start_page: startPage,
+        max_pages: maxPages,
       },
       { skipAuthRedirect: true },
     );
