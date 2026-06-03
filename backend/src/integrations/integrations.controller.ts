@@ -106,7 +106,7 @@ export class IntegrationsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   async refreshExistingMobileSentrixProducts() {
-    return this.integrationsService.refreshExistingMobileSentrixProducts();
+    return this.integrationsService.startMobileSentrixExistingRefresh(100);
   }
 
   @Post('mobilesentrix/webhook')

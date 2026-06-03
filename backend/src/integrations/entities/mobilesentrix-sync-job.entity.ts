@@ -50,6 +50,9 @@ export class MobileSentrixSyncJob {
   updated: number;
 
   @Column({ type: 'int', default: 0 })
+  skipped: number;
+
+  @Column({ type: 'int', default: 0 })
   failed: number;
 
   @Column('text', { nullable: true })

@@ -79,6 +79,18 @@ type MobileSentrixMappedProduct = {
   };
   raw: MobileSentrixSearchItem;
 };
+type MobileSentrixSyncMode = 'catalog' | 'refresh-existing';
+type MobileSentrixSyncProgress = {
+  current_page: number;
+  total_pages: number;
+  total_items: number;
+  scanned: number;
+  created: number;
+  updated: number;
+  skipped: number;
+  failed: number;
+  last_message: string;
+};
 
 @Injectable()
 export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
@@ -283,7 +295,7 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
-  async startMobileSentrixCatalogSync(limit = 100) {
+  async startMobileSentrixCatalogSync(limit = 100, mode: MobileSentrixSyncMode = 'catalog') {
     const runningJob = await this.mobileSentrixSyncJobsRepository.findOne({
       where: {
         status: In([
@@ -306,9 +318,12 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
     const job = this.mobileSentrixSyncJobsRepository.create({
       id: uuidv4(),
       status: MobileSentrixSyncJobStatus.QUEUED,
-      mode: 'catalog',
+      mode,
       limit_per_page: safeLimit,
-      last_message: 'Queued full MobileSentrix catalog sync.',
+      last_message:
+        mode === 'refresh-existing'
+          ? 'Queued MobileSentrix stock and price refresh.'
+          : 'Queued full MobileSentrix catalog sync.',
     });
     await this.mobileSentrixSyncJobsRepository.save(job);
 
@@ -323,6 +338,10 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
       already_running: false,
       job: this.formatMobileSentrixSyncJob(job),
     };
+  }
+
+  async startMobileSentrixExistingRefresh(limit = 100) {
+    return this.startMobileSentrixCatalogSync(limit, 'refresh-existing');
   }
 
   async getMobileSentrixSyncJob(jobId: string) {
@@ -357,7 +376,10 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
     await this.mobileSentrixSyncJobsRepository.update(job.id, {
       status: MobileSentrixSyncJobStatus.RUNNING,
       started_at: new Date(),
-      last_message: 'Started full MobileSentrix catalog sync.',
+      last_message:
+        job.mode === 'refresh-existing'
+          ? 'Started MobileSentrix stock and price refresh.'
+          : 'Started full MobileSentrix catalog sync.',
       error_message: null,
     });
 
@@ -366,6 +388,10 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
         job.limit_per_page,
         1,
         undefined,
+        {
+          importMissing: job.mode !== 'refresh-existing',
+          updateExisting: true,
+        },
         async (progress) => {
           await this.mobileSentrixSyncJobsRepository.update(job.id, {
             current_page: progress.current_page,
@@ -374,6 +400,7 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
             scanned: progress.scanned,
             created: progress.created,
             updated: progress.updated,
+            skipped: progress.skipped,
             failed: progress.failed,
             last_message: progress.last_message,
           });
@@ -388,8 +415,9 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
         scanned: result.scanned,
         created: result.created,
         updated: result.updated,
+        skipped: result.skipped,
         failed: result.failed,
-        last_message: `Completed. ${result.scanned} scanned, ${result.created} created, ${result.updated} updated, ${result.failed} failed.`,
+        last_message: `Completed. ${result.scanned} scanned, ${result.created} created, ${result.updated} updated, ${result.skipped} skipped, ${result.failed} failed.`,
         finished_at: new Date(),
       });
     } catch (error) {
@@ -420,6 +448,7 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
       scanned: job.scanned,
       created: job.created,
       updated: job.updated,
+      skipped: job.skipped,
       failed: job.failed,
       progress,
       last_message: job.last_message,
@@ -435,45 +464,115 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
     limit = 100,
     startPage = 1,
     maxPages?: number,
-    onProgress?: (progress: {
-      current_page: number;
-      total_pages: number;
-      total_items: number;
-      scanned: number;
-      created: number;
-      updated: number;
-      failed: number;
-      last_message: string;
-    }) => Promise<void>,
+    options: { importMissing?: boolean; updateExisting?: boolean } = {},
+    onProgress?: (progress: MobileSentrixSyncProgress) => Promise<void>,
   ) {
+    const importMissing = options.importMissing !== false;
+    const updateExisting = options.updateExisting !== false;
     const safeLimit = Math.min(Math.max(Number(limit) || 100, 1), 100);
     let page = Math.max(Number(startPage) || 1, 1);
     let totalPages = 1;
     let scanned = 0;
     let created = 0;
     let updated = 0;
+    let skipped = 0;
     let failed = 0;
     let totalItems = 0;
     const synced: Array<{ id: number; title: string; action: 'created' | 'updated' }> = [];
 
     do {
-      const productPage = await this.fetchMobileSentrixProductPage(safeLimit, page);
+      let productPage: Awaited<ReturnType<typeof this.fetchMobileSentrixProductPage>>;
+      try {
+        productPage = await this.fetchMobileSentrixProductPageWithRetry(safeLimit, page);
+      } catch (error) {
+        failed += safeLimit;
+        if (onProgress) {
+          await onProgress({
+            current_page: page,
+            total_pages: totalPages,
+            total_items: totalItems,
+            scanned,
+            created,
+            updated,
+            skipped,
+            failed,
+            last_message: `Skipped page ${page} after repeated supplier errors: ${error.message}`,
+          });
+        }
+        page += 1;
+        continue;
+      }
       totalPages = productPage.totalPages || totalPages;
       totalItems = productPage.totalItems || totalItems;
       scanned += productPage.items.length;
-      const mappedProducts = await this.mapMobileSentrixItems(productPage.items);
+      const supplierIds = productPage.items
+        .map((item) => String(item.product_id || item.entity_id || '').trim())
+        .filter(Boolean);
+      const existingProducts = supplierIds.length
+        ? await this.shopProductsRepository.find({
+            where: {
+              supplier: ShopProductSupplier.MOBILESENTRIX,
+              supplier_product_id: In(supplierIds),
+            },
+          })
+        : [];
+      const existingBySupplierId = new Map(
+        existingProducts.map((product) => [String(product.supplier_product_id), product]),
+      );
+      const missingItems: MobileSentrixSearchItem[] = [];
+      const rateCache = new Map<string, number>();
 
-      for (const mapped of mappedProducts.items) {
+      for (const item of productPage.items) {
+        const supplierProductId = String(item.product_id || item.entity_id || '').trim();
+        const existing = existingBySupplierId.get(supplierProductId);
+        if (!existing) {
+          if (importMissing) {
+            missingItems.push(item);
+          } else {
+            skipped += 1;
+          }
+          continue;
+        }
+
+        if (!updateExisting) {
+          skipped += 1;
+          continue;
+        }
+
         try {
-          const result = await this.upsertMobileSentrixProduct(mapped);
-          if (result.action === 'created') created += 1;
-          if (result.action === 'updated') updated += 1;
-          synced.push(result);
+          const result = await this.updateExistingMobileSentrixProductFromCatalog(
+            existing,
+            item,
+            rateCache,
+          );
+          if (result.action === 'updated') {
+            updated += 1;
+          } else {
+            skipped += 1;
+          }
         } catch (error) {
           failed += 1;
           this.logger.warn(
-            `Failed to sync MobileSentrix product ${mapped.supplier_product_id}: ${error.message}`,
+            `Failed to refresh MobileSentrix product ${supplierProductId}: ${error.message}`,
           );
+        }
+      }
+
+      if (missingItems.length > 0) {
+        const mappedProducts = await this.mapMobileSentrixItems(missingItems);
+
+        for (const mapped of mappedProducts.items) {
+          try {
+            const result = await this.upsertMobileSentrixProduct(mapped);
+            if (result.action === 'created') created += 1;
+            if (result.action === 'updated') updated += 1;
+            synced.push(result);
+          } catch (error) {
+            failed += 1;
+            this.logger.warn(
+              `Failed to sync MobileSentrix product ${mapped.supplier_product_id}: ${error.message}`,
+            );
+          }
         }
       }
 
@@ -485,6 +584,7 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
           scanned,
           created,
           updated,
+          skipped,
           failed,
           last_message: `Processed page ${page} of ${totalPages}.`,
         });
@@ -500,6 +600,7 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
       scanned,
       created,
       updated,
+      skipped,
       failed,
       synced_count: synced.length,
       total_items: totalItems,
@@ -587,6 +688,65 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
     return { id: saved.id, title: mapped.title, action: 'created' as const };
   }
 
+  private async updateExistingMobileSentrixProductFromCatalog(
+    product: ShopProduct,
+    item: MobileSentrixSearchItem,
+    rateCache: Map<string, number>,
+  ) {
+    const currency = this.getMobileSentrixCurrency(item);
+    if (!rateCache.has(currency)) {
+      rateCache.set(currency, await this.getGelExchangeRate(currency));
+    }
+    const rate = rateCache.get(currency)!;
+    const supplierPrice = Number(
+      item.customer_price ??
+        item.final_price_with_tax ??
+        item.final_price_without_tax ??
+        item.price ??
+        item.list_price ??
+        0,
+    );
+    const stockQuantity = Math.max(
+      Number.parseInt(String(item.in_stock_qty ?? item.quantity ?? 0), 10) || 0,
+      0,
+    );
+    const calculatedPrice = Number.isFinite(supplierPrice)
+      ? this.calculateMobileSentrixPrice(supplierPrice, rate).toFixed(2)
+      : product.price;
+    const supplierPriceValue = Number.isFinite(supplierPrice)
+      ? supplierPrice.toFixed(2)
+      : product.supplier_price_usd;
+    const supplierSku = String(item.new_sku || item.sku || item.product_code || '').trim() || null;
+    const nextPayload = {
+      price: calculatedPrice,
+      stock_quantity: stockQuantity,
+      is_active: stockQuantity > 0,
+      supplier_sku: supplierSku,
+      supplier_price_usd: supplierPriceValue,
+      supplier_currency: currency,
+      supplier_exchange_rate: rate.toFixed(4),
+      supplier_payload: item,
+      supplier_synced_at: new Date(),
+      deleted_at: null,
+    };
+    const changed =
+      product.price !== nextPayload.price ||
+      Number(product.stock_quantity || 0) !== nextPayload.stock_quantity ||
+      Boolean(product.is_active) !== nextPayload.is_active ||
+      product.supplier_sku !== nextPayload.supplier_sku ||
+      product.supplier_price_usd !== nextPayload.supplier_price_usd ||
+      product.supplier_currency !== nextPayload.supplier_currency ||
+      product.supplier_exchange_rate !== nextPayload.supplier_exchange_rate ||
+      product.deleted_at !== null;
+
+    if (!changed) {
+      return { id: product.id, title: product.title, action: 'skipped' as const };
+    }
+
+    await this.shopProductsRepository.update(product.id, nextPayload);
+    return { id: product.id, title: product.title, action: 'updated' as const };
+  }
+
   async refreshExistingMobileSentrixProducts() {
     if (this.mobileSentrixAutoSyncRunning) {
       return { success: true, skipped: true, reason: 'already_running' };
@@ -594,65 +754,10 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
 
     this.mobileSentrixAutoSyncRunning = true;
     try {
-      const products = await this.shopProductsRepository.find({
-        where: { supplier: ShopProductSupplier.MOBILESENTRIX },
+      return this.syncMobileSentrixProducts(100, 1, undefined, {
+        importMissing: false,
+        updateExisting: true,
       });
-      let updated = 0;
-      let failed = 0;
-
-      for (const product of products) {
-        try {
-          const sourceItem = await this.enrichMobileSentrixSearchItem({
-            product_id: product.supplier_product_id,
-          });
-          const tagMap = await this.fetchMobileSentrixTagsForItems([sourceItem]);
-          const item = this.mergeMobileSentrixTags(sourceItem, tagMap);
-          const currency = this.getMobileSentrixCurrency(item);
-          const rate = await this.getGelExchangeRate(currency);
-          const mapped = this.mapMobileSentrixProduct(item, rate, currency);
-
-          if (!mapped) {
-            failed += 1;
-            continue;
-          }
-
-          await this.shopProductsRepository.save({
-            ...product,
-            title: mapped.title,
-            brand: mapped.brand,
-            device_category: mapped.device_category,
-            part_category: mapped.part_category,
-            inventory_source: mapped.inventory_source,
-            issue_label: mapped.issue_label,
-            device_model: mapped.device_model,
-            quality_line: mapped.quality_line,
-            quality_badge: mapped.quality_badge,
-            warranty_line: mapped.warranty_line,
-            description: mapped.description,
-            image_url: mapped.image_url,
-            gallery_images: mapped.gallery_images,
-            compatibility_tags: mapped.compatibility_tags,
-            search_tags: mapped.search_tags,
-            price: mapped.calculated_price_gel.toFixed(2),
-            stock_quantity: mapped.stock_quantity,
-            is_active: mapped.stock_quantity > 0,
-            supplier_sku: mapped.supplier_sku,
-            supplier_price_usd: mapped.supplier_price_usd.toFixed(2),
-            supplier_currency: mapped.supplier_currency,
-            supplier_exchange_rate: mapped.supplier_exchange_rate.toFixed(4),
-            supplier_payload: mapped.raw,
-            supplier_synced_at: new Date(),
-          });
-          updated += 1;
-        } catch (error) {
-          failed += 1;
-          this.logger.warn(
-            `Failed to refresh MobileSentrix product ${product.supplier_product_id}: ${error.message}`,
-          );
-        }
-      }
-
-      return { success: true, updated, failed, total: products.length };
     } finally {
       this.mobileSentrixAutoSyncRunning = false;
     }
@@ -985,6 +1090,23 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
+  private async fetchMobileSentrixProductPageWithRetry(limit: number, page: number, attempts = 3) {
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+      try {
+        return await this.fetchMobileSentrixProductPage(limit, page);
+      } catch (error) {
+        lastError = error;
+        if (attempt < attempts) {
+          await new Promise((resolve) => setTimeout(resolve, attempt * 1200));
+        }
+      }
+    }
+
+    throw lastError || new Error(`MobileSentrix page ${page} request failed.`);
+  }
+
   private async enrichMobileSentrixSearchItem(item: MobileSentrixSearchItem) {
     const productId = String(item.product_id || item.entity_id || '').trim();
     if (!productId) {
@@ -1108,7 +1230,8 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
     currency: string,
   ): MobileSentrixMappedProduct | null {
     const supplierProductId = String(item.product_id || item.entity_id || '').trim();
-    const title = String(item.name || item.title || '').trim();
+    const rawTitle = String(item.name || item.title || '').trim();
+    const title = rawTitle.slice(0, 255);
     const supplierPrice = Number(
       item.customer_price ??
         item.final_price_with_tax ??
@@ -1118,7 +1241,7 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
         0,
     );
 
-    if (!supplierProductId || !title || !Number.isFinite(supplierPrice)) {
+    if (!supplierProductId || !rawTitle || !Number.isFinite(supplierPrice)) {
       return null;
     }
 
@@ -1162,15 +1285,15 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
       supplier_product_id: supplierProductId,
       supplier_sku: String(item.new_sku || item.sku || item.product_code || '').trim() || null,
       title,
-      slug: this.slugify(`mobilesentrix-${supplierProductId}-${title}`),
+      slug: this.slugify(`mobilesentrix-${supplierProductId}-${rawTitle}`),
       brand: manufacturer || this.inferMobileSentrixBrand(searchable),
       device_category: this.inferMobileSentrixDeviceCategory(searchable),
       part_category: this.inferMobileSentrixPartCategory(searchable),
       inventory_source: this.inferMobileSentrixInventorySource(searchable),
-      issue_label: [model, productType, qualityBrand].filter(Boolean).join(' • ') || null,
-      device_model: model,
-      quality_line: qualityBrand,
-      quality_badge: qualityBadge,
+      issue_label: this.truncateText([model, productType, qualityBrand].filter(Boolean).join(' • '), 255),
+      device_model: this.truncateText(model, 255),
+      quality_line: this.truncateText(qualityBrand, 255),
+      quality_badge: this.truncateText(qualityBadge, 255),
       warranty_line: '1 year warranty',
       description,
       image_url: String(item.image_url || item.default_image || item.image_link || '').trim().slice(0, 500) || null,
@@ -1199,6 +1322,11 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
     const landedGel = withVat * currencyGelRate + this.mobileSentrixHandlingFeeGel;
     const withMarginGel = landedGel * (1 + this.mobileSentrixMarginRate);
     return Number(withMarginGel.toFixed(2));
+  }
+
+  private truncateText(value: string | null, maxLength: number) {
+    const normalized = String(value || '').trim();
+    return normalized ? normalized.slice(0, maxLength) : null;
   }
 
   private inferMobileSentrixDeviceCategory(value: string): ShopDeviceCategory {

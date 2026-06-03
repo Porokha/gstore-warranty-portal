@@ -339,11 +339,17 @@ const ShopAdminProductsPage = () => {
 
   const mobileSentrixRefreshMutation = useMutation(() => shopService.refreshMobileSentrixProducts(), {
     onSuccess: async (result) => {
+      const job = result.job;
+      if (job?.id) {
+        setMobileSentrixJobId(job.id);
+      }
       setMessage(
-        `MobileSentrix refresh finished. ${result.updated || 0} updated, ${result.failed || 0} failed.`,
+        result.already_running
+          ? 'MobileSentrix sync is already running. Progress is shown below.'
+          : 'MobileSentrix stock and price refresh started in the background. Progress is shown below.',
       );
       setError('');
-      await invalidateProducts();
+      await queryClient.invalidateQueries(['mobilesentrix-sync-latest']);
     },
     onError: (mutationError) => {
       setError(formatIntegrationError(mutationError, 'Failed to refresh MobileSentrix products.'));
@@ -628,10 +634,12 @@ const ShopAdminProductsPage = () => {
                     variant="outlined"
                     startIcon={<Sync />}
                     onClick={() => mobileSentrixRefreshMutation.mutate()}
-                    disabled={mobileSentrixRefreshMutation.isLoading}
+                    disabled={mobileSentrixRefreshMutation.isLoading || mobileSentrixJobRunning}
                     sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
                   >
-                    {mobileSentrixRefreshMutation.isLoading ? 'Refreshing...' : 'Refresh Existing'}
+                    {mobileSentrixRefreshMutation.isLoading || mobileSentrixJobRunning
+                      ? 'Refresh Running...'
+                      : 'Refresh Existing'}
                   </Button>
                 </Stack>
               )}
@@ -723,6 +731,7 @@ const ShopAdminProductsPage = () => {
                   <Chip size="small" label={`${mobileSentrixJob.scanned || 0} scanned`} sx={{ borderRadius: 2 }} />
                   <Chip color="success" size="small" label={`${mobileSentrixJob.created || 0} created`} sx={{ borderRadius: 2 }} />
                   <Chip color="primary" size="small" label={`${mobileSentrixJob.updated || 0} updated`} sx={{ borderRadius: 2 }} />
+                  <Chip size="small" label={`${mobileSentrixJob.skipped || 0} skipped`} sx={{ borderRadius: 2 }} />
                   <Chip color={mobileSentrixJob.failed ? 'error' : 'default'} size="small" label={`${mobileSentrixJob.failed || 0} failed`} sx={{ borderRadius: 2 }} />
                 </Stack>
               </Paper>
