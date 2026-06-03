@@ -54,6 +54,7 @@ type MobileSentrixMappedProduct = {
   source_url: string | null;
   stock_quantity: number;
   supplier_price_usd: number;
+  supplier_currency: string;
   supplier_exchange_rate: number;
   calculated_price_gel: number;
   calculation: {
@@ -222,22 +223,38 @@ export class IntegrationsService {
       throw new BadRequestException('Search query is required');
     }
 
-    const [searchResult, usdRate] = await Promise.all([
-      this.searchMobileSentrixProducts(normalizedQuery, maxResults, startIndex),
-      this.getUsdGelExchangeRate(),
-    ]);
+    const searchResult = await this.searchMobileSentrixProducts(
+      normalizedQuery,
+      maxResults,
+      startIndex,
+    );
+    const enrichedItems = await Promise.all(
+      searchResult.items.map((item) => this.enrichMobileSentrixSearchItem(item)),
+    );
+    const rateCache = new Map<string, number>();
 
-    const mappedProducts = searchResult.items
-      .map((item) => this.mapMobileSentrixProduct(item, usdRate))
-      .filter((item): item is MobileSentrixMappedProduct => Boolean(item));
+    const mappedProducts: MobileSentrixMappedProduct[] = [];
+    for (const item of enrichedItems) {
+      const currency = this.getMobileSentrixCurrency(item);
+      if (!rateCache.has(currency)) {
+        rateCache.set(currency, await this.getGelExchangeRate(currency));
+      }
+      const mapped = this.mapMobileSentrixProduct(item, rateCache.get(currency)!, currency);
+      if (mapped) {
+        mappedProducts.push(mapped);
+      }
+    }
+
+    const exchangeRates = Object.fromEntries(rateCache.entries());
 
     return {
       success: true,
       query: normalizedQuery,
       total_items: searchResult.totalItems,
-      exchange_rate: usdRate,
+      exchange_rate: exchangeRates.USD ?? exchangeRates.EUR ?? Object.values(exchangeRates)[0],
+      exchange_rates: exchangeRates,
       pricing_formula:
-        '((supplier_price_usd * 1.18 VAT) * USD_GEL + 5 GEL handling) * 1.5 margin',
+        '((supplier currency price * 1.18 VAT) * official NBG currency/GEL rate + 5 GEL handling) * 1.5 margin',
       items: mappedProducts,
     };
   }
@@ -276,6 +293,7 @@ export class IntegrationsService {
         supplier_product_id: mapped.supplier_product_id,
         supplier_sku: mapped.supplier_sku,
         supplier_price_usd: mapped.supplier_price_usd.toFixed(2),
+        supplier_currency: mapped.supplier_currency,
         supplier_exchange_rate: mapped.supplier_exchange_rate.toFixed(4),
         supplier_payload: mapped.raw,
         supplier_synced_at: new Date(),
@@ -588,7 +606,45 @@ export class IntegrationsService {
     };
   }
 
-  private async getUsdGelExchangeRate() {
+  private async enrichMobileSentrixSearchItem(item: MobileSentrixSearchItem) {
+    const productId = String(item.product_id || item.entity_id || '').trim();
+    if (!productId) {
+      return item;
+    }
+
+    const config = await this.getMobileSentrixCredentials();
+    const response = await axios.get(`${config.baseUrl}/api/rest/products/${productId}`, {
+      params: {
+        load: 'image_gallery,related_product',
+      },
+      headers: {
+        Authorization: this.buildMobileSentrixOAuthHeader(config),
+        Accept: 'application/json',
+      },
+      validateStatus: (status) => status >= 200 && status < 500,
+    });
+
+    if (response.status >= 400 || !response.data || Array.isArray(response.data)) {
+      this.logger.warn(
+        `MobileSentrix product detail failed for ${productId} with status ${response.status}: ${this.formatMobileSentrixProviderResponse(response.data)}`,
+      );
+      return item;
+    }
+
+    return {
+      ...item,
+      ...response.data,
+      product_id: productId,
+      search_payload: item,
+    };
+  }
+
+  private async getGelExchangeRate(currencyCode: string) {
+    const normalizedCurrency = currencyCode.toUpperCase();
+    if (normalizedCurrency === 'GEL') {
+      return 1;
+    }
+
     const today = this.formatTbilisiDate(new Date());
     const response = await axios.get(
       `https://nbg.gov.ge/gw/api/ct/monetarypolicy/currencies/ka/json/`,
@@ -599,74 +655,109 @@ export class IntegrationsService {
     );
     const entries = Array.isArray(response.data) ? response.data : [];
     const currencies = Array.isArray(entries[0]?.currencies) ? entries[0].currencies : [];
-    const usd = currencies.find((item: any) => item?.code === 'USD');
+    const currency = currencies.find((item: any) => item?.code === normalizedCurrency);
 
-    if (!usd?.rate || !usd?.quantity) {
-      throw new BadGatewayException('NBG USD exchange rate is unavailable.');
+    if (!currency?.rate || !currency?.quantity) {
+      throw new BadGatewayException(`NBG ${normalizedCurrency} exchange rate is unavailable.`);
     }
 
-    return Number(usd.rate) / Number(usd.quantity);
+    return Number(currency.rate) / Number(currency.quantity);
+  }
+
+  private getMobileSentrixCurrency(item: MobileSentrixSearchItem) {
+    return String(item.display_currency || item.currency || 'EUR').trim().toUpperCase() || 'EUR';
   }
 
   private mapMobileSentrixProduct(
     item: MobileSentrixSearchItem,
-    usdGelRate: number,
+    currencyGelRate: number,
+    currency: string,
   ): MobileSentrixMappedProduct | null {
-    const supplierProductId = String(item.product_id || '').trim();
-    const title = String(item.title || '').trim();
-    const supplierPriceUsd = Number(item.price ?? item.list_price ?? 0);
+    const supplierProductId = String(item.product_id || item.entity_id || '').trim();
+    const title = String(item.name || item.title || '').trim();
+    const supplierPrice = Number(
+      item.customer_price ??
+        item.final_price_with_tax ??
+        item.final_price_without_tax ??
+        item.price ??
+        item.list_price ??
+        0,
+    );
 
-    if (!supplierProductId || !title || !Number.isFinite(supplierPriceUsd)) {
+    if (!supplierProductId || !title || !Number.isFinite(supplierPrice)) {
       return null;
     }
 
-    const stockQuantity = Math.max(Number.parseInt(String(item.quantity ?? 0), 10) || 0, 0);
-    const description = this.stripHtml(String(item.description || '')).slice(0, 1000) || null;
-    const tags = Array.isArray(item.tags) ? item.tags.map((tag) => String(tag)) : [];
-    const searchable = `${title} ${description || ''} ${tags.join(' ')}`.toLowerCase();
-    const finalPrice = this.calculateMobileSentrixPrice(supplierPriceUsd, usdGelRate);
+    const stockQuantity = Math.max(
+      Number.parseInt(String(item.in_stock_qty ?? item.quantity ?? 0), 10) || 0,
+      0,
+    );
+    const description =
+      this.stripHtml(String(item.description || item.short_description || '')).slice(0, 1000) ||
+      null;
+    const tags = this.normalizeMobileSentrixTags(item.tags);
+    const manufacturer = this.normalizeTextValue(item.manufacturer_text);
+    const model = this.normalizeTextValue(item.model_text || item.device_model_text);
+    const productType = this.normalizeTextValue(item.front_position_text);
+    const qualityBrand = this.normalizeTextValue(item.brand_text || item.product_badges_text);
+    const searchable = [
+      title,
+      description,
+      tags.join(' '),
+      manufacturer,
+      model,
+      productType,
+      qualityBrand,
+      item.hst_description,
+      `attribute_set_${item.attribute_set || ''}`,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    const finalPrice = this.calculateMobileSentrixPrice(supplierPrice, currencyGelRate);
 
     return {
       supplier: ShopProductSupplier.MOBILESENTRIX,
       supplier_product_id: supplierProductId,
-      supplier_sku: String(item.product_code || '').trim() || null,
+      supplier_sku: String(item.new_sku || item.sku || item.product_code || '').trim() || null,
       title,
       slug: this.slugify(`mobilesentrix-${supplierProductId}-${title}`),
-      brand: this.inferMobileSentrixBrand(searchable),
+      brand: manufacturer || this.inferMobileSentrixBrand(searchable),
       device_category: this.inferMobileSentrixDeviceCategory(searchable),
       part_category: this.inferMobileSentrixPartCategory(searchable),
       inventory_source: this.inferMobileSentrixInventorySource(searchable),
-      issue_label: tags.slice(0, 4).join(', ') || null,
+      issue_label: [model, productType, qualityBrand].filter(Boolean).join(' • ') || null,
       description,
-      image_url: String(item.image_link || '').trim().slice(0, 500) || null,
-      source_url: String(item.link || '').trim() || null,
+      image_url: String(item.image_url || item.default_image || item.image_link || '').trim().slice(0, 500) || null,
+      source_url: String(item.url || item.link || '').trim() || null,
       stock_quantity: stockQuantity,
-      supplier_price_usd: Number(supplierPriceUsd.toFixed(2)),
-      supplier_exchange_rate: Number(usdGelRate.toFixed(4)),
+      supplier_price_usd: Number(supplierPrice.toFixed(2)),
+      supplier_currency: currency,
+      supplier_exchange_rate: Number(currencyGelRate.toFixed(4)),
       calculated_price_gel: finalPrice,
       calculation: {
         vat_rate: this.mobileSentrixVatRate,
         handling_fee_gel: this.mobileSentrixHandlingFeeGel,
         margin_rate: this.mobileSentrixMarginRate,
         formula:
-          '((supplier_price_usd * 1.18 VAT) * USD_GEL + 5 GEL handling) * 1.5 margin',
+          `((supplier_price_${currency.toLowerCase()} * 1.18 VAT) * ${currency}_GEL + 5 GEL handling) * 1.5 margin`,
       },
       raw: item,
     };
   }
 
-  private calculateMobileSentrixPrice(supplierPriceUsd: number, usdGelRate: number) {
-    const withVatUsd = supplierPriceUsd * (1 + this.mobileSentrixVatRate);
-    const landedGel = withVatUsd * usdGelRate + this.mobileSentrixHandlingFeeGel;
+  private calculateMobileSentrixPrice(supplierPrice: number, currencyGelRate: number) {
+    const withVat = supplierPrice * (1 + this.mobileSentrixVatRate);
+    const landedGel = withVat * currencyGelRate + this.mobileSentrixHandlingFeeGel;
     const withMarginGel = landedGel * (1 + this.mobileSentrixMarginRate);
     return Number(withMarginGel.toFixed(2));
   }
 
   private inferMobileSentrixDeviceCategory(value: string): ShopDeviceCategory {
-    if (/(macbook|laptop|notebook|dell|hp |lenovo|thinkpad|asus|acer|surface)/i.test(value)) {
+    if (/(attribute_set.*12|macbook|laptop|notebook|dell|hp |lenovo|thinkpad|asus|acer|surface)/i.test(value)) {
       return ShopDeviceCategory.LAPTOPS;
     }
-    if (/(case|cable|charger|adapter|tool|adhesive|protector)/i.test(value)) {
+    if (/(attribute_set.*17|attribute_set.*20|tool|tools|case|cable|charger|adapter|adhesive|protector)/i.test(value)) {
       return ShopDeviceCategory.ACCESSORIES;
     }
     return ShopDeviceCategory.SMARTPHONES;
@@ -684,7 +775,7 @@ export class IntegrationsService {
   }
 
   private inferMobileSentrixInventorySource(value: string): ShopInventorySource {
-    if (/(oem|original|genuine|service pack)/i.test(value)) {
+    if (/(oem|original|genuine|service pack|premium|refurbished)/i.test(value)) {
       return ShopInventorySource.OEM;
     }
     return ShopInventorySource.THIRD_PARTY;
@@ -710,6 +801,29 @@ export class IntegrationsService {
     ];
     const brand = brands.find((candidate) => value.includes(candidate));
     return brand ? brand.charAt(0).toUpperCase() + brand.slice(1) : null;
+  }
+
+  private normalizeMobileSentrixTags(value: unknown) {
+    if (Array.isArray(value)) {
+      return value.map((tag) => String(tag).trim()).filter(Boolean);
+    }
+
+    return String(value || '')
+      .split('[:ATTR:]')
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+  }
+
+  private normalizeTextValue(value: unknown) {
+    if (Array.isArray(value)) {
+      return value.map((item) => String(item).trim()).filter(Boolean).join(', ');
+    }
+
+    if (value === false || value === null || value === undefined) {
+      return null;
+    }
+
+    return String(value).trim() || null;
   }
 
   private async ensureUniqueProductSlug(value: string, excludeId?: number) {

@@ -868,10 +868,12 @@ const ShopAdminProductsPage = () => {
                         </TableCell>
                         <TableCell>
                           <Typography sx={{ fontWeight: 700 }}>
-                            ${Number(product.supplier_price_usd || 0).toFixed(2)}
+                            {product.supplier_currency || 'EUR'}{' '}
+                            {Number(product.supplier_price_usd || 0).toFixed(2)}
                           </Typography>
                           <Typography sx={{ fontSize: '12px', color: '#667085' }}>
-                            USD/GEL {Number(product.supplier_exchange_rate || 0).toFixed(4)}
+                            {(product.supplier_currency || 'EUR')}/GEL{' '}
+                            {Number(product.supplier_exchange_rate || 0).toFixed(4)}
                           </Typography>
                         </TableCell>
                         <TableCell>

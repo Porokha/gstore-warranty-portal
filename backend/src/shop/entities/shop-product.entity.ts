@@ -111,6 +111,9 @@ export class ShopProduct {
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   supplier_price_usd: string | null;
 
+  @Column({ length: 10, nullable: true })
+  supplier_currency: string | null;
+
   @Column({ type: 'decimal', precision: 10, scale: 4, nullable: true })
   supplier_exchange_rate: string | null;
 

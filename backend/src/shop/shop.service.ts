@@ -588,6 +588,7 @@ export class ShopService {
             supplier_sku: product.supplier_sku,
             supplier_price_usd:
               product.supplier_price_usd !== null ? Number(product.supplier_price_usd) : null,
+            supplier_currency: product.supplier_currency,
             supplier_exchange_rate:
               product.supplier_exchange_rate !== null
                 ? Number(product.supplier_exchange_rate)
