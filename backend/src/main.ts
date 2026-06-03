@@ -26,8 +26,10 @@ async function bootstrap() {
         'http://3.68.134.145:3001',
         'http://zezva.ge',
         'https://zezva.ge',
+        'https://zezva.ge:3001',
         'http://www.zezva.ge',
         'https://www.zezva.ge',
+        'https://www.zezva.ge:3001',
       ].filter(Boolean),
     ),
   );

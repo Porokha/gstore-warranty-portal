@@ -149,6 +149,7 @@ const ApiKeysSettings = () => {
     async () => {
       const response = await api.get('/integrations/mobilesentrix/test-search', {
         params: { q: mobileSentrixTestQuery },
+        skipAuthRedirect: true,
       });
       return response.data;
     },

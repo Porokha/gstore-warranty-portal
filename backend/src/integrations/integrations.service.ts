@@ -1,6 +1,6 @@
 import {
+  BadGatewayException,
   BadRequestException,
-  HttpException,
   Injectable,
   Logger,
   NotFoundException,
@@ -152,10 +152,12 @@ export class IntegrationsService {
     });
 
     if (response.status >= 400) {
-      throw new HttpException(
-        response.data?.message || 'MobileSentrix search request failed',
-        response.status,
-      );
+      throw new BadGatewayException({
+        message: response.data?.message || 'MobileSentrix search request failed',
+        provider: 'mobilesentrix',
+        provider_status: response.status,
+        provider_response: response.data,
+      });
     }
 
     const data = response.data?.data || {};
