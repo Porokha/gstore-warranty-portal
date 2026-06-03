@@ -62,6 +62,39 @@ export class IntegrationsController {
     return this.integrationsService.testMobileSentrixSearch(q || 'iphone lcd');
   }
 
+  @Get('mobilesentrix/products/preview')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async previewMobileSentrixProducts(
+    @Query('q') q?: string,
+    @Query('max_results') maxResults?: string,
+    @Query('start_index') startIndex?: string,
+  ) {
+    return this.integrationsService.previewMobileSentrixProducts(
+      q || 'iphone lcd',
+      Number(maxResults || 10),
+      Number(startIndex || 0),
+    );
+  }
+
+  @Post('mobilesentrix/products/sync')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async syncMobileSentrixProducts(
+    @Body()
+    body: {
+      q?: string;
+      max_results?: number;
+      start_index?: number;
+    },
+  ) {
+    return this.integrationsService.syncMobileSentrixProducts(
+      body.q || 'iphone lcd',
+      Number(body.max_results || 25),
+      Number(body.start_index || 0),
+    );
+  }
+
   @Post('mobilesentrix/webhook')
   @HttpCode(HttpStatus.OK)
   async handleMobileSentrixWebhook(

@@ -25,6 +25,7 @@ import {
   ShopInventorySource,
   ShopPartCategory,
   ShopProduct,
+  ShopProductSupplier,
 } from './entities/shop-product.entity';
 import { ShopOrder, ShopOrderStatus } from './entities/shop-order.entity';
 
@@ -106,6 +107,7 @@ export class ShopService {
       stock_quantity: createDto.stock_quantity ?? 0,
       sort_order: createDto.sort_order ?? 0,
       is_active: createDto.is_active ?? true,
+      supplier: ShopProductSupplier.MANUAL,
       deleted_at: null,
     });
 
@@ -235,10 +237,11 @@ export class ShopService {
           sale_price: this.toNullableMoney(parsed.sale_price),
           service_price: this.toNullableMoney(parsed.service_price),
           stock_quantity: parsed.stock_quantity ?? 0,
-          sort_order: parsed.sort_order ?? nextAutoSortOrder,
-          is_active: parsed.is_active ?? true,
-          deleted_at: null,
-        });
+      sort_order: parsed.sort_order ?? nextAutoSortOrder,
+      is_active: parsed.is_active ?? true,
+      supplier: ShopProductSupplier.MANUAL,
+      deleted_at: null,
+    });
         await this.shopProductsRepository.save(product);
         if (parsed.sort_order == null) {
           nextAutoSortOrder += 10;
@@ -580,6 +583,16 @@ export class ShopService {
       is_active: product.is_active,
       ...(admin
         ? {
+            supplier: product.supplier,
+            supplier_product_id: product.supplier_product_id,
+            supplier_sku: product.supplier_sku,
+            supplier_price_usd:
+              product.supplier_price_usd !== null ? Number(product.supplier_price_usd) : null,
+            supplier_exchange_rate:
+              product.supplier_exchange_rate !== null
+                ? Number(product.supplier_exchange_rate)
+                : null,
+            supplier_synced_at: product.supplier_synced_at,
             deleted_at: product.deleted_at,
             created_at: product.created_at,
             updated_at: product.updated_at,

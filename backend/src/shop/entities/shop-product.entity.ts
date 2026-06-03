@@ -28,6 +28,11 @@ export enum ShopInventorySource {
   THIRD_PARTY = 'third-party',
 }
 
+export enum ShopProductSupplier {
+  MANUAL = 'manual',
+  MOBILESENTRIX = 'mobilesentrix',
+}
+
 @Entity('shop_products')
 export class ShopProduct {
   @PrimaryGeneratedColumn()
@@ -89,6 +94,31 @@ export class ShopProduct {
 
   @Column({ type: 'boolean', default: true })
   is_active: boolean;
+
+  @Column({
+    type: 'enum',
+    enum: ['manual', 'mobilesentrix'],
+    default: 'manual',
+  })
+  supplier: ShopProductSupplier;
+
+  @Column({ nullable: true })
+  supplier_product_id: string | null;
+
+  @Column({ nullable: true })
+  supplier_sku: string | null;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  supplier_price_usd: string | null;
+
+  @Column({ type: 'decimal', precision: 10, scale: 4, nullable: true })
+  supplier_exchange_rate: string | null;
+
+  @Column({ type: 'json', nullable: true })
+  supplier_payload: Record<string, any> | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  supplier_synced_at: Date | null;
 
   @Column({ type: 'datetime', nullable: true })
   deleted_at: Date | null;

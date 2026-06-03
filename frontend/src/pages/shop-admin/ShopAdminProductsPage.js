@@ -29,6 +29,8 @@ import {
   FileUpload,
   RestoreFromTrash,
   Save,
+  Search,
+  Sync,
   UploadFile,
 } from '@mui/icons-material';
 import { shopService } from '../../services/shopService';
@@ -90,6 +92,8 @@ const ShopAdminProductsPage = () => {
   const [selectedId, setSelectedId] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [form, setForm] = useState(emptyForm);
+  const [mobileSentrixQuery, setMobileSentrixQuery] = useState('iphone lcd');
+  const [mobileSentrixResult, setMobileSentrixResult] = useState(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [confirmState, setConfirmState] = useState({
@@ -226,6 +230,66 @@ const ShopAdminProductsPage = () => {
       setMessage('');
     },
   });
+
+  const formatIntegrationError = (mutationError, fallback) => {
+    const data = mutationError.response?.data;
+    const providerMessage =
+      data?.provider_response?.messages?.error?.[0]?.message ||
+      data?.provider_response?.message ||
+      data?.provider_response?.error;
+    return [
+      data?.message || mutationError.message || fallback,
+      data?.provider_status ? `Provider status: ${data.provider_status}` : '',
+      providerMessage ? `Provider response: ${providerMessage}` : '',
+    ]
+      .filter(Boolean)
+      .join(' • ');
+  };
+
+  const mobileSentrixPreviewMutation = useMutation(
+    () =>
+      shopService.previewMobileSentrixProducts({
+        query: mobileSentrixQuery,
+        maxResults: 10,
+        startIndex: 0,
+      }),
+    {
+      onSuccess: (result) => {
+        setMobileSentrixResult(result);
+        setMessage(
+          `MobileSentrix preview loaded. ${result.items?.length || 0} mapped items, ${result.total_items || 0} total matches.`,
+        );
+        setError('');
+      },
+      onError: (mutationError) => {
+        setMobileSentrixResult(null);
+        setError(formatIntegrationError(mutationError, 'Failed to preview MobileSentrix products.'));
+        setMessage('');
+      },
+    },
+  );
+
+  const mobileSentrixSyncMutation = useMutation(
+    () =>
+      shopService.syncMobileSentrixProducts({
+        query: mobileSentrixQuery,
+        maxResults: 25,
+        startIndex: 0,
+      }),
+    {
+      onSuccess: async (result) => {
+        setMessage(
+          `MobileSentrix sync finished. ${result.created || 0} created, ${result.updated || 0} updated.`,
+        );
+        setError('');
+        await invalidateProducts();
+      },
+      onError: (mutationError) => {
+        setError(formatIntegrationError(mutationError, 'Failed to sync MobileSentrix products.'));
+        setMessage('');
+      },
+    },
+  );
 
   const selectedProduct = useMemo(
     () => products.find((product) => product.id === selectedId) || null,
@@ -415,7 +479,7 @@ const ShopAdminProductsPage = () => {
                 <Typography sx={{ color: '#667085', mt: 0.75 }}>
                   {productSource === 'manual'
                     ? 'Catalog management, CSV import, image handling, and trash recovery.'
-                    : 'Separate workspace reserved for MobileSentrix products while the API contract is being finalized.'}
+                    : 'Preview supplier products, apply Zezva pricing, and sync selected search pages into the shop catalog.'}
                 </Typography>
               </Box>
               {productSource === 'manual' ? (
@@ -478,7 +542,35 @@ const ShopAdminProductsPage = () => {
                     </>
                   )}
                 </Stack>
-              ) : null}
+              ) : (
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.25} sx={{ minWidth: { md: 420 } }}>
+                  <TextField
+                    size="small"
+                    label="Search MobileSentrix"
+                    value={mobileSentrixQuery}
+                    onChange={(event) => setMobileSentrixQuery(event.target.value)}
+                    sx={{ minWidth: { md: 220 } }}
+                  />
+                  <Button
+                    variant="outlined"
+                    startIcon={<Search />}
+                    onClick={() => mobileSentrixPreviewMutation.mutate()}
+                    disabled={mobileSentrixPreviewMutation.isLoading || !mobileSentrixQuery.trim()}
+                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
+                  >
+                    {mobileSentrixPreviewMutation.isLoading ? 'Loading...' : 'Preview'}
+                  </Button>
+                  <Button
+                    variant="contained"
+                    startIcon={<Sync />}
+                    onClick={() => mobileSentrixSyncMutation.mutate()}
+                    disabled={mobileSentrixSyncMutation.isLoading || !mobileSentrixQuery.trim()}
+                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
+                  >
+                    {mobileSentrixSyncMutation.isLoading ? 'Syncing...' : 'Sync 25'}
+                  </Button>
+                </Stack>
+              )}
             </Stack>
 
             {productSource === 'manual' ? (
@@ -527,7 +619,7 @@ const ShopAdminProductsPage = () => {
             )}
             {productSource === 'mobilesentrix' && (
               <Alert severity="info" sx={{ mt: 2 }}>
-                This tab is intentionally empty for now. We will connect the real product feed only after MobileSentrix confirms the API payload and callback format.
+                Pricing formula: supplier USD price + 18% VAT, converted by official NBG USD/GEL rate, plus ₾5 handling, then +50% Zezva margin. Synced products are public only while supplier stock is above zero.
               </Alert>
             )}
           </Box>
@@ -704,28 +796,118 @@ const ShopAdminProductsPage = () => {
               </Table>
             </Box>
           ) : (
-            <Box sx={{ p: 3 }}>
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 3,
-                  borderRadius: 3,
-                  border: '1px dashed #c7d4e6',
-                  background: '#f8fbff',
-                }}
-              >
-                <Typography sx={{ fontSize: '18px', fontWeight: 800, color: '#172033' }}>
-                  MobileSentrix workspace reserved
-                </Typography>
-                <Typography sx={{ color: '#667085', mt: 1 }}>
-                  The manual product form stays unchanged. This separate area will hold MobileSentrix-sourced products once we see their actual API response shape, inventory fields, and image structure.
-                </Typography>
-                <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 2 }}>
-                  <Chip label="Separate catalog tab" sx={{ borderRadius: 2 }} />
-                  <Chip label="No sync active yet" sx={{ borderRadius: 2 }} />
-                  <Chip label="Waiting for API contract" sx={{ borderRadius: 2 }} />
-                </Stack>
-              </Paper>
+            <Box sx={{ overflowX: 'auto' }}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Product</TableCell>
+                    <TableCell>Supplier</TableCell>
+                    <TableCell>Zezva Price</TableCell>
+                    <TableCell>Mapping</TableCell>
+                    <TableCell>Stock</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {mobileSentrixPreviewMutation.isLoading &&
+                    Array.from({ length: 5 }).map((_, index) => (
+                      <TableRow key={`mobilesentrix-loading-${index}`}>
+                        <TableCell>
+                          <Stack direction="row" spacing={1.5} alignItems="center">
+                            <Skeleton variant="rounded" width={44} height={44} />
+                            <Box>
+                              <Skeleton variant="text" width={220} />
+                              <Skeleton variant="text" width={140} />
+                            </Box>
+                          </Stack>
+                        </TableCell>
+                        <TableCell><Skeleton variant="text" width={90} /></TableCell>
+                        <TableCell><Skeleton variant="text" width={90} /></TableCell>
+                        <TableCell><Skeleton variant="rounded" width={160} height={24} /></TableCell>
+                        <TableCell><Skeleton variant="text" width={50} /></TableCell>
+                      </TableRow>
+                    ))}
+                  {!mobileSentrixPreviewMutation.isLoading &&
+                    !mobileSentrixResult?.items?.length && (
+                      <TableRow>
+                        <TableCell colSpan={5}>
+                          Search MobileSentrix to preview mapped products before syncing.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  {!mobileSentrixPreviewMutation.isLoading &&
+                    mobileSentrixResult?.items?.map((product) => (
+                      <TableRow key={product.supplier_product_id} hover>
+                        <TableCell>
+                          <Stack direction="row" spacing={1.5} alignItems="center">
+                            {product.image_url ? (
+                              <Box
+                                component="img"
+                                src={product.image_url}
+                                alt={product.title}
+                                sx={{
+                                  width: 44,
+                                  height: 44,
+                                  borderRadius: 2,
+                                  objectFit: 'contain',
+                                  border: '1px solid #dce4f0',
+                                  background: '#f8fbff',
+                                }}
+                              />
+                            ) : null}
+                            <Box>
+                              <Typography sx={{ fontWeight: 800, color: '#172033' }}>
+                                {product.title}
+                              </Typography>
+                              <Typography sx={{ fontSize: '12px', color: '#667085' }}>
+                                {[product.brand, product.supplier_sku || product.supplier_product_id]
+                                  .filter(Boolean)
+                                  .join(' • ')}
+                              </Typography>
+                            </Box>
+                          </Stack>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontWeight: 700 }}>
+                            ${Number(product.supplier_price_usd || 0).toFixed(2)}
+                          </Typography>
+                          <Typography sx={{ fontSize: '12px', color: '#667085' }}>
+                            USD/GEL {Number(product.supplier_exchange_rate || 0).toFixed(4)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontWeight: 800, color: '#172033' }}>
+                            ₾{Number(product.calculated_price_gel || 0).toFixed(2)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Stack direction="row" spacing={1} flexWrap="wrap">
+                            <Chip size="small" label={product.device_category} sx={{ borderRadius: 2 }} />
+                            <Chip
+                              size="small"
+                              variant="outlined"
+                              label={product.part_category}
+                              sx={{ borderRadius: 2 }}
+                            />
+                            <Chip
+                              size="small"
+                              variant="outlined"
+                              label={product.inventory_source}
+                              sx={{ borderRadius: 2 }}
+                            />
+                          </Stack>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            size="small"
+                            color={product.stock_quantity > 0 ? 'success' : 'default'}
+                            label={product.stock_quantity > 0 ? `${product.stock_quantity} in stock` : 'Out of stock'}
+                            sx={{ borderRadius: 2 }}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
             </Box>
           )}
         </Paper>
@@ -736,14 +918,33 @@ const ShopAdminProductsPage = () => {
           {productSource === 'mobilesentrix' ? (
             <Stack spacing={2}>
               <Typography sx={{ fontSize: '22px', fontWeight: 800, color: '#172033' }}>
-                MobileSentrix product management
+                MobileSentrix sync rules
               </Typography>
               <Typography sx={{ color: '#667085' }}>
-                This side panel is intentionally on standby. Once MobileSentrix shares the live payload, we can decide whether these products should remain read-only, sync into a separate table, or be partially editable after import.
+                Products are matched by MobileSentrix product id. Existing supplier products update in place; new supplier products are added with MobileSentrix metadata.
               </Typography>
               <Alert severity="info">
-                Current scope: create a separate tab only. No import, mapping, or data mutation logic is enabled yet.
+                Current sync mode is manual. Use Preview first, then Sync 25 for the first page of the current search. Automatic stock refresh can be scheduled after we validate mappings.
               </Alert>
+              <Paper elevation={0} sx={{ p: 2, borderRadius: 3, border: '1px solid #dce4f0' }}>
+                <Typography sx={{ fontWeight: 800, color: '#172033', mb: 1 }}>
+                  Price calculation
+                </Typography>
+                <Typography sx={{ color: '#667085', fontSize: '14px' }}>
+                  ((USD price × 1.18 VAT) × NBG USD/GEL + ₾5 handling) × 1.5 margin.
+                </Typography>
+              </Paper>
+              {mobileSentrixResult && (
+                <Paper elevation={0} sx={{ p: 2, borderRadius: 3, border: '1px solid #dce4f0' }}>
+                  <Typography sx={{ fontWeight: 800, color: '#172033' }}>
+                    Last preview
+                  </Typography>
+                  <Typography sx={{ color: '#667085', fontSize: '14px', mt: 0.75 }}>
+                    {mobileSentrixResult.total_items} total matches. NBG USD/GEL rate:{' '}
+                    {Number(mobileSentrixResult.exchange_rate || 0).toFixed(4)}.
+                  </Typography>
+                </Paper>
+              )}
             </Stack>
           ) : (
             <>

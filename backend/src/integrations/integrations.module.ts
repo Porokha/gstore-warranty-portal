@@ -5,6 +5,7 @@ import { SettingsModule } from '../settings/settings.module';
 import { SmsModule } from '../sms/sms.module';
 import { WarrantiesModule } from '../warranties/warranties.module';
 import { Warranty } from '../warranties/entities/warranty.entity';
+import { ShopProduct } from '../shop/entities/shop-product.entity';
 import { IntegrationsController } from './integrations.controller';
 import { IntegrationsService } from './integrations.service';
 import { PosWarrantyInboundEvent } from './entities/pos-warranty-inbound-event.entity';
@@ -12,7 +13,7 @@ import { PosWarrantyInboundEvent } from './entities/pos-warranty-inbound-event.e
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([Warranty, PosWarrantyInboundEvent]),
+    TypeOrmModule.forFeature([Warranty, PosWarrantyInboundEvent, ShopProduct]),
     SettingsModule,
     SmsModule,
     WarrantiesModule,

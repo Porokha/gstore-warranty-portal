@@ -12,6 +12,13 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SettingsService } from '../settings/settings.service';
+import {
+  ShopDeviceCategory,
+  ShopInventorySource,
+  ShopPartCategory,
+  ShopProduct,
+  ShopProductSupplier,
+} from '../shop/entities/shop-product.entity';
 import { SmsService } from '../sms/sms.service';
 import { Warranty, CreatedSource } from '../warranties/entities/warranty.entity';
 import { WarrantiesService } from '../warranties/warranties.service';
@@ -30,6 +37,33 @@ type MobileSentrixCredentials = {
   accessToken: string;
   accessTokenSecret: string;
 };
+type MobileSentrixSearchItem = Record<string, any>;
+type MobileSentrixMappedProduct = {
+  supplier: ShopProductSupplier.MOBILESENTRIX;
+  supplier_product_id: string;
+  supplier_sku: string | null;
+  title: string;
+  slug: string;
+  brand: string | null;
+  device_category: ShopDeviceCategory;
+  part_category: ShopPartCategory;
+  inventory_source: ShopInventorySource;
+  issue_label: string | null;
+  description: string | null;
+  image_url: string | null;
+  source_url: string | null;
+  stock_quantity: number;
+  supplier_price_usd: number;
+  supplier_exchange_rate: number;
+  calculated_price_gel: number;
+  calculation: {
+    vat_rate: number;
+    handling_fee_gel: number;
+    margin_rate: number;
+    formula: string;
+  };
+  raw: MobileSentrixSearchItem;
+};
 
 @Injectable()
 export class IntegrationsService {
@@ -39,12 +73,17 @@ export class IntegrationsService {
   private readonly warrantyYears = 2;
   private readonly mobileSentrixCallbackPath = '/api/integrations/mobilesentrix/oauth/callback';
   private readonly mobileSentrixWebhookPath = '/api/integrations/mobilesentrix/webhook';
+  private readonly mobileSentrixVatRate = 0.18;
+  private readonly mobileSentrixHandlingFeeGel = 5;
+  private readonly mobileSentrixMarginRate = 0.5;
 
   constructor(
     @InjectRepository(PosWarrantyInboundEvent)
     private posInboundEventsRepository: Repository<PosWarrantyInboundEvent>,
     @InjectRepository(Warranty)
     private warrantiesRepository: Repository<Warranty>,
+    @InjectRepository(ShopProduct)
+    private shopProductsRepository: Repository<ShopProduct>,
     private settingsService: SettingsService,
     private smsService: SmsService,
     private warrantiesService: WarrantiesService,
@@ -174,6 +213,97 @@ export class IntegrationsService {
       categories_count: categories.length,
       items_count: items.length,
       first_items: items,
+    };
+  }
+
+  async previewMobileSentrixProducts(query: string, maxResults = 10, startIndex = 0) {
+    const normalizedQuery = query.trim();
+    if (!normalizedQuery) {
+      throw new BadRequestException('Search query is required');
+    }
+
+    const [searchResult, usdRate] = await Promise.all([
+      this.searchMobileSentrixProducts(normalizedQuery, maxResults, startIndex),
+      this.getUsdGelExchangeRate(),
+    ]);
+
+    const mappedProducts = searchResult.items
+      .map((item) => this.mapMobileSentrixProduct(item, usdRate))
+      .filter((item): item is MobileSentrixMappedProduct => Boolean(item));
+
+    return {
+      success: true,
+      query: normalizedQuery,
+      total_items: searchResult.totalItems,
+      exchange_rate: usdRate,
+      pricing_formula:
+        '((supplier_price_usd * 1.18 VAT) * USD_GEL + 5 GEL handling) * 1.5 margin',
+      items: mappedProducts,
+    };
+  }
+
+  async syncMobileSentrixProducts(query: string, maxResults = 25, startIndex = 0) {
+    const preview = await this.previewMobileSentrixProducts(query, maxResults, startIndex);
+    let created = 0;
+    let updated = 0;
+    const synced: Array<{ id: number; title: string; action: 'created' | 'updated' }> = [];
+
+    for (const mapped of preview.items) {
+      const existing = await this.shopProductsRepository.findOne({
+        where: {
+          supplier: ShopProductSupplier.MOBILESENTRIX,
+          supplier_product_id: mapped.supplier_product_id,
+        },
+      });
+
+      const payload = {
+        title: mapped.title,
+        brand: mapped.brand,
+        slug: existing?.slug || (await this.ensureUniqueProductSlug(mapped.slug)),
+        device_category: mapped.device_category,
+        part_category: mapped.part_category,
+        inventory_source: mapped.inventory_source,
+        issue_label: mapped.issue_label,
+        description: mapped.description,
+        image_url: mapped.image_url,
+        price: mapped.calculated_price_gel.toFixed(2),
+        sale_price: null,
+        service_price: null,
+        stock_quantity: mapped.stock_quantity,
+        sort_order: existing?.sort_order ?? (await this.getNextShopProductSortOrder()),
+        is_active: mapped.stock_quantity > 0,
+        supplier: ShopProductSupplier.MOBILESENTRIX,
+        supplier_product_id: mapped.supplier_product_id,
+        supplier_sku: mapped.supplier_sku,
+        supplier_price_usd: mapped.supplier_price_usd.toFixed(2),
+        supplier_exchange_rate: mapped.supplier_exchange_rate.toFixed(4),
+        supplier_payload: mapped.raw,
+        supplier_synced_at: new Date(),
+        deleted_at: null,
+      };
+
+      if (existing) {
+        await this.shopProductsRepository.save({ ...existing, ...payload });
+        updated += 1;
+        synced.push({ id: existing.id, title: mapped.title, action: 'updated' });
+        continue;
+      }
+
+      const product = this.shopProductsRepository.create(payload);
+      const saved = await this.shopProductsRepository.save(product);
+      created += 1;
+      synced.push({ id: saved.id, title: mapped.title, action: 'created' });
+    }
+
+    return {
+      success: true,
+      query: preview.query,
+      total_items: preview.total_items,
+      exchange_rate: preview.exchange_rate,
+      created,
+      updated,
+      synced_count: synced.length,
+      synced,
     };
   }
 
@@ -418,6 +548,216 @@ export class IntegrationsService {
     } catch {
       return 'unserializable response';
     }
+  }
+
+  private async searchMobileSentrixProducts(query: string, maxResults: number, startIndex: number) {
+    const config = await this.getMobileSentrixCredentials();
+    const safeMaxResults = Math.min(Math.max(Number(maxResults) || 10, 1), 100);
+    const safeStartIndex = Math.max(Number(startIndex) || 0, 0);
+    const response = await axios.get(`${config.baseUrl}/api/rest/searchproduct`, {
+      params: {
+        q: query,
+        max_results: safeMaxResults,
+        start_index: safeStartIndex,
+      },
+      headers: {
+        Authorization: this.buildMobileSentrixOAuthHeader(config),
+        Accept: 'application/json',
+      },
+      validateStatus: (status) => status >= 200 && status < 500,
+    });
+
+    if (response.status >= 400) {
+      this.logger.warn(
+        `MobileSentrix product search failed with status ${response.status}: ${this.formatMobileSentrixProviderResponse(response.data)}`,
+      );
+      throw new BadGatewayException({
+        message: response.data?.message || 'MobileSentrix product search request failed',
+        provider: 'mobilesentrix',
+        provider_status: response.status,
+        provider_response: response.data,
+      });
+    }
+
+    const data = response.data?.data || {};
+    const items = Array.isArray(data.items) ? data.items : [];
+
+    return {
+      totalItems: Number(data.total_items || items.length || 0),
+      items,
+    };
+  }
+
+  private async getUsdGelExchangeRate() {
+    const today = this.formatTbilisiDate(new Date());
+    const response = await axios.get(
+      `https://nbg.gov.ge/gw/api/ct/monetarypolicy/currencies/ka/json/`,
+      {
+        params: { date: today },
+        timeout: 10000,
+      },
+    );
+    const entries = Array.isArray(response.data) ? response.data : [];
+    const currencies = Array.isArray(entries[0]?.currencies) ? entries[0].currencies : [];
+    const usd = currencies.find((item: any) => item?.code === 'USD');
+
+    if (!usd?.rate || !usd?.quantity) {
+      throw new BadGatewayException('NBG USD exchange rate is unavailable.');
+    }
+
+    return Number(usd.rate) / Number(usd.quantity);
+  }
+
+  private mapMobileSentrixProduct(
+    item: MobileSentrixSearchItem,
+    usdGelRate: number,
+  ): MobileSentrixMappedProduct | null {
+    const supplierProductId = String(item.product_id || '').trim();
+    const title = String(item.title || '').trim();
+    const supplierPriceUsd = Number(item.price ?? item.list_price ?? 0);
+
+    if (!supplierProductId || !title || !Number.isFinite(supplierPriceUsd)) {
+      return null;
+    }
+
+    const stockQuantity = Math.max(Number.parseInt(String(item.quantity ?? 0), 10) || 0, 0);
+    const description = this.stripHtml(String(item.description || '')).slice(0, 1000) || null;
+    const tags = Array.isArray(item.tags) ? item.tags.map((tag) => String(tag)) : [];
+    const searchable = `${title} ${description || ''} ${tags.join(' ')}`.toLowerCase();
+    const finalPrice = this.calculateMobileSentrixPrice(supplierPriceUsd, usdGelRate);
+
+    return {
+      supplier: ShopProductSupplier.MOBILESENTRIX,
+      supplier_product_id: supplierProductId,
+      supplier_sku: String(item.product_code || '').trim() || null,
+      title,
+      slug: this.slugify(`mobilesentrix-${supplierProductId}-${title}`),
+      brand: this.inferMobileSentrixBrand(searchable),
+      device_category: this.inferMobileSentrixDeviceCategory(searchable),
+      part_category: this.inferMobileSentrixPartCategory(searchable),
+      inventory_source: this.inferMobileSentrixInventorySource(searchable),
+      issue_label: tags.slice(0, 4).join(', ') || null,
+      description,
+      image_url: String(item.image_link || '').trim().slice(0, 500) || null,
+      source_url: String(item.link || '').trim() || null,
+      stock_quantity: stockQuantity,
+      supplier_price_usd: Number(supplierPriceUsd.toFixed(2)),
+      supplier_exchange_rate: Number(usdGelRate.toFixed(4)),
+      calculated_price_gel: finalPrice,
+      calculation: {
+        vat_rate: this.mobileSentrixVatRate,
+        handling_fee_gel: this.mobileSentrixHandlingFeeGel,
+        margin_rate: this.mobileSentrixMarginRate,
+        formula:
+          '((supplier_price_usd * 1.18 VAT) * USD_GEL + 5 GEL handling) * 1.5 margin',
+      },
+      raw: item,
+    };
+  }
+
+  private calculateMobileSentrixPrice(supplierPriceUsd: number, usdGelRate: number) {
+    const withVatUsd = supplierPriceUsd * (1 + this.mobileSentrixVatRate);
+    const landedGel = withVatUsd * usdGelRate + this.mobileSentrixHandlingFeeGel;
+    const withMarginGel = landedGel * (1 + this.mobileSentrixMarginRate);
+    return Number(withMarginGel.toFixed(2));
+  }
+
+  private inferMobileSentrixDeviceCategory(value: string): ShopDeviceCategory {
+    if (/(macbook|laptop|notebook|dell|hp |lenovo|thinkpad|asus|acer|surface)/i.test(value)) {
+      return ShopDeviceCategory.LAPTOPS;
+    }
+    if (/(case|cable|charger|adapter|tool|adhesive|protector)/i.test(value)) {
+      return ShopDeviceCategory.ACCESSORIES;
+    }
+    return ShopDeviceCategory.SMARTPHONES;
+  }
+
+  private inferMobileSentrixPartCategory(value: string): ShopPartCategory {
+    if (/(battery|cell)/i.test(value)) return ShopPartCategory.BATTERY;
+    if (/(screen|display|lcd|oled|glass|digitizer)/i.test(value)) return ShopPartCategory.SCREEN;
+    if (/(camera|lens)/i.test(value)) return ShopPartCategory.CAMERA;
+    if (/(speaker|earpiece|audio|buzzer)/i.test(value)) return ShopPartCategory.SPEAKER;
+    if (/(charging|charge|dock|port|connector)/i.test(value)) return ShopPartCategory.CHARGING;
+    if (/(sensor|proximity|fingerprint|face id|faceid)/i.test(value)) return ShopPartCategory.SENSOR;
+    if (/(board|logic|motherboard|ic |chip)/i.test(value)) return ShopPartCategory.BOARD;
+    return ShopPartCategory.ACCESSORY;
+  }
+
+  private inferMobileSentrixInventorySource(value: string): ShopInventorySource {
+    if (/(oem|original|genuine|service pack)/i.test(value)) {
+      return ShopInventorySource.OEM;
+    }
+    return ShopInventorySource.THIRD_PARTY;
+  }
+
+  private inferMobileSentrixBrand(value: string) {
+    const brands = [
+      'apple',
+      'samsung',
+      'google',
+      'xiaomi',
+      'huawei',
+      'oneplus',
+      'motorola',
+      'lg',
+      'sony',
+      'nokia',
+      'dell',
+      'hp',
+      'lenovo',
+      'asus',
+      'acer',
+    ];
+    const brand = brands.find((candidate) => value.includes(candidate));
+    return brand ? brand.charAt(0).toUpperCase() + brand.slice(1) : null;
+  }
+
+  private async ensureUniqueProductSlug(value: string, excludeId?: number) {
+    const normalized = this.slugify(value);
+    let candidate = normalized;
+    let suffix = 1;
+
+    while (true) {
+      const existing = await this.shopProductsRepository.findOne({
+        where: { slug: candidate },
+      });
+
+      if (!existing || existing.id === excludeId) {
+        return candidate;
+      }
+
+      suffix += 1;
+      candidate = `${normalized}-${suffix}`;
+    }
+  }
+
+  private async getNextShopProductSortOrder() {
+    const result = await this.shopProductsRepository
+      .createQueryBuilder('product')
+      .select('MAX(product.sort_order)', 'maxSortOrder')
+      .getRawOne<{ maxSortOrder: string | null }>();
+
+    const currentMax = Number(result?.maxSortOrder ?? 0);
+    return Number.isFinite(currentMax) ? currentMax + 10 : 10;
+  }
+
+  private formatTbilisiDate(date: Date) {
+    const tbilisiTime = new Date(date.getTime() + 4 * 60 * 60 * 1000);
+    return tbilisiTime.toISOString().slice(0, 10);
+  }
+
+  private slugify(value: string) {
+    return (
+      value
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 120) || 'product'
+    );
+  }
+
+  private stripHtml(value: string) {
+    return value.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
   }
 
   getMobileSentrixCallbackUrl(): string {

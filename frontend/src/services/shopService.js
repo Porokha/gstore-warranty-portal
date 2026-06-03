@@ -73,6 +73,31 @@ export const shopService = {
     return response.data;
   },
 
+  previewMobileSentrixProducts: async ({ query, maxResults = 10, startIndex = 0 }) => {
+    const response = await api.get('/integrations/mobilesentrix/products/preview', {
+      params: {
+        q: query,
+        max_results: maxResults,
+        start_index: startIndex,
+      },
+      skipAuthRedirect: true,
+    });
+    return response.data;
+  },
+
+  syncMobileSentrixProducts: async ({ query, maxResults = 25, startIndex = 0 }) => {
+    const response = await api.post(
+      '/integrations/mobilesentrix/products/sync',
+      {
+        q: query,
+        max_results: maxResults,
+        start_index: startIndex,
+      },
+      { skipAuthRedirect: true },
+    );
+    return response.data;
+  },
+
   getOrders: async (scope = 'active') => {
     const response = await api.get('/shop/admin/orders', {
       params: { scope },
