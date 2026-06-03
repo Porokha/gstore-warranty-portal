@@ -71,11 +71,32 @@ export class ShopProduct {
   @Column({ nullable: true })
   issue_label: string;
 
+  @Column({ nullable: true })
+  device_model: string | null;
+
+  @Column({ nullable: true })
+  quality_line: string | null;
+
+  @Column({ nullable: true })
+  quality_badge: string | null;
+
+  @Column({ nullable: true })
+  warranty_line: string | null;
+
   @Column({ type: 'text', nullable: true })
   description: string;
 
   @Column({ nullable: true })
   image_url: string;
+
+  @Column({ type: 'json', nullable: true })
+  gallery_images: string[] | null;
+
+  @Column({ type: 'json', nullable: true })
+  compatibility_tags: string[] | null;
+
+  @Column({ type: 'json', nullable: true })
+  search_tags: string[] | null;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true, default: null })
   price: string | null;

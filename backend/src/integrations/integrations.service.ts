@@ -4,6 +4,8 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  OnModuleDestroy,
+  OnModuleInit,
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -49,8 +51,15 @@ type MobileSentrixMappedProduct = {
   part_category: ShopPartCategory;
   inventory_source: ShopInventorySource;
   issue_label: string | null;
+  device_model: string | null;
+  quality_line: string | null;
+  quality_badge: string | null;
+  warranty_line: string;
   description: string | null;
   image_url: string | null;
+  gallery_images: string[];
+  compatibility_tags: string[];
+  search_tags: string[];
   source_url: string | null;
   stock_quantity: number;
   supplier_price_usd: number;
@@ -67,7 +76,7 @@ type MobileSentrixMappedProduct = {
 };
 
 @Injectable()
-export class IntegrationsService {
+export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(IntegrationsService.name);
   private readonly eligibleNonPreorderStatuses = new Set(['pos-success', 'completed']);
   private readonly minimumWarrantyPrice = 500;
@@ -77,6 +86,9 @@ export class IntegrationsService {
   private readonly mobileSentrixVatRate = 0.18;
   private readonly mobileSentrixHandlingFeeGel = 5;
   private readonly mobileSentrixMarginRate = 0.5;
+  private readonly mobileSentrixAutoSyncIntervalMs = 12 * 60 * 60 * 1000;
+  private mobileSentrixAutoSyncTimer?: NodeJS.Timeout;
+  private mobileSentrixAutoSyncRunning = false;
 
   constructor(
     @InjectRepository(PosWarrantyInboundEvent)
@@ -90,6 +102,20 @@ export class IntegrationsService {
     private warrantiesService: WarrantiesService,
     private configService: ConfigService,
   ) {}
+
+  onModuleInit() {
+    this.mobileSentrixAutoSyncTimer = setInterval(() => {
+      this.refreshExistingMobileSentrixProducts().catch((error) => {
+        this.logger.error(`MobileSentrix auto-sync failed: ${error.message}`);
+      });
+    }, this.mobileSentrixAutoSyncIntervalMs);
+  }
+
+  onModuleDestroy() {
+    if (this.mobileSentrixAutoSyncTimer) {
+      clearInterval(this.mobileSentrixAutoSyncTimer);
+    }
+  }
 
   async assertPosWebhookAuthorization(authorizationHeader?: string): Promise<void> {
     const secret =
@@ -231,10 +257,12 @@ export class IntegrationsService {
     const enrichedItems = await Promise.all(
       searchResult.items.map((item) => this.enrichMobileSentrixSearchItem(item)),
     );
+    const tagMap = await this.fetchMobileSentrixTagsForItems(enrichedItems);
     const rateCache = new Map<string, number>();
 
     const mappedProducts: MobileSentrixMappedProduct[] = [];
-    for (const item of enrichedItems) {
+    for (const sourceItem of enrichedItems) {
+      const item = this.mergeMobileSentrixTags(sourceItem, tagMap);
       const currency = this.getMobileSentrixCurrency(item);
       if (!rateCache.has(currency)) {
         rateCache.set(currency, await this.getGelExchangeRate(currency));
@@ -281,8 +309,15 @@ export class IntegrationsService {
         part_category: mapped.part_category,
         inventory_source: mapped.inventory_source,
         issue_label: mapped.issue_label,
+        device_model: mapped.device_model,
+        quality_line: mapped.quality_line,
+        quality_badge: mapped.quality_badge,
+        warranty_line: mapped.warranty_line,
         description: mapped.description,
         image_url: mapped.image_url,
+        gallery_images: mapped.gallery_images,
+        compatibility_tags: mapped.compatibility_tags,
+        search_tags: mapped.search_tags,
         price: mapped.calculated_price_gel.toFixed(2),
         sale_price: null,
         service_price: null,
@@ -323,6 +358,77 @@ export class IntegrationsService {
       synced_count: synced.length,
       synced,
     };
+  }
+
+  async refreshExistingMobileSentrixProducts() {
+    if (this.mobileSentrixAutoSyncRunning) {
+      return { success: true, skipped: true, reason: 'already_running' };
+    }
+
+    this.mobileSentrixAutoSyncRunning = true;
+    try {
+      const products = await this.shopProductsRepository.find({
+        where: { supplier: ShopProductSupplier.MOBILESENTRIX },
+      });
+      let updated = 0;
+      let failed = 0;
+
+      for (const product of products) {
+        try {
+          const sourceItem = await this.enrichMobileSentrixSearchItem({
+            product_id: product.supplier_product_id,
+          });
+          const tagMap = await this.fetchMobileSentrixTagsForItems([sourceItem]);
+          const item = this.mergeMobileSentrixTags(sourceItem, tagMap);
+          const currency = this.getMobileSentrixCurrency(item);
+          const rate = await this.getGelExchangeRate(currency);
+          const mapped = this.mapMobileSentrixProduct(item, rate, currency);
+
+          if (!mapped) {
+            failed += 1;
+            continue;
+          }
+
+          await this.shopProductsRepository.save({
+            ...product,
+            title: mapped.title,
+            brand: mapped.brand,
+            device_category: mapped.device_category,
+            part_category: mapped.part_category,
+            inventory_source: mapped.inventory_source,
+            issue_label: mapped.issue_label,
+            device_model: mapped.device_model,
+            quality_line: mapped.quality_line,
+            quality_badge: mapped.quality_badge,
+            warranty_line: mapped.warranty_line,
+            description: mapped.description,
+            image_url: mapped.image_url,
+            gallery_images: mapped.gallery_images,
+            compatibility_tags: mapped.compatibility_tags,
+            search_tags: mapped.search_tags,
+            price: mapped.calculated_price_gel.toFixed(2),
+            stock_quantity: mapped.stock_quantity,
+            is_active: mapped.stock_quantity > 0,
+            supplier_sku: mapped.supplier_sku,
+            supplier_price_usd: mapped.supplier_price_usd.toFixed(2),
+            supplier_currency: mapped.supplier_currency,
+            supplier_exchange_rate: mapped.supplier_exchange_rate.toFixed(4),
+            supplier_payload: mapped.raw,
+            supplier_synced_at: new Date(),
+          });
+          updated += 1;
+        } catch (error) {
+          failed += 1;
+          this.logger.warn(
+            `Failed to refresh MobileSentrix product ${product.supplier_product_id}: ${error.message}`,
+          );
+        }
+      }
+
+      return { success: true, updated, failed, total: products.length };
+    } finally {
+      this.mobileSentrixAutoSyncRunning = false;
+    }
   }
 
   async handlePosOrderUpsert(payload: PosOrderUpsertDto) {
@@ -639,6 +745,61 @@ export class IntegrationsService {
     };
   }
 
+  private async fetchMobileSentrixTagsForItems(items: MobileSentrixSearchItem[]) {
+    const skus = Array.from(
+      new Set(
+        items
+          .map((item) => String(item.new_sku || item.sku || item.product_code || '').trim())
+          .filter(Boolean),
+      ),
+    );
+
+    if (skus.length === 0) {
+      return new Map<string, any>();
+    }
+
+    const config = await this.getMobileSentrixCredentials();
+    const params = new URLSearchParams();
+    params.append('filter[1][attribute]', 'sku');
+    skus.slice(0, 100).forEach((sku, index) => {
+      params.append(`filter[1][in][${index}]`, sku);
+    });
+
+    const response = await axios.get(`${config.baseUrl}/api/rest/tags?${params.toString()}`, {
+      headers: {
+        Authorization: this.buildMobileSentrixOAuthHeader(config),
+        Accept: 'application/json',
+      },
+      validateStatus: (status) => status >= 200 && status < 500,
+    });
+
+    if (response.status >= 400 || !response.data) {
+      this.logger.warn(
+        `MobileSentrix tags request failed with status ${response.status}: ${this.formatMobileSentrixProviderResponse(response.data)}`,
+      );
+      return new Map<string, any>();
+    }
+
+    const map = new Map<string, any>();
+    Object.values(response.data).forEach((entry: any) => {
+      const sku = String(entry?.new_sku || entry?.sku || '').trim();
+      if (sku) {
+        map.set(sku, entry);
+      }
+    });
+
+    return map;
+  }
+
+  private mergeMobileSentrixTags(
+    item: MobileSentrixSearchItem,
+    tagMap: Map<string, any>,
+  ): MobileSentrixSearchItem {
+    const sku = String(item.new_sku || item.sku || item.product_code || '').trim();
+    const tagPayload = sku ? tagMap.get(sku) : null;
+    return tagPayload ? { ...item, tags_payload: tagPayload } : item;
+  }
+
   private async getGelExchangeRate(currencyCode: string) {
     const normalizedCurrency = currencyCode.toUpperCase();
     if (normalizedCurrency === 'GEL') {
@@ -696,14 +857,21 @@ export class IntegrationsService {
       this.stripHtml(String(item.description || item.short_description || '')).slice(0, 1000) ||
       null;
     const tags = this.normalizeMobileSentrixTags(item.tags);
+    const tagPayload = item.tags_payload || {};
+    const searchTags = Array.from(
+      new Set([...tags, ...this.normalizeMobileSentrixTags(tagPayload.tag)]),
+    );
+    const compatibilityTags = this.normalizeMobileSentrixTags(tagPayload.compatibility);
     const manufacturer = this.normalizeTextValue(item.manufacturer_text);
     const model = this.normalizeTextValue(item.model_text || item.device_model_text);
     const productType = this.normalizeTextValue(item.front_position_text);
     const qualityBrand = this.normalizeTextValue(item.brand_text || item.product_badges_text);
+    const qualityBadge = this.normalizeTextValue(item.product_badges_text);
+    const galleryImages = this.normalizeMobileSentrixGallery(item);
     const searchable = [
       title,
       description,
-      tags.join(' '),
+      searchTags.join(' '),
       manufacturer,
       model,
       productType,
@@ -727,8 +895,15 @@ export class IntegrationsService {
       part_category: this.inferMobileSentrixPartCategory(searchable),
       inventory_source: this.inferMobileSentrixInventorySource(searchable),
       issue_label: [model, productType, qualityBrand].filter(Boolean).join(' • ') || null,
+      device_model: model,
+      quality_line: qualityBrand,
+      quality_badge: qualityBadge,
+      warranty_line: '1 year warranty',
       description,
       image_url: String(item.image_url || item.default_image || item.image_link || '').trim().slice(0, 500) || null,
+      gallery_images: galleryImages,
+      compatibility_tags: compatibilityTags,
+      search_tags: searchTags,
       source_url: String(item.url || item.link || '').trim() || null,
       stock_quantity: stockQuantity,
       supplier_price_usd: Number(supplierPrice.toFixed(2)),
@@ -824,6 +999,24 @@ export class IntegrationsService {
     }
 
     return String(value).trim() || null;
+  }
+
+  private normalizeMobileSentrixGallery(item: MobileSentrixSearchItem) {
+    const values = [
+      ...(Array.isArray(item.image_gallery) ? item.image_gallery : []),
+      item.image_url,
+      item.default_image,
+      item.image_link,
+    ];
+
+    return Array.from(
+      new Set(
+        values
+          .map((value) => String(value || '').trim())
+          .filter((value) => /^https?:\/\//i.test(value))
+          .map((value) => value.slice(0, 500)),
+      ),
+    );
   }
 
   private async ensureUniqueProductSlug(value: string, excludeId?: number) {

@@ -16,9 +16,9 @@ export const shopService = {
     return response.data;
   },
 
-  getAdminProducts: async (scope = 'active') => {
+  getAdminProducts: async (scope = 'active', supplier = 'manual') => {
     const response = await api.get('/shop/admin/products', {
-      params: { scope },
+      params: { scope, supplier },
     });
     return response.data;
   },
@@ -93,6 +93,15 @@ export const shopService = {
         max_results: maxResults,
         start_index: startIndex,
       },
+      { skipAuthRedirect: true },
+    );
+    return response.data;
+  },
+
+  refreshMobileSentrixProducts: async () => {
+    const response = await api.post(
+      '/integrations/mobilesentrix/products/refresh-existing',
+      {},
       { skipAuthRedirect: true },
     );
     return response.data;

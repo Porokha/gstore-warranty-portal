@@ -95,6 +95,13 @@ export class IntegrationsController {
     );
   }
 
+  @Post('mobilesentrix/products/refresh-existing')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async refreshExistingMobileSentrixProducts() {
+    return this.integrationsService.refreshExistingMobileSentrixProducts();
+  }
+
   @Post('mobilesentrix/webhook')
   @HttpCode(HttpStatus.OK)
   async handleMobileSentrixWebhook(

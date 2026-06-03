@@ -38,8 +38,17 @@ export class ShopController {
   constructor(private readonly shopService: ShopService) {}
 
   @Get('products')
-  listProducts(@Query('scope') scope?: 'active' | 'trash') {
-    return this.shopService.listAdminProducts(scope === 'trash' ? 'trash' : 'active');
+  listProducts(
+    @Query('scope') scope?: 'active' | 'trash',
+    @Query('supplier') supplier?: 'manual' | 'mobilesentrix' | 'all',
+  ) {
+    const resolvedSupplier = ['manual', 'mobilesentrix', 'all'].includes(String(supplier))
+      ? supplier
+      : 'manual';
+    return this.shopService.listAdminProducts(
+      scope === 'trash' ? 'trash' : 'active',
+      resolvedSupplier as 'manual' | 'mobilesentrix' | 'all',
+    );
   }
 
   @Post('products/import/csv')

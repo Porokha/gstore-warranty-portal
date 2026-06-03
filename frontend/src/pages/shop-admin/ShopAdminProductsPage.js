@@ -60,7 +60,7 @@ const productScopes = [
 ];
 
 const productSources = [
-  { value: 'manual', label: 'Manual Catalog' },
+  { value: 'manual', label: 'Zezva Products' },
   { value: 'mobilesentrix', label: 'MobileSentrix' },
 ];
 
@@ -105,8 +105,9 @@ const ShopAdminProductsPage = () => {
     onConfirm: null,
   });
 
-  const { data: products = [], isLoading } = useQuery(['shop-admin-products', scope], () =>
-    shopService.getAdminProducts(scope),
+  const productSupplier = productSource === 'mobilesentrix' ? 'mobilesentrix' : 'manual';
+  const { data: products = [], isLoading } = useQuery(['shop-admin-products', scope, productSupplier], () =>
+    shopService.getAdminProducts(scope, productSupplier),
   );
 
   useEffect(() => {
@@ -290,6 +291,20 @@ const ShopAdminProductsPage = () => {
       },
     },
   );
+
+  const mobileSentrixRefreshMutation = useMutation(() => shopService.refreshMobileSentrixProducts(), {
+    onSuccess: async (result) => {
+      setMessage(
+        `MobileSentrix refresh finished. ${result.updated || 0} updated, ${result.failed || 0} failed.`,
+      );
+      setError('');
+      await invalidateProducts();
+    },
+    onError: (mutationError) => {
+      setError(formatIntegrationError(mutationError, 'Failed to refresh MobileSentrix products.'));
+      setMessage('');
+    },
+  });
 
   const selectedProduct = useMemo(
     () => products.find((product) => product.id === selectedId) || null,
@@ -569,6 +584,15 @@ const ShopAdminProductsPage = () => {
                   >
                     {mobileSentrixSyncMutation.isLoading ? 'Syncing...' : 'Sync 25'}
                   </Button>
+                  <Button
+                    variant="outlined"
+                    startIcon={<Sync />}
+                    onClick={() => mobileSentrixRefreshMutation.mutate()}
+                    disabled={mobileSentrixRefreshMutation.isLoading}
+                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
+                  >
+                    {mobileSentrixRefreshMutation.isLoading ? 'Refreshing...' : 'Refresh Existing'}
+                  </Button>
                 </Stack>
               )}
             </Stack>
@@ -619,7 +643,7 @@ const ShopAdminProductsPage = () => {
             )}
             {productSource === 'mobilesentrix' && (
               <Alert severity="info" sx={{ mt: 2 }}>
-                Pricing formula: supplier USD price + 18% VAT, converted by official NBG USD/GEL rate, plus ₾5 handling, then +50% Zezva margin. Synced products are public only while supplier stock is above zero.
+                Pricing formula: supplier currency price + 18% VAT, converted by official NBG rate, plus ₾5 handling, then +50% Zezva margin. Existing MobileSentrix products auto-refresh every 12 hours.
               </Alert>
             )}
           </Box>
@@ -808,7 +832,7 @@ const ShopAdminProductsPage = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {mobileSentrixPreviewMutation.isLoading &&
+                  {isLoading &&
                     Array.from({ length: 5 }).map((_, index) => (
                       <TableRow key={`mobilesentrix-loading-${index}`}>
                         <TableCell>
@@ -826,17 +850,17 @@ const ShopAdminProductsPage = () => {
                         <TableCell><Skeleton variant="text" width={50} /></TableCell>
                       </TableRow>
                     ))}
-                  {!mobileSentrixPreviewMutation.isLoading &&
-                    !mobileSentrixResult?.items?.length && (
+                  {!isLoading &&
+                    products.length === 0 && (
                       <TableRow>
                         <TableCell colSpan={5}>
-                          Search MobileSentrix to preview mapped products before syncing.
+                          No MobileSentrix products synced yet. Search and click Sync 25 to add supplier products.
                         </TableCell>
                       </TableRow>
                     )}
-                  {!mobileSentrixPreviewMutation.isLoading &&
-                    mobileSentrixResult?.items?.map((product) => (
-                      <TableRow key={product.supplier_product_id} hover>
+                  {!isLoading &&
+                    products.map((product) => (
+                      <TableRow key={product.id} hover>
                         <TableCell>
                           <Stack direction="row" spacing={1.5} alignItems="center">
                             {product.image_url ? (
@@ -859,7 +883,7 @@ const ShopAdminProductsPage = () => {
                                 {product.title}
                               </Typography>
                               <Typography sx={{ fontSize: '12px', color: '#667085' }}>
-                                {[product.brand, product.supplier_sku || product.supplier_product_id]
+                                {[product.brand, product.device_model, product.supplier_sku || product.supplier_product_id]
                                   .filter(Boolean)
                                   .join(' • ')}
                               </Typography>
@@ -878,7 +902,12 @@ const ShopAdminProductsPage = () => {
                         </TableCell>
                         <TableCell>
                           <Typography sx={{ fontWeight: 800, color: '#172033' }}>
-                            ₾{Number(product.calculated_price_gel || 0).toFixed(2)}
+                            {formatAdminProductPrice(product)}
+                          </Typography>
+                          <Typography sx={{ fontSize: '12px', color: '#667085' }}>
+                            {product.supplier_synced_at
+                              ? `Synced ${new Date(product.supplier_synced_at).toLocaleString()}`
+                              : 'Not synced yet'}
                           </Typography>
                         </TableCell>
                         <TableCell>
@@ -893,7 +922,7 @@ const ShopAdminProductsPage = () => {
                             <Chip
                               size="small"
                               variant="outlined"
-                              label={product.inventory_source}
+                              label={product.quality_line || product.inventory_source}
                               sx={{ borderRadius: 2 }}
                             />
                           </Stack>

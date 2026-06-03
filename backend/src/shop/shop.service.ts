@@ -30,6 +30,7 @@ import {
 import { ShopOrder, ShopOrderStatus } from './entities/shop-order.entity';
 
 type ShopScope = 'active' | 'trash';
+type ShopSupplierScope = 'manual' | 'mobilesentrix' | 'all';
 
 @Injectable()
 export class ShopService {
@@ -83,11 +84,14 @@ export class ShopService {
     return products.map((product) => this.serializeProduct(product));
   }
 
-  async listAdminProducts(scope: ShopScope = 'active') {
+  async listAdminProducts(scope: ShopScope = 'active', supplier: ShopSupplierScope = 'manual') {
     await this.purgeExpiredTrash();
 
     const qb = this.shopProductsRepository.createQueryBuilder('product');
     this.applyScope(qb, 'product', scope);
+    if (supplier !== 'all') {
+      qb.andWhere('product.supplier = :supplier', { supplier });
+    }
     qb.orderBy('product.sort_order', 'ASC').addOrderBy('product.id', 'ASC');
 
     const products = await qb.getMany();
@@ -573,8 +577,15 @@ export class ShopService {
       part_category: product.part_category,
       inventory_source: product.inventory_source,
       issue_label: product.issue_label,
+      device_model: product.device_model,
+      quality_line: product.quality_line,
+      quality_badge: product.quality_badge,
+      warranty_line: product.warranty_line,
       description: product.description,
       image_url: product.image_url,
+      gallery_images: product.gallery_images || [],
+      compatibility_tags: product.compatibility_tags || [],
+      search_tags: product.search_tags || [],
       price: product.price !== null ? Number(product.price) : null,
       sale_price: product.sale_price !== null ? Number(product.sale_price) : null,
       service_price: product.service_price !== null ? Number(product.service_price) : null,
