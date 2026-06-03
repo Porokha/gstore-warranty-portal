@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
+  Param,
   Post,
   Query,
   Res,
@@ -82,15 +83,23 @@ export class IntegrationsController {
     @Body()
     body: {
       limit?: number;
-      start_page?: number;
-      max_pages?: number;
     },
   ) {
-    return this.integrationsService.syncMobileSentrixProducts(
-      Number(body.limit || 100),
-      Number(body.start_page || 1),
-      body.max_pages ? Number(body.max_pages) : undefined,
-    );
+    return this.integrationsService.startMobileSentrixCatalogSync(Number(body.limit || 100));
+  }
+
+  @Get('mobilesentrix/products/sync/latest')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async getLatestMobileSentrixSyncJob() {
+    return this.integrationsService.getLatestMobileSentrixSyncJob();
+  }
+
+  @Get('mobilesentrix/products/sync/:jobId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async getMobileSentrixSyncJob(@Param('jobId') jobId: string) {
+    return this.integrationsService.getMobileSentrixSyncJob(jobId);
   }
 
   @Post('mobilesentrix/products/refresh-existing')

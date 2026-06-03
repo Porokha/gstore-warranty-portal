@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS mobilesentrix_sync_jobs (
+  id VARCHAR(36) NOT NULL,
+  status ENUM('queued', 'running', 'completed', 'failed') NOT NULL DEFAULT 'queued',
+  mode VARCHAR(50) NOT NULL DEFAULT 'catalog',
+  limit_per_page INT NOT NULL DEFAULT 100,
+  current_page INT NOT NULL DEFAULT 0,
+  total_pages INT NOT NULL DEFAULT 0,
+  total_items INT NOT NULL DEFAULT 0,
+  scanned INT NOT NULL DEFAULT 0,
+  created INT NOT NULL DEFAULT 0,
+  updated INT NOT NULL DEFAULT 0,
+  failed INT NOT NULL DEFAULT 0,
+  last_message TEXT NULL,
+  error_message TEXT NULL,
+  started_at DATETIME NULL,
+  finished_at DATETIME NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_mobilesentrix_sync_jobs_status (status),
+  KEY idx_mobilesentrix_sync_jobs_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

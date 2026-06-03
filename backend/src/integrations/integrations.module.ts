@@ -9,11 +9,12 @@ import { ShopProduct } from '../shop/entities/shop-product.entity';
 import { IntegrationsController } from './integrations.controller';
 import { IntegrationsService } from './integrations.service';
 import { PosWarrantyInboundEvent } from './entities/pos-warranty-inbound-event.entity';
+import { MobileSentrixSyncJob } from './entities/mobilesentrix-sync-job.entity';
 
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([Warranty, PosWarrantyInboundEvent, ShopProduct]),
+    TypeOrmModule.forFeature([Warranty, PosWarrantyInboundEvent, ShopProduct, MobileSentrixSyncJob]),
     SettingsModule,
     SmsModule,
     WarrantiesModule,

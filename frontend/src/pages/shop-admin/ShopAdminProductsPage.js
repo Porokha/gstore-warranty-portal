@@ -8,6 +8,7 @@ import {
   Chip,
   Grid,
   IconButton,
+  LinearProgress,
   MenuItem,
   Paper,
   Stack,
@@ -93,6 +94,7 @@ const ShopAdminProductsPage = () => {
   const [selectedIds, setSelectedIds] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [mobileSentrixResult, setMobileSentrixResult] = useState(null);
+  const [mobileSentrixJobId, setMobileSentrixJobId] = useState(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [confirmState, setConfirmState] = useState({
@@ -108,6 +110,47 @@ const ShopAdminProductsPage = () => {
   const { data: products = [], isLoading } = useQuery(['shop-admin-products', scope, productSupplier], () =>
     shopService.getAdminProducts(scope, productSupplier),
   );
+  const { data: latestMobileSentrixJobResult } = useQuery(
+    ['mobilesentrix-sync-latest'],
+    () => shopService.getLatestMobileSentrixSyncJob(),
+    {
+      enabled: productSource === 'mobilesentrix',
+      refetchOnWindowFocus: false,
+    },
+  );
+  const latestMobileSentrixJob = latestMobileSentrixJobResult?.job || null;
+
+  useEffect(() => {
+    if (
+      productSource === 'mobilesentrix' &&
+      latestMobileSentrixJob &&
+      ['queued', 'running'].includes(latestMobileSentrixJob.status)
+    ) {
+      setMobileSentrixJobId(latestMobileSentrixJob.id);
+    }
+  }, [latestMobileSentrixJob, productSource]);
+
+  const { data: mobileSentrixJobResult } = useQuery(
+    ['mobilesentrix-sync-job', mobileSentrixJobId],
+    () => shopService.getMobileSentrixSyncJob(mobileSentrixJobId),
+    {
+      enabled: Boolean(mobileSentrixJobId),
+      refetchInterval: (result) => {
+        const status = result?.job?.status;
+        return status === 'queued' || status === 'running' ? 3000 : false;
+      },
+      refetchOnWindowFocus: false,
+    },
+  );
+  const mobileSentrixJob = mobileSentrixJobResult?.job || latestMobileSentrixJob;
+  const mobileSentrixJobRunning = ['queued', 'running'].includes(mobileSentrixJob?.status);
+
+  useEffect(() => {
+    if (mobileSentrixJob?.status === 'completed') {
+      queryClient.invalidateQueries(['shop-admin-products']);
+      queryClient.invalidateQueries(['mobilesentrix-sync-latest']);
+    }
+  }, [mobileSentrixJob?.id, mobileSentrixJob?.status, queryClient]);
 
   useEffect(() => {
     setSelectedId(null);
@@ -272,15 +315,20 @@ const ShopAdminProductsPage = () => {
     () =>
       shopService.syncMobileSentrixProducts({
         limit: 100,
-        startPage: 1,
       }),
     {
       onSuccess: async (result) => {
+        const job = result.job;
+        if (job?.id) {
+          setMobileSentrixJobId(job.id);
+        }
         setMessage(
-          `MobileSentrix full catalog sync finished. ${result.scanned || 0} scanned, ${result.created || 0} created, ${result.updated || 0} updated, ${result.failed || 0} failed.`,
+          result.already_running
+            ? 'MobileSentrix full catalog sync is already running. Progress is shown below.'
+            : 'MobileSentrix full catalog sync started in the background. Progress is shown below.',
         );
         setError('');
-        await invalidateProducts();
+        await queryClient.invalidateQueries(['mobilesentrix-sync-latest']);
       },
       onError: (mutationError) => {
         setError(formatIntegrationError(mutationError, 'Failed to sync MobileSentrix products.'));
@@ -569,10 +617,12 @@ const ShopAdminProductsPage = () => {
                     variant="contained"
                     startIcon={<Sync />}
                     onClick={() => mobileSentrixSyncMutation.mutate()}
-                    disabled={mobileSentrixSyncMutation.isLoading}
+                    disabled={mobileSentrixSyncMutation.isLoading || mobileSentrixJobRunning}
                     sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
                   >
-                    {mobileSentrixSyncMutation.isLoading ? 'Syncing...' : 'Sync Full Catalog'}
+                    {mobileSentrixSyncMutation.isLoading || mobileSentrixJobRunning
+                      ? 'Sync Running...'
+                      : 'Sync Full Catalog'}
                   </Button>
                   <Button
                     variant="outlined"
@@ -635,6 +685,47 @@ const ShopAdminProductsPage = () => {
               <Alert severity="info" sx={{ mt: 2 }}>
                 Pricing formula: supplier currency price + 18% VAT, converted by official NBG rate, plus ₾5 handling, then +50% Zezva margin. Existing MobileSentrix products auto-refresh every 12 hours.
               </Alert>
+            )}
+            {productSource === 'mobilesentrix' && mobileSentrixJob && (
+              <Paper
+                elevation={0}
+                sx={{ mt: 2, p: 2, borderRadius: 3, border: '1px solid #dce4f0', background: '#fbfcff' }}
+              >
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} justifyContent="space-between">
+                  <Box>
+                    <Typography sx={{ fontWeight: 800, color: '#172033' }}>
+                      Full catalog sync: {mobileSentrixJob.status}
+                    </Typography>
+                    <Typography sx={{ fontSize: '13px', color: '#667085', mt: 0.5 }}>
+                      {mobileSentrixJob.last_message || 'Waiting for progress...'}
+                    </Typography>
+                    {mobileSentrixJob.error_message && (
+                      <Typography sx={{ fontSize: '13px', color: '#b42318', mt: 0.5 }}>
+                        {mobileSentrixJob.error_message}
+                      </Typography>
+                    )}
+                  </Box>
+                  <Typography sx={{ fontWeight: 900, color: '#6f4ef6' }}>
+                    {mobileSentrixJob.progress || 0}%
+                  </Typography>
+                </Stack>
+                <LinearProgress
+                  variant={mobileSentrixJob.total_pages ? 'determinate' : 'indeterminate'}
+                  value={mobileSentrixJob.progress || 0}
+                  sx={{ mt: 1.5, height: 8, borderRadius: 999 }}
+                />
+                <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 1.5 }}>
+                  <Chip
+                    size="small"
+                    label={`Page ${mobileSentrixJob.current_page || 0}/${mobileSentrixJob.total_pages || '?'}`}
+                    sx={{ borderRadius: 2 }}
+                  />
+                  <Chip size="small" label={`${mobileSentrixJob.scanned || 0} scanned`} sx={{ borderRadius: 2 }} />
+                  <Chip color="success" size="small" label={`${mobileSentrixJob.created || 0} created`} sx={{ borderRadius: 2 }} />
+                  <Chip color="primary" size="small" label={`${mobileSentrixJob.updated || 0} updated`} sx={{ borderRadius: 2 }} />
+                  <Chip color={mobileSentrixJob.failed ? 'error' : 'default'} size="small" label={`${mobileSentrixJob.failed || 0} failed`} sx={{ borderRadius: 2 }} />
+                </Stack>
+              </Paper>
             )}
           </Box>
 
@@ -952,7 +1043,7 @@ const ShopAdminProductsPage = () => {
                   Price calculation
                 </Typography>
                 <Typography sx={{ color: '#667085', fontSize: '14px' }}>
-                  ((USD price × 1.18 VAT) × NBG USD/GEL + ₾5 handling) × 1.5 margin.
+                  ((Supplier currency price × 1.18 VAT) × NBG currency/GEL + ₾5 handling) × 1.5 margin.
                 </Typography>
               </Paper>
               {mobileSentrixResult && (

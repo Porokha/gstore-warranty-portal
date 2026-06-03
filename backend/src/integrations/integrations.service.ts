@@ -12,7 +12,8 @@ import {
 import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
+import { v4 as uuidv4 } from 'uuid';
 import { SettingsService } from '../settings/settings.service';
 import {
   ShopDeviceCategory,
@@ -29,6 +30,10 @@ import {
   PosWarrantyInboundEvent,
   PosWarrantyInboundEventStatus,
 } from './entities/pos-warranty-inbound-event.entity';
+import {
+  MobileSentrixSyncJob,
+  MobileSentrixSyncJobStatus,
+} from './entities/mobilesentrix-sync-job.entity';
 
 type PosOrderUpsertAction = 'created' | 'updated' | 'ignored' | 'deferred';
 type MobileSentrixCredentials = {
@@ -97,13 +102,30 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
     private warrantiesRepository: Repository<Warranty>,
     @InjectRepository(ShopProduct)
     private shopProductsRepository: Repository<ShopProduct>,
+    @InjectRepository(MobileSentrixSyncJob)
+    private mobileSentrixSyncJobsRepository: Repository<MobileSentrixSyncJob>,
     private settingsService: SettingsService,
     private smsService: SmsService,
     private warrantiesService: WarrantiesService,
     private configService: ConfigService,
   ) {}
 
-  onModuleInit() {
+  async onModuleInit() {
+    await this.mobileSentrixSyncJobsRepository.update(
+      {
+        status: In([
+          MobileSentrixSyncJobStatus.QUEUED,
+          MobileSentrixSyncJobStatus.RUNNING,
+        ]),
+      },
+      {
+        status: MobileSentrixSyncJobStatus.FAILED,
+        error_message: 'Server restarted before this sync job finished.',
+        last_message: 'Sync job was interrupted by a server restart.',
+        finished_at: new Date(),
+      },
+    );
+
     this.mobileSentrixAutoSyncTimer = setInterval(() => {
       this.refreshExistingMobileSentrixProducts().catch((error) => {
         this.logger.error(`MobileSentrix auto-sync failed: ${error.message}`);
@@ -261,7 +283,169 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
-  async syncMobileSentrixProducts(limit = 100, startPage = 1, maxPages?: number) {
+  async startMobileSentrixCatalogSync(limit = 100) {
+    const runningJob = await this.mobileSentrixSyncJobsRepository.findOne({
+      where: {
+        status: In([
+          MobileSentrixSyncJobStatus.QUEUED,
+          MobileSentrixSyncJobStatus.RUNNING,
+        ]),
+      },
+      order: { created_at: 'DESC' },
+    });
+
+    if (runningJob) {
+      return {
+        success: true,
+        already_running: true,
+        job: this.formatMobileSentrixSyncJob(runningJob),
+      };
+    }
+
+    const safeLimit = Math.min(Math.max(Number(limit) || 100, 1), 100);
+    const job = this.mobileSentrixSyncJobsRepository.create({
+      id: uuidv4(),
+      status: MobileSentrixSyncJobStatus.QUEUED,
+      mode: 'catalog',
+      limit_per_page: safeLimit,
+      last_message: 'Queued full MobileSentrix catalog sync.',
+    });
+    await this.mobileSentrixSyncJobsRepository.save(job);
+
+    setImmediate(() => {
+      this.runMobileSentrixCatalogSyncJob(job.id).catch((error) => {
+        this.logger.error(`MobileSentrix catalog sync job ${job.id} failed: ${error.message}`);
+      });
+    });
+
+    return {
+      success: true,
+      already_running: false,
+      job: this.formatMobileSentrixSyncJob(job),
+    };
+  }
+
+  async getMobileSentrixSyncJob(jobId: string) {
+    const job = await this.mobileSentrixSyncJobsRepository.findOne({ where: { id: jobId } });
+    if (!job) {
+      throw new NotFoundException('MobileSentrix sync job was not found.');
+    }
+
+    return {
+      success: true,
+      job: this.formatMobileSentrixSyncJob(job),
+    };
+  }
+
+  async getLatestMobileSentrixSyncJob() {
+    const job = await this.mobileSentrixSyncJobsRepository.findOne({
+      order: { created_at: 'DESC' },
+    });
+
+    return {
+      success: true,
+      job: job ? this.formatMobileSentrixSyncJob(job) : null,
+    };
+  }
+
+  private async runMobileSentrixCatalogSyncJob(jobId: string) {
+    const job = await this.mobileSentrixSyncJobsRepository.findOne({ where: { id: jobId } });
+    if (!job) {
+      throw new NotFoundException(`MobileSentrix sync job ${jobId} was not found.`);
+    }
+
+    await this.mobileSentrixSyncJobsRepository.update(job.id, {
+      status: MobileSentrixSyncJobStatus.RUNNING,
+      started_at: new Date(),
+      last_message: 'Started full MobileSentrix catalog sync.',
+      error_message: null,
+    });
+
+    try {
+      const result = await this.syncMobileSentrixProducts(
+        job.limit_per_page,
+        1,
+        undefined,
+        async (progress) => {
+          await this.mobileSentrixSyncJobsRepository.update(job.id, {
+            current_page: progress.current_page,
+            total_pages: progress.total_pages,
+            total_items: progress.total_items,
+            scanned: progress.scanned,
+            created: progress.created,
+            updated: progress.updated,
+            failed: progress.failed,
+            last_message: progress.last_message,
+          });
+        },
+      );
+
+      await this.mobileSentrixSyncJobsRepository.update(job.id, {
+        status: MobileSentrixSyncJobStatus.COMPLETED,
+        current_page: result.current_page || result.total_pages,
+        total_pages: result.total_pages,
+        total_items: result.total_items,
+        scanned: result.scanned,
+        created: result.created,
+        updated: result.updated,
+        failed: result.failed,
+        last_message: `Completed. ${result.scanned} scanned, ${result.created} created, ${result.updated} updated, ${result.failed} failed.`,
+        finished_at: new Date(),
+      });
+    } catch (error) {
+      await this.mobileSentrixSyncJobsRepository.update(job.id, {
+        status: MobileSentrixSyncJobStatus.FAILED,
+        error_message: error.message,
+        last_message: 'MobileSentrix catalog sync failed.',
+        finished_at: new Date(),
+      });
+      throw error;
+    }
+  }
+
+  private formatMobileSentrixSyncJob(job: MobileSentrixSyncJob) {
+    const totalPages = Number(job.total_pages || 0);
+    const currentPage = Number(job.current_page || 0);
+    const progress =
+      totalPages > 0 ? Math.min(100, Math.round((currentPage / totalPages) * 100)) : 0;
+
+    return {
+      id: job.id,
+      status: job.status,
+      mode: job.mode,
+      limit_per_page: job.limit_per_page,
+      current_page: job.current_page,
+      total_pages: job.total_pages,
+      total_items: job.total_items,
+      scanned: job.scanned,
+      created: job.created,
+      updated: job.updated,
+      failed: job.failed,
+      progress,
+      last_message: job.last_message,
+      error_message: job.error_message,
+      started_at: job.started_at,
+      finished_at: job.finished_at,
+      created_at: job.created_at,
+      updated_at: job.updated_at,
+    };
+  }
+
+  async syncMobileSentrixProducts(
+    limit = 100,
+    startPage = 1,
+    maxPages?: number,
+    onProgress?: (progress: {
+      current_page: number;
+      total_pages: number;
+      total_items: number;
+      scanned: number;
+      created: number;
+      updated: number;
+      failed: number;
+      last_message: string;
+    }) => Promise<void>,
+  ) {
     const safeLimit = Math.min(Math.max(Number(limit) || 100, 1), 100);
     let page = Math.max(Number(startPage) || 1, 1);
     let totalPages = 1;
@@ -269,11 +453,13 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
     let created = 0;
     let updated = 0;
     let failed = 0;
+    let totalItems = 0;
     const synced: Array<{ id: number; title: string; action: 'created' | 'updated' }> = [];
 
     do {
       const productPage = await this.fetchMobileSentrixProductPage(safeLimit, page);
       totalPages = productPage.totalPages || totalPages;
+      totalItems = productPage.totalItems || totalItems;
       scanned += productPage.items.length;
       const mappedProducts = await this.mapMobileSentrixItems(productPage.items);
 
@@ -291,17 +477,32 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
         }
       }
 
+      if (onProgress) {
+        await onProgress({
+          current_page: page,
+          total_pages: totalPages,
+          total_items: totalItems,
+          scanned,
+          created,
+          updated,
+          failed,
+          last_message: `Processed page ${page} of ${totalPages}.`,
+        });
+      }
+
       page += 1;
     } while (page <= totalPages && (!maxPages || page < startPage + maxPages));
 
     return {
       success: true,
       mode: 'catalog',
+      current_page: Math.min(page - 1, totalPages),
       scanned,
       created,
       updated,
       failed,
       synced_count: synced.length,
+      total_items: totalItems,
       total_pages: totalPages,
       synced: synced.slice(0, 100),
     };
