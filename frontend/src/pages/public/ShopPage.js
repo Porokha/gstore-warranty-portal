@@ -105,6 +105,7 @@ const ShopPage = () => {
   const orderModalCloseTimerRef = useRef(null);
   const filterDrawerCloseTimerRef = useRef(null);
   const cartRemoveTimersRef = useRef(new Map());
+  const loadingNextPageRef = useRef(false);
 
   const publicProductParams = useMemo(
     () => ({
@@ -120,13 +121,15 @@ const ShopPage = () => {
     }),
     [brands, parts, priceMax, priceMin, productPage, search, sources, tab],
   );
-  const { data: productsResult, isLoading: isProductsLoading } = useQuery(
+  const { data: productsResult, isLoading: isProductsLoading, isFetching: isProductsFetching } = useQuery(
     ['shop-public-products', publicProductParams],
     () => shopService.getPublicProducts(publicProductParams),
+    { keepPreviousData: true },
   );
   const products = productsResult?.items || [];
   const productsTotal = productsResult?.total || products.length;
   const hasMoreProducts = gridProducts.length < productsTotal;
+  const isInitialProductsLoading = isProductsLoading && gridProducts.length === 0;
   const orderMutation = useMutation((payload) => shopService.createPublicOrder(payload), {
     onSuccess: (result) => {
       setCreatedOrder(result);
@@ -366,7 +369,43 @@ const ShopPage = () => {
   }, [isProductsLoading, productPage, visibleProducts]);
 
   useEffect(() => {
+    if (!isProductsFetching) {
+      loadingNextPageRef.current = false;
+    }
+  }, [isProductsFetching]);
+
+  useEffect(() => {
+    const scrollNode = gridScrollRef.current;
+    if (!scrollNode) {
+      return undefined;
+    }
+
+    const handleScroll = () => {
+      if (!hasMoreProducts || isProductsFetching || loadingNextPageRef.current) {
+        return;
+      }
+
+      const remaining =
+        scrollNode.scrollHeight - scrollNode.scrollTop - scrollNode.clientHeight;
+
+      if (remaining < 520) {
+        loadingNextPageRef.current = true;
+        setProductPage((current) => current + 1);
+      }
+    };
+
+    scrollNode.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+
+    return () => {
+      scrollNode.removeEventListener('scroll', handleScroll);
+    };
+  }, [hasMoreProducts, isProductsFetching]);
+
+  useEffect(() => {
     setProductPage(1);
+    setGridProducts([]);
+    loadingNextPageRef.current = false;
   }, [brands, parts, priceMax, priceMin, search, sources, tab]);
 
   const handleImageReady = (key) => {
@@ -820,7 +859,7 @@ const ShopPage = () => {
                 <span className="zpos-results-label" id="zpos-results-title">
                   {t(deviceTitles[tab] || deviceTitles.all)}
                 </span>
-                <strong id="zpos-results-count">{isProductsLoading ? '...' : productsTotal}</strong>
+                <strong id="zpos-results-count">{isInitialProductsLoading ? '...' : productsTotal}</strong>
                 <span>{t('shop.visible')}</span>
               </div>
             </div>
@@ -844,7 +883,7 @@ const ShopPage = () => {
               className="zpos-grid"
               aria-live="polite"
             >
-              {isProductsLoading &&
+              {isInitialProductsLoading &&
                 Array.from({ length: 12 }).map((_, index) => (
                   <div key={`skeleton-${index}`} className="zpos-card zpos-card--skeleton is-visible">
                     <div className="zpos-thumb zpos-skeleton zpos-skeleton--thumb" />
@@ -862,14 +901,14 @@ const ShopPage = () => {
                   </div>
                 ))}
 
-              {!isProductsLoading && gridProducts.length === 0 && (
+              {!isInitialProductsLoading && gridProducts.length === 0 && (
                 <div className="zpos-empty zpos-empty--grid is-visible">
                   <strong>{t('shop.empty.title')}</strong>
                   <p>{t('shop.empty.description')}</p>
                 </div>
               )}
 
-              {!isProductsLoading && gridProducts.map((product) => {
+              {!isInitialProductsLoading && gridProducts.map((product) => {
                 const displayPrice = getDisplayPrice(product);
                 const productOnlyAvailable = canBuyProductOnly(product);
                 const serviceAvailable = canBuyWithService(product);
@@ -942,13 +981,14 @@ const ShopPage = () => {
                 );
               })}
             </div>
-            {!isProductsLoading && hasMoreProducts && (
+            {!isInitialProductsLoading && (hasMoreProducts || isProductsFetching) && (
               <button
                 type="button"
-                className="zpos-load-more"
+                className={`zpos-load-more ${isProductsFetching ? 'is-loading' : ''}`}
                 onClick={() => setProductPage((current) => current + 1)}
+                disabled={isProductsFetching || !hasMoreProducts}
               >
-                Load more
+                {isProductsFetching ? 'Loading more...' : 'Load more'}
               </button>
             )}
           </div>

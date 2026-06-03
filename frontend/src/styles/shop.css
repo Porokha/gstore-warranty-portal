@@ -1096,6 +1096,11 @@ body.zpos-fullscreen .container {
   box-shadow: 0 12px 30px rgba(111, 78, 246, 0.1);
 }
 
+.zpos-load-more:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
 .zpos-card {
   display: flex;
   flex-direction: column;
