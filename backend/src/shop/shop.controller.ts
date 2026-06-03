@@ -41,6 +41,8 @@ export class ShopController {
   listProducts(
     @Query('scope') scope?: 'active' | 'trash',
     @Query('supplier') supplier?: 'manual' | 'mobilesentrix' | 'all',
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
     const resolvedSupplier = ['manual', 'mobilesentrix', 'all'].includes(String(supplier))
       ? supplier
@@ -48,6 +50,8 @@ export class ShopController {
     return this.shopService.listAdminProducts(
       scope === 'trash' ? 'trash' : 'active',
       resolvedSupplier as 'manual' | 'mobilesentrix' | 'all',
+      Number(page || 1),
+      Number(limit || 100),
     );
   }
 

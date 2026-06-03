@@ -46,6 +46,8 @@ export class ShopService {
 
   async listPublicProducts(filters: PublicShopProductsDto) {
     await this.purgeExpiredTrash();
+    const page = Math.max(Number(filters.page) || 1, 1);
+    const limit = Math.min(Math.max(Number(filters.limit) || 80, 1), 120);
 
     const qb = this.shopProductsRepository.createQueryBuilder('product');
 
@@ -56,18 +58,19 @@ export class ShopService {
       qb.andWhere('product.device_category = :device', { device: filters.device });
     }
 
-    if (filters.brand) {
-      qb.andWhere('LOWER(COALESCE(product.brand, "")) = :brand', {
-        brand: filters.brand.toLowerCase(),
-      });
+    const brands = this.parseFilterList(filters.brand).map((brand) => brand.toLowerCase());
+    if (brands.length > 0) {
+      qb.andWhere('LOWER(COALESCE(product.brand, "")) IN (:...brands)', { brands });
     }
 
-    if (filters.part) {
-      qb.andWhere('product.part_category = :part', { part: filters.part });
+    const parts = this.parseFilterList(filters.part);
+    if (parts.length > 0) {
+      qb.andWhere('product.part_category IN (:...parts)', { parts });
     }
 
-    if (filters.source) {
-      qb.andWhere('product.inventory_source = :source', { source: filters.source });
+    const sources = this.parseFilterList(filters.source);
+    if (sources.length > 0) {
+      qb.andWhere('product.inventory_source IN (:...sources)', { sources });
     }
 
     if (filters.search) {
@@ -77,15 +80,41 @@ export class ShopService {
       );
     }
 
+    if (filters.price_min !== undefined) {
+      qb.andWhere('COALESCE(product.sale_price, product.price, product.service_price) >= :priceMin', {
+        priceMin: filters.price_min,
+      });
+    }
+
+    if (filters.price_max !== undefined) {
+      qb.andWhere('COALESCE(product.sale_price, product.price, product.service_price) <= :priceMax', {
+        priceMax: filters.price_max,
+      });
+    }
+
     qb.orderBy('product.sort_order', 'ASC').addOrderBy('product.id', 'ASC');
+    qb.skip((page - 1) * limit).take(limit);
 
-    const products = await qb.getMany();
+    const [products, total] = await qb.getManyAndCount();
 
-    return products.map((product) => this.serializeProduct(product));
+    return {
+      items: products.map((product) => this.serializeProduct(product)),
+      total,
+      page,
+      limit,
+      total_pages: Math.ceil(total / limit),
+    };
   }
 
-  async listAdminProducts(scope: ShopScope = 'active', supplier: ShopSupplierScope = 'manual') {
+  async listAdminProducts(
+    scope: ShopScope = 'active',
+    supplier: ShopSupplierScope = 'manual',
+    pageInput = 1,
+    limitInput = 100,
+  ) {
     await this.purgeExpiredTrash();
+    const page = Math.max(Number(pageInput) || 1, 1);
+    const limit = Math.min(Math.max(Number(limitInput) || 100, 1), 200);
 
     const qb = this.shopProductsRepository.createQueryBuilder('product');
     this.applyScope(qb, 'product', scope);
@@ -93,9 +122,16 @@ export class ShopService {
       qb.andWhere('product.supplier = :supplier', { supplier });
     }
     qb.orderBy('product.sort_order', 'ASC').addOrderBy('product.id', 'ASC');
+    qb.skip((page - 1) * limit).take(limit);
 
-    const products = await qb.getMany();
-    return products.map((product) => this.serializeProduct(product, true));
+    const [products, total] = await qb.getManyAndCount();
+    return {
+      items: products.map((product) => this.serializeProduct(product, true)),
+      total,
+      page,
+      limit,
+      total_pages: Math.ceil(total / limit),
+    };
   }
 
   async createProduct(createDto: CreateShopProductDto) {
@@ -565,6 +601,13 @@ export class ShopService {
     }
 
     qb.where(`${alias}.deleted_at IS NULL`);
+  }
+
+  private parseFilterList(value?: string) {
+    return String(value || '')
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
   }
 
   private serializeProduct(product: ShopProduct, admin = false) {

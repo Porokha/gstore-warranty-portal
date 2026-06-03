@@ -1,8 +1,7 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import {
   ShopDeviceCategory,
-  ShopInventorySource,
-  ShopPartCategory,
 } from '../entities/shop-product.entity';
 
 export class PublicShopProductsDto {
@@ -15,14 +14,37 @@ export class PublicShopProductsDto {
   device?: ShopDeviceCategory;
 
   @IsOptional()
-  @IsEnum(ShopPartCategory)
-  part?: ShopPartCategory;
+  @IsString()
+  part?: string;
 
   @IsOptional()
-  @IsEnum(ShopInventorySource)
-  source?: ShopInventorySource;
+  @IsString()
+  source?: string;
 
   @IsOptional()
   @IsString()
   search?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(120)
+  limit?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @Min(0)
+  price_min?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @Min(0)
+  price_max?: number;
 }

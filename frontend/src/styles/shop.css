@@ -1083,6 +1083,19 @@ body.zpos-fullscreen .container {
   pointer-events: none;
 }
 
+.zpos-load-more {
+  display: block;
+  margin: 18px auto 6px;
+  padding: 12px 24px;
+  border: 1px solid rgba(111, 78, 246, 0.22);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #221d35;
+  font: 700 12px/1 "BPG Banner Quadrosquare Caps", sans-serif;
+  cursor: pointer;
+  box-shadow: 0 12px 30px rgba(111, 78, 246, 0.1);
+}
+
 .zpos-card {
   display: flex;
   flex-direction: column;

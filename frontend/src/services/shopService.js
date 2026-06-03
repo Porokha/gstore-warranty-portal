@@ -6,8 +6,8 @@ export const shopService = {
     return response.data;
   },
 
-  getPublicProducts: async () => {
-    const response = await api.get('/public/shop/products');
+  getPublicProducts: async (params = {}) => {
+    const response = await api.get('/public/shop/products', { params });
     return response.data;
   },
 
@@ -16,9 +16,9 @@ export const shopService = {
     return response.data;
   },
 
-  getAdminProducts: async (scope = 'active', supplier = 'manual') => {
+  getAdminProducts: async (scope = 'active', supplier = 'manual', params = {}) => {
     const response = await api.get('/shop/admin/products', {
-      params: { scope, supplier },
+      params: { scope, supplier, ...params },
     });
     return response.data;
   },

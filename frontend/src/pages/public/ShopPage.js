@@ -97,6 +97,7 @@ const ShopPage = () => {
   const [compactCart, setCompactCart] = useState(false);
   const [cartExpanded, setCartExpanded] = useState(true);
   const [pullRefresh, setPullRefresh] = useState({ active: false, ready: false, distance: 0 });
+  const [productPage, setProductPage] = useState(1);
   const rootRef = useRef(null);
   const gridScrollRef = useRef(null);
   const tabsRef = useRef(null);
@@ -105,9 +106,27 @@ const ShopPage = () => {
   const filterDrawerCloseTimerRef = useRef(null);
   const cartRemoveTimersRef = useRef(new Map());
 
-  const { data: products = [], isLoading: isProductsLoading } = useQuery(['shop-public-products'], () =>
-    shopService.getPublicProducts(),
+  const publicProductParams = useMemo(
+    () => ({
+      page: productPage,
+      limit: 80,
+      device: tab === 'all' ? undefined : tab,
+      brand: brands.length > 0 ? brands.join(',') : undefined,
+      part: parts.length > 0 ? parts.join(',') : undefined,
+      source: sources.length < 2 ? sources.join(',') : undefined,
+      search: search.trim() || undefined,
+      price_min: priceMin === '' ? undefined : Number(priceMin),
+      price_max: priceMax === '' ? undefined : Number(priceMax),
+    }),
+    [brands, parts, priceMax, priceMin, productPage, search, sources, tab],
   );
+  const { data: productsResult, isLoading: isProductsLoading } = useQuery(
+    ['shop-public-products', publicProductParams],
+    () => shopService.getPublicProducts(publicProductParams),
+  );
+  const products = productsResult?.items || [];
+  const productsTotal = productsResult?.total || products.length;
+  const hasMoreProducts = gridProducts.length < productsTotal;
   const orderMutation = useMutation((payload) => shopService.createPublicOrder(payload), {
     onSuccess: (result) => {
       setCreatedOrder(result);
@@ -315,24 +334,7 @@ const ShopPage = () => {
     orderForm.has_partner_warranty !== null &&
     (!orderForm.has_partner_warranty || orderForm.partner_warranty_id.trim());
 
-  const visibleProducts = useMemo(() => {
-    return products.filter((product) => {
-      const activePrice = getDisplayPrice(product);
-      const haystack = `${product.title} ${product.brand || ''} ${product.issue_label || ''} ${product.part_category} ${product.device_category}`.toLowerCase();
-      const numericMin = priceMin === '' ? null : Number(priceMin);
-      const numericMax = priceMax === '' ? null : Number(priceMax);
-
-      if (tab !== 'all' && product.device_category !== tab) return false;
-      if (brands.length > 0 && !brands.includes(product.brand || '')) return false;
-      if (parts.length > 0 && !parts.includes(product.part_category)) return false;
-      if (search && !haystack.includes(search.toLowerCase())) return false;
-      if (!sources.includes(product.inventory_source)) return false;
-      if (numericMin !== null && activePrice !== null && activePrice < numericMin) return false;
-      if (numericMin !== null && activePrice === null) return false;
-      if (numericMax !== null && activePrice !== null && activePrice > numericMax) return false;
-      return true;
-    });
-  }, [brands, parts, priceMax, priceMin, products, search, sources, tab]);
+  const visibleProducts = products;
 
   const brandOptions = useMemo(
     () =>
@@ -357,9 +359,15 @@ const ShopPage = () => {
 
   useEffect(() => {
     if (!isProductsLoading) {
-      setGridProducts(visibleProducts);
+      setGridProducts((current) =>
+        productPage === 1 ? visibleProducts : [...current, ...visibleProducts],
+      );
     }
-  }, [isProductsLoading, visibleProducts]);
+  }, [isProductsLoading, productPage, visibleProducts]);
+
+  useEffect(() => {
+    setProductPage(1);
+  }, [brands, parts, priceMax, priceMin, search, sources, tab]);
 
   const handleImageReady = (key) => {
     setLoadedImages((current) => (current[key] ? current : { ...current, [key]: true }));
@@ -812,7 +820,7 @@ const ShopPage = () => {
                 <span className="zpos-results-label" id="zpos-results-title">
                   {t(deviceTitles[tab] || deviceTitles.all)}
                 </span>
-                <strong id="zpos-results-count">{isProductsLoading ? '...' : visibleProducts.length}</strong>
+                <strong id="zpos-results-count">{isProductsLoading ? '...' : productsTotal}</strong>
                 <span>{t('shop.visible')}</span>
               </div>
             </div>
@@ -934,6 +942,15 @@ const ShopPage = () => {
                 );
               })}
             </div>
+            {!isProductsLoading && hasMoreProducts && (
+              <button
+                type="button"
+                className="zpos-load-more"
+                onClick={() => setProductPage((current) => current + 1)}
+              >
+                Load more
+              </button>
+            )}
           </div>
         </main>
 

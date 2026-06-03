@@ -95,6 +95,7 @@ const ShopAdminProductsPage = () => {
   const [form, setForm] = useState(emptyForm);
   const [mobileSentrixResult, setMobileSentrixResult] = useState(null);
   const [mobileSentrixJobId, setMobileSentrixJobId] = useState(null);
+  const [adminProductPage, setAdminProductPage] = useState(1);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [confirmState, setConfirmState] = useState({
@@ -107,9 +108,16 @@ const ShopAdminProductsPage = () => {
   });
 
   const productSupplier = productSource === 'mobilesentrix' ? 'mobilesentrix' : 'manual';
-  const { data: products = [], isLoading } = useQuery(['shop-admin-products', scope, productSupplier], () =>
-    shopService.getAdminProducts(scope, productSupplier),
+  const adminProductLimit = productSource === 'mobilesentrix' ? 100 : 200;
+  const { data: productsResult, isLoading } = useQuery(['shop-admin-products', scope, productSupplier, adminProductPage, adminProductLimit], () =>
+    shopService.getAdminProducts(scope, productSupplier, {
+      page: adminProductPage,
+      limit: adminProductLimit,
+    }),
   );
+  const products = productsResult?.items || [];
+  const productsTotal = productsResult?.total || products.length;
+  const productsTotalPages = productsResult?.total_pages || 1;
   const { data: latestMobileSentrixJobResult } = useQuery(
     ['mobilesentrix-sync-latest'],
     () => shopService.getLatestMobileSentrixSyncJob(),
@@ -156,6 +164,7 @@ const ShopAdminProductsPage = () => {
     setSelectedId(null);
     setSelectedIds([]);
     setForm(emptyForm);
+    setAdminProductPage(1);
   }, [scope, productSource]);
 
   const invalidateProducts = async () => {
@@ -1031,6 +1040,35 @@ const ShopAdminProductsPage = () => {
               </Table>
             </Box>
           )}
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={1.5}
+            alignItems={{ xs: 'stretch', sm: 'center' }}
+            justifyContent="space-between"
+            sx={{ p: 2, borderTop: '1px solid #e6edf7' }}
+          >
+            <Typography sx={{ fontSize: '13px', color: '#667085', fontWeight: 700 }}>
+              Showing page {adminProductPage} of {productsTotalPages} • {productsTotal} products
+            </Typography>
+            <Stack direction="row" spacing={1}>
+              <Button
+                variant="outlined"
+                disabled={adminProductPage <= 1 || isLoading}
+                onClick={() => setAdminProductPage((current) => Math.max(1, current - 1))}
+                sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outlined"
+                disabled={adminProductPage >= productsTotalPages || isLoading}
+                onClick={() => setAdminProductPage((current) => current + 1)}
+                sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
+              >
+                Next
+              </Button>
+            </Stack>
+          </Stack>
         </Paper>
       </Grid>
 
