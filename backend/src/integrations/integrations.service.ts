@@ -152,6 +152,9 @@ export class IntegrationsService {
     });
 
     if (response.status >= 400) {
+      this.logger.warn(
+        `MobileSentrix search failed with status ${response.status}: ${this.formatMobileSentrixProviderResponse(response.data)}`,
+      );
       throw new BadGatewayException({
         message: response.data?.message || 'MobileSentrix search request failed',
         provider: 'mobilesentrix',
@@ -399,6 +402,22 @@ export class IntegrationsService {
     return `OAuth ${Object.entries(values)
       .map(([key, value]) => `${key}="${encodeURIComponent(value)}"`)
       .join(', ')}`;
+  }
+
+  private formatMobileSentrixProviderResponse(data: unknown): string {
+    if (!data) {
+      return 'empty response';
+    }
+
+    if (typeof data === 'string') {
+      return data.slice(0, 500);
+    }
+
+    try {
+      return JSON.stringify(data).slice(0, 1000);
+    } catch {
+      return 'unserializable response';
+    }
   }
 
   getMobileSentrixCallbackUrl(): string {

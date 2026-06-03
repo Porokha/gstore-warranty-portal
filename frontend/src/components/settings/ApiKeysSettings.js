@@ -118,6 +118,34 @@ const ApiKeysSettings = () => {
     setFormData({ ...formData, [field]: value });
   };
 
+  const formatMobileSentrixError = (error) => {
+    const data = error.response?.data;
+    const providerStatus = data?.provider_status;
+    const providerResponse = data?.provider_response;
+    const providerMessage =
+      providerResponse?.message ||
+      providerResponse?.error ||
+      (typeof providerResponse === 'string' ? providerResponse : '');
+    const baseMessage =
+      data?.message || error.message || t('apiKeys.mobileSentrixTestError');
+
+    if (providerStatus || providerMessage) {
+      return [
+        baseMessage,
+        providerStatus ? `MobileSentrix status: ${providerStatus}` : '',
+        providerMessage ? `MobileSentrix response: ${providerMessage}` : '',
+      ]
+        .filter(Boolean)
+        .join(' • ');
+    }
+
+    if (providerResponse) {
+      return `${baseMessage} • MobileSentrix response: ${JSON.stringify(providerResponse)}`;
+    }
+
+    return baseMessage;
+  };
+
   const handleSave = () => {
     saveMutation.mutate(formData);
   };
@@ -160,9 +188,7 @@ const ApiKeysSettings = () => {
       },
       onError: (error) => {
         setMobileSentrixTestResult(null);
-        setSaveError(
-          error.response?.data?.message || error.message || t('apiKeys.mobileSentrixTestError'),
-        );
+        setSaveError(formatMobileSentrixError(error));
       },
     },
   );
