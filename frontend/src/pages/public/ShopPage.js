@@ -792,16 +792,19 @@ const ShopPage = () => {
           <div className="zpos-sidebar-scroll">
             <section className="zpos-filter-section">
               <div className="zpos-section-head">
-                <p>{t('shop.filters.brandKicker')}</p>
-                <h3>{t('shop.filters.brandTitle')}</h3>
+                <p>{t('shop.filters.partTypeKicker')}</p>
+                <h3>{t('shop.filters.partTypeTitle')}</h3>
               </div>
               <FilterOptionList
-                allLabel={t('shop.filters.allBrands')}
-                allActive={brands.length === 0}
-                options={brandOptions}
-                selectedValues={brands}
-                onToggle={toggleBrand}
-                onAll={() => toggleBrand('all')}
+                allLabel={t('common.all')}
+                allActive={parts.length === 0}
+                options={dynamicPartOptions.filter(([value]) => value !== 'all').map(([value]) => value)}
+                selectedValues={parts}
+                onToggle={togglePart}
+                onAll={() => togglePart('all')}
+                getLabel={(value) =>
+                  t(dynamicPartOptions.find(([partValue]) => partValue === value)?.[1] || value)
+                }
                 searchPlaceholder={t('shop.filters.searchOptions')}
                 showLessLabel={t('shop.filters.showLess')}
                 showMoreLabel={(count) => t('shop.filters.showMore', { count })}
@@ -828,19 +831,16 @@ const ShopPage = () => {
 
             <section className="zpos-filter-section">
               <div className="zpos-section-head">
-                <p>{t('shop.filters.partTypeKicker')}</p>
-                <h3>{t('shop.filters.partTypeTitle')}</h3>
+                <p>{t('shop.filters.brandKicker')}</p>
+                <h3>{t('shop.filters.brandTitle')}</h3>
               </div>
               <FilterOptionList
-                allLabel={t('common.all')}
-                allActive={parts.length === 0}
-                options={dynamicPartOptions.filter(([value]) => value !== 'all').map(([value]) => value)}
-                selectedValues={parts}
-                onToggle={togglePart}
-                onAll={() => togglePart('all')}
-                getLabel={(value) =>
-                  t(dynamicPartOptions.find(([partValue]) => partValue === value)?.[1] || value)
-                }
+                allLabel={t('shop.filters.allBrands')}
+                allActive={brands.length === 0}
+                options={brandOptions}
+                selectedValues={brands}
+                onToggle={toggleBrand}
+                onAll={() => toggleBrand('all')}
                 searchPlaceholder={t('shop.filters.searchOptions')}
                 showLessLabel={t('shop.filters.showLess')}
                 showMoreLabel={(count) => t('shop.filters.showMore', { count })}
