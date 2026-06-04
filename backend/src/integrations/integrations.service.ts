@@ -763,6 +763,79 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  async refreshSelectedMobileSentrixProducts(productIds: number[]) {
+    const ids = Array.from(
+      new Set(
+        (productIds || [])
+          .map((id) => Number(id))
+          .filter((id) => Number.isInteger(id) && id > 0),
+      ),
+    );
+
+    if (ids.length === 0) {
+      throw new BadRequestException('At least one product id is required.');
+    }
+
+    const products = await this.shopProductsRepository.find({
+      where: {
+        id: In(ids),
+        supplier: ShopProductSupplier.MOBILESENTRIX,
+      },
+    });
+
+    if (products.length === 0) {
+      throw new NotFoundException('No MobileSentrix products were found for refresh.');
+    }
+
+    const rateCache = new Map<string, number>();
+    const results: Array<{ id: number; title: string; action: 'updated' | 'skipped' | 'failed'; error?: string }> = [];
+
+    for (const product of products) {
+      try {
+        const supplierProductId = String(product.supplier_product_id || '').trim();
+        if (!supplierProductId) {
+          results.push({
+            id: product.id,
+            title: product.title,
+            action: 'failed',
+            error: 'Missing supplier product id.',
+          });
+          continue;
+        }
+
+        const supplierItem = await this.enrichMobileSentrixSearchItem({
+          product_id: supplierProductId,
+          entity_id: supplierProductId,
+          sku: product.supplier_sku,
+          new_sku: product.supplier_sku,
+        });
+        const result = await this.updateExistingMobileSentrixProductFromCatalog(
+          product,
+          supplierItem,
+          rateCache,
+        );
+        results.push(result);
+      } catch (error) {
+        results.push({
+          id: product.id,
+          title: product.title,
+          action: 'failed',
+          error: error.message,
+        });
+      }
+    }
+
+    return {
+      success: true,
+      requested: ids.length,
+      matched: products.length,
+      updated: results.filter((item) => item.action === 'updated').length,
+      skipped: results.filter((item) => item.action === 'skipped').length,
+      failed: results.filter((item) => item.action === 'failed').length,
+      results,
+    };
+  }
+
   async handlePosOrderUpsert(payload: PosOrderUpsertDto) {
     if (payload.event_type !== 'order_upserted') {
       throw new BadRequestException('Unsupported event_type. Only order_upserted is accepted.');

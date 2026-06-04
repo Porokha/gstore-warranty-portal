@@ -123,6 +123,15 @@ export const shopService = {
     return response.data;
   },
 
+  refreshSelectedMobileSentrixProducts: async (productIds = []) => {
+    const response = await api.post(
+      '/integrations/mobilesentrix/products/refresh-selected',
+      { product_ids: productIds },
+      { skipAuthRedirect: true },
+    );
+    return response.data;
+  },
+
   getOrders: async (scope = 'active') => {
     const response = await api.get('/shop/admin/orders', {
       params: { scope },

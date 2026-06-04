@@ -109,6 +109,18 @@ export class IntegrationsController {
     return this.integrationsService.startMobileSentrixExistingRefresh(100);
   }
 
+  @Post('mobilesentrix/products/refresh-selected')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async refreshSelectedMobileSentrixProducts(
+    @Body()
+    body: {
+      product_ids?: number[];
+    },
+  ) {
+    return this.integrationsService.refreshSelectedMobileSentrixProducts(body.product_ids || []);
+  }
+
   @Post('mobilesentrix/webhook')
   @HttpCode(HttpStatus.OK)
   async handleMobileSentrixWebhook(

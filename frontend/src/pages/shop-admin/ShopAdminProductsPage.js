@@ -4,8 +4,14 @@ import {
   Alert,
   Box,
   Button,
+  Card,
+  CardContent,
   Checkbox,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Grid,
   IconButton,
   LinearProgress,
@@ -21,10 +27,13 @@ import {
   TableHead,
   TableRow,
   TextField,
+  Switch,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import {
   Add,
+  Edit,
   Download,
   DeleteOutline,
   FileUpload,
@@ -33,6 +42,8 @@ import {
   Search,
   Sync,
   UploadFile,
+  VisibilityOff,
+  Visibility,
 } from '@mui/icons-material';
 import { shopService } from '../../services/shopService';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
@@ -93,6 +104,7 @@ const ShopAdminProductsPage = () => {
   const [selectedId, setSelectedId] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [form, setForm] = useState(emptyForm);
+  const [productModalOpen, setProductModalOpen] = useState(false);
   const [mobileSentrixResult, setMobileSentrixResult] = useState(null);
   const [mobileSentrixJobId, setMobileSentrixJobId] = useState(null);
   const [adminProductPage, setAdminProductPage] = useState(1);
@@ -177,6 +189,7 @@ const ShopAdminProductsPage = () => {
       setError('');
       setForm(emptyForm);
       setSelectedId(null);
+      setProductModalOpen(false);
       await invalidateProducts();
     },
     onError: (mutationError) => {
@@ -189,6 +202,7 @@ const ShopAdminProductsPage = () => {
     onSuccess: async () => {
       setMessage('Product updated.');
       setError('');
+      setProductModalOpen(false);
       await invalidateProducts();
     },
     onError: (mutationError) => {
@@ -196,6 +210,21 @@ const ShopAdminProductsPage = () => {
       setMessage('');
     },
   });
+
+  const toggleVisibilityMutation = useMutation(
+    ({ id, isActive }) => shopService.updateProduct(id, { is_active: isActive }),
+    {
+      onSuccess: async () => {
+        setMessage('Product visibility updated.');
+        setError('');
+        await invalidateProducts();
+      },
+      onError: (mutationError) => {
+        setError(mutationError.response?.data?.message || 'Failed to update visibility.');
+        setMessage('');
+      },
+    },
+  );
 
   const deleteMutation = useMutation((id) => shopService.deleteProduct(id), {
     onSuccess: async () => {
@@ -366,6 +395,24 @@ const ShopAdminProductsPage = () => {
     },
   });
 
+  const mobileSentrixSelectedRefreshMutation = useMutation(
+    (ids) => shopService.refreshSelectedMobileSentrixProducts(ids),
+    {
+      onSuccess: async (result) => {
+        setMessage(
+          `Selected MobileSentrix refresh finished. ${result.updated || 0} updated, ${result.skipped || 0} skipped, ${result.failed || 0} failed.`,
+        );
+        setError('');
+        setSelectedIds([]);
+        await invalidateProducts();
+      },
+      onError: (mutationError) => {
+        setError(formatIntegrationError(mutationError, 'Failed to refresh selected MobileSentrix products.'));
+        setMessage('');
+      },
+    },
+  );
+
   const selectedProduct = useMemo(
     () => products.find((product) => product.id === selectedId) || null,
     [products, selectedId],
@@ -373,15 +420,17 @@ const ShopAdminProductsPage = () => {
   const allSelected =
     products.length > 0 && selectedIds.length > 0 && selectedIds.length === products.length;
 
-  const applyProductToForm = (product) => {
+  const applyProductToForm = (product, openModal = true) => {
     if (!product) {
       setSelectedId(null);
       setForm(emptyForm);
+      if (openModal) {
+        setProductModalOpen(true);
+      }
       return;
     }
 
     setSelectedId(product.id);
-    setSelectedIds([product.id]);
     setForm({
       title: product.title || '',
       brand: product.brand || '',
@@ -399,6 +448,9 @@ const ShopAdminProductsPage = () => {
       sort_order: String(product.sort_order ?? 0),
       is_active: Boolean(product.is_active),
     });
+    if (openModal) {
+      setProductModalOpen(true);
+    }
   };
 
   const buildPayload = () => ({
@@ -521,9 +573,298 @@ const ShopAdminProductsPage = () => {
     });
   };
 
+  const handleBulkVisibility = (isActive) => {
+    if (selectedIds.length === 0) {
+      return;
+    }
+
+    setConfirmState({
+      open: true,
+      title: isActive ? 'Show Selected Products' : 'Hide Selected Products',
+      message: `${selectedIds.length} selected products will be ${isActive ? 'shown in' : 'hidden from'} the public catalog.`,
+      confirmText: isActive ? 'Show Selected' : 'Hide Selected',
+      severity: 'warning',
+      onConfirm: async () => {
+        await Promise.all(
+          selectedIds.map((id) => shopService.updateProduct(id, { is_active: isActive })),
+        );
+        setSelectedIds([]);
+        setMessage(`${selectedIds.length} products ${isActive ? 'shown' : 'hidden'}.`);
+        setError('');
+        await invalidateProducts();
+      },
+    });
+  };
+
+  const handleRefreshSelectedMobileSentrix = () => {
+    if (selectedIds.length === 0) {
+      return;
+    }
+
+    mobileSentrixSelectedRefreshMutation.mutate(selectedIds);
+  };
+
+  const refreshMobileSentrixProduct = (productId) => {
+    mobileSentrixSelectedRefreshMutation.mutate([productId]);
+  };
+
+  const renderVisibilitySwitch = (product) => (
+    <Tooltip title={product.is_active ? 'Visible in public shop' : 'Hidden from public shop'}>
+      <Switch
+        size="small"
+        checked={Boolean(product.is_active)}
+        disabled={scope === 'trash' || toggleVisibilityMutation.isLoading}
+        onClick={(event) => event.stopPropagation()}
+        onChange={(event) =>
+          toggleVisibilityMutation.mutate({
+            id: product.id,
+            isActive: event.target.checked,
+          })
+        }
+      />
+    </Tooltip>
+  );
+
+  const renderProductEditor = () => (
+    <>
+      <Box sx={{ mb: 2.5 }}>
+        {form.image_url ? (
+          <Box
+            component="img"
+            src={form.image_url}
+            alt="Product preview"
+            sx={{
+              width: '100%',
+              maxHeight: 220,
+              objectFit: 'contain',
+              borderRadius: 3,
+              border: '1px solid #dce4f0',
+              background: '#f8fbff',
+              mb: 1.5,
+            }}
+          />
+        ) : null}
+        <Stack direction="row" spacing={1.25}>
+          <Button
+            variant="outlined"
+            startIcon={<FileUpload />}
+            onClick={() => imageInputRef.current?.click()}
+            disabled={uploadImageMutation.isLoading}
+            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
+          >
+            {uploadImageMutation.isLoading ? 'Uploading...' : 'Upload Image'}
+          </Button>
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) {
+                uploadImageMutation.mutate(file);
+              }
+              event.target.value = '';
+            }}
+          />
+        </Stack>
+      </Box>
+
+      <Box component="form" id="shop-admin-product-form" onSubmit={handleSubmit}>
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Title"
+              value={form.title}
+              onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
+              required
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Brand"
+              value={form.brand}
+              onChange={(event) => setForm((prev) => ({ ...prev, brand: event.target.value }))}
+              helperText="Used in the public shop brand filter and CSV imports."
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Slug"
+              value={form.slug}
+              onChange={(event) => setForm((prev) => ({ ...prev, slug: event.target.value }))}
+              helperText="Optional. Leave blank to auto-generate."
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              select
+              fullWidth
+              label="Device"
+              value={form.device_category}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, device_category: event.target.value }))
+              }
+            >
+              <MenuItem value="smartphones">smartphones</MenuItem>
+              <MenuItem value="laptops">laptops</MenuItem>
+              <MenuItem value="accessories">accessories</MenuItem>
+            </TextField>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              select
+              fullWidth
+              label="Part"
+              value={form.part_category}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, part_category: event.target.value }))
+              }
+            >
+              {['board', 'screen', 'sensor', 'battery', 'camera', 'speaker', 'charging', 'accessory'].map(
+                (value) => (
+                  <MenuItem key={value} value={value}>
+                    {value}
+                  </MenuItem>
+                ),
+              )}
+            </TextField>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              select
+              fullWidth
+              label="Source"
+              value={form.inventory_source}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, inventory_source: event.target.value }))
+              }
+            >
+              <MenuItem value="oem">oem</MenuItem>
+              <MenuItem value="third-party">third-party</MenuItem>
+            </TextField>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              select
+              fullWidth
+              label="Visibility"
+              value={form.is_active ? 'active' : 'hidden'}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, is_active: event.target.value === 'active' }))
+              }
+            >
+              <MenuItem value="active">active</MenuItem>
+              <MenuItem value="hidden">hidden</MenuItem>
+            </TextField>
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Issue Label"
+              value={form.issue_label}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, issue_label: event.target.value }))
+              }
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              multiline
+              minRows={3}
+              label="Description"
+              value={form.description}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, description: event.target.value }))
+              }
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Image URL"
+              value={form.image_url}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, image_url: event.target.value }))
+              }
+              helperText="If this is an external URL, the backend downloads and stores it locally when you save."
+            />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <TextField
+              fullWidth
+              type="number"
+              label="Price"
+              value={form.price}
+              onChange={(event) => setForm((prev) => ({ ...prev, price: event.target.value }))}
+              helperText={
+                form.price === '' && form.service_price !== ''
+                  ? productOnlyStatusLabelKa
+                  : 'Leave empty to make this product available only with service.'
+              }
+            />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <TextField
+              fullWidth
+              type="number"
+              label="Sale Price"
+              value={form.sale_price}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, sale_price: event.target.value }))
+              }
+            />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <TextField
+              fullWidth
+              type="number"
+              label="Service Price"
+              value={form.service_price}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, service_price: event.target.value }))
+              }
+              helperText={
+                form.service_price === ''
+                  ? serviceUnavailableLabelKa
+                  : 'Leave empty to disable the service-bundle option.'
+              }
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              type="number"
+              label="Stock Quantity"
+              value={form.stock_quantity}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, stock_quantity: event.target.value }))
+              }
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              type="number"
+              label="Sort Order"
+              value={form.sort_order}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, sort_order: event.target.value }))
+              }
+            />
+          </Grid>
+        </Grid>
+      </Box>
+    </>
+  );
+
   return (
     <Grid container spacing={3}>
-      <Grid item xs={12} lg={7}>
+      <Grid item xs={12} lg={productSource === 'mobilesentrix' ? 9 : 7}>
         <Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid #dce4f0', overflow: 'hidden' }}>
           <Box sx={{ p: 3, borderBottom: '1px solid #e6edf7' }}>
             <Tabs
@@ -618,7 +959,7 @@ const ShopAdminProductsPage = () => {
                   )}
                 </Stack>
               ) : (
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.25} sx={{ minWidth: { md: 420 } }}>
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.25} flexWrap="wrap" sx={{ minWidth: { md: 420 } }}>
                   <Button
                     variant="outlined"
                     startIcon={<Search />}
@@ -649,6 +990,40 @@ const ShopAdminProductsPage = () => {
                     {mobileSentrixRefreshMutation.isLoading || mobileSentrixJobRunning
                       ? 'Refresh Running...'
                       : 'Refresh Existing'}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    startIcon={<Sync />}
+                    onClick={handleRefreshSelectedMobileSentrix}
+                    disabled={selectedIds.length === 0 || mobileSentrixSelectedRefreshMutation.isLoading}
+                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
+                  >
+                    {mobileSentrixSelectedRefreshMutation.isLoading ? 'Refreshing...' : 'Refresh Selected'}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    disabled={selectedIds.length === 0}
+                    onClick={() => handleBulkVisibility(false)}
+                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
+                  >
+                    Hide Selected
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    disabled={selectedIds.length === 0}
+                    onClick={() => handleBulkVisibility(true)}
+                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
+                  >
+                    Show Selected
+                  </Button>
+                  <Button
+                    color="warning"
+                    variant="outlined"
+                    disabled={selectedIds.length === 0}
+                    onClick={handleBulkDelete}
+                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
+                  >
+                    Delete Selected
                   </Button>
                 </Stack>
               )}
@@ -871,12 +1246,16 @@ const ShopAdminProductsPage = () => {
                             {product.deleted_at ? new Date(product.deleted_at).toLocaleString() : 'Unknown'}
                           </Typography>
                         ) : (
-                          <Chip
-                            size="small"
-                            label={product.is_active ? 'Active' : 'Hidden'}
-                            color={product.is_active ? 'success' : 'default'}
-                            sx={{ borderRadius: 2 }}
-                          />
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            {renderVisibilitySwitch(product)}
+                            <Chip
+                              size="small"
+                              icon={product.is_active ? <Visibility /> : <VisibilityOff />}
+                              label={product.is_active ? 'Visible' : 'Hidden'}
+                              color={product.is_active ? 'success' : 'default'}
+                              sx={{ borderRadius: 2 }}
+                            />
+                          </Stack>
                         )}
                       </TableCell>
                       <TableCell align="right">
@@ -902,15 +1281,26 @@ const ShopAdminProductsPage = () => {
                             </IconButton>
                           </Stack>
                         ) : (
-                          <IconButton
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleSoftDelete(product.id);
-                            }}
-                            color="error"
-                          >
-                            <DeleteOutline />
-                          </IconButton>
+                          <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                            <IconButton
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                applyProductToForm(product);
+                              }}
+                              color="primary"
+                            >
+                              <Edit />
+                            </IconButton>
+                            <IconButton
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleSoftDelete(product.id);
+                              }}
+                              color="error"
+                            >
+                              <DeleteOutline />
+                            </IconButton>
+                          </Stack>
                         )}
                       </TableCell>
                     </TableRow>
@@ -919,125 +1309,194 @@ const ShopAdminProductsPage = () => {
               </Table>
             </Box>
           ) : (
-            <Box sx={{ overflowX: 'auto' }}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Product</TableCell>
-                    <TableCell>Supplier</TableCell>
-                    <TableCell>Zezva Price</TableCell>
-                    <TableCell>Mapping</TableCell>
-                    <TableCell>Stock</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {isLoading &&
-                    Array.from({ length: 5 }).map((_, index) => (
-                      <TableRow key={`mobilesentrix-loading-${index}`}>
-                        <TableCell>
-                          <Stack direction="row" spacing={1.5} alignItems="center">
-                            <Skeleton variant="rounded" width={44} height={44} />
-                            <Box>
-                              <Skeleton variant="text" width={220} />
-                              <Skeleton variant="text" width={140} />
+            <Box sx={{ p: 2.5 }}>
+              <Stack direction="row" spacing={1.25} alignItems="center" sx={{ mb: 2 }}>
+                <Checkbox
+                  checked={allSelected}
+                  indeterminate={selectedIds.length > 0 && !allSelected}
+                  onChange={(event) => handleSelectAll(event.target.checked)}
+                />
+                <Typography sx={{ fontWeight: 800, color: '#172033' }}>
+                  {selectedIds.length ? `${selectedIds.length} selected` : 'Select synced products'}
+                </Typography>
+              </Stack>
+              {isLoading ? (
+                <Grid container spacing={2}>
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <Grid item xs={12} md={6} xl={4} key={`mobilesentrix-card-loading-${index}`}>
+                      <Card elevation={0} sx={{ borderRadius: 3, border: '1px solid #dce4f0' }}>
+                        <CardContent>
+                          <Stack direction="row" spacing={1.5}>
+                            <Skeleton variant="rounded" width={84} height={84} />
+                            <Box sx={{ flex: 1 }}>
+                              <Skeleton variant="text" height={28} />
+                              <Skeleton variant="text" width="70%" />
+                              <Skeleton variant="rounded" width="80%" height={28} sx={{ mt: 1 }} />
                             </Box>
                           </Stack>
-                        </TableCell>
-                        <TableCell><Skeleton variant="text" width={90} /></TableCell>
-                        <TableCell><Skeleton variant="text" width={90} /></TableCell>
-                        <TableCell><Skeleton variant="rounded" width={160} height={24} /></TableCell>
-                        <TableCell><Skeleton variant="text" width={50} /></TableCell>
-                      </TableRow>
-                    ))}
-                  {!isLoading &&
-                    products.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={5}>
-                          No MobileSentrix products synced yet. Click Sync Full Catalog to import supplier products.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  {!isLoading &&
-                    products.map((product) => (
-                      <TableRow key={product.id} hover>
-                        <TableCell>
-                          <Stack direction="row" spacing={1.5} alignItems="center">
-                            {product.image_url ? (
-                              <Box
-                                component="img"
-                                src={product.image_url}
-                                alt={product.title}
-                                sx={{
-                                  width: 44,
-                                  height: 44,
-                                  borderRadius: 2,
-                                  objectFit: 'contain',
-                                  border: '1px solid #dce4f0',
-                                  background: '#f8fbff',
-                                }}
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              ) : null}
+              {!isLoading && products.length === 0 ? (
+                <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: '1px solid #dce4f0' }}>
+                  No MobileSentrix products synced yet. Click Sync Full Catalog to import supplier products.
+                </Paper>
+              ) : null}
+              {!isLoading && products.length > 0 ? (
+                <Grid container spacing={2}>
+                  {products.map((product) => (
+                    <Grid item xs={12} md={6} xl={4} key={product.id}>
+                      <Card
+                        elevation={0}
+                        sx={{
+                          height: '100%',
+                          borderRadius: 3,
+                          border: selectedIds.includes(product.id)
+                            ? '1px solid #7c3aed'
+                            : '1px solid #dce4f0',
+                          background: selectedIds.includes(product.id) ? '#fbf8ff' : '#ffffff',
+                        }}
+                      >
+                        <CardContent sx={{ height: '100%' }}>
+                          <Stack spacing={1.5} sx={{ height: '100%' }}>
+                            <Stack direction="row" spacing={1.5} alignItems="flex-start">
+                              <Checkbox
+                                checked={selectedIds.includes(product.id)}
+                                onChange={(event) =>
+                                  handleSelectProduct(product.id, event.target.checked)
+                                }
+                                sx={{ mt: -1, ml: -1 }}
                               />
-                            ) : null}
-                            <Box>
-                              <Typography sx={{ fontWeight: 800, color: '#172033' }}>
-                                {product.title}
-                              </Typography>
-                              <Typography sx={{ fontSize: '12px', color: '#667085' }}>
-                                {[product.brand, product.device_model, product.supplier_sku || product.supplier_product_id]
-                                  .filter(Boolean)
-                                  .join(' • ')}
-                              </Typography>
-                            </Box>
+                              {product.image_url ? (
+                                <Box
+                                  component="img"
+                                  src={product.image_url}
+                                  alt={product.title}
+                                  sx={{
+                                    width: 86,
+                                    height: 86,
+                                    borderRadius: 2.5,
+                                    objectFit: 'contain',
+                                    border: '1px solid #dce4f0',
+                                    background: '#f8fbff',
+                                    p: 1,
+                                  }}
+                                />
+                              ) : (
+                                <Box
+                                  sx={{
+                                    width: 86,
+                                    height: 86,
+                                    borderRadius: 2.5,
+                                    border: '1px solid #dce4f0',
+                                    background: '#f8fbff',
+                                    display: 'grid',
+                                    placeItems: 'center',
+                                    color: '#667085',
+                                    fontWeight: 900,
+                                  }}
+                                >
+                                  MS
+                                </Box>
+                              )}
+                              <Box sx={{ minWidth: 0, flex: 1 }}>
+                                <Typography
+                                  sx={{
+                                    fontWeight: 900,
+                                    color: '#172033',
+                                    lineHeight: 1.25,
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden',
+                                  }}
+                                >
+                                  {product.title}
+                                </Typography>
+                                <Typography sx={{ fontSize: '12px', color: '#667085', mt: 0.5 }}>
+                                  {[product.brand, product.device_model, product.supplier_sku || product.supplier_product_id]
+                                    .filter(Boolean)
+                                    .join(' • ')}
+                                </Typography>
+                              </Box>
+                            </Stack>
+
+                            <Stack direction="row" spacing={1} flexWrap="wrap">
+                              <Chip size="small" label={product.device_category} sx={{ borderRadius: 2 }} />
+                              <Chip size="small" variant="outlined" label={product.part_category} sx={{ borderRadius: 2 }} />
+                              <Chip size="small" variant="outlined" label={product.quality_line || product.inventory_source} sx={{ borderRadius: 2 }} />
+                            </Stack>
+
+                            <Grid container spacing={1.25}>
+                              <Grid item xs={6}>
+                                <Paper elevation={0} sx={{ p: 1.25, borderRadius: 2.5, background: '#f8fbff' }}>
+                                  <Typography sx={{ fontSize: '11px', fontWeight: 800, color: '#667085', textTransform: 'uppercase' }}>
+                                    Supplier
+                                  </Typography>
+                                  <Typography sx={{ fontWeight: 900, color: '#172033' }}>
+                                    {product.supplier_currency || 'EUR'} {Number(product.supplier_price_usd || 0).toFixed(2)}
+                                  </Typography>
+                                </Paper>
+                              </Grid>
+                              <Grid item xs={6}>
+                                <Paper elevation={0} sx={{ p: 1.25, borderRadius: 2.5, background: '#f8fbff' }}>
+                                  <Typography sx={{ fontSize: '11px', fontWeight: 800, color: '#667085', textTransform: 'uppercase' }}>
+                                    Zezva
+                                  </Typography>
+                                  <Typography sx={{ fontWeight: 900, color: '#172033' }}>
+                                    {formatAdminProductPrice(product)}
+                                  </Typography>
+                                </Paper>
+                              </Grid>
+                            </Grid>
+
+                            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ mt: 'auto' }}>
+                              <Stack direction="row" spacing={1} alignItems="center">
+                                {renderVisibilitySwitch(product)}
+                                <Chip
+                                  size="small"
+                                  color={product.stock_quantity > 0 ? 'success' : 'default'}
+                                  label={product.stock_quantity > 0 ? `${product.stock_quantity} in stock` : 'Out of stock'}
+                                  sx={{ borderRadius: 2 }}
+                                />
+                              </Stack>
+                              <Stack direction="row" spacing={0.5}>
+                                <Tooltip title="Refresh this product">
+                                  <IconButton
+                                    color="primary"
+                                    disabled={mobileSentrixSelectedRefreshMutation.isLoading}
+                                    onClick={() => refreshMobileSentrixProduct(product.id)}
+                                  >
+                                    <Sync />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Edit product">
+                                  <IconButton color="primary" onClick={() => applyProductToForm(product)}>
+                                    <Edit />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Move to trash">
+                                  <IconButton color="error" onClick={() => handleSoftDelete(product.id)}>
+                                    <DeleteOutline />
+                                  </IconButton>
+                                </Tooltip>
+                              </Stack>
+                            </Stack>
+                            <Typography sx={{ fontSize: '11px', color: '#98a2b3' }}>
+                              {product.supplier_synced_at
+                                ? `Synced ${new Date(product.supplier_synced_at).toLocaleString()}`
+                                : 'Not synced yet'}
+                            </Typography>
                           </Stack>
-                        </TableCell>
-                        <TableCell>
-                          <Typography sx={{ fontWeight: 700 }}>
-                            {product.supplier_currency || 'EUR'}{' '}
-                            {Number(product.supplier_price_usd || 0).toFixed(2)}
-                          </Typography>
-                          <Typography sx={{ fontSize: '12px', color: '#667085' }}>
-                            {(product.supplier_currency || 'EUR')}/GEL{' '}
-                            {Number(product.supplier_exchange_rate || 0).toFixed(4)}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography sx={{ fontWeight: 800, color: '#172033' }}>
-                            {formatAdminProductPrice(product)}
-                          </Typography>
-                          <Typography sx={{ fontSize: '12px', color: '#667085' }}>
-                            {product.supplier_synced_at
-                              ? `Synced ${new Date(product.supplier_synced_at).toLocaleString()}`
-                              : 'Not synced yet'}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Stack direction="row" spacing={1} flexWrap="wrap">
-                            <Chip size="small" label={product.device_category} sx={{ borderRadius: 2 }} />
-                            <Chip
-                              size="small"
-                              variant="outlined"
-                              label={product.part_category}
-                              sx={{ borderRadius: 2 }}
-                            />
-                            <Chip
-                              size="small"
-                              variant="outlined"
-                              label={product.quality_line || product.inventory_source}
-                              sx={{ borderRadius: 2 }}
-                            />
-                          </Stack>
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            size="small"
-                            color={product.stock_quantity > 0 ? 'success' : 'default'}
-                            label={product.stock_quantity > 0 ? `${product.stock_quantity} in stock` : 'Out of stock'}
-                            sx={{ borderRadius: 2 }}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              ) : null}
             </Box>
           )}
           <Stack
@@ -1072,7 +1531,7 @@ const ShopAdminProductsPage = () => {
         </Paper>
       </Grid>
 
-      <Grid item xs={12} lg={5}>
+      <Grid item xs={12} lg={productSource === 'mobilesentrix' ? 3 : 5}>
         <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: '1px solid #dce4f0' }}>
           {productSource === 'mobilesentrix' ? (
             <Stack spacing={2}>
@@ -1106,311 +1565,98 @@ const ShopAdminProductsPage = () => {
               )}
             </Stack>
           ) : (
-            <>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Box>
+            <Stack spacing={2}>
               <Typography sx={{ fontSize: '22px', fontWeight: 800, color: '#172033' }}>
-                {selectedProduct ? 'Edit Product' : 'New Product'}
+                Zezva catalog actions
               </Typography>
-              <Typography sx={{ color: '#667085', mt: 0.5 }}>
-                Upload an image directly, or paste an image URL and it will be downloaded on save.
+              <Typography sx={{ color: '#667085' }}>
+                Create and edit products in a focused modal. Use table selection for bulk delete, restore, and visibility operations.
               </Typography>
-            </Box>
-            <Button
-              onClick={() => applyProductToForm(null)}
-              startIcon={<Add />}
-              sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
-            >
-              Clear
-            </Button>
-          </Box>
-
-          <Box sx={{ mb: 2.5 }}>
-            {form.image_url ? (
-              <Box
-                component="img"
-                src={form.image_url}
-                alt="Product preview"
-                sx={{
-                  width: '100%',
-                  maxHeight: 220,
-                  objectFit: 'cover',
-                  borderRadius: 3,
-                  border: '1px solid #dce4f0',
-                  mb: 1.5,
-                }}
-              />
-            ) : null}
-            <Stack direction="row" spacing={1.25}>
               <Button
-                variant="outlined"
-                startIcon={<FileUpload />}
-                onClick={() => imageInputRef.current?.click()}
-                disabled={uploadImageMutation.isLoading}
-                sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
+                fullWidth
+                variant="contained"
+                startIcon={<Add />}
+                onClick={() => applyProductToForm(null)}
+                sx={{ textTransform: 'none', fontWeight: 800, borderRadius: 3 }}
               >
-                {uploadImageMutation.isLoading ? 'Uploading...' : 'Upload Image'}
+                New Product
               </Button>
-              <input
-                ref={imageInputRef}
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (file) {
-                    uploadImageMutation.mutate(file);
-                  }
-                  event.target.value = '';
-                }}
-              />
+              <Paper elevation={0} sx={{ p: 2, borderRadius: 3, border: '1px solid #dce4f0' }}>
+                <Typography sx={{ fontWeight: 800, color: '#172033', mb: 1 }}>
+                  Selection tools
+                </Typography>
+                <Typography sx={{ color: '#667085', fontSize: '14px' }}>
+                  Select rows to run bulk actions. Visibility can also be changed directly from each product row without opening the editor.
+                </Typography>
+              </Paper>
             </Stack>
-          </Box>
-
-          <Box component="form" onSubmit={handleSubmit}>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Title"
-                  value={form.title}
-                  onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
-                  required
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Brand"
-                  value={form.brand}
-                  onChange={(event) => setForm((prev) => ({ ...prev, brand: event.target.value }))}
-                  helperText="Used in the public shop brand filter and CSV imports."
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Slug"
-                  value={form.slug}
-                  onChange={(event) => setForm((prev) => ({ ...prev, slug: event.target.value }))}
-                  helperText="Optional. Leave blank to auto-generate."
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  select
-                  fullWidth
-                  label="Device"
-                  value={form.device_category}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, device_category: event.target.value }))
-                  }
-                >
-                  <MenuItem value="smartphones">smartphones</MenuItem>
-                  <MenuItem value="laptops">laptops</MenuItem>
-                  <MenuItem value="accessories">accessories</MenuItem>
-                </TextField>
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  select
-                  fullWidth
-                  label="Part"
-                  value={form.part_category}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, part_category: event.target.value }))
-                  }
-                >
-                  {['board', 'screen', 'sensor', 'battery', 'camera', 'speaker', 'charging', 'accessory'].map(
-                    (value) => (
-                      <MenuItem key={value} value={value}>
-                        {value}
-                      </MenuItem>
-                    ),
-                  )}
-                </TextField>
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  select
-                  fullWidth
-                  label="Source"
-                  value={form.inventory_source}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, inventory_source: event.target.value }))
-                  }
-                >
-                  <MenuItem value="oem">oem</MenuItem>
-                  <MenuItem value="third-party">third-party</MenuItem>
-                </TextField>
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  select
-                  fullWidth
-                  label="Visibility"
-                  value={form.is_active ? 'active' : 'hidden'}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, is_active: event.target.value === 'active' }))
-                  }
-                >
-                  <MenuItem value="active">active</MenuItem>
-                  <MenuItem value="hidden">hidden</MenuItem>
-                </TextField>
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Issue Label"
-                  value={form.issue_label}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, issue_label: event.target.value }))
-                  }
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  multiline
-                  minRows={3}
-                  label="Description"
-                  value={form.description}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, description: event.target.value }))
-                  }
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Image URL"
-                  value={form.image_url}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, image_url: event.target.value }))
-                  }
-                  helperText="If this is an external URL, the backend downloads and stores it locally when you save."
-                />
-              </Grid>
-              <Grid item xs={4}>
-                <TextField
-                  fullWidth
-                  type="number"
-                  label="Price"
-                  value={form.price}
-                  onChange={(event) => setForm((prev) => ({ ...prev, price: event.target.value }))}
-                  helperText={
-                    form.price === '' && form.service_price !== ''
-                      ? productOnlyStatusLabelKa
-                      : 'Leave empty to make this product available only with service.'
-                  }
-                />
-              </Grid>
-              <Grid item xs={4}>
-                <TextField
-                  fullWidth
-                  type="number"
-                  label="Sale Price"
-                  value={form.sale_price}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, sale_price: event.target.value }))
-                  }
-                />
-              </Grid>
-              <Grid item xs={4}>
-                <TextField
-                  fullWidth
-                  type="number"
-                  label="Service Price"
-                  value={form.service_price}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, service_price: event.target.value }))
-                  }
-                  helperText={
-                    form.service_price === ''
-                      ? serviceUnavailableLabelKa
-                      : 'Leave empty to disable the service-bundle option.'
-                  }
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  type="number"
-                  label="Stock Quantity"
-                  value={form.stock_quantity}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, stock_quantity: event.target.value }))
-                  }
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  type="number"
-                  label="Sort Order"
-                  value={form.sort_order}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, sort_order: event.target.value }))
-                  }
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  startIcon={<Save />}
-                  disabled={
-                    createMutation.isLoading || updateMutation.isLoading || uploadImageMutation.isLoading
-                  }
-                  sx={{
-                    textTransform: 'none',
-                    fontWeight: 800,
-                    borderRadius: 3,
-                    bgcolor: '#172033',
-                    color: '#ffffff',
-                    '& .MuiButton-startIcon': {
-                      color: 'inherit',
-                    },
-                    '&:hover': { bgcolor: '#0f1726' },
-                  }}
-                >
-                  {selectedProduct ? 'Save Changes' : 'Create Product'}
-                </Button>
-              </Grid>
-              {selectedProduct && scope === 'active' && (
-                <>
-                  <Grid item xs={12} sm={6}>
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      color="warning"
-                      startIcon={<DeleteOutline />}
-                      onClick={() => handleSoftDelete(selectedProduct.id)}
-                      sx={{ textTransform: 'none', fontWeight: 800, borderRadius: 3 }}
-                    >
-                      Delete
-                    </Button>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      color="error"
-                      startIcon={<DeleteOutline />}
-                      onClick={() => handlePermanentDelete(selectedProduct.id)}
-                      sx={{ textTransform: 'none', fontWeight: 800, borderRadius: 3 }}
-                    >
-                      Delete Permanently
-                    </Button>
-                  </Grid>
-                </>
-              )}
-            </Grid>
-          </Box>
-            </>
           )}
         </Paper>
       </Grid>
+      <Dialog
+        open={productModalOpen}
+        onClose={() => setProductModalOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            border: '1px solid #dce4f0',
+          },
+        }}
+      >
+        <DialogTitle sx={{ pb: 1 }}>
+          <Typography sx={{ fontSize: '24px', fontWeight: 900, color: '#172033' }}>
+            {selectedProduct ? 'Edit Product' : 'New Product'}
+          </Typography>
+          <Typography sx={{ color: '#667085', mt: 0.5, fontSize: '14px' }}>
+            Upload an image directly, or paste an image URL and it will be downloaded on save.
+          </Typography>
+        </DialogTitle>
+        <DialogContent dividers sx={{ pt: 2.5 }}>
+          {renderProductEditor()}
+        </DialogContent>
+        <DialogActions sx={{ p: 2, gap: 1, flexWrap: 'wrap' }}>
+          {selectedProduct && scope === 'active' ? (
+            <Button
+              color="warning"
+              variant="outlined"
+              startIcon={<DeleteOutline />}
+              onClick={() => handleSoftDelete(selectedProduct.id)}
+              sx={{ textTransform: 'none', fontWeight: 800, borderRadius: 3, mr: 'auto' }}
+            >
+              Delete
+            </Button>
+          ) : null}
+          <Button
+            variant="outlined"
+            onClick={() => setProductModalOpen(false)}
+            sx={{ textTransform: 'none', fontWeight: 800, borderRadius: 3 }}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="shop-admin-product-form"
+            variant="contained"
+            startIcon={<Save />}
+            disabled={createMutation.isLoading || updateMutation.isLoading || uploadImageMutation.isLoading}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 800,
+              borderRadius: 3,
+              bgcolor: '#172033',
+              color: '#ffffff',
+              '& .MuiButton-startIcon': {
+                color: 'inherit',
+              },
+              '&:hover': { bgcolor: '#0f1726' },
+            }}
+          >
+            {selectedProduct ? 'Save Changes' : 'Create Product'}
+          </Button>
+        </DialogActions>
+      </Dialog>
       <ConfirmDialog
         open={confirmState.open}
         onClose={() =>
