@@ -4,8 +4,6 @@ import {
   Alert,
   Box,
   Button,
-  Card,
-  CardContent,
   Checkbox,
   Chip,
   Dialog,
@@ -864,7 +862,7 @@ const ShopAdminProductsPage = () => {
 
   return (
     <Grid container spacing={3}>
-      <Grid item xs={12} lg={productSource === 'mobilesentrix' ? 9 : 7}>
+      <Grid item xs={12}>
         <Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid #dce4f0', overflow: 'hidden' }}>
           <Box sx={{ p: 3, borderBottom: '1px solid #e6edf7' }}>
             <Tabs
@@ -961,6 +959,14 @@ const ShopAdminProductsPage = () => {
               ) : (
                 <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.25} flexWrap="wrap" sx={{ minWidth: { md: 420 } }}>
                   <Button
+                    variant="contained"
+                    startIcon={<Add />}
+                    onClick={() => applyProductToForm(null)}
+                    sx={{ textTransform: 'none', fontWeight: 800, borderRadius: 3 }}
+                  >
+                    New Product
+                  </Button>
+                  <Button
                     variant="outlined"
                     startIcon={<Search />}
                     onClick={() => mobileSentrixPreviewMutation.mutate()}
@@ -1002,6 +1008,7 @@ const ShopAdminProductsPage = () => {
                   </Button>
                   <Button
                     variant="outlined"
+                    startIcon={<VisibilityOff />}
                     disabled={selectedIds.length === 0}
                     onClick={() => handleBulkVisibility(false)}
                     sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
@@ -1010,6 +1017,7 @@ const ShopAdminProductsPage = () => {
                   </Button>
                   <Button
                     variant="outlined"
+                    startIcon={<Visibility />}
                     disabled={selectedIds.length === 0}
                     onClick={() => handleBulkVisibility(true)}
                     sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
@@ -1019,6 +1027,7 @@ const ShopAdminProductsPage = () => {
                   <Button
                     color="warning"
                     variant="outlined"
+                    startIcon={<DeleteOutline />}
                     disabled={selectedIds.length === 0}
                     onClick={handleBulkDelete}
                     sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
@@ -1309,194 +1318,219 @@ const ShopAdminProductsPage = () => {
               </Table>
             </Box>
           ) : (
-            <Box sx={{ p: 2.5 }}>
-              <Stack direction="row" spacing={1.25} alignItems="center" sx={{ mb: 2 }}>
-                <Checkbox
-                  checked={allSelected}
-                  indeterminate={selectedIds.length > 0 && !allSelected}
-                  onChange={(event) => handleSelectAll(event.target.checked)}
-                />
-                <Typography sx={{ fontWeight: 800, color: '#172033' }}>
-                  {selectedIds.length ? `${selectedIds.length} selected` : 'Select synced products'}
-                </Typography>
-              </Stack>
-              {isLoading ? (
-                <Grid container spacing={2}>
-                  {Array.from({ length: 6 }).map((_, index) => (
-                    <Grid item xs={12} md={6} xl={4} key={`mobilesentrix-card-loading-${index}`}>
-                      <Card elevation={0} sx={{ borderRadius: 3, border: '1px solid #dce4f0' }}>
-                        <CardContent>
-                          <Stack direction="row" spacing={1.5}>
-                            <Skeleton variant="rounded" width={84} height={84} />
-                            <Box sx={{ flex: 1 }}>
-                              <Skeleton variant="text" height={28} />
-                              <Skeleton variant="text" width="70%" />
-                              <Skeleton variant="rounded" width="80%" height={28} sx={{ mt: 1 }} />
+            <Box sx={{ overflowX: 'auto' }}>
+              <Table
+                size="small"
+                sx={{
+                  '& th': {
+                    bgcolor: '#f8fbff',
+                    color: '#667085',
+                    fontSize: '11px',
+                    fontWeight: 900,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    whiteSpace: 'nowrap',
+                  },
+                  '& td': {
+                    borderColor: '#e6edf7',
+                    py: 1.25,
+                    verticalAlign: 'middle',
+                  },
+                }}
+              >
+                <TableHead>
+                  <TableRow>
+                    <TableCell padding="checkbox">
+                      <Checkbox
+                        checked={allSelected}
+                        indeterminate={selectedIds.length > 0 && !allSelected}
+                        onChange={(event) => handleSelectAll(event.target.checked)}
+                      />
+                    </TableCell>
+                    <TableCell>Product</TableCell>
+                    <TableCell>SKU / Supplier ID</TableCell>
+                    <TableCell>Mapping</TableCell>
+                    <TableCell>Supplier Price</TableCell>
+                    <TableCell>Zezva Price</TableCell>
+                    <TableCell>Stock</TableCell>
+                    <TableCell>Catalog</TableCell>
+                    <TableCell>Synced</TableCell>
+                    <TableCell align="right">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {isLoading &&
+                    Array.from({ length: 8 }).map((_, index) => (
+                      <TableRow key={`mobilesentrix-loading-${index}`}>
+                        <TableCell padding="checkbox">
+                          <Skeleton variant="rounded" width={20} height={20} />
+                        </TableCell>
+                        <TableCell>
+                          <Stack direction="row" spacing={1.5} alignItems="center">
+                            <Skeleton variant="rounded" width={52} height={52} />
+                            <Box>
+                              <Skeleton variant="text" width={260} height={24} />
+                              <Skeleton variant="text" width={180} height={18} />
                             </Box>
                           </Stack>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))}
-                </Grid>
-              ) : null}
-              {!isLoading && products.length === 0 ? (
-                <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: '1px solid #dce4f0' }}>
-                  No MobileSentrix products synced yet. Click Sync Full Catalog to import supplier products.
-                </Paper>
-              ) : null}
-              {!isLoading && products.length > 0 ? (
-                <Grid container spacing={2}>
-                  {products.map((product) => (
-                    <Grid item xs={12} md={6} xl={4} key={product.id}>
-                      <Card
-                        elevation={0}
+                        </TableCell>
+                        <TableCell><Skeleton variant="text" width={120} /></TableCell>
+                        <TableCell><Skeleton variant="rounded" width={170} height={24} /></TableCell>
+                        <TableCell><Skeleton variant="text" width={100} /></TableCell>
+                        <TableCell><Skeleton variant="text" width={100} /></TableCell>
+                        <TableCell><Skeleton variant="rounded" width={86} height={24} /></TableCell>
+                        <TableCell><Skeleton variant="rounded" width={58} height={24} /></TableCell>
+                        <TableCell><Skeleton variant="text" width={120} /></TableCell>
+                        <TableCell align="right"><Skeleton variant="text" width={140} sx={{ ml: 'auto' }} /></TableCell>
+                      </TableRow>
+                    ))}
+                  {!isLoading && products.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={10}>
+                        No MobileSentrix products synced yet. Click Sync Full Catalog to import supplier products.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {!isLoading &&
+                    products.map((product) => (
+                      <TableRow
+                        hover
+                        key={product.id}
+                        selected={selectedIds.includes(product.id)}
                         sx={{
-                          height: '100%',
-                          borderRadius: 3,
-                          border: selectedIds.includes(product.id)
-                            ? '1px solid #7c3aed'
-                            : '1px solid #dce4f0',
-                          background: selectedIds.includes(product.id) ? '#fbf8ff' : '#ffffff',
+                          '&.Mui-selected': {
+                            bgcolor: '#fbf8ff',
+                          },
                         }}
                       >
-                        <CardContent sx={{ height: '100%' }}>
-                          <Stack spacing={1.5} sx={{ height: '100%' }}>
-                            <Stack direction="row" spacing={1.5} alignItems="flex-start">
-                              <Checkbox
-                                checked={selectedIds.includes(product.id)}
-                                onChange={(event) =>
-                                  handleSelectProduct(product.id, event.target.checked)
-                                }
-                                sx={{ mt: -1, ml: -1 }}
+                        <TableCell padding="checkbox">
+                          <Checkbox
+                            checked={selectedIds.includes(product.id)}
+                            onChange={(event) =>
+                              handleSelectProduct(product.id, event.target.checked)
+                            }
+                          />
+                        </TableCell>
+                        <TableCell sx={{ minWidth: 340 }}>
+                          <Stack direction="row" spacing={1.5} alignItems="center">
+                            {product.image_url ? (
+                              <Box
+                                component="img"
+                                src={product.image_url}
+                                alt={product.title}
+                                sx={{
+                                  width: 52,
+                                  height: 52,
+                                  borderRadius: 2,
+                                  objectFit: 'contain',
+                                  border: '1px solid #dce4f0',
+                                  background: '#f8fbff',
+                                  p: 0.75,
+                                  flexShrink: 0,
+                                }}
                               />
-                              {product.image_url ? (
-                                <Box
-                                  component="img"
-                                  src={product.image_url}
-                                  alt={product.title}
-                                  sx={{
-                                    width: 86,
-                                    height: 86,
-                                    borderRadius: 2.5,
-                                    objectFit: 'contain',
-                                    border: '1px solid #dce4f0',
-                                    background: '#f8fbff',
-                                    p: 1,
-                                  }}
-                                />
-                              ) : (
-                                <Box
-                                  sx={{
-                                    width: 86,
-                                    height: 86,
-                                    borderRadius: 2.5,
-                                    border: '1px solid #dce4f0',
-                                    background: '#f8fbff',
-                                    display: 'grid',
-                                    placeItems: 'center',
-                                    color: '#667085',
-                                    fontWeight: 900,
-                                  }}
-                                >
-                                  MS
-                                </Box>
-                              )}
-                              <Box sx={{ minWidth: 0, flex: 1 }}>
-                                <Typography
-                                  sx={{
-                                    fontWeight: 900,
-                                    color: '#172033',
-                                    lineHeight: 1.25,
-                                    display: '-webkit-box',
-                                    WebkitLineClamp: 2,
-                                    WebkitBoxOrient: 'vertical',
-                                    overflow: 'hidden',
-                                  }}
-                                >
-                                  {product.title}
-                                </Typography>
-                                <Typography sx={{ fontSize: '12px', color: '#667085', mt: 0.5 }}>
-                                  {[product.brand, product.device_model, product.supplier_sku || product.supplier_product_id]
-                                    .filter(Boolean)
-                                    .join(' • ')}
-                                </Typography>
+                            ) : (
+                              <Box
+                                sx={{
+                                  width: 52,
+                                  height: 52,
+                                  borderRadius: 2,
+                                  border: '1px solid #dce4f0',
+                                  background: '#f8fbff',
+                                  display: 'grid',
+                                  placeItems: 'center',
+                                  color: '#667085',
+                                  fontWeight: 900,
+                                  flexShrink: 0,
+                                }}
+                              >
+                                MS
                               </Box>
-                            </Stack>
-
-                            <Stack direction="row" spacing={1} flexWrap="wrap">
-                              <Chip size="small" label={product.device_category} sx={{ borderRadius: 2 }} />
-                              <Chip size="small" variant="outlined" label={product.part_category} sx={{ borderRadius: 2 }} />
-                              <Chip size="small" variant="outlined" label={product.quality_line || product.inventory_source} sx={{ borderRadius: 2 }} />
-                            </Stack>
-
-                            <Grid container spacing={1.25}>
-                              <Grid item xs={6}>
-                                <Paper elevation={0} sx={{ p: 1.25, borderRadius: 2.5, background: '#f8fbff' }}>
-                                  <Typography sx={{ fontSize: '11px', fontWeight: 800, color: '#667085', textTransform: 'uppercase' }}>
-                                    Supplier
-                                  </Typography>
-                                  <Typography sx={{ fontWeight: 900, color: '#172033' }}>
-                                    {product.supplier_currency || 'EUR'} {Number(product.supplier_price_usd || 0).toFixed(2)}
-                                  </Typography>
-                                </Paper>
-                              </Grid>
-                              <Grid item xs={6}>
-                                <Paper elevation={0} sx={{ p: 1.25, borderRadius: 2.5, background: '#f8fbff' }}>
-                                  <Typography sx={{ fontSize: '11px', fontWeight: 800, color: '#667085', textTransform: 'uppercase' }}>
-                                    Zezva
-                                  </Typography>
-                                  <Typography sx={{ fontWeight: 900, color: '#172033' }}>
-                                    {formatAdminProductPrice(product)}
-                                  </Typography>
-                                </Paper>
-                              </Grid>
-                            </Grid>
-
-                            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ mt: 'auto' }}>
-                              <Stack direction="row" spacing={1} alignItems="center">
-                                {renderVisibilitySwitch(product)}
-                                <Chip
-                                  size="small"
-                                  color={product.stock_quantity > 0 ? 'success' : 'default'}
-                                  label={product.stock_quantity > 0 ? `${product.stock_quantity} in stock` : 'Out of stock'}
-                                  sx={{ borderRadius: 2 }}
-                                />
-                              </Stack>
-                              <Stack direction="row" spacing={0.5}>
-                                <Tooltip title="Refresh this product">
-                                  <IconButton
-                                    color="primary"
-                                    disabled={mobileSentrixSelectedRefreshMutation.isLoading}
-                                    onClick={() => refreshMobileSentrixProduct(product.id)}
-                                  >
-                                    <Sync />
-                                  </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Edit product">
-                                  <IconButton color="primary" onClick={() => applyProductToForm(product)}>
-                                    <Edit />
-                                  </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Move to trash">
-                                  <IconButton color="error" onClick={() => handleSoftDelete(product.id)}>
-                                    <DeleteOutline />
-                                  </IconButton>
-                                </Tooltip>
-                              </Stack>
-                            </Stack>
-                            <Typography sx={{ fontSize: '11px', color: '#98a2b3' }}>
-                              {product.supplier_synced_at
-                                ? `Synced ${new Date(product.supplier_synced_at).toLocaleString()}`
-                                : 'Not synced yet'}
-                            </Typography>
+                            )}
+                            <Box sx={{ minWidth: 0 }}>
+                              <Typography sx={{ fontWeight: 800, color: '#172033', lineHeight: 1.25 }}>
+                                {product.title}
+                              </Typography>
+                              <Typography sx={{ fontSize: '12px', color: '#667085', mt: 0.4 }}>
+                                {[product.brand, product.device_model].filter(Boolean).join(' • ') || 'MobileSentrix product'}
+                              </Typography>
+                            </Box>
                           </Stack>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))}
-                </Grid>
-              ) : null}
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontWeight: 800, color: '#172033', fontSize: '13px' }}>
+                            {product.supplier_sku || 'No SKU'}
+                          </Typography>
+                          <Typography sx={{ color: '#667085', fontSize: '12px' }}>
+                            ID {product.supplier_product_id || product.id}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Stack direction="row" spacing={0.75} flexWrap="wrap">
+                            <Chip size="small" label={product.device_category} sx={{ borderRadius: 2 }} />
+                            <Chip size="small" variant="outlined" label={product.part_category} sx={{ borderRadius: 2 }} />
+                            <Chip size="small" variant="outlined" label={product.quality_line || product.inventory_source} sx={{ borderRadius: 2 }} />
+                          </Stack>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontWeight: 800, color: '#172033' }}>
+                            {product.supplier_currency || 'EUR'} {Number(product.supplier_price_usd || 0).toFixed(2)}
+                          </Typography>
+                          <Typography sx={{ color: '#667085', fontSize: '12px' }}>
+                            rate {Number(product.supplier_exchange_rate || 0).toFixed(4)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontWeight: 900, color: '#172033' }}>
+                            {formatAdminProductPrice(product)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            size="small"
+                            color={product.stock_quantity > 0 ? 'success' : 'default'}
+                            label={product.stock_quantity > 0 ? `${product.stock_quantity} in stock` : 'Out of stock'}
+                            sx={{ borderRadius: 2, fontWeight: 800 }}
+                          />
+                        </TableCell>
+                        <TableCell>{renderVisibilitySwitch(product)}</TableCell>
+                        <TableCell>
+                          <Typography sx={{ color: '#667085', fontSize: '12px', whiteSpace: 'nowrap' }}>
+                            {product.supplier_synced_at
+                              ? new Date(product.supplier_synced_at).toLocaleString()
+                              : 'Not synced'}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                            <Tooltip title="Refresh product">
+                              <span>
+                                <IconButton
+                                  size="small"
+                                  color="primary"
+                                  disabled={mobileSentrixSelectedRefreshMutation.isLoading}
+                                  onClick={() => refreshMobileSentrixProduct(product.id)}
+                                >
+                                  <Sync fontSize="small" />
+                                </IconButton>
+                              </span>
+                            </Tooltip>
+                            <Tooltip title="Edit product">
+                              <IconButton size="small" color="primary" onClick={() => applyProductToForm(product)}>
+                                <Edit fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Move to trash">
+                              <IconButton size="small" color="error" onClick={() => handleSoftDelete(product.id)}>
+                                <DeleteOutline fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Stack>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
             </Box>
           )}
           <Stack
@@ -1531,68 +1565,6 @@ const ShopAdminProductsPage = () => {
         </Paper>
       </Grid>
 
-      <Grid item xs={12} lg={productSource === 'mobilesentrix' ? 3 : 5}>
-        <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: '1px solid #dce4f0' }}>
-          {productSource === 'mobilesentrix' ? (
-            <Stack spacing={2}>
-              <Typography sx={{ fontSize: '22px', fontWeight: 800, color: '#172033' }}>
-                MobileSentrix sync rules
-              </Typography>
-              <Typography sx={{ color: '#667085' }}>
-                Products are matched by MobileSentrix product id. Existing supplier products update in place; new supplier products are added with MobileSentrix metadata.
-              </Typography>
-              <Alert severity="info">
-                Current import mode is full catalog sync. Use Preview Catalog to inspect the first supplier page, then Sync Full Catalog to import/update all MobileSentrix products. Existing products auto-refresh every 12 hours.
-              </Alert>
-              <Paper elevation={0} sx={{ p: 2, borderRadius: 3, border: '1px solid #dce4f0' }}>
-                <Typography sx={{ fontWeight: 800, color: '#172033', mb: 1 }}>
-                  Price calculation
-                </Typography>
-                <Typography sx={{ color: '#667085', fontSize: '14px' }}>
-                  ((Supplier currency price × 1.18 VAT) × NBG currency/GEL + ₾5 handling) × 1.5 margin.
-                </Typography>
-              </Paper>
-              {mobileSentrixResult && (
-                <Paper elevation={0} sx={{ p: 2, borderRadius: 3, border: '1px solid #dce4f0' }}>
-                  <Typography sx={{ fontWeight: 800, color: '#172033' }}>
-                    Last preview
-                  </Typography>
-                  <Typography sx={{ color: '#667085', fontSize: '14px', mt: 0.75 }}>
-                    {mobileSentrixResult.total_items} total matches. NBG USD/GEL rate:{' '}
-                    {Number(mobileSentrixResult.exchange_rate || 0).toFixed(4)}.
-                  </Typography>
-                </Paper>
-              )}
-            </Stack>
-          ) : (
-            <Stack spacing={2}>
-              <Typography sx={{ fontSize: '22px', fontWeight: 800, color: '#172033' }}>
-                Zezva catalog actions
-              </Typography>
-              <Typography sx={{ color: '#667085' }}>
-                Create and edit products in a focused modal. Use table selection for bulk delete, restore, and visibility operations.
-              </Typography>
-              <Button
-                fullWidth
-                variant="contained"
-                startIcon={<Add />}
-                onClick={() => applyProductToForm(null)}
-                sx={{ textTransform: 'none', fontWeight: 800, borderRadius: 3 }}
-              >
-                New Product
-              </Button>
-              <Paper elevation={0} sx={{ p: 2, borderRadius: 3, border: '1px solid #dce4f0' }}>
-                <Typography sx={{ fontWeight: 800, color: '#172033', mb: 1 }}>
-                  Selection tools
-                </Typography>
-                <Typography sx={{ color: '#667085', fontSize: '14px' }}>
-                  Select rows to run bulk actions. Visibility can also be changed directly from each product row without opening the editor.
-                </Typography>
-              </Paper>
-            </Stack>
-          )}
-        </Paper>
-      </Grid>
       <Dialog
         open={productModalOpen}
         onClose={() => setProductModalOpen(false)}
