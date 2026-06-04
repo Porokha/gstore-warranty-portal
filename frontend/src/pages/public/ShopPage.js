@@ -16,6 +16,8 @@ const partOptions = [
   ['charging', 'shop.partLabels.charging'],
 ];
 
+const popularBrandNames = ['apple', 'samsung', 'google', 'sony', 'lenovo', 'microsoft'];
+
 const deviceTitles = {
   all: 'shop.deviceTitles.all',
   smartphones: 'shop.deviceTitles.smartphones',
@@ -82,10 +84,12 @@ const FilterOptionList = ({
   searchPlaceholder = 'Search',
   showLessLabel = 'Show less',
   showMoreLabel = (count) => `Show ${count} more`,
+  enableSearch = true,
+  showAllButton = true,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [query, setQuery] = useState('');
-  const searchable = options.length > 5;
+  const searchable = enableSearch && options.length > 5;
   const normalizedQuery = query.trim().toLowerCase();
   const filteredOptions = normalizedQuery
     ? options.filter((option) => getLabel(option).toLowerCase().includes(normalizedQuery))
@@ -113,13 +117,15 @@ const FilterOptionList = ({
       ) : null}
 
       <div className="zpos-filter-list">
-        <button
-          type="button"
-          className={`zpos-filter-pill ${allActive ? 'is-active' : ''}`}
-          onClick={onAll}
-        >
-          <span>{allLabel}</span>
-        </button>
+        {showAllButton ? (
+          <button
+            type="button"
+            className={`zpos-filter-pill ${allActive ? 'is-active' : ''}`}
+            onClick={onAll}
+          >
+            <span>{allLabel}</span>
+          </button>
+        ) : null}
         {visibleOptions.map((option) => (
           <button
             key={option}
@@ -140,6 +146,77 @@ const FilterOptionList = ({
         >
           {expanded ? showLessLabel : showMoreLabel(filteredOptions.length - 5)}
         </button>
+      ) : null}
+    </>
+  );
+};
+
+const BrandFilterList = ({
+  allLabel,
+  allActive,
+  options,
+  selectedValues,
+  onToggle,
+  onAll,
+  searchPlaceholder,
+  showLessLabel,
+  showMoreLabel,
+  othersLabel,
+}) => {
+  const [showOthers, setShowOthers] = useState(false);
+  const popularOptions = popularBrandNames
+    .map((popularBrand) => options.find((brand) => brand.toLowerCase() === popularBrand))
+    .filter(Boolean);
+  const popularSet = new Set(popularOptions.map((brand) => brand.toLowerCase()));
+  const otherOptions = options.filter((brand) => !popularSet.has(brand.toLowerCase()));
+  const hasSelectedOther = selectedValues.some((brand) => !popularSet.has(brand.toLowerCase()));
+
+  return (
+    <>
+      <div className="zpos-filter-list">
+        <button
+          type="button"
+          className={`zpos-filter-pill ${allActive ? 'is-active' : ''}`}
+          onClick={onAll}
+        >
+          <span>{allLabel}</span>
+        </button>
+        {popularOptions.map((brand) => (
+          <button
+            key={brand}
+            type="button"
+            className={`zpos-filter-pill ${selectedValues.includes(brand) ? 'is-active' : ''}`}
+            onClick={() => onToggle(brand)}
+          >
+            <span>{brand}</span>
+          </button>
+        ))}
+        {otherOptions.length > 0 ? (
+          <button
+            type="button"
+            className={`zpos-filter-pill ${showOthers || hasSelectedOther ? 'is-active' : ''}`}
+            onClick={() => setShowOthers((current) => !current)}
+          >
+            <span>{othersLabel}</span>
+          </button>
+        ) : null}
+      </div>
+
+      {showOthers ? (
+        <div className="zpos-filter-others">
+          <FilterOptionList
+            allLabel={allLabel}
+            allActive={false}
+            options={otherOptions}
+            selectedValues={selectedValues}
+            onToggle={onToggle}
+            onAll={onAll}
+            searchPlaceholder={searchPlaceholder}
+            showLessLabel={showLessLabel}
+            showMoreLabel={showMoreLabel}
+            showAllButton={false}
+          />
+        </div>
       ) : null}
     </>
   );
@@ -808,6 +885,26 @@ const ShopPage = () => {
                 searchPlaceholder={t('shop.filters.searchOptions')}
                 showLessLabel={t('shop.filters.showLess')}
                 showMoreLabel={(count) => t('shop.filters.showMore', { count })}
+                enableSearch={false}
+              />
+            </section>
+
+            <section className="zpos-filter-section">
+              <div className="zpos-section-head">
+                <p>{t('shop.filters.brandKicker')}</p>
+                <h3>{t('shop.filters.brandTitle')}</h3>
+              </div>
+              <BrandFilterList
+                allLabel={t('shop.filters.allBrands')}
+                allActive={brands.length === 0}
+                options={brandOptions}
+                selectedValues={brands}
+                onToggle={toggleBrand}
+                onAll={() => toggleBrand('all')}
+                searchPlaceholder={t('shop.filters.searchOptions')}
+                showLessLabel={t('shop.filters.showLess')}
+                showMoreLabel={(count) => t('shop.filters.showMore', { count })}
+                othersLabel={t('shop.filters.otherBrands')}
               />
             </section>
 
@@ -823,24 +920,6 @@ const ShopPage = () => {
                 selectedValues={models}
                 onToggle={toggleModel}
                 onAll={() => toggleModel('all')}
-                searchPlaceholder={t('shop.filters.searchOptions')}
-                showLessLabel={t('shop.filters.showLess')}
-                showMoreLabel={(count) => t('shop.filters.showMore', { count })}
-              />
-            </section>
-
-            <section className="zpos-filter-section">
-              <div className="zpos-section-head">
-                <p>{t('shop.filters.brandKicker')}</p>
-                <h3>{t('shop.filters.brandTitle')}</h3>
-              </div>
-              <FilterOptionList
-                allLabel={t('shop.filters.allBrands')}
-                allActive={brands.length === 0}
-                options={brandOptions}
-                selectedValues={brands}
-                onToggle={toggleBrand}
-                onAll={() => toggleBrand('all')}
                 searchPlaceholder={t('shop.filters.searchOptions')}
                 showLessLabel={t('shop.filters.showLess')}
                 showMoreLabel={(count) => t('shop.filters.showMore', { count })}

@@ -682,6 +682,10 @@ body.zpos-fullscreen .container {
   cursor: pointer;
 }
 
+.zpos-filter-others {
+  margin-top: 8px;
+}
+
 .zpos-filter-pill {
   position: relative;
   padding: 7px 10px;
