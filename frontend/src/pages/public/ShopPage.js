@@ -71,10 +71,85 @@ const createInitialOrderForm = () => ({
   payment_method: 'onsite',
 });
 
+const FilterOptionList = ({
+  allLabel,
+  allActive,
+  options,
+  selectedValues,
+  onToggle,
+  onAll,
+  getLabel = (value) => value,
+  searchPlaceholder = 'Search',
+  showLessLabel = 'Show less',
+  showMoreLabel = (count) => `Show ${count} more`,
+}) => {
+  const [expanded, setExpanded] = useState(false);
+  const [query, setQuery] = useState('');
+  const searchable = options.length > 5;
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredOptions = normalizedQuery
+    ? options.filter((option) => getLabel(option).toLowerCase().includes(normalizedQuery))
+    : options;
+  const visibleOptions = searchable && !expanded ? filteredOptions.slice(0, 5) : filteredOptions;
+
+  return (
+    <>
+      {searchable ? (
+        <label className="zpos-filter-search">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="M20 20l-3.5-3.5"></path>
+          </svg>
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setExpanded(true);
+            }}
+            placeholder={searchPlaceholder}
+          />
+        </label>
+      ) : null}
+
+      <div className="zpos-filter-list">
+        <button
+          type="button"
+          className={`zpos-filter-pill ${allActive ? 'is-active' : ''}`}
+          onClick={onAll}
+        >
+          <span>{allLabel}</span>
+        </button>
+        {visibleOptions.map((option) => (
+          <button
+            key={option}
+            type="button"
+            className={`zpos-filter-pill ${selectedValues.includes(option) ? 'is-active' : ''}`}
+            onClick={() => onToggle(option)}
+          >
+            <span>{getLabel(option)}</span>
+          </button>
+        ))}
+      </div>
+
+      {searchable && filteredOptions.length > 5 ? (
+        <button
+          type="button"
+          className="zpos-filter-expand"
+          onClick={() => setExpanded((current) => !current)}
+        >
+          {expanded ? showLessLabel : showMoreLabel(filteredOptions.length - 5)}
+        </button>
+      ) : null}
+    </>
+  );
+};
+
 const ShopPage = () => {
   const { t } = useTranslation();
   const [tab, setTab] = useState('all');
   const [brands, setBrands] = useState([]);
+  const [models, setModels] = useState([]);
   const [parts, setParts] = useState([]);
   const [search, setSearch] = useState('');
   const [priceMin, setPriceMin] = useState('');
@@ -113,13 +188,14 @@ const ShopPage = () => {
       limit: 80,
       device: tab === 'all' ? undefined : tab,
       brand: brands.length > 0 ? brands.join(',') : undefined,
+      model: models.length > 0 ? models.join(',') : undefined,
       part: parts.length > 0 ? parts.join(',') : undefined,
       source: sources.length < 2 ? sources.join(',') : undefined,
       search: search.trim() || undefined,
       price_min: priceMin === '' ? undefined : Number(priceMin),
       price_max: priceMax === '' ? undefined : Number(priceMax),
     }),
-    [brands, parts, priceMax, priceMin, productPage, search, sources, tab],
+    [brands, models, parts, priceMax, priceMin, productPage, search, sources, tab],
   );
   const { data: productsResult, isLoading: isProductsLoading, isFetching: isProductsFetching } = useQuery(
     ['shop-public-products', publicProductParams],
@@ -130,6 +206,11 @@ const ShopPage = () => {
   const productsTotal = productsResult?.total || products.length;
   const hasMoreProducts = gridProducts.length < productsTotal;
   const isInitialProductsLoading = isProductsLoading && gridProducts.length === 0;
+  const { data: productFacets = { brands: [], models: [], parts: [] } } = useQuery(
+    ['shop-public-facets', tab],
+    () => shopService.getPublicProductFacets({ device: tab === 'all' ? undefined : tab }),
+    { staleTime: 5 * 60 * 1000 },
+  );
   const orderMutation = useMutation((payload) => shopService.createPublicOrder(payload), {
     onSuccess: (result) => {
       setCreatedOrder(result);
@@ -340,16 +421,18 @@ const ShopPage = () => {
   const visibleProducts = products;
 
   const brandOptions = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          products
-            .map((product) => String(product.brand || '').trim())
-            .filter(Boolean),
-        ),
-      ).sort((left, right) => left.localeCompare(right)),
-    [products],
+    () => (productFacets.brands || []).map((item) => item.value).filter(Boolean),
+    [productFacets.brands],
   );
+  const modelOptions = useMemo(
+    () => (productFacets.models || []).map((item) => item.value).filter(Boolean),
+    [productFacets.models],
+  );
+  const dynamicPartOptions = useMemo(() => {
+    const availableParts = new Set((productFacets.parts || []).map((item) => item.value));
+    const filtered = partOptions.filter(([value]) => value === 'all' || availableParts.has(value));
+    return filtered.length > 1 ? filtered : partOptions;
+  }, [productFacets.parts]);
 
   const cartSummary = useMemo(() => {
     const subtotal = cart.reduce((sum, item) => sum + item.basePrice * item.qty, 0);
@@ -406,7 +489,7 @@ const ShopPage = () => {
     setProductPage(1);
     setGridProducts([]);
     loadingNextPageRef.current = false;
-  }, [brands, parts, priceMax, priceMin, search, sources, tab]);
+  }, [brands, models, parts, priceMax, priceMin, search, sources, tab]);
 
   const handleImageReady = (key) => {
     setLoadedImages((current) => (current[key] ? current : { ...current, [key]: true }));
@@ -434,9 +517,21 @@ const ShopPage = () => {
     );
   };
 
+  const toggleModel = (model) => {
+    if (model === 'all') {
+      setModels([]);
+      return;
+    }
+
+    setModels((current) =>
+      current.includes(model) ? current.filter((value) => value !== model) : [...current, model],
+    );
+  };
+
   const resetFilters = () => {
     setTab('all');
     setBrands([]);
+    setModels([]);
     setParts([]);
     setSearch('');
     setPriceMin('');
@@ -700,25 +795,35 @@ const ShopPage = () => {
                 <p>{t('shop.filters.brandKicker')}</p>
                 <h3>{t('shop.filters.brandTitle')}</h3>
               </div>
-              <div className="zpos-filter-list">
-                <button
-                  type="button"
-                  className={`zpos-filter-pill ${brands.length === 0 ? 'is-active' : ''}`}
-                  onClick={() => toggleBrand('all')}
-                >
-                  <span>{t('shop.filters.allBrands')}</span>
-                </button>
-                {brandOptions.map((brand) => (
-                  <button
-                    key={brand}
-                    type="button"
-                    className={`zpos-filter-pill ${brands.includes(brand) ? 'is-active' : ''}`}
-                    onClick={() => toggleBrand(brand)}
-                  >
-                    <span>{brand}</span>
-                  </button>
-                ))}
+              <FilterOptionList
+                allLabel={t('shop.filters.allBrands')}
+                allActive={brands.length === 0}
+                options={brandOptions}
+                selectedValues={brands}
+                onToggle={toggleBrand}
+                onAll={() => toggleBrand('all')}
+                searchPlaceholder={t('shop.filters.searchOptions')}
+                showLessLabel={t('shop.filters.showLess')}
+                showMoreLabel={(count) => t('shop.filters.showMore', { count })}
+              />
+            </section>
+
+            <section className="zpos-filter-section">
+              <div className="zpos-section-head">
+                <p>{t('shop.filters.modelKicker')}</p>
+                <h3>{t('shop.filters.modelTitle')}</h3>
               </div>
+              <FilterOptionList
+                allLabel={t('shop.filters.allModels')}
+                allActive={models.length === 0}
+                options={modelOptions}
+                selectedValues={models}
+                onToggle={toggleModel}
+                onAll={() => toggleModel('all')}
+                searchPlaceholder={t('shop.filters.searchOptions')}
+                showLessLabel={t('shop.filters.showLess')}
+                showMoreLabel={(count) => t('shop.filters.showMore', { count })}
+              />
             </section>
 
             <section className="zpos-filter-section">
@@ -726,21 +831,20 @@ const ShopPage = () => {
                 <p>{t('shop.filters.partTypeKicker')}</p>
                 <h3>{t('shop.filters.partTypeTitle')}</h3>
               </div>
-              <div className="zpos-filter-list">
-                {partOptions.map(([value, label]) => {
-                  const active = value === 'all' ? parts.length === 0 : parts.includes(value);
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      className={`zpos-filter-pill ${active ? 'is-active' : ''}`}
-                      onClick={() => togglePart(value)}
-                    >
-                      <span>{t(label)}</span>
-                    </button>
-                  );
-                })}
-              </div>
+              <FilterOptionList
+                allLabel={t('common.all')}
+                allActive={parts.length === 0}
+                options={dynamicPartOptions.filter(([value]) => value !== 'all').map(([value]) => value)}
+                selectedValues={parts}
+                onToggle={togglePart}
+                onAll={() => togglePart('all')}
+                getLabel={(value) =>
+                  t(dynamicPartOptions.find(([partValue]) => partValue === value)?.[1] || value)
+                }
+                searchPlaceholder={t('shop.filters.searchOptions')}
+                showLessLabel={t('shop.filters.showLess')}
+                showMoreLabel={(count) => t('shop.filters.showMore', { count })}
+              />
             </section>
 
             <section className="zpos-filter-section">

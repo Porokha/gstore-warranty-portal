@@ -644,6 +644,44 @@ body.zpos-fullscreen .container {
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.85);
 }
 
+.zpos-filter-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--zpos-border);
+  background: #fff;
+  color: #667085;
+}
+
+.zpos-filter-search svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.zpos-filter-search input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: 600 11px/1.2 "BPG Banner Quadrosquare", sans-serif;
+  color: #172033;
+}
+
+.zpos-filter-expand {
+  margin: 8px 0 0;
+  border: 0;
+  background: transparent;
+  color: #744de0;
+  font: 700 11px/1 "BPG Banner Quadrosquare Caps", sans-serif;
+  cursor: pointer;
+}
+
 .zpos-filter-pill {
   position: relative;
   padding: 7px 10px;

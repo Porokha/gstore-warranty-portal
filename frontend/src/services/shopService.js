@@ -11,6 +11,11 @@ export const shopService = {
     return response.data;
   },
 
+  getPublicProductFacets: async (params = {}) => {
+    const response = await api.get('/public/shop/facets', { params });
+    return response.data;
+  },
+
   createPublicOrder: async (payload) => {
     const response = await api.post('/public/shop/orders', payload);
     return response.data;

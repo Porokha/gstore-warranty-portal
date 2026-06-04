@@ -10,6 +10,10 @@ export class PublicShopProductsDto {
   brand?: string;
 
   @IsOptional()
+  @IsString()
+  model?: string;
+
+  @IsOptional()
   @IsEnum(ShopDeviceCategory)
   device?: ShopDeviceCategory;
 

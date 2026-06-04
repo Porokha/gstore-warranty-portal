@@ -12,6 +12,11 @@ export class ShopPublicController {
     return this.shopService.listPublicProducts(filters);
   }
 
+  @Get('facets')
+  listFacets(@Query() filters: PublicShopProductsDto) {
+    return this.shopService.getPublicProductFacets({ device: filters.device });
+  }
+
   @Post('orders')
   @HttpCode(HttpStatus.CREATED)
   createOrder(@Body() createDto: CreatePublicShopOrderDto) {

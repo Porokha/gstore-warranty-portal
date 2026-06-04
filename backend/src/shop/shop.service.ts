@@ -63,6 +63,11 @@ export class ShopService {
       qb.andWhere('LOWER(COALESCE(product.brand, "")) IN (:...brands)', { brands });
     }
 
+    const models = this.parseFilterList(filters.model).map((model) => model.toLowerCase());
+    if (models.length > 0) {
+      qb.andWhere('LOWER(COALESCE(product.device_model, "")) IN (:...models)', { models });
+    }
+
     const parts = this.parseFilterList(filters.part);
     if (parts.length > 0) {
       qb.andWhere('product.part_category IN (:...parts)', { parts });
@@ -75,7 +80,7 @@ export class ShopService {
 
     if (filters.search) {
       qb.andWhere(
-        '(LOWER(product.title) LIKE :search OR LOWER(COALESCE(product.brand, "")) LIKE :search OR LOWER(COALESCE(product.issue_label, "")) LIKE :search OR LOWER(COALESCE(product.description, "")) LIKE :search)',
+        '(LOWER(product.title) LIKE :search OR LOWER(COALESCE(product.brand, "")) LIKE :search OR LOWER(COALESCE(product.device_model, "")) LIKE :search OR LOWER(COALESCE(product.issue_label, "")) LIKE :search OR LOWER(COALESCE(product.description, "")) LIKE :search)',
         { search: `%${filters.search.toLowerCase()}%` },
       );
     }
@@ -103,6 +108,48 @@ export class ShopService {
       page,
       limit,
       total_pages: Math.ceil(total / limit),
+    };
+  }
+
+  async getPublicProductFacets(filters: Pick<PublicShopProductsDto, 'device'> = {}) {
+    await this.purgeExpiredTrash();
+    const baseQb = this.shopProductsRepository
+      .createQueryBuilder('product')
+      .where('product.is_active = true')
+      .andWhere('product.deleted_at IS NULL');
+
+    if (filters.device) {
+      baseQb.andWhere('product.device_category = :device', { device: filters.device });
+    }
+
+    const cloneForField = (field: 'brand' | 'device_model' | 'part_category') =>
+      baseQb
+        .clone()
+        .select(`product.${field}`, 'value')
+        .addSelect('COUNT(product.id)', 'count')
+        .andWhere(`product.${field} IS NOT NULL`)
+        .andWhere(`TRIM(product.${field}) != ""`)
+        .groupBy(`product.${field}`)
+        .orderBy('value', 'ASC')
+        .getRawMany();
+
+    const [brands, models, parts] = await Promise.all([
+      cloneForField('brand'),
+      cloneForField('device_model'),
+      cloneForField('part_category'),
+    ]);
+
+    const mapFacetRows = (rows: Array<{ value: string; count: string }>) =>
+      rows.map((row) => ({
+        value: row.value,
+        label: row.value,
+        count: Number(row.count || 0),
+      }));
+
+    return {
+      brands: mapFacetRows(brands),
+      models: mapFacetRows(models),
+      parts: mapFacetRows(parts),
     };
   }
 
