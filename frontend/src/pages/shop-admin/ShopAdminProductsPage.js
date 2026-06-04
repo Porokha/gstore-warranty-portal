@@ -105,6 +105,9 @@ const ShopAdminProductsPage = () => {
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [mobileSentrixResult, setMobileSentrixResult] = useState(null);
   const [mobileSentrixJobId, setMobileSentrixJobId] = useState(null);
+  const [mobileSentrixSearch, setMobileSentrixSearch] = useState('');
+  const [mobileSentrixStockFilter, setMobileSentrixStockFilter] = useState('all');
+  const [mobileSentrixVisibilityFilter, setMobileSentrixVisibilityFilter] = useState('all');
   const [adminProductPage, setAdminProductPage] = useState(1);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -113,6 +116,7 @@ const ShopAdminProductsPage = () => {
     title: '',
     message: '',
     confirmText: 'Confirm',
+    cancelText: 'Cancel',
     severity: 'warning',
     onConfirm: null,
   });
@@ -175,6 +179,9 @@ const ShopAdminProductsPage = () => {
     setSelectedIds([]);
     setForm(emptyForm);
     setAdminProductPage(1);
+    setMobileSentrixSearch('');
+    setMobileSentrixStockFilter('all');
+    setMobileSentrixVisibilityFilter('all');
   }, [scope, productSource]);
 
   const invalidateProducts = async () => {
@@ -415,8 +422,41 @@ const ShopAdminProductsPage = () => {
     () => products.find((product) => product.id === selectedId) || null,
     [products, selectedId],
   );
+  const displayedProducts = useMemo(() => {
+    if (productSource !== 'mobilesentrix') {
+      return products;
+    }
+
+    const search = mobileSentrixSearch.trim().toLowerCase();
+    return products.filter((product) => {
+      const matchesSearch =
+        !search ||
+        [
+          product.title,
+          product.brand,
+          product.device_model,
+          product.supplier_sku,
+          product.supplier_product_id,
+          product.part_category,
+          product.device_category,
+        ]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(search));
+      const matchesStock =
+        mobileSentrixStockFilter === 'all' ||
+        (mobileSentrixStockFilter === 'in_stock' && Number(product.stock_quantity || 0) > 0) ||
+        (mobileSentrixStockFilter === 'out_of_stock' && Number(product.stock_quantity || 0) <= 0);
+      const matchesVisibility =
+        mobileSentrixVisibilityFilter === 'all' ||
+        (mobileSentrixVisibilityFilter === 'visible' && product.is_active) ||
+        (mobileSentrixVisibilityFilter === 'hidden' && !product.is_active);
+
+      return matchesSearch && matchesStock && matchesVisibility;
+    });
+  }, [mobileSentrixSearch, mobileSentrixStockFilter, mobileSentrixVisibilityFilter, productSource, products]);
   const allSelected =
-    products.length > 0 && selectedIds.length > 0 && selectedIds.length === products.length;
+    displayedProducts.length > 0 &&
+    displayedProducts.every((product) => selectedIds.includes(product.id));
 
   const applyProductToForm = (product, openModal = true) => {
     if (!product) {
@@ -503,7 +543,24 @@ const ShopAdminProductsPage = () => {
   };
 
   const handleSelectAll = (checked) => {
-    setSelectedIds(checked ? products.map((product) => product.id) : []);
+    const visibleIds = displayedProducts.map((product) => product.id);
+    setSelectedIds((current) =>
+      checked
+        ? [...new Set([...current, ...visibleIds])]
+        : current.filter((id) => !visibleIds.includes(id)),
+    );
+  };
+
+  const handleFullMobileSentrixSync = () => {
+    setConfirmState({
+      open: true,
+      title: 'Sync Fully',
+      message: 'Are you sure? Full MobileSentrix catalog sync may take more than 1 hour to complete.',
+      confirmText: 'Continue',
+      cancelText: 'Cancel',
+      severity: 'warning',
+      onConfirm: () => mobileSentrixSyncMutation.mutate(),
+    });
   };
 
   const handleBulkDelete = () => {
@@ -890,11 +947,11 @@ const ShopAdminProductsPage = () => {
                 <Typography sx={{ fontSize: '24px', fontWeight: 800, color: '#172033' }}>
                   {productSource === 'manual' ? 'Products' : 'MobileSentrix Products'}
                 </Typography>
-                <Typography sx={{ color: '#667085', mt: 0.75 }}>
-                  {productSource === 'manual'
-                    ? 'Catalog management, CSV import, image handling, and trash recovery.'
-                    : 'Preview the supplier catalog, apply Zezva pricing, and sync all MobileSentrix products into the shop catalog.'}
-                </Typography>
+                {productSource === 'manual' ? (
+                  <Typography sx={{ color: '#667085', mt: 0.75 }}>
+                    Catalog management, CSV import, image handling, and trash recovery.
+                  </Typography>
+                ) : null}
               </Box>
               {productSource === 'manual' ? (
                 <Stack direction="row" spacing={1.25} flexWrap="wrap">
@@ -957,83 +1014,96 @@ const ShopAdminProductsPage = () => {
                   )}
                 </Stack>
               ) : (
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.25} flexWrap="wrap" sx={{ minWidth: { md: 420 } }}>
-                  <Button
-                    variant="contained"
-                    startIcon={<Add />}
-                    onClick={() => applyProductToForm(null)}
-                    sx={{ textTransform: 'none', fontWeight: 800, borderRadius: 3 }}
-                  >
-                    New Product
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    startIcon={<Search />}
-                    onClick={() => mobileSentrixPreviewMutation.mutate()}
-                    disabled={mobileSentrixPreviewMutation.isLoading}
-                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
-                  >
-                    {mobileSentrixPreviewMutation.isLoading ? 'Loading...' : 'Preview Catalog'}
-                  </Button>
-                  <Button
-                    variant="contained"
-                    startIcon={<Sync />}
-                    onClick={() => mobileSentrixSyncMutation.mutate()}
-                    disabled={mobileSentrixSyncMutation.isLoading || mobileSentrixJobRunning}
-                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
-                  >
-                    {mobileSentrixSyncMutation.isLoading || mobileSentrixJobRunning
-                      ? 'Sync Running...'
-                      : 'Sync Full Catalog'}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    startIcon={<Sync />}
-                    onClick={() => mobileSentrixRefreshMutation.mutate()}
-                    disabled={mobileSentrixRefreshMutation.isLoading || mobileSentrixJobRunning}
-                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
-                  >
-                    {mobileSentrixRefreshMutation.isLoading || mobileSentrixJobRunning
-                      ? 'Refresh Running...'
-                      : 'Refresh Existing'}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    startIcon={<Sync />}
-                    onClick={handleRefreshSelectedMobileSentrix}
-                    disabled={selectedIds.length === 0 || mobileSentrixSelectedRefreshMutation.isLoading}
-                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
-                  >
-                    {mobileSentrixSelectedRefreshMutation.isLoading ? 'Refreshing...' : 'Refresh Selected'}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    startIcon={<VisibilityOff />}
-                    disabled={selectedIds.length === 0}
-                    onClick={() => handleBulkVisibility(false)}
-                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
-                  >
-                    Hide Selected
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    startIcon={<Visibility />}
-                    disabled={selectedIds.length === 0}
-                    onClick={() => handleBulkVisibility(true)}
-                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
-                  >
-                    Show Selected
-                  </Button>
-                  <Button
-                    color="warning"
-                    variant="outlined"
-                    startIcon={<DeleteOutline />}
-                    disabled={selectedIds.length === 0}
-                    onClick={handleBulkDelete}
-                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
-                  >
-                    Delete Selected
-                  </Button>
+                <Stack direction="row" spacing={0.75} sx={{ flexWrap: 'nowrap', overflowX: 'auto', pb: 0.5 }}>
+                  <Tooltip title="New Product">
+                    <IconButton color="primary" onClick={() => applyProductToForm(null)} sx={{ border: '1px solid #dce4f0' }}>
+                      <Add />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title={mobileSentrixPreviewMutation.isLoading ? 'Loading preview...' : 'Preview Catalog'}>
+                    <span>
+                      <IconButton
+                        color="primary"
+                        onClick={() => mobileSentrixPreviewMutation.mutate()}
+                        disabled={mobileSentrixPreviewMutation.isLoading}
+                        sx={{ border: '1px solid #dce4f0' }}
+                      >
+                        <Search />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                  <Tooltip title={mobileSentrixSyncMutation.isLoading || mobileSentrixJobRunning ? 'Sync running...' : 'Sync Fully'}>
+                    <span>
+                      <IconButton
+                        color="primary"
+                        onClick={handleFullMobileSentrixSync}
+                        disabled={mobileSentrixSyncMutation.isLoading || mobileSentrixJobRunning}
+                        sx={{ border: '1px solid #dce4f0', bgcolor: '#eef2ff' }}
+                      >
+                        <Sync />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                  <Tooltip title={mobileSentrixRefreshMutation.isLoading || mobileSentrixJobRunning ? 'Refresh running...' : 'Refresh Existing'}>
+                    <span>
+                      <IconButton
+                        color="primary"
+                        onClick={() => mobileSentrixRefreshMutation.mutate()}
+                        disabled={mobileSentrixRefreshMutation.isLoading || mobileSentrixJobRunning}
+                        sx={{ border: '1px solid #dce4f0' }}
+                      >
+                        <Sync />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                  <Tooltip title={mobileSentrixSelectedRefreshMutation.isLoading ? 'Refreshing selected...' : 'Refresh Selected'}>
+                    <span>
+                      <IconButton
+                        color="primary"
+                        onClick={handleRefreshSelectedMobileSentrix}
+                        disabled={selectedIds.length === 0 || mobileSentrixSelectedRefreshMutation.isLoading}
+                        sx={{ border: '1px solid #dce4f0' }}
+                      >
+                        <Sync />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                  <Tooltip title="Hide Selected">
+                    <span>
+                      <IconButton
+                        color="warning"
+                        disabled={selectedIds.length === 0}
+                        onClick={() => handleBulkVisibility(false)}
+                        sx={{ border: '1px solid #dce4f0' }}
+                      >
+                        <VisibilityOff />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                  <Tooltip title="Show Selected">
+                    <span>
+                      <IconButton
+                        color="success"
+                        disabled={selectedIds.length === 0}
+                        onClick={() => handleBulkVisibility(true)}
+                        sx={{ border: '1px solid #dce4f0' }}
+                      >
+                        <Visibility />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                  <Tooltip title="Delete Selected">
+                    <span>
+                      <IconButton
+                        color="error"
+                        disabled={selectedIds.length === 0}
+                        onClick={handleBulkDelete}
+                        sx={{ border: '1px solid #dce4f0' }}
+                      >
+                        <DeleteOutline />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
                 </Stack>
               )}
             </Stack>
@@ -1080,11 +1150,6 @@ const ShopAdminProductsPage = () => {
             {productSource === 'manual' && selectedIds.length > 0 && (
               <Alert severity="info" sx={{ mt: 2 }}>
                 {selectedIds.length} product{selectedIds.length === 1 ? '' : 's'} selected.
-              </Alert>
-            )}
-            {productSource === 'mobilesentrix' && (
-              <Alert severity="info" sx={{ mt: 2 }}>
-                Pricing formula: supplier currency price + 18% VAT, converted by official NBG rate, plus ₾5 handling, then +50% Zezva margin. Existing MobileSentrix products auto-refresh every 12 hours.
               </Alert>
             )}
             {productSource === 'mobilesentrix' && mobileSentrixJob && (
@@ -1318,6 +1383,65 @@ const ShopAdminProductsPage = () => {
               </Table>
             </Box>
           ) : (
+            <>
+            <Paper
+              elevation={0}
+              sx={{
+                m: 2,
+                mb: 0,
+                p: 1.5,
+                borderRadius: 3,
+                border: '1px solid #dce4f0',
+                background: '#fbfcff',
+              }}
+            >
+              <Stack
+                direction={{ xs: 'column', md: 'row' }}
+                spacing={1.25}
+                alignItems={{ xs: 'stretch', md: 'center' }}
+                justifyContent="space-between"
+              >
+                <TextField
+                  size="small"
+                  value={mobileSentrixSearch}
+                  onChange={(event) => setMobileSentrixSearch(event.target.value)}
+                  placeholder="Search title, SKU, brand, model..."
+                  InputProps={{
+                    startAdornment: <Search sx={{ color: '#98a2b3', mr: 1 }} fontSize="small" />,
+                  }}
+                  sx={{ minWidth: { md: 360 }, flex: 1 }}
+                />
+                <Stack direction="row" spacing={1} sx={{ flexWrap: 'nowrap' }}>
+                  <TextField
+                    select
+                    size="small"
+                    label="Stock"
+                    value={mobileSentrixStockFilter}
+                    onChange={(event) => setMobileSentrixStockFilter(event.target.value)}
+                    sx={{ minWidth: 140 }}
+                  >
+                    <MenuItem value="all">All stock</MenuItem>
+                    <MenuItem value="in_stock">In stock</MenuItem>
+                    <MenuItem value="out_of_stock">Out of stock</MenuItem>
+                  </TextField>
+                  <TextField
+                    select
+                    size="small"
+                    label="Catalog"
+                    value={mobileSentrixVisibilityFilter}
+                    onChange={(event) => setMobileSentrixVisibilityFilter(event.target.value)}
+                    sx={{ minWidth: 140 }}
+                  >
+                    <MenuItem value="all">All</MenuItem>
+                    <MenuItem value="visible">Visible</MenuItem>
+                    <MenuItem value="hidden">Hidden</MenuItem>
+                  </TextField>
+                </Stack>
+                <Typography sx={{ color: '#667085', fontSize: '12px', fontWeight: 800, whiteSpace: 'nowrap' }}>
+                  {displayedProducts.length} / {products.length} shown
+                </Typography>
+              </Stack>
+            </Paper>
             <Box sx={{ overflowX: 'auto' }}>
               <Table
                 size="small"
@@ -1384,15 +1508,17 @@ const ShopAdminProductsPage = () => {
                         <TableCell align="right"><Skeleton variant="text" width={140} sx={{ ml: 'auto' }} /></TableCell>
                       </TableRow>
                     ))}
-                  {!isLoading && products.length === 0 && (
+                  {!isLoading && displayedProducts.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={10}>
-                        No MobileSentrix products synced yet. Click Sync Full Catalog to import supplier products.
+                        {products.length === 0
+                          ? 'No MobileSentrix products synced yet. Click Sync Fully to import supplier products.'
+                          : 'No products match the current filters.'}
                       </TableCell>
                     </TableRow>
                   )}
                   {!isLoading &&
-                    products.map((product) => (
+                    displayedProducts.map((product) => (
                       <TableRow
                         hover
                         key={product.id}
@@ -1532,6 +1658,7 @@ const ShopAdminProductsPage = () => {
                 </TableBody>
               </Table>
             </Box>
+            </>
           )}
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
@@ -1635,6 +1762,7 @@ const ShopAdminProductsPage = () => {
           setConfirmState((prev) => ({
             ...prev,
             open: false,
+            cancelText: 'Cancel',
             onConfirm: null,
           }))
         }
@@ -1646,12 +1774,14 @@ const ShopAdminProductsPage = () => {
           setConfirmState((prev) => ({
             ...prev,
             open: false,
+            cancelText: 'Cancel',
             onConfirm: null,
           }));
         }}
         title={confirmState.title}
         message={confirmState.message}
         confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
         severity={confirmState.severity}
       />
     </Grid>
