@@ -628,6 +628,10 @@
     "actions": {
       "add": "Add"
     },
+    "loading": {
+      "title": "Matching parts",
+      "description": "Refining the catalog for your selected filters."
+    },
     "empty": {
       "title": "No parts match these filters",
       "description": "Try another tab, adjust price range, or reset the source selection."

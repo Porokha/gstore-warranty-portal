@@ -250,6 +250,7 @@ const ShopPage = () => {
   const [cartExpanded, setCartExpanded] = useState(true);
   const [pullRefresh, setPullRefresh] = useState({ active: false, ready: false, distance: 0 });
   const [productPage, setProductPage] = useState(1);
+  const [showSlowProductLoader, setShowSlowProductLoader] = useState(false);
   const rootRef = useRef(null);
   const gridScrollRef = useRef(null);
   const tabsRef = useRef(null);
@@ -296,6 +297,8 @@ const ShopPage = () => {
   const productsTotal = productsResult?.total || products.length;
   const hasMoreProducts = gridProducts.length < productsTotal;
   const isInitialProductsLoading = isProductsLoading && gridProducts.length === 0;
+  const isFilteringProducts = isProductsFetching && productPage === 1 && gridProducts.length > 0;
+  const shouldShowProductLoader = isFilteringProducts && showSlowProductLoader;
   const { data: productFacets = { brands: [], models: [], parts: [] } } = useQuery(
     ['shop-public-facets', publicFacetParams],
     () => shopService.getPublicProductFacets(publicFacetParams),
@@ -548,6 +551,19 @@ const ShopPage = () => {
   }, [isProductsLoading, productPage, visibleProducts]);
 
   useEffect(() => {
+    if (!isFilteringProducts) {
+      setShowSlowProductLoader(false);
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      setShowSlowProductLoader(true);
+    }, 1500);
+
+    return () => window.clearTimeout(timer);
+  }, [isFilteringProducts]);
+
+  useEffect(() => {
     if (!isProductsFetching) {
       loadingNextPageRef.current = false;
     }
@@ -583,7 +599,6 @@ const ShopPage = () => {
 
   useEffect(() => {
     setProductPage(1);
-    setGridProducts([]);
     loadingNextPageRef.current = false;
   }, [brands, models, parts, priceMax, priceMin, search, sources, tab]);
 
@@ -1082,7 +1097,7 @@ const ShopPage = () => {
             </div>
             <div
               id="zpos-grid"
-              className="zpos-grid"
+              className={`zpos-grid ${isFilteringProducts ? 'is-refetching' : ''}`}
               aria-live="polite"
             >
               {isInitialProductsLoading &&
@@ -1103,7 +1118,7 @@ const ShopPage = () => {
                   </div>
                 ))}
 
-              {!isInitialProductsLoading && gridProducts.length === 0 && (
+              {!isProductsFetching && !isInitialProductsLoading && gridProducts.length === 0 && (
                 <div className="zpos-empty zpos-empty--grid is-visible">
                   <strong>{t('shop.empty.title')}</strong>
                   <p>{t('shop.empty.description')}</p>
@@ -1182,6 +1197,18 @@ const ShopPage = () => {
                   </article>
                 );
               })}
+
+              {shouldShowProductLoader && (
+                <div className="zpos-product-loader" role="status" aria-live="polite">
+                  <div className="zpos-product-loader-orb" aria-hidden="true">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                  <strong>{t('shop.loading.title')}</strong>
+                  <p>{t('shop.loading.description')}</p>
+                </div>
+              )}
             </div>
             {!isInitialProductsLoading && (hasMoreProducts || isProductsFetching) && (
               <button
