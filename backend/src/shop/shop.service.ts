@@ -111,20 +111,15 @@ export class ShopService {
     };
   }
 
-  async getPublicProductFacets(filters: Pick<PublicShopProductsDto, 'device'> = {}) {
+  async getPublicProductFacets(filters: PublicShopProductsDto = {}) {
     await this.purgeExpiredTrash();
     const baseQb = this.shopProductsRepository
       .createQueryBuilder('product')
       .where('product.is_active = true')
       .andWhere('product.deleted_at IS NULL');
 
-    if (filters.device) {
-      baseQb.andWhere('product.device_category = :device', { device: filters.device });
-    }
-
     const cloneForField = (field: 'brand' | 'device_model' | 'part_category') =>
-      baseQb
-        .clone()
+      this.applyPublicProductFilters(baseQb.clone(), filters, field)
         .select(`product.${field}`, 'value')
         .addSelect('COUNT(product.id)', 'count')
         .andWhere(`product.${field} IS NOT NULL`)
@@ -655,6 +650,57 @@ export class ShopService {
       .split(',')
       .map((item) => item.trim())
       .filter(Boolean);
+  }
+
+  private applyPublicProductFilters(
+    qb: any,
+    filters: PublicShopProductsDto,
+    excludeField?: 'brand' | 'device_model' | 'part_category',
+  ) {
+    if (filters.device) {
+      qb.andWhere('product.device_category = :device', { device: filters.device });
+    }
+
+    const brands = this.parseFilterList(filters.brand).map((brand) => brand.toLowerCase());
+    if (brands.length > 0 && excludeField !== 'brand') {
+      qb.andWhere('LOWER(COALESCE(product.brand, "")) IN (:...brands)', { brands });
+    }
+
+    const models = this.parseFilterList(filters.model).map((model) => model.toLowerCase());
+    if (models.length > 0 && excludeField !== 'device_model') {
+      qb.andWhere('LOWER(COALESCE(product.device_model, "")) IN (:...models)', { models });
+    }
+
+    const parts = this.parseFilterList(filters.part);
+    if (parts.length > 0 && excludeField !== 'part_category') {
+      qb.andWhere('product.part_category IN (:...parts)', { parts });
+    }
+
+    const sources = this.parseFilterList(filters.source);
+    if (sources.length > 0) {
+      qb.andWhere('product.inventory_source IN (:...sources)', { sources });
+    }
+
+    if (filters.search) {
+      qb.andWhere(
+        '(LOWER(product.title) LIKE :search OR LOWER(COALESCE(product.brand, "")) LIKE :search OR LOWER(COALESCE(product.device_model, "")) LIKE :search OR LOWER(COALESCE(product.issue_label, "")) LIKE :search OR LOWER(COALESCE(product.description, "")) LIKE :search)',
+        { search: `%${filters.search.toLowerCase()}%` },
+      );
+    }
+
+    if (filters.price_min !== undefined) {
+      qb.andWhere('COALESCE(product.sale_price, product.price, product.service_price) >= :priceMin', {
+        priceMin: filters.price_min,
+      });
+    }
+
+    if (filters.price_max !== undefined) {
+      qb.andWhere('COALESCE(product.sale_price, product.price, product.service_price) <= :priceMax', {
+        priceMax: filters.price_max,
+      });
+    }
+
+    return qb;
   }
 
   private serializeProduct(product: ShopProduct, admin = false) {

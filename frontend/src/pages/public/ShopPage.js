@@ -274,6 +274,19 @@ const ShopPage = () => {
     }),
     [brands, models, parts, priceMax, priceMin, productPage, search, sources, tab],
   );
+  const publicFacetParams = useMemo(
+    () => ({
+      device: tab === 'all' ? undefined : tab,
+      brand: brands.length > 0 ? brands.join(',') : undefined,
+      model: models.length > 0 ? models.join(',') : undefined,
+      part: parts.length > 0 ? parts.join(',') : undefined,
+      source: sources.length < 2 ? sources.join(',') : undefined,
+      search: search.trim() || undefined,
+      price_min: priceMin === '' ? undefined : Number(priceMin),
+      price_max: priceMax === '' ? undefined : Number(priceMax),
+    }),
+    [brands, models, parts, priceMax, priceMin, search, sources, tab],
+  );
   const { data: productsResult, isLoading: isProductsLoading, isFetching: isProductsFetching } = useQuery(
     ['shop-public-products', publicProductParams],
     () => shopService.getPublicProducts(publicProductParams),
@@ -284,8 +297,8 @@ const ShopPage = () => {
   const hasMoreProducts = gridProducts.length < productsTotal;
   const isInitialProductsLoading = isProductsLoading && gridProducts.length === 0;
   const { data: productFacets = { brands: [], models: [], parts: [] } } = useQuery(
-    ['shop-public-facets', tab],
-    () => shopService.getPublicProductFacets({ device: tab === 'all' ? undefined : tab }),
+    ['shop-public-facets', publicFacetParams],
+    () => shopService.getPublicProductFacets(publicFacetParams),
     { staleTime: 5 * 60 * 1000 },
   );
   const orderMutation = useMutation((payload) => shopService.createPublicOrder(payload), {
@@ -498,12 +511,18 @@ const ShopPage = () => {
   const visibleProducts = products;
 
   const brandOptions = useMemo(
-    () => (productFacets.brands || []).map((item) => item.value).filter(Boolean),
-    [productFacets.brands],
+    () =>
+      Array.from(
+        new Set([...(productFacets.brands || []).map((item) => item.value).filter(Boolean), ...brands]),
+      ),
+    [brands, productFacets.brands],
   );
   const modelOptions = useMemo(
-    () => (productFacets.models || []).map((item) => item.value).filter(Boolean),
-    [productFacets.models],
+    () =>
+      Array.from(
+        new Set([...(productFacets.models || []).map((item) => item.value).filter(Boolean), ...models]),
+      ),
+    [models, productFacets.models],
   );
   const dynamicPartOptions = useMemo(() => {
     const availableParts = new Set((productFacets.parts || []).map((item) => item.value));

@@ -14,7 +14,7 @@ export class ShopPublicController {
 
   @Get('facets')
   listFacets(@Query() filters: PublicShopProductsDto) {
-    return this.shopService.getPublicProductFacets({ device: filters.device });
+    return this.shopService.getPublicProductFacets(filters);
   }
 
   @Post('orders')
