@@ -251,6 +251,7 @@ const ShopPage = () => {
   const [pullRefresh, setPullRefresh] = useState({ active: false, ready: false, distance: 0 });
   const [productPage, setProductPage] = useState(1);
   const [showSlowProductLoader, setShowSlowProductLoader] = useState(false);
+  const [showSlowFilterLoader, setShowSlowFilterLoader] = useState(false);
   const rootRef = useRef(null);
   const gridScrollRef = useRef(null);
   const tabsRef = useRef(null);
@@ -299,11 +300,15 @@ const ShopPage = () => {
   const isInitialProductsLoading = isProductsLoading && gridProducts.length === 0;
   const isFilteringProducts = isProductsFetching && productPage === 1 && gridProducts.length > 0;
   const shouldShowProductLoader = isFilteringProducts && showSlowProductLoader;
-  const { data: productFacets = { brands: [], models: [], parts: [] } } = useQuery(
+  const {
+    data: productFacets = { brands: [], models: [], parts: [] },
+    isFetching: isFacetsFetching,
+  } = useQuery(
     ['shop-public-facets', publicFacetParams],
     () => shopService.getPublicProductFacets(publicFacetParams),
-    { staleTime: 5 * 60 * 1000 },
+    { keepPreviousData: true, staleTime: 5 * 60 * 1000 },
   );
+  const shouldShowFilterLoader = isFacetsFetching && showSlowFilterLoader;
   const orderMutation = useMutation((payload) => shopService.createPublicOrder(payload), {
     onSuccess: (result) => {
       setCreatedOrder(result);
@@ -562,6 +567,19 @@ const ShopPage = () => {
 
     return () => window.clearTimeout(timer);
   }, [isFilteringProducts]);
+
+  useEffect(() => {
+    if (!isFacetsFetching) {
+      setShowSlowFilterLoader(false);
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      setShowSlowFilterLoader(true);
+    }, 1500);
+
+    return () => window.clearTimeout(timer);
+  }, [isFacetsFetching]);
 
   useEffect(() => {
     if (!isProductsFetching) {
@@ -900,7 +918,19 @@ const ShopPage = () => {
             </button>
           </div>
 
-          <div className="zpos-sidebar-scroll">
+          <div className={`zpos-sidebar-scroll ${isFacetsFetching ? 'is-refetching' : ''}`}>
+            {shouldShowFilterLoader && (
+              <div className="zpos-filter-loader" role="status" aria-live="polite">
+                <div className="zpos-product-loader-orb" aria-hidden="true">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+                <strong>{t('shop.loading.filtersTitle')}</strong>
+                <p>{t('shop.loading.filtersDescription')}</p>
+              </div>
+            )}
+
             <section className="zpos-filter-section">
               <div className="zpos-section-head">
                 <p>{t('shop.filters.partTypeKicker')}</p>

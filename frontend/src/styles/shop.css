@@ -557,6 +557,7 @@ body.zpos-fullscreen .container {
 }
 
 .zpos-sidebar-scroll {
+  position: relative;
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
@@ -567,6 +568,12 @@ body.zpos-fullscreen .container {
   scrollbar-color: rgba(24, 33, 43, 0.14) transparent;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+}
+
+.zpos-sidebar-scroll.is-refetching .zpos-filter-section {
+  opacity: 0.72;
+  filter: saturate(0.88);
+  transition: opacity 0.18s ease, filter 0.18s ease;
 }
 
 .zpos-sidebar-scroll::-webkit-scrollbar {
@@ -684,6 +691,42 @@ body.zpos-fullscreen .container {
 
 .zpos-filter-others {
   margin-top: 8px;
+}
+
+.zpos-filter-loader {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  margin: 0 6px 12px 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(111, 78, 246, 0.2);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(125, 92, 246, 0.14), transparent 35%),
+    rgba(255, 255, 255, 0.94);
+  box-shadow: 0 14px 34px rgba(38, 24, 82, 0.13);
+  text-align: center;
+  backdrop-filter: blur(12px);
+}
+
+.zpos-filter-loader .zpos-product-loader-orb {
+  width: 28px;
+  height: 28px;
+}
+
+.zpos-filter-loader strong {
+  color: #1f2634;
+  font: 800 11px/1 "BPG Banner Quadrosquare Caps", sans-serif;
+  letter-spacing: 0.04em;
+}
+
+.zpos-filter-loader p {
+  margin: 0;
+  color: #6a7487;
+  font: 600 9px/1.35 "BPG Banner Quadrosquare", sans-serif;
 }
 
 .zpos-filter-pill {

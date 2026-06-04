@@ -630,7 +630,9 @@
     },
     "loading": {
       "title": "Matching parts",
-      "description": "Refining the catalog for your selected filters."
+      "description": "Refining the catalog for your selected filters.",
+      "filtersTitle": "Updating filters",
+      "filtersDescription": "Preparing relevant options."
     },
     "empty": {
       "title": "No parts match these filters",
