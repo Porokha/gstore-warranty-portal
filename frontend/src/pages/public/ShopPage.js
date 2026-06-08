@@ -61,6 +61,7 @@ const FILTER_DRAWER_CLOSE_MS = 220;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const COMPACT_CART_WIDTH = 920;
 const COMPACT_CART_HEIGHT = 919;
+const SHOP_SEARCH_DEBOUNCE_MS = 260;
 
 const createInitialOrderForm = () => ({
   customer_name: '',
@@ -222,6 +223,24 @@ const BrandFilterList = ({
   );
 };
 
+const ProductSkeletonCards = ({ count = 12, prefix = 'skeleton' }) =>
+  Array.from({ length: count }).map((_, index) => (
+    <div key={`${prefix}-${index}`} className="zpos-card zpos-card--skeleton is-visible">
+      <div className="zpos-thumb zpos-skeleton zpos-skeleton--thumb" />
+      <div className="zpos-card-body">
+        <div className="zpos-skeleton zpos-skeleton--meta" />
+        <div className="zpos-skeleton zpos-skeleton--title" />
+        <div className="zpos-skeleton zpos-skeleton--issue" />
+        <div className="zpos-card-footer">
+          <div className="zpos-price">
+            <div className="zpos-skeleton zpos-skeleton--price" />
+          </div>
+          <div className="zpos-skeleton zpos-skeleton--button" />
+        </div>
+      </div>
+    </div>
+  ));
+
 const ShopPage = () => {
   const { t } = useTranslation();
   const [tab, setTab] = useState('all');
@@ -229,6 +248,7 @@ const ShopPage = () => {
   const [models, setModels] = useState([]);
   const [parts, setParts] = useState([]);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [priceMin, setPriceMin] = useState('');
   const [priceMax, setPriceMax] = useState('');
   const [sources, setSources] = useState(['oem', 'third-party']);
@@ -250,7 +270,6 @@ const ShopPage = () => {
   const [cartExpanded, setCartExpanded] = useState(true);
   const [pullRefresh, setPullRefresh] = useState({ active: false, ready: false, distance: 0 });
   const [productPage, setProductPage] = useState(1);
-  const [showSlowProductLoader, setShowSlowProductLoader] = useState(false);
   const [showSlowFilterLoader, setShowSlowFilterLoader] = useState(false);
   const rootRef = useRef(null);
   const gridScrollRef = useRef(null);
@@ -261,6 +280,14 @@ const ShopPage = () => {
   const cartRemoveTimersRef = useRef(new Map());
   const loadingNextPageRef = useRef(false);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(search.trim());
+    }, SHOP_SEARCH_DEBOUNCE_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [search]);
+
   const publicProductParams = useMemo(
     () => ({
       page: productPage,
@@ -270,11 +297,11 @@ const ShopPage = () => {
       model: models.length > 0 ? models.join(',') : undefined,
       part: parts.length > 0 ? parts.join(',') : undefined,
       source: sources.length < 2 ? sources.join(',') : undefined,
-      search: search.trim() || undefined,
+      search: debouncedSearch || undefined,
       price_min: priceMin === '' ? undefined : Number(priceMin),
       price_max: priceMax === '' ? undefined : Number(priceMax),
     }),
-    [brands, models, parts, priceMax, priceMin, productPage, search, sources, tab],
+    [brands, debouncedSearch, models, parts, priceMax, priceMin, productPage, sources, tab],
   );
   const publicFacetParams = useMemo(
     () => ({
@@ -283,23 +310,25 @@ const ShopPage = () => {
       model: models.length > 0 ? models.join(',') : undefined,
       part: parts.length > 0 ? parts.join(',') : undefined,
       source: sources.length < 2 ? sources.join(',') : undefined,
-      search: search.trim() || undefined,
+      search: debouncedSearch || undefined,
       price_min: priceMin === '' ? undefined : Number(priceMin),
       price_max: priceMax === '' ? undefined : Number(priceMax),
     }),
-    [brands, models, parts, priceMax, priceMin, search, sources, tab],
+    [brands, debouncedSearch, models, parts, priceMax, priceMin, sources, tab],
   );
   const { data: productsResult, isLoading: isProductsLoading, isFetching: isProductsFetching } = useQuery(
     ['shop-public-products', publicProductParams],
     () => shopService.getPublicProducts(publicProductParams),
-    { keepPreviousData: true },
+    { keepPreviousData: true, staleTime: 60 * 1000 },
   );
   const products = productsResult?.items || [];
   const productsTotal = productsResult?.total || products.length;
   const hasMoreProducts = gridProducts.length < productsTotal;
   const isInitialProductsLoading = isProductsLoading && gridProducts.length === 0;
   const isFilteringProducts = isProductsFetching && productPage === 1 && gridProducts.length > 0;
-  const shouldShowProductLoader = isFilteringProducts && showSlowProductLoader;
+  const isProductSkeletonLoading =
+    isInitialProductsLoading || (isProductsFetching && productPage === 1 && gridProducts.length === 0);
+  const isLoadingNextProducts = isProductsFetching && productPage > 1;
   const {
     data: productFacets = { brands: [], models: [], parts: [] },
     isFetching: isFacetsFetching,
@@ -556,19 +585,6 @@ const ShopPage = () => {
       productPage === 1 ? visibleProducts : [...current, ...visibleProducts],
     );
   }, [isProductsFetching, productPage, productsResult, visibleProducts]);
-
-  useEffect(() => {
-    if (!isFilteringProducts) {
-      setShowSlowProductLoader(false);
-      return undefined;
-    }
-
-    const timer = window.setTimeout(() => {
-      setShowSlowProductLoader(true);
-    }, 1500);
-
-    return () => window.clearTimeout(timer);
-  }, [isFilteringProducts]);
 
   useEffect(() => {
     if (!isFacetsFetching) {
@@ -1136,32 +1152,16 @@ const ShopPage = () => {
               className={`zpos-grid ${isFilteringProducts ? 'is-refetching' : ''}`}
               aria-live="polite"
             >
-              {isInitialProductsLoading &&
-                Array.from({ length: 12 }).map((_, index) => (
-                  <div key={`skeleton-${index}`} className="zpos-card zpos-card--skeleton is-visible">
-                    <div className="zpos-thumb zpos-skeleton zpos-skeleton--thumb" />
-                    <div className="zpos-card-body">
-                      <div className="zpos-skeleton zpos-skeleton--meta" />
-                      <div className="zpos-skeleton zpos-skeleton--title" />
-                      <div className="zpos-skeleton zpos-skeleton--issue" />
-                      <div className="zpos-card-footer">
-                        <div className="zpos-price">
-                          <div className="zpos-skeleton zpos-skeleton--price" />
-                        </div>
-                        <div className="zpos-skeleton zpos-skeleton--button" />
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              {isProductSkeletonLoading && <ProductSkeletonCards count={12} prefix="search-skeleton" />}
 
-              {!isProductsFetching && !isInitialProductsLoading && gridProducts.length === 0 && (
+              {!isProductsFetching && !isProductSkeletonLoading && gridProducts.length === 0 && (
                 <div className="zpos-empty zpos-empty--grid is-visible">
                   <strong>{t('shop.empty.title')}</strong>
                   <p>{t('shop.empty.description')}</p>
                 </div>
               )}
 
-              {!isInitialProductsLoading && gridProducts.map((product) => {
+              {!isProductSkeletonLoading && gridProducts.map((product) => {
                 const displayPrice = getDisplayPrice(product);
                 const productOnlyAvailable = canBuyProductOnly(product);
                 const serviceAvailable = canBuyWithService(product);
@@ -1234,28 +1234,8 @@ const ShopPage = () => {
                 );
               })}
 
-              {shouldShowProductLoader && (
-                <div className="zpos-product-loader" role="status" aria-live="polite">
-                  <div className="zpos-product-loader-orb" aria-hidden="true">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                  </div>
-                  <strong>{t('shop.loading.title')}</strong>
-                  <p>{t('shop.loading.description')}</p>
-                </div>
-              )}
+              {isLoadingNextProducts && <ProductSkeletonCards count={6} prefix="next-page-skeleton" />}
             </div>
-            {!isInitialProductsLoading && (hasMoreProducts || isProductsFetching) && (
-              <button
-                type="button"
-                className={`zpos-load-more ${isProductsFetching ? 'is-loading' : ''}`}
-                onClick={() => setProductPage((current) => current + 1)}
-                disabled={isProductsFetching || !hasMoreProducts}
-              >
-                {isProductsFetching ? 'Loading more...' : 'Load more'}
-              </button>
-            )}
           </div>
         </main>
 
