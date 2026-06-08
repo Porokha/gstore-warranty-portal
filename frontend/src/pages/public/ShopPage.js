@@ -548,12 +548,14 @@ const ShopPage = () => {
   }, [cart]);
 
   useEffect(() => {
-    if (!isProductsLoading) {
-      setGridProducts((current) =>
-        productPage === 1 ? visibleProducts : [...current, ...visibleProducts],
-      );
+    if (isProductsFetching || !productsResult) {
+      return;
     }
-  }, [isProductsLoading, productPage, visibleProducts]);
+
+    setGridProducts((current) =>
+      productPage === 1 ? visibleProducts : [...current, ...visibleProducts],
+    );
+  }, [isProductsFetching, productPage, productsResult, visibleProducts]);
 
   useEffect(() => {
     if (!isFilteringProducts) {
@@ -617,7 +619,11 @@ const ShopPage = () => {
 
   useEffect(() => {
     setProductPage(1);
+    setGridProducts([]);
     loadingNextPageRef.current = false;
+    if (gridScrollRef.current) {
+      gridScrollRef.current.scrollTop = 0;
+    }
   }, [brands, models, parts, priceMax, priceMin, search, sources, tab]);
 
   const handleImageReady = (key) => {

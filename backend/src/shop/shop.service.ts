@@ -78,12 +78,7 @@ export class ShopService {
       qb.andWhere('product.inventory_source IN (:...sources)', { sources });
     }
 
-    if (filters.search) {
-      qb.andWhere(
-        '(LOWER(product.title) LIKE :search OR LOWER(COALESCE(product.brand, "")) LIKE :search OR LOWER(COALESCE(product.device_model, "")) LIKE :search OR LOWER(COALESCE(product.issue_label, "")) LIKE :search OR LOWER(COALESCE(product.description, "")) LIKE :search)',
-        { search: `%${filters.search.toLowerCase()}%` },
-      );
-    }
+    this.applyPublicSearch(qb, filters.search);
 
     if (filters.price_min !== undefined) {
       qb.andWhere('COALESCE(product.sale_price, product.price, product.service_price) >= :priceMin', {
@@ -681,12 +676,7 @@ export class ShopService {
       qb.andWhere('product.inventory_source IN (:...sources)', { sources });
     }
 
-    if (filters.search) {
-      qb.andWhere(
-        '(LOWER(product.title) LIKE :search OR LOWER(COALESCE(product.brand, "")) LIKE :search OR LOWER(COALESCE(product.device_model, "")) LIKE :search OR LOWER(COALESCE(product.issue_label, "")) LIKE :search OR LOWER(COALESCE(product.description, "")) LIKE :search)',
-        { search: `%${filters.search.toLowerCase()}%` },
-      );
-    }
+    this.applyPublicSearch(qb, filters.search);
 
     if (filters.price_min !== undefined) {
       qb.andWhere('COALESCE(product.sale_price, product.price, product.service_price) >= :priceMin', {
@@ -701,6 +691,31 @@ export class ShopService {
     }
 
     return qb;
+  }
+
+  private applyPublicSearch(qb: any, rawSearch?: string) {
+    const terms = String(rawSearch || '')
+      .toLowerCase()
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 6);
+
+    terms.forEach((term, index) => {
+      qb.andWhere(
+        `(
+          LOWER(product.title) LIKE :searchTerm${index}
+          OR LOWER(COALESCE(product.brand, "")) LIKE :searchTerm${index}
+          OR LOWER(COALESCE(product.device_model, "")) LIKE :searchTerm${index}
+          OR LOWER(COALESCE(product.issue_label, "")) LIKE :searchTerm${index}
+          OR LOWER(COALESCE(product.description, "")) LIKE :searchTerm${index}
+          OR LOWER(COALESCE(product.slug, "")) LIKE :searchTerm${index}
+          OR LOWER(COALESCE(product.supplier_sku, "")) LIKE :searchTerm${index}
+          OR LOWER(COALESCE(product.supplier_product_id, "")) LIKE :searchTerm${index}
+        )`,
+        { [`searchTerm${index}`]: `%${term}%` },
+      );
+    });
   }
 
   private serializeProduct(product: ShopProduct, admin = false) {
