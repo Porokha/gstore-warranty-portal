@@ -710,7 +710,7 @@ export class ShopService {
           OR LOWER(COALESCE(product.device_model, "")) LIKE :searchTerm${index}
           OR LOWER(COALESCE(product.issue_label, "")) LIKE :searchTerm${index}
           OR LOWER(COALESCE(product.description, "")) LIKE :searchTerm${index}
-          OR LOWER(COALESCE(product.slug, "")) LIKE :searchTerm${index}
+          ${canSearchSupplierCodes ? `OR LOWER(COALESCE(product.slug, "")) LIKE :searchTerm${index}` : ''}
           ${canSearchSupplierCodes ? `OR LOWER(COALESCE(product.supplier_sku, "")) LIKE :searchTerm${index}` : ''}
           ${canSearchSupplierCodes ? `OR LOWER(COALESCE(product.supplier_product_id, "")) LIKE :searchTerm${index}` : ''}
         )`,
