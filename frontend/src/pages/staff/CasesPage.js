@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from 'react-query';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   Typography,
   Box,
@@ -29,6 +29,7 @@ import CustomDataTable from '../../components/common/CustomDataTable';
 const CasesPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   
@@ -200,7 +201,7 @@ const CasesPage = () => {
               size="small"
               onClick={(e) => {
                 e.stopPropagation();
-                navigate(`/staff/cases/${row.id}`);
+                navigate(`/staff/cases/${row.id}${location.search}`);
               }}
             >
               <ViewIcon />
@@ -209,7 +210,7 @@ const CasesPage = () => {
         ),
       },
     ],
-    [t, navigate]
+    [t, navigate, location.search]
   );
 
   const handleFilterChange = (key, value) => {
@@ -314,7 +315,7 @@ const CasesPage = () => {
         tableKey="cases-table"
         frozenColumns={['select', 'case_number']}
         defaultColumnWidth={150}
-        onRowClick={(row) => navigate(`/staff/cases/${row.id}`)}
+        onRowClick={(row) => navigate(`/staff/cases/${row.id}${location.search}`)}
         onBulkDelete={async (selectedIds) => {
           try {
             for (const id of selectedIds) {

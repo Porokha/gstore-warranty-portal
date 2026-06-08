@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import {
@@ -38,11 +38,13 @@ import { useAuth } from '../../contexts/AuthContext';
 const CaseDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const queryClient = useQueryClient();
   const [tab, setTab] = useState(0);
+  const closePath = `/staff/cases${location.search || ''}`;
 
   const { data: case_, isLoading } = useQuery(
     ['case', id],
@@ -147,7 +149,7 @@ const CaseDetailPage = () => {
   const statusTimestamps = getStatusTimestamps();
 
   return (
-    <Dialog open={true} onClose={() => navigate('/staff/cases')} maxWidth="lg" fullWidth>
+    <Dialog open={true} onClose={() => navigate(closePath)} maxWidth="lg" fullWidth>
         <DialogTitle>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Typography variant="h6">{localCaseData?.case_number || case_?.case_number}</Typography>
@@ -163,7 +165,7 @@ const CaseDetailPage = () => {
                   {updateCaseMutation.isLoading ? <CircularProgress size={20} /> : t('common.save')}
                 </Button>
               )}
-              <Button onClick={() => navigate('/staff/cases')}>{t('common.close')}</Button>
+              <Button onClick={() => navigate(closePath)}>{t('common.close')}</Button>
             </Box>
           </Box>
         </DialogTitle>
@@ -576,7 +578,7 @@ const CaseDetailPage = () => {
                 try {
                   await casesService.delete(id);
                   queryClient.invalidateQueries('cases');
-                  navigate('/staff/cases');
+                  navigate(closePath);
                 } catch (error) {
                   alert(error.response?.data?.message || t('common.errorLoading'));
                 }
@@ -586,7 +588,7 @@ const CaseDetailPage = () => {
             {t('case.deleteCase')}
           </Button>
         )}
-        <Button onClick={() => navigate('/staff/cases')}>{t('common.close')}</Button>
+        <Button onClick={() => navigate(closePath)}>{t('common.close')}</Button>
       </DialogActions>
     </Dialog>
   );
