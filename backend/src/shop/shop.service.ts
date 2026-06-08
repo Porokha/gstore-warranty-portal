@@ -712,7 +712,13 @@ export class ShopService {
         `;
 
       qb.andWhere(
-        `(
+        isShortNumericTerm
+          ? `(
+          LOWER(product.title) REGEXP :searchTermRegex${index}
+          OR LOWER(COALESCE(product.device_model, "")) REGEXP :searchTermRegex${index}
+          OR LOWER(COALESCE(product.issue_label, "")) REGEXP :searchTermRegex${index}
+        )`
+          : `(
           LOWER(product.title) LIKE :searchTerm${index}
           OR LOWER(COALESCE(product.device_model, "")) LIKE :searchTerm${index}
           OR LOWER(COALESCE(product.issue_label, "")) LIKE :searchTerm${index}
@@ -721,7 +727,10 @@ export class ShopService {
           ${canSearchSupplierCodes ? `OR LOWER(COALESCE(product.supplier_sku, "")) LIKE :searchTerm${index}` : ''}
           ${canSearchSupplierCodes ? `OR LOWER(COALESCE(product.supplier_product_id, "")) LIKE :searchTerm${index}` : ''}
         )`,
-        { [`searchTerm${index}`]: `%${term}%` },
+        {
+          [`searchTerm${index}`]: `%${term}%`,
+          [`searchTermRegex${index}`]: `(^|[^[:alnum:]])${term}([^[:alnum:]]|$)`,
+        },
       );
     });
   }
