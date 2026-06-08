@@ -925,7 +925,7 @@ const SettingsPage = () => {
         onClose={() => setUserDialogOpen(false)}
         maxWidth="sm"
         fullWidth
-        PaperProps={{ sx: { borderRadius: 3 } }}
+        PaperProps={{ sx: { borderRadius: '24px' } }}
       >
         <DialogTitle>
           {editingUser ? t('common.editUser') || 'Edit User' : t('common.createUser') || 'Create User'}
@@ -962,7 +962,7 @@ const SettingsPage = () => {
                   onChange={(e) => setUserForm({ ...userForm, must_change_password: e.target.checked })}
                 />
               }
-              label={t('user.mustChangePassword') || 'Require password change at first login'}
+              label="Require password change at first login"
             />
           <TextField
             fullWidth
