@@ -7,6 +7,7 @@ import {
   Paper,
   Switch,
   FormControlLabel,
+  Checkbox,
   Button,
   Alert,
   CircularProgress,
@@ -93,6 +94,7 @@ const SettingsPage = () => {
   const [testCustomMessage, setTestCustomMessage] = useState('');
   const [testSendResult, setTestSendResult] = useState(null);
   const [saveError, setSaveError] = useState('');
+  const [userDialogError, setUserDialogError] = useState('');
 
   const { data: settings, isLoading: settingsLoading } = useQuery('sms-settings', () =>
     smsService.getSettings()
@@ -136,17 +138,24 @@ const SettingsPage = () => {
           last_name: '',
           role: 'technician',
           language_preference: 'ka',
+          must_change_password: false,
         });
         setEditingUser(null);
       },
       onError: (error) => {
-        alert(error.response?.data?.message || 'Failed to create user');
+        setUserDialogError(error.response?.data?.message || 'Failed to create user');
       },
     }
   );
 
   const userUpdateMutation = useMutation(
-    ({ id, ...data }) => usersService.update(id, data),
+    ({ id, ...data }) => {
+      const { username, password, ...payload } = data;
+      if (password) {
+        payload.password = password;
+      }
+      return usersService.update(id, payload);
+    },
     {
       onSuccess: () => {
         queryClient.invalidateQueries('users');
@@ -158,11 +167,12 @@ const SettingsPage = () => {
           last_name: '',
           role: 'technician',
           language_preference: 'ka',
+          must_change_password: false,
         });
         setEditingUser(null);
       },
       onError: (error) => {
-        alert(error.response?.data?.message || 'Failed to update user');
+        setUserDialogError(error.response?.data?.message || 'Failed to update user');
       },
     }
   );
@@ -202,6 +212,7 @@ const SettingsPage = () => {
     last_name: '',
     role: 'technician',
     language_preference: 'ka',
+    must_change_password: false,
   });
 
   React.useEffect(() => {
@@ -312,7 +323,9 @@ const SettingsPage = () => {
       last_name: user.last_name,
       role: user.role,
       language_preference: user.language_pref || user.language_preference || 'ka',
+      must_change_password: Boolean(user.must_change_password),
     });
+    setUserDialogError('');
     setUserDialogOpen(true);
   };
 
@@ -722,6 +735,7 @@ const SettingsPage = () => {
                 startIcon={<AddIcon />}
                 onClick={() => {
                   setEditingUser(null);
+                  setUserDialogError('');
                   setUserForm({
                     username: '',
                     password: '',
@@ -729,6 +743,7 @@ const SettingsPage = () => {
                     last_name: '',
                     role: 'technician',
                     language_preference: 'ka',
+                    must_change_password: false,
                   });
                   setUserDialogOpen(true);
                 }}
@@ -917,6 +932,11 @@ const SettingsPage = () => {
         </DialogTitle>
         <DialogContent>
           <form onSubmit={(e) => { e.preventDefault(); }}>
+            {userDialogError && (
+              <Alert severity="error" sx={{ mt: 1, mb: 2 }}>
+                {Array.isArray(userDialogError) ? userDialogError.join(', ') : userDialogError}
+              </Alert>
+            )}
             <TextField
               fullWidth
               label={t('user.username') || 'Username'}
@@ -934,6 +954,15 @@ const SettingsPage = () => {
               onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
               margin="normal"
               required={!editingUser}
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={Boolean(userForm.must_change_password)}
+                  onChange={(e) => setUserForm({ ...userForm, must_change_password: e.target.checked })}
+                />
+              }
+              label={t('user.mustChangePassword') || 'Require password change at first login'}
             />
           <TextField
             fullWidth
@@ -979,6 +1008,7 @@ const SettingsPage = () => {
           <Button
             variant="contained"
             onClick={() => {
+              setUserDialogError('');
               if (editingUser) {
                 userUpdateMutation.mutate({ id: editingUser.id, ...userForm });
               } else {

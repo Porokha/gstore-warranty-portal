@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsEnum, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsOptional, IsBoolean } from 'class-validator';
 import { UserRole, LanguagePreference } from '../entities/user.entity';
 
 export class CreateUserDto {
@@ -31,5 +31,8 @@ export class CreateUserDto {
 
   @IsEnum(LanguagePreference)
   language_preference: LanguagePreference;
-}
 
+  @IsOptional()
+  @IsBoolean()
+  must_change_password?: boolean;
+}

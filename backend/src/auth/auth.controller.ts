@@ -16,7 +16,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('me')
   getProfile(@Request() req) {
-    return req.user;
+    return this.authService.getProfile(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -25,4 +25,3 @@ export class AuthController {
     return { message: 'Logged out successfully' };
   }
 }
-

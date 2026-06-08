@@ -30,8 +30,25 @@ export class AuthService {
         last_name: user.last_name,
         role: user.role,
         language_pref: user.language_pref,
+        must_change_password: Boolean(user.must_change_password),
       },
     };
   }
-}
 
+  async getProfile(userId: number) {
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException();
+    }
+
+    return {
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      last_name: user.last_name,
+      role: user.role,
+      language_pref: user.language_pref,
+      must_change_password: Boolean(user.must_change_password),
+    };
+  }
+}

@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsBoolean } from 'class-validator';
 import { UserRole, LanguagePreference } from '../entities/user.entity';
 
 export class UpdateUserDto {
@@ -29,5 +29,8 @@ export class UpdateUserDto {
   @IsOptional()
   @IsEnum(LanguagePreference)
   language_preference?: LanguagePreference;
-}
 
+  @IsOptional()
+  @IsBoolean()
+  must_change_password?: boolean;
+}

@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -25,6 +25,14 @@ export class UsersService {
     return this.usersRepository.findOne({ where: { id } });
   }
 
+  async findByIdWithPassword(id: number): Promise<User | null> {
+    return this.usersRepository
+      .createQueryBuilder('user')
+      .addSelect('user.password_hash')
+      .where('user.id = :id', { id })
+      .getOne();
+  }
+
   async findAll(): Promise<User[]> {
     return this.usersRepository.find();
   }
@@ -49,6 +57,7 @@ export class UsersService {
       phone: createDto.phone,
       email: createDto.email,
       language_pref: createDto.language_preference,
+      must_change_password: Boolean(createDto.must_change_password),
     });
 
     return this.usersRepository.save(user);
@@ -72,7 +81,42 @@ export class UsersService {
     if (updateDto.phone !== undefined) user.phone = updateDto.phone;
     if (updateDto.email !== undefined) user.email = updateDto.email;
     if (updateDto.language_preference !== undefined) user.language_pref = updateDto.language_preference;
+    if (updateDto.must_change_password !== undefined) {
+      user.must_change_password = Boolean(updateDto.must_change_password);
+    }
 
     return this.usersRepository.save(user);
+  }
+
+  async changeOwnPassword(
+    userId: number,
+    currentPassword: string | undefined,
+    newPassword: string,
+  ): Promise<User> {
+    const user = await this.findByIdWithPassword(userId);
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    if (!newPassword || newPassword.length < 6) {
+      throw new BadRequestException('New password must be at least 6 characters');
+    }
+
+    if (!user.must_change_password) {
+      if (!currentPassword) {
+        throw new BadRequestException('Current password is required');
+      }
+
+      const matches = await bcrypt.compare(currentPassword, user.password_hash);
+      if (!matches) {
+        throw new ForbiddenException('Current password is incorrect');
+      }
+    }
+
+    user.password_hash = await bcrypt.hash(newPassword, 10);
+    user.must_change_password = false;
+    const savedUser = await this.usersRepository.save(user);
+    delete (savedUser as any).password_hash;
+    return savedUser;
   }
 }

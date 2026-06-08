@@ -17,6 +17,12 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Alert,
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
@@ -35,21 +41,38 @@ import {
   ChevronRight,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
+import { usersService } from '../../services/usersService';
 
 const EXPANDED_DRAWER_WIDTH = 280;
 const COLLAPSED_DRAWER_WIDTH = 88;
 
 const StaffLayout = () => {
   const { t, i18n } = useTranslation();
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [userMenuAnchor, setUserMenuAnchor] = React.useState(null);
+  const [passwordDialogOpen, setPasswordDialogOpen] = React.useState(false);
+  const [passwordForm, setPasswordForm] = React.useState({
+    current_password: '',
+    new_password: '',
+    confirm_password: '',
+  });
+  const [passwordError, setPasswordError] = React.useState('');
+  const [passwordSuccess, setPasswordSuccess] = React.useState('');
+  const [isChangingPassword, setIsChangingPassword] = React.useState(false);
   const [isCollapsed, setIsCollapsed] = React.useState(() => {
     if (typeof window === 'undefined') return false;
     return localStorage.getItem('zezva.sidebar.collapsed') === 'true';
   });
   const drawerWidth = isCollapsed ? COLLAPSED_DRAWER_WIDTH : EXPANDED_DRAWER_WIDTH;
+  const mustChangePassword = Boolean(user?.must_change_password);
+
+  React.useEffect(() => {
+    if (mustChangePassword) {
+      setPasswordDialogOpen(true);
+    }
+  }, [mustChangePassword]);
 
   const toggleSidebar = () => {
     setIsCollapsed((prev) => {
@@ -64,6 +87,66 @@ const StaffLayout = () => {
   const handleLogout = () => {
     logout();
     navigate('/staff/login');
+  };
+
+  const resetPasswordDialog = () => {
+    setPasswordForm({
+      current_password: '',
+      new_password: '',
+      confirm_password: '',
+    });
+    setPasswordError('');
+    setPasswordSuccess('');
+  };
+
+  const openPasswordDialog = () => {
+    resetPasswordDialog();
+    setPasswordDialogOpen(true);
+    setUserMenuAnchor(null);
+  };
+
+  const handlePasswordDialogClose = () => {
+    if (mustChangePassword || isChangingPassword) return;
+    setPasswordDialogOpen(false);
+    resetPasswordDialog();
+  };
+
+  const handlePasswordChange = async () => {
+    setPasswordError('');
+    setPasswordSuccess('');
+
+    if (!mustChangePassword && !passwordForm.current_password) {
+      setPasswordError('Current password is required.');
+      return;
+    }
+
+    if (!passwordForm.new_password || passwordForm.new_password.length < 6) {
+      setPasswordError('New password must be at least 6 characters.');
+      return;
+    }
+
+    if (passwordForm.new_password !== passwordForm.confirm_password) {
+      setPasswordError('New password confirmation does not match.');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const updatedUser = await usersService.changeOwnPassword({
+        current_password: mustChangePassword ? undefined : passwordForm.current_password,
+        new_password: passwordForm.new_password,
+      });
+      updateUser({ ...updatedUser, must_change_password: false });
+      setPasswordSuccess('Password changed successfully.');
+      window.setTimeout(() => {
+        setPasswordDialogOpen(false);
+        resetPasswordDialog();
+      }, 650);
+    } catch (error) {
+      setPasswordError(error.response?.data?.message || 'Failed to change password.');
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   const toggleLanguage = () => {
@@ -360,6 +443,9 @@ const StaffLayout = () => {
           open={Boolean(userMenuAnchor)}
           onClose={() => setUserMenuAnchor(null)}
         >
+          <MenuItem onClick={openPasswordDialog}>
+            {t('common.accountSettings') || 'Account settings'}
+          </MenuItem>
           <MenuItem onClick={handleLogout}>Logout</MenuItem>
         </Menu>
       </Drawer>
@@ -441,6 +527,81 @@ const StaffLayout = () => {
           <Outlet />
         </Box>
       </Box>
+
+      <Dialog
+        open={passwordDialogOpen}
+        onClose={handlePasswordDialogClose}
+        disableEscapeKeyDown={mustChangePassword}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 4 } }}
+      >
+        <DialogTitle>
+          {mustChangePassword
+            ? (t('user.changePasswordRequired') || 'Change your password')
+            : (t('user.changePassword') || 'Change password')}
+        </DialogTitle>
+        <DialogContent>
+          {mustChangePassword && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              {t('user.changePasswordRequiredMessage') || 'Your administrator requires you to change the temporary password before continuing.'}
+            </Alert>
+          )}
+          {passwordError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {Array.isArray(passwordError) ? passwordError.join(', ') : passwordError}
+            </Alert>
+          )}
+          {passwordSuccess && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {passwordSuccess}
+            </Alert>
+          )}
+          {!mustChangePassword && (
+            <TextField
+              fullWidth
+              type="password"
+              label={t('user.currentPassword') || 'Current password'}
+              value={passwordForm.current_password}
+              onChange={(e) => setPasswordForm((prev) => ({ ...prev, current_password: e.target.value }))}
+              margin="normal"
+              autoComplete="current-password"
+            />
+          )}
+          <TextField
+            fullWidth
+            type="password"
+            label={t('user.newPassword') || 'New password'}
+            value={passwordForm.new_password}
+            onChange={(e) => setPasswordForm((prev) => ({ ...prev, new_password: e.target.value }))}
+            margin="normal"
+            autoComplete="new-password"
+          />
+          <TextField
+            fullWidth
+            type="password"
+            label={t('user.confirmPassword') || 'Confirm new password'}
+            value={passwordForm.confirm_password}
+            onChange={(e) => setPasswordForm((prev) => ({ ...prev, confirm_password: e.target.value }))}
+            margin="normal"
+            autoComplete="new-password"
+          />
+        </DialogContent>
+        <DialogActions>
+          {!mustChangePassword && (
+            <Button onClick={handlePasswordDialogClose} disabled={isChangingPassword}>
+              {t('common.cancel')}
+            </Button>
+          )}
+          <Button
+            variant="contained"
+            onClick={handlePasswordChange}
+            disabled={isChangingPassword}
+          >
+            {isChangingPassword ? (t('common.saving') || 'Saving...') : (t('common.save') || 'Save')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

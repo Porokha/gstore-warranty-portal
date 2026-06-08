@@ -58,6 +58,9 @@ export class User {
   })
   language_pref: LanguagePreference;
 
+  @Column({ default: false })
+  must_change_password: boolean;
+
   @CreateDateColumn()
   created_at: Date;
 

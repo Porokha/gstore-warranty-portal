@@ -20,5 +20,9 @@ export const usersService = {
     const response = await api.put(`/users/${id}`, userData);
     return response.data;
   },
-};
 
+  changeOwnPassword: async (passwordData) => {
+    const response = await api.post('/users/me/password', passwordData);
+    return response.data;
+  },
+};
