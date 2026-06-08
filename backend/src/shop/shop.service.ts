@@ -700,6 +700,7 @@ export class ShopService {
       .split(/\s+/)
       .filter(Boolean)
       .slice(0, 6);
+    const canSearchSupplierCodes = terms.length === 1 && terms[0].length >= 4;
 
     terms.forEach((term, index) => {
       qb.andWhere(
@@ -710,8 +711,8 @@ export class ShopService {
           OR LOWER(COALESCE(product.issue_label, "")) LIKE :searchTerm${index}
           OR LOWER(COALESCE(product.description, "")) LIKE :searchTerm${index}
           OR LOWER(COALESCE(product.slug, "")) LIKE :searchTerm${index}
-          OR LOWER(COALESCE(product.supplier_sku, "")) LIKE :searchTerm${index}
-          OR LOWER(COALESCE(product.supplier_product_id, "")) LIKE :searchTerm${index}
+          ${canSearchSupplierCodes ? `OR LOWER(COALESCE(product.supplier_sku, "")) LIKE :searchTerm${index}` : ''}
+          ${canSearchSupplierCodes ? `OR LOWER(COALESCE(product.supplier_product_id, "")) LIKE :searchTerm${index}` : ''}
         )`,
         { [`searchTerm${index}`]: `%${term}%` },
       );
