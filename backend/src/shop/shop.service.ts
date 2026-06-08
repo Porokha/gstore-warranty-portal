@@ -703,13 +703,20 @@ export class ShopService {
     const canSearchSupplierCodes = terms.length === 1 && terms[0].length >= 4;
 
     terms.forEach((term, index) => {
+      const isShortNumericTerm = /^\d{1,2}$/.test(term);
+      const broadTextFields = isShortNumericTerm
+        ? ''
+        : `
+          OR LOWER(COALESCE(product.brand, "")) LIKE :searchTerm${index}
+          OR LOWER(COALESCE(product.description, "")) LIKE :searchTerm${index}
+        `;
+
       qb.andWhere(
         `(
           LOWER(product.title) LIKE :searchTerm${index}
-          OR LOWER(COALESCE(product.brand, "")) LIKE :searchTerm${index}
           OR LOWER(COALESCE(product.device_model, "")) LIKE :searchTerm${index}
           OR LOWER(COALESCE(product.issue_label, "")) LIKE :searchTerm${index}
-          OR LOWER(COALESCE(product.description, "")) LIKE :searchTerm${index}
+          ${broadTextFields}
           ${canSearchSupplierCodes ? `OR LOWER(COALESCE(product.slug, "")) LIKE :searchTerm${index}` : ''}
           ${canSearchSupplierCodes ? `OR LOWER(COALESCE(product.supplier_sku, "")) LIKE :searchTerm${index}` : ''}
           ${canSearchSupplierCodes ? `OR LOWER(COALESCE(product.supplier_product_id, "")) LIKE :searchTerm${index}` : ''}
