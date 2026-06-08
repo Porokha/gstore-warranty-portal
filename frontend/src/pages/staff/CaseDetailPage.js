@@ -42,6 +42,7 @@ const CaseDetailPage = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const canManageCases = ['admin', 'manager'].includes(user?.role);
   const queryClient = useQueryClient();
   const [tab, setTab] = useState(0);
   const closePath = `/staff/cases${location.search || ''}`;
@@ -61,7 +62,7 @@ const CaseDetailPage = () => {
   const { data: technicians } = useQuery(
     'technicians',
     () => usersService.getTechnicians(),
-    { enabled: isAdmin }
+    { enabled: canManageCases }
   );
 
   const statusChangeMutation = useMutation(
@@ -205,7 +206,7 @@ const CaseDetailPage = () => {
                 label={t('case.orderId')}
                 value={localCaseData?.order_id || ''}
                 onChange={(e) => handleFieldChange('order_id', e.target.value ? parseInt(e.target.value) : null)}
-                disabled={!isAdmin}
+                disabled={!canManageCases}
                 margin="normal"
                 type="number"
               />
@@ -216,7 +217,7 @@ const CaseDetailPage = () => {
                 label={t('case.productId')}
                 value={localCaseData?.product_id || ''}
                 onChange={(e) => handleFieldChange('product_id', e.target.value ? parseInt(e.target.value) : null)}
-                disabled={!isAdmin}
+                disabled={!canManageCases}
                 margin="normal"
                 type="number"
               />
@@ -227,7 +228,7 @@ const CaseDetailPage = () => {
                 label={t('case.productTitle')}
                 value={localCaseData?.product_title || ''}
                 onChange={(e) => handleFieldChange('product_title', e.target.value)}
-                disabled={!isAdmin}
+                disabled={!canManageCases}
                 margin="normal"
               />
             </Grid>
@@ -237,7 +238,7 @@ const CaseDetailPage = () => {
                 label={t('case.sku')}
                 value={localCaseData?.sku || ''}
                 onChange={(e) => handleFieldChange('sku', e.target.value)}
-                disabled={!isAdmin}
+                disabled={!canManageCases}
                 margin="normal"
               />
             </Grid>
@@ -247,7 +248,7 @@ const CaseDetailPage = () => {
                 label={t('case.serialNumber')}
                 value={localCaseData?.serial_number || ''}
                 onChange={(e) => handleFieldChange('serial_number', e.target.value)}
-                disabled={!isAdmin}
+                disabled={!canManageCases}
                 margin="normal"
               />
             </Grid>
@@ -258,7 +259,7 @@ const CaseDetailPage = () => {
                   value={localCaseData?.device_type || 'Laptop'}
                   label={t('case.deviceType')}
                   onChange={(e) => handleFieldChange('device_type', e.target.value)}
-                  disabled={!isAdmin}
+                  disabled={!canManageCases}
                 >
                   <MenuItem value="Laptop">Laptop</MenuItem>
                   <MenuItem value="Phone">Phone</MenuItem>
@@ -274,7 +275,7 @@ const CaseDetailPage = () => {
                 label="IMEI"
                 value={localCaseData?.imei || ''}
                 onChange={(e) => handleFieldChange('imei', e.target.value)}
-                disabled={!isAdmin}
+                disabled={!canManageCases}
                 margin="normal"
               />
             </Grid>
@@ -284,7 +285,7 @@ const CaseDetailPage = () => {
                 label={t('case.customerName')}
                 value={localCaseData?.customer_name || ''}
                 onChange={(e) => handleFieldChange('customer_name', e.target.value)}
-                disabled={!isAdmin}
+                disabled={!canManageCases}
                 margin="normal"
               />
             </Grid>
@@ -294,7 +295,7 @@ const CaseDetailPage = () => {
                 label={t('case.customerLastName')}
                 value={localCaseData?.customer_last_name || ''}
                 onChange={(e) => handleFieldChange('customer_last_name', e.target.value)}
-                disabled={!isAdmin}
+                disabled={!canManageCases}
                 margin="normal"
               />
             </Grid>
@@ -304,7 +305,7 @@ const CaseDetailPage = () => {
                 label={t('case.phone')}
                 value={localCaseData?.customer_phone || ''}
                 onChange={(e) => handleFieldChange('customer_phone', e.target.value)}
-                disabled={!isAdmin}
+                disabled={!canManageCases}
                 margin="normal"
               />
             </Grid>
@@ -314,7 +315,7 @@ const CaseDetailPage = () => {
                 label={t('case.email')}
                 value={localCaseData?.customer_email || ''}
                 onChange={(e) => handleFieldChange('customer_email', e.target.value)}
-                disabled={!isAdmin}
+                disabled={!canManageCases}
                 margin="normal"
                 type="email"
               />
@@ -327,7 +328,7 @@ const CaseDetailPage = () => {
                 label={t('case.customerInitialNote') || "Customer's Initial Note (Problem Description)"}
                 value={localCaseData?.customer_initial_note || ''}
                 onChange={(e) => handleFieldChange('customer_initial_note', e.target.value)}
-                disabled={!isAdmin}
+                disabled={!canManageCases}
                 margin="normal"
               />
             </Grid>
@@ -346,7 +347,7 @@ const CaseDetailPage = () => {
                 label={t('case.deadline')}
                 value={localCaseData?.deadline_at ? new Date(localCaseData.deadline_at).toISOString().slice(0, 16) : ''}
                 onChange={(e) => handleFieldChange('deadline_at', e.target.value ? new Date(e.target.value).toISOString() : null)}
-                disabled={!isAdmin}
+                disabled={!canManageCases}
                 margin="normal"
                 type="datetime-local"
                 InputLabelProps={{ shrink: true }}
@@ -370,7 +371,7 @@ const CaseDetailPage = () => {
                   value={localCaseData?.priority || 'normal'}
                   label={t('common.priority')}
                   onChange={(e) => handleFieldChange('priority', e.target.value)}
-                  disabled={!isAdmin}
+                  disabled={!canManageCases}
                 >
                   <MenuItem value="low">Low</MenuItem>
                   <MenuItem value="normal">Normal</MenuItem>
@@ -379,7 +380,7 @@ const CaseDetailPage = () => {
                 </Select>
               </FormControl>
             </Grid>
-            {isAdmin && (
+            {canManageCases && (
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth margin="normal">
                   <InputLabel>{t('case.technician')}</InputLabel>
@@ -410,7 +411,7 @@ const CaseDetailPage = () => {
                     {...params}
                     label={t('common.tags')}
                     margin="normal"
-                    disabled={!isAdmin}
+                    disabled={!canManageCases}
                   />
                 )}
                 renderTags={(value, getTagProps) =>
@@ -488,7 +489,7 @@ const CaseDetailPage = () => {
               </Box>
             )}
 
-            {isAdmin && (
+            {canManageCases && (
               <Box mt={3}>
                 <Typography variant="h6" gutterBottom>
                   {t('common.quickActions') || 'Quick Actions'}

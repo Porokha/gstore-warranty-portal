@@ -22,7 +22,7 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const isAdmin = user?.role === 'admin';
+  const canManageCases = ['admin', 'manager'].includes(user?.role);
 
   const [formData, setFormData] = useState({
     new_status_level: case_.status_level,
@@ -77,7 +77,7 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
   ];
 
   // Technicians can only move forward
-  const availableStatuses = isAdmin
+  const availableStatuses = canManageCases
     ? statusOptions
     : statusOptions.filter((s) => s.value > case_.status_level);
 
@@ -105,7 +105,7 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
     setGeneratedCode('');
 
     // Validation
-    if (!isAdmin && formData.new_status_level <= case_.status_level) {
+    if (!canManageCases && formData.new_status_level <= case_.status_level) {
       setError('Technicians can only move status forward');
       return;
     }

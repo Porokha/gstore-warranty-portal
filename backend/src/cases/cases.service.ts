@@ -256,8 +256,8 @@ export class CasesService {
     }
     const case_ = await this.findOne(id);
 
-    // Only admin can update certain fields
-    if (user.role !== UserRole.ADMIN) {
+    // Technicians can only update limited fields.
+    if (user.role === UserRole.TECHNICIAN) {
       // Technicians can only update limited fields
       const allowedFields = ['assigned_technician_id', 'priority', 'tags'];
       Object.keys(updateDto).forEach((key) => {
@@ -411,8 +411,8 @@ export class CasesService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    if (user.role !== UserRole.ADMIN) {
-      throw new ForbiddenException('Only admins can reopen cases');
+    if (![UserRole.ADMIN, UserRole.MANAGER].includes(user.role)) {
+      throw new ForbiddenException('Only admins or managers can reopen cases');
     }
 
     const case_ = await this.findOne(id);

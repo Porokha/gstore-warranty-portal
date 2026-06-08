@@ -38,6 +38,7 @@ const WarrantiesPage = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const canManageWarranties = ['admin', 'manager'].includes(user?.role);
   const [searchParams, setSearchParams] = useSearchParams();
   
   const [filters, setFilters] = useState({
@@ -294,25 +295,31 @@ const WarrantiesPage = () => {
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4">{t('common.warranties')}</Typography>
         <Box display="flex" gap={1}>
-          <Button
-            variant="outlined"
-            onClick={() => navigate('/staff/warranties/import/csv')}
-          >
-            {t('common.importCSV') || 'Import CSV'}
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={() => navigate('/staff/warranties/import/woocommerce')}
-          >
-            {t('common.importWooCommerce') || 'Import from WooCommerce'}
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => navigate('/staff/warranties/new')}
-          >
-            {t('common.createWarranty')}
-          </Button>
+          {isAdmin && (
+            <>
+              <Button
+                variant="outlined"
+                onClick={() => navigate('/staff/warranties/import/csv')}
+              >
+                {t('common.importCSV') || 'Import CSV'}
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={() => navigate('/staff/warranties/import/woocommerce')}
+              >
+                {t('common.importWooCommerce') || 'Import from WooCommerce'}
+              </Button>
+            </>
+          )}
+          {canManageWarranties && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => navigate('/staff/warranties/new')}
+            >
+              {t('common.createWarranty')}
+            </Button>
+          )}
         </Box>
       </Box>
 

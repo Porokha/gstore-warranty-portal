@@ -181,12 +181,14 @@ function AppRoutes() {
                 <Route path="cases/:id" element={<CaseDetailPage />} />
                 <Route path="warranties" element={<WarrantiesPage />} />
                 <Route path="warranties/:id" element={<WarrantyDetailPage />} />
-                <Route element={<StaffRoleRoute allowedRoles={['admin']} />}>
+                <Route element={<StaffRoleRoute allowedRoles={['admin', 'manager']} />}>
                   <Route path="warranties/:id/edit" element={<WarrantyEditPage />} />
                   <Route path="warranties/new" element={<CreateWarrantyPage />} />
-                  <Route path="import" element={<ImportPage />} />
                   <Route path="finance" element={<FinancePage />} />
                   <Route path="statistics" element={<StatisticsPage />} />
+                </Route>
+                <Route element={<StaffRoleRoute allowedRoles={['admin']} />}>
+                  <Route path="import" element={<ImportPage />} />
                   <Route path="settings" element={<SettingsPage />} />
                   <Route path="audit" element={<AuditPage />} />
                 </Route>

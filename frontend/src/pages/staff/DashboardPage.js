@@ -52,7 +52,7 @@ const DashboardPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const hasManagementAccess = ['admin', 'manager'].includes(user?.role);
   const brand = {
     violet: '#A576FF',
     violetSoft: '#EFE7FF',
@@ -438,7 +438,7 @@ const DashboardPage = () => {
         </Grid>
       </Grid>
 
-      {isAdmin && (
+      {hasManagementAccess && (
         <Grid container spacing={2} mb={2}>
           <Grid item xs={12} sm={6} md={4}>
             <Card
@@ -644,7 +644,7 @@ const DashboardPage = () => {
         </Grid>
       </Grid>
 
-      {isAdmin && (
+      {hasManagementAccess && (
       <Grid container spacing={2} mb={2}>
         <Grid item xs={12} md={4}>
           <Paper sx={{ p: 2.5, borderRadius: 2, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>

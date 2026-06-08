@@ -22,7 +22,7 @@ const WarrantyDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const canManageWarranties = ['admin', 'manager'].includes(user?.role);
 
   const { data: warranty, isLoading, error } = useQuery(
     ['warranty', id],
@@ -107,7 +107,7 @@ const WarrantyDetailPage = () => {
           </Button>
           <Typography variant="h4">{t('warranty.warrantyDetails') || 'Warranty Details'}</Typography>
         </Box>
-        {isAdmin && (
+        {canManageWarranties && (
           <Button
             variant="contained"
             startIcon={<Edit />}
@@ -232,7 +232,7 @@ const WarrantyDetailPage = () => {
             </Grid>
           )}
 
-          {isAdmin && (
+          {canManageWarranties && (
             <>
               <Grid item xs={12}>
                 <Divider sx={{ my: 2 }} />
@@ -304,4 +304,3 @@ const WarrantyDetailPage = () => {
 };
 
 export default WarrantyDetailPage;
-

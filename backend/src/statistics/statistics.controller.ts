@@ -12,7 +12,7 @@ export class StatisticsController {
   constructor(private statisticsService: StatisticsService) {}
 
   @Get('technicians')
-  @Roles(UserRole.ADMIN, UserRole.TECHNICIAN)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.TECHNICIAN)
   async getTechnicianStats(
     @Query('technician_id') technicianId?: string,
     @Query('start_date') startDate?: string,
@@ -24,13 +24,13 @@ export class StatisticsController {
       return this.statisticsService.getTechnicianStats(req.user.id, startDate, endDate);
     }
     
-    // If admin, show specific technician or all technicians
+    // If admin/manager, show specific technician or all technicians
     const techId = technicianId ? parseInt(technicianId, 10) : undefined;
     return this.statisticsService.getTechnicianStats(techId, startDate, endDate);
   }
 
   @Get('technicians/all')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   async getAllTechniciansStats(
     @Query('start_date') startDate?: string,
     @Query('end_date') endDate?: string,
@@ -39,7 +39,7 @@ export class StatisticsController {
   }
 
   @Get('technicians/export')
-  @Roles(UserRole.ADMIN, UserRole.TECHNICIAN)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.TECHNICIAN)
   @Header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
   @Header('Content-Disposition', 'attachment; filename=technician-statistics.xlsx')
   async exportTechnicianStats(
@@ -62,7 +62,7 @@ export class StatisticsController {
   }
 
   @Get('technicians/all/export')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @Header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
   @Header('Content-Disposition', 'attachment; filename=all-technicians-statistics.xlsx')
   async exportAllTechniciansStats(
@@ -75,4 +75,3 @@ export class StatisticsController {
     res.send(excelBuffer);
   }
 }
-

@@ -12,6 +12,7 @@ import { AuditLog } from '../../audit/entities/audit-log.entity';
 
 export enum UserRole {
   ADMIN = 'admin',
+  MANAGER = 'manager',
   TECHNICIAN = 'technician',
 }
 
@@ -39,7 +40,7 @@ export class User {
 
   @Column({
     type: 'enum',
-    enum: ['admin', 'technician'],
+    enum: ['admin', 'manager', 'technician'],
     default: 'technician',
   })
   role: UserRole;

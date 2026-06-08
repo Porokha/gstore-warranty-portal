@@ -72,19 +72,21 @@ const StaffLayout = () => {
   };
 
   const isAdmin = user?.role === 'admin';
+  const isManager = user?.role === 'manager';
+  const hasManagementAccess = isAdmin || isManager;
 
   const menuItems = [
     { path: '/staff/dashboard', label: t('common.dashboard'), icon: <DashboardIcon /> },
-    ...(!isAdmin
+    ...(!hasManagementAccess
       ? [{ path: '/staff/my-cases', label: t('common.myServiceCases') || 'My Service Cases', icon: <OpenCasesIcon /> }]
       : []),
     { path: '/staff/cases', label: t('common.serviceCases'), icon: <OpenCasesIcon /> },
     { path: '/staff/warranties', label: t('common.warranties'), icon: <WarrantiesIcon /> },
-    ...(isAdmin
+    ...(hasManagementAccess
       ? [
           { path: '/staff/finance', label: t('common.finance'), icon: <FinanceIcon /> },
           { path: '/staff/statistics', label: t('common.statistics') || 'Statistics', icon: <StatisticsIcon /> },
-          { path: '/staff/import', label: t('common.importData'), icon: <ImportIcon /> },
+          ...(isAdmin ? [{ path: '/staff/import', label: t('common.importData'), icon: <ImportIcon /> }] : []),
         ]
       : []),
   ];

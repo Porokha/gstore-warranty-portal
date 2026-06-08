@@ -14,7 +14,7 @@ export class UsersController {
 
   @Get()
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   findAll() {
     return this.usersService.findAll();
   }

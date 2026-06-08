@@ -33,18 +33,18 @@ import { usersService } from '../../services/usersService';
 const StatisticsPage = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const hasManagementAccess = ['admin', 'manager'].includes(user?.role);
   
-  const [selectedTechnician, setSelectedTechnician] = useState(isAdmin ? '' : user.id);
+  const [selectedTechnician, setSelectedTechnician] = useState(hasManagementAccess ? '' : user.id);
   const [timeFilter, setTimeFilter] = useState('all');
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
 
-  // Fetch technicians for admin
+  // Fetch technicians for admin/manager
   const { data: technicians } = useQuery(
     'technicians',
     () => usersService.getAll(),
-    { enabled: isAdmin }
+    { enabled: hasManagementAccess }
   );
 
   const handleTimeFilterChange = (value) => {
@@ -87,18 +87,18 @@ const StatisticsPage = () => {
       startDateStr,
       endDateStr
     ),
-    { enabled: !!selectedTechnician || isAdmin }
+    { enabled: !!selectedTechnician || hasManagementAccess }
   );
 
-  // Fetch all technicians stats for admin
+  // Fetch all technicians stats for admin/manager
   const { data: allStats, isLoading: isLoadingAll } = useQuery(
     ['all-technicians-stats', startDateStr, endDateStr],
     () => statisticsService.getAllTechniciansStats(startDateStr, endDateStr),
-    { enabled: isAdmin && !selectedTechnician }
+    { enabled: hasManagementAccess && !selectedTechnician }
   );
 
   const handleExport = () => {
-    if (isAdmin && !selectedTechnician) {
+    if (hasManagementAccess && !selectedTechnician) {
       statisticsService.exportAllTechniciansStats(startDateStr, endDateStr);
     } else {
       statisticsService.exportTechnicianStats(
@@ -117,14 +117,14 @@ const StatisticsPage = () => {
     );
   }
 
-  const displayStats = isAdmin && !selectedTechnician ? null : stats;
-  const displayData = isAdmin && !selectedTechnician ? allStats : (stats ? [stats] : []);
+  const displayStats = hasManagementAccess && !selectedTechnician ? null : stats;
+  const displayData = hasManagementAccess && !selectedTechnician ? allStats : (stats ? [stats] : []);
 
   return (
     <div>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4">
-          {isAdmin ? t('common.technicianStatistics') || 'Technician Statistics' : t('common.myStatistics') || 'My Statistics'}
+          {hasManagementAccess ? t('common.technicianStatistics') || 'Technician Statistics' : t('common.myStatistics') || 'My Statistics'}
         </Typography>
         <Button
           variant="contained"
@@ -139,7 +139,7 @@ const StatisticsPage = () => {
       {/* Filters */}
       <Paper sx={{ p: 2, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
-          {isAdmin && (
+          {hasManagementAccess && (
             <Grid item xs={12} md={3}>
               <FormControl fullWidth size="small">
                 <InputLabel>Technician</InputLabel>
@@ -285,7 +285,7 @@ const StatisticsPage = () => {
       )}
 
       {/* All Technicians Table (Admin only) */}
-      {isAdmin && !selectedTechnician && allStats && (
+      {hasManagementAccess && !selectedTechnician && allStats && (
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
@@ -329,4 +329,3 @@ const StatisticsPage = () => {
 };
 
 export default StatisticsPage;
-

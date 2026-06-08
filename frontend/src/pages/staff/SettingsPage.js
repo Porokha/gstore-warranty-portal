@@ -957,6 +957,7 @@ const SettingsPage = () => {
               onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
             >
               <MenuItem value="admin">Admin</MenuItem>
+              <MenuItem value="manager">Manager</MenuItem>
               <MenuItem value="technician">Technician</MenuItem>
             </Select>
           </FormControl>
