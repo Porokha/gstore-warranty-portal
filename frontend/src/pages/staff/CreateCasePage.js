@@ -137,6 +137,7 @@ const CreateCasePage = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const isTechnician = user?.role === 'technician';
+  const canAssignTechnician = ['admin', 'manager'].includes(user?.role);
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
   const [error, setError] = useState('');
@@ -175,8 +176,10 @@ const CreateCasePage = () => {
     }
   );
 
-  // Fetch technicians
-  const { data: users } = useQuery('users', usersService.getAll);
+  // Fetch technicians only for roles allowed to assign work.
+  const { data: users } = useQuery('users', usersService.getAll, {
+    enabled: canAssignTechnician,
+  });
   const availableTechnicians = users?.filter(u => u.role === 'technician') || [];
 
   // If warranty_id is in URL, set mode to warranty and fetch warranty
@@ -599,9 +602,9 @@ const CreateCasePage = () => {
                     value={formData.assigned_technician_id}
                     onChange={handleChange}
                     label={t('case.technician')}
-                    disabled={isTechnician}
+                    disabled={!canAssignTechnician}
                   >
-                    {!isTechnician && <MenuItem value="">{t('common.none')}</MenuItem>}
+                    {canAssignTechnician && <MenuItem value="">{t('common.none')}</MenuItem>}
                     {availableTechnicians.map((tech) => (
                       <MenuItem key={tech.id} value={tech.id}>
                         {tech.name} {tech.last_name}
