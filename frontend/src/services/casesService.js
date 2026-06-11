@@ -40,6 +40,11 @@ export const casesService = {
     return response.data;
   },
 
+  addInternalNote: async (id, note) => {
+    const response = await api.post(`/cases/${id}/internal-notes`, { note });
+    return response.data;
+  },
+
   reopen: async (id) => {
     const response = await api.post(`/cases/${id}/reopen`);
     return response.data;
@@ -50,4 +55,3 @@ export const casesService = {
     return response.data;
   },
 };
-

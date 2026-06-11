@@ -19,6 +19,7 @@ import { CasesService } from './cases.service';
 import { CreateCaseDto } from './dto/create-case.dto';
 import { UpdateCaseDto } from './dto/update-case.dto';
 import { ChangeStatusDto } from './dto/change-status.dto';
+import { AddInternalNoteDto } from './dto/add-internal-note.dto';
 import { CaseStatusLevel, ResultType, Priority } from './entities/service-case.entity';
 
 @Controller('cases')
@@ -106,6 +107,15 @@ export class CasesController {
     @Request() req,
   ) {
     return this.casesService.changeStatus(id, changeStatusDto, req.user.id);
+  }
+
+  @Post(':id/internal-notes')
+  addInternalNote(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: AddInternalNoteDto,
+    @Request() req,
+  ) {
+    return this.casesService.addInternalNote(id, dto.note, req.user.id);
   }
 
   @Post(':id/reopen')

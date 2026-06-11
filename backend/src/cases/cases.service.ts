@@ -239,7 +239,14 @@ export class CasesService {
   async findOne(id: number): Promise<ServiceCase> {
     const case_ = await this.casesRepository.findOne({
       where: { id },
-      relations: ['assigned_technician', 'warranty', 'status_history', 'payments', 'files'],
+      relations: [
+        'assigned_technician',
+        'warranty',
+        'status_history',
+        'status_history.changed_by_user',
+        'payments',
+        'files',
+      ],
     });
 
     if (!case_) {
@@ -437,6 +444,30 @@ export class CasesService {
     );
 
     return savedCase;
+  }
+
+  async addInternalNote(
+    id: number,
+    note: string,
+    userId: number,
+  ): Promise<CaseStatusHistory> {
+    const trimmedNote = note?.trim();
+    if (!trimmedNote) {
+      throw new BadRequestException('Internal note is required');
+    }
+
+    const case_ = await this.findOne(id);
+
+    return this.createHistoryEntry(
+      case_.id,
+      userId,
+      null,
+      case_.status_level,
+      null,
+      null,
+      null,
+      trimmedNote,
+    );
   }
 
   private async createHistoryEntry(

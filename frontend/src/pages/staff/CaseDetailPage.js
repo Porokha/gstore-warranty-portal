@@ -45,6 +45,8 @@ const CaseDetailPage = () => {
   const canManageCases = ['admin', 'manager'].includes(user?.role);
   const queryClient = useQueryClient();
   const [tab, setTab] = useState(0);
+  const [internalNote, setInternalNote] = useState('');
+  const [internalNoteError, setInternalNoteError] = useState('');
   const closePath = `/staff/cases${location.search || ''}`;
 
   const { data: case_, isLoading } = useQuery(
@@ -100,6 +102,31 @@ const CaseDetailPage = () => {
 
   const handleStatusChange = (data) => {
     return statusChangeMutation.mutateAsync(data);
+  };
+
+  const internalNoteMutation = useMutation(
+    (note) => casesService.addInternalNote(id, note),
+    {
+      onSuccess: () => {
+        setInternalNote('');
+        setInternalNoteError('');
+        queryClient.invalidateQueries(['case', id]);
+        queryClient.invalidateQueries('cases');
+      },
+      onError: (error) => {
+        setInternalNoteError(error.response?.data?.message || 'Failed to add internal note');
+      },
+    }
+  );
+
+  const handleAddInternalNote = () => {
+    const trimmedNote = internalNote.trim();
+    if (!trimmedNote) {
+      setInternalNoteError('Internal note is required');
+      return;
+    }
+    setInternalNoteError('');
+    internalNoteMutation.mutate(trimmedNote);
   };
 
   const handleFieldChange = (field, value) => {
@@ -526,6 +553,34 @@ const CaseDetailPage = () => {
             <Typography variant="h6" gutterBottom>
               {t('common.history')}
             </Typography>
+            <Paper variant="outlined" sx={{ p: 2, mb: 2, borderRadius: 2 }}>
+              <Typography variant="subtitle1" gutterBottom>
+                {t('case.addInternalNote') || 'Add internal note'}
+              </Typography>
+              {internalNoteError && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {Array.isArray(internalNoteError) ? internalNoteError.join(', ') : internalNoteError}
+                </Alert>
+              )}
+              <TextField
+                fullWidth
+                multiline
+                minRows={3}
+                label={t('common.privateNote') || 'Internal note'}
+                value={internalNote}
+                onChange={(event) => setInternalNote(event.target.value)}
+                placeholder={t('case.internalNotePlaceholder') || 'Write an internal note for this case...'}
+              />
+              <Box mt={1.5} display="flex" justifyContent="flex-end">
+                <Button
+                  variant="contained"
+                  onClick={handleAddInternalNote}
+                  disabled={internalNoteMutation.isLoading}
+                >
+                  {internalNoteMutation.isLoading ? (t('common.saving') || 'Saving...') : (t('common.addNote') || 'Add note')}
+                </Button>
+              </Box>
+            </Paper>
             {case_.status_history && case_.status_history.length > 0 ? (
               case_.status_history
                 .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
@@ -536,6 +591,13 @@ const CaseDetailPage = () => {
                   >
                     <Typography variant="body2" color="text.secondary" gutterBottom>
                       {new Date(history.created_at).toLocaleString()}
+                      {history.changed_by_user && (
+                        <>
+                          {' '}·{' '}
+                          {[history.changed_by_user.name, history.changed_by_user.last_name].filter(Boolean).join(' ') ||
+                            history.changed_by_user.username}
+                        </>
+                      )}
                     </Typography>
                     {history.previous_status_level !== null && (
                       <Typography variant="body1" gutterBottom>
