@@ -555,7 +555,7 @@ const CaseDetailPage = () => {
             </Typography>
             <Paper variant="outlined" sx={{ p: 2, mb: 2, borderRadius: 2 }}>
               <Typography variant="subtitle1" gutterBottom>
-                {t('case.addInternalNote') || 'Add internal note'}
+                {t('case.addInternalNote', 'Add internal note')}
               </Typography>
               {internalNoteError && (
                 <Alert severity="error" sx={{ mb: 2 }}>
@@ -566,10 +566,10 @@ const CaseDetailPage = () => {
                 fullWidth
                 multiline
                 minRows={3}
-                label={t('common.privateNote') || 'Internal note'}
+                label={t('common.privateNote', 'Internal note')}
                 value={internalNote}
                 onChange={(event) => setInternalNote(event.target.value)}
-                placeholder={t('case.internalNotePlaceholder') || 'Write an internal note for this case...'}
+                placeholder={t('case.internalNotePlaceholder', 'Write an internal note for this case...')}
               />
               <Box mt={1.5} display="flex" justifyContent="flex-end">
                 <Button
@@ -577,7 +577,7 @@ const CaseDetailPage = () => {
                   onClick={handleAddInternalNote}
                   disabled={internalNoteMutation.isLoading}
                 >
-                  {internalNoteMutation.isLoading ? (t('common.saving') || 'Saving...') : (t('common.addNote') || 'Add note')}
+                  {internalNoteMutation.isLoading ? t('common.saving', 'Saving...') : t('common.addNote', 'Add note')}
                 </Button>
               </Box>
             </Paper>

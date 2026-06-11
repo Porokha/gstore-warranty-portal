@@ -98,6 +98,7 @@
     "myServiceCases": "My Service Cases",
     "importData": "Import Data",
     "saving": "Saving...",
+    "addNote": "Add note",
     "noData": "No data available",
     "next": "Next"
   },
@@ -217,7 +218,9 @@
     "deleteCase": "Delete Case",
     "deleteCaseConfirm": "Are you sure you want to delete this case? This action cannot be undone. Case history will be preserved in audit logs.",
     "caseDeleted": "Case deleted successfully",
-    "pressEnterToAddTag": "Press Enter to add tag"
+    "pressEnterToAddTag": "Press Enter to add tag",
+    "addInternalNote": "Add internal note",
+    "internalNotePlaceholder": "Write an internal note for this case..."
   },
   "warranty": {
     "warrantyId": "Warranty ID",
