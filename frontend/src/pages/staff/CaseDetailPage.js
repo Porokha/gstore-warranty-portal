@@ -119,6 +119,16 @@ const CaseDetailPage = () => {
     }
   );
 
+  const deleteInternalNoteMutation = useMutation(
+    (historyId) => casesService.deleteInternalNote(id, historyId),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['case', id]);
+        queryClient.invalidateQueries('cases');
+      },
+    }
+  );
+
   const handleAddInternalNote = () => {
     const trimmedNote = internalNote.trim();
     if (!trimmedNote) {
@@ -127,6 +137,10 @@ const CaseDetailPage = () => {
     }
     setInternalNoteError('');
     internalNoteMutation.mutate(trimmedNote);
+  };
+
+  const handleDeleteInternalNote = (historyId) => {
+    deleteInternalNoteMutation.mutate(historyId);
   };
 
   const handleFieldChange = (field, value) => {
@@ -619,9 +633,27 @@ const CaseDetailPage = () => {
                     )}
                     {history.note_private && (
                       <Box mt={1} p={1} sx={{ backgroundColor: '#fff3e0', borderRadius: 1 }}>
-                        <Typography variant="body2" color="text.secondary">
-                          <strong>{t('common.privateNote')}:</strong> {history.note_private}
-                        </Typography>
+                        <Box display="flex" alignItems="flex-start" justifyContent="space-between" gap={1}>
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>{t('common.privateNote')}:</strong> {history.note_private}
+                          </Typography>
+                          {isAdmin &&
+                            history.previous_status_level === null &&
+                            history.previous_result === null &&
+                            history.new_result === null &&
+                            !history.note_public &&
+                            history.note_private && (
+                              <Button
+                                size="small"
+                                color="error"
+                                onClick={() => handleDeleteInternalNote(history.id)}
+                                disabled={deleteInternalNoteMutation.isLoading}
+                                sx={{ flexShrink: 0 }}
+                              >
+                                {t('common.delete')}
+                              </Button>
+                            )}
+                        </Box>
                       </Box>
                     )}
                   </Paper>

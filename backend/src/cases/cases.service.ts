@@ -470,6 +470,43 @@ export class CasesService {
     );
   }
 
+  async deleteInternalNote(
+    caseId: number,
+    historyId: number,
+    deletedBy: number,
+  ): Promise<void> {
+    const history = await this.historyRepository.findOne({
+      where: { id: historyId, case_id: caseId },
+      relations: ['case_'],
+    });
+
+    if (!history) {
+      throw new NotFoundException(`Internal note with ID ${historyId} not found`);
+    }
+
+    const isStandaloneInternalNote =
+      history.previous_status_level === null &&
+      history.previous_result === null &&
+      history.new_result === null &&
+      !history.note_public &&
+      Boolean(history.note_private);
+
+    if (!isStandaloneInternalNote) {
+      throw new BadRequestException('Only standalone internal notes can be deleted');
+    }
+
+    await this.auditService.log(deletedBy, 'case.internal_note.deleted', {
+      case_id: caseId,
+      history_id: historyId,
+      note_private: history.note_private,
+      created_at: history.created_at,
+      changed_by: history.changed_by,
+      deleted_at: new Date().toISOString(),
+    });
+
+    await this.historyRepository.delete({ id: historyId, case_id: caseId });
+  }
+
   private async createHistoryEntry(
     caseId: number,
     changedBy: number,

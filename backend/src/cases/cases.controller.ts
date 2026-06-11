@@ -118,6 +118,17 @@ export class CasesController {
     return this.casesService.addInternalNote(id, dto.note, req.user.id);
   }
 
+  @Delete(':id/internal-notes/:historyId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  deleteInternalNote(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('historyId', ParseIntPipe) historyId: number,
+    @Request() req,
+  ) {
+    return this.casesService.deleteInternalNote(id, historyId, req.user.id);
+  }
+
   @Post(':id/reopen')
   reopen(@Param('id', ParseIntPipe) id: number, @Request() req) {
     return this.casesService.reopen(id, req.user.id);

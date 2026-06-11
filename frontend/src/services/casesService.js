@@ -45,6 +45,11 @@ export const casesService = {
     return response.data;
   },
 
+  deleteInternalNote: async (id, historyId) => {
+    const response = await api.delete(`/cases/${id}/internal-notes/${historyId}`);
+    return response.data;
+  },
+
   reopen: async (id) => {
     const response = await api.post(`/cases/${id}/reopen`);
     return response.data;
