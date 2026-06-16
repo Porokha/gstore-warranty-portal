@@ -1,6 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery } from 'react-query';
 import { useTranslation } from 'react-i18next';
+import {
+  BatteryChargingFullOutlined,
+  BoltOutlined,
+  CameraAltOutlined,
+  CategoryOutlined,
+  CropPortraitOutlined,
+  DeveloperBoardOutlined,
+  SensorsOutlined,
+  VolumeUpOutlined,
+} from '@mui/icons-material';
 import '../../styles/shop.css';
 import gstoreLogo from '../../assets/gstore-logo.svg';
 import { shopService } from '../../services/shopService';
@@ -40,6 +50,17 @@ const labelForPart = {
   speaker: 'shop.partLabels.speaker',
   charging: 'shop.partLabels.charging',
   accessory: 'shop.partLabels.accessory',
+};
+
+const iconForPart = {
+  board: DeveloperBoardOutlined,
+  screen: CropPortraitOutlined,
+  sensor: SensorsOutlined,
+  battery: BatteryChargingFullOutlined,
+  camera: CameraAltOutlined,
+  speaker: VolumeUpOutlined,
+  charging: BoltOutlined,
+  accessory: CategoryOutlined,
 };
 
 const labelForSource = {
@@ -949,26 +970,30 @@ const ShopPage = () => {
         {shopIntroOpen ? (
           <section className="zpos-shop-entry" aria-label={t('shop.filters.partTypeTitle')}>
             <div className="zpos-shop-entry-grid">
-              {shopIntroTiles.map(([value, labelKey], index) => (
-                <button
-                  key={value}
-                  type="button"
-                  className={`zpos-shop-entry-tile zpos-shop-entry-tile--${(index % 4) + 1}`}
-                  onClick={() => openShopByPart(value)}
-                >
-                  <span className="zpos-shop-entry-arrow" aria-hidden="true">
-                    <svg viewBox="0 0 24 24">
-                      <path d="M7 17 17 7"></path>
-                      <path d="M9 7h8v8"></path>
-                    </svg>
-                  </span>
-                  <span className="zpos-shop-entry-icon" aria-hidden="true">
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <span className="zpos-shop-entry-label">{t('shop.filters.partTypeKicker')}</span>
-                  <strong>{t(labelKey)}</strong>
-                </button>
-              ))}
+              {shopIntroTiles.map(([value, labelKey], index) => {
+                const PartIcon = iconForPart[value] || CategoryOutlined;
+
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    className={`zpos-shop-entry-tile zpos-shop-entry-tile--${(index % 4) + 1}`}
+                    onClick={() => openShopByPart(value)}
+                  >
+                    <span className="zpos-shop-entry-arrow" aria-hidden="true">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M7 17 17 7"></path>
+                        <path d="M9 7h8v8"></path>
+                      </svg>
+                    </span>
+                    <span className="zpos-shop-entry-icon" aria-hidden="true">
+                      <PartIcon fontSize="inherit" />
+                    </span>
+                    <span className="zpos-shop-entry-label">{t('shop.filters.partTypeKicker')}</span>
+                    <strong>{t(labelKey)}</strong>
+                  </button>
+                );
+              })}
             </div>
           </section>
         ) : (

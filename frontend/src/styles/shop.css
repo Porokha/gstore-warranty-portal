@@ -562,13 +562,21 @@ body.zpos-fullscreen .container {
 }
 
 .zpos-shop-entry-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: #6f6680;
-  font-family: var(--zpos-font-caps);
-  font-size: clamp(20px, 2vw, 28px);
+  font-size: clamp(28px, 2.6vw, 38px);
   line-height: 1;
   transition:
     color 0.18s ease,
     transform 0.18s ease;
+}
+
+.zpos-shop-entry-icon svg {
+  display: block;
+  width: 1em;
+  height: 1em;
 }
 
 .zpos-shop-entry-tile:hover .zpos-shop-entry-icon {
@@ -3049,7 +3057,7 @@ body.zpos-fullscreen .container {
   }
 
   .zpos-shop-entry-icon {
-    font-size: 20px;
+    font-size: 26px;
   }
 
   .zpos-shop-entry-label {
