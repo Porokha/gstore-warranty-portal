@@ -443,6 +443,154 @@ body.zpos-fullscreen .container {
   overflow: hidden;
 }
 
+.zpos-shell--entry {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(18px, 2.8vw, 42px);
+  background:
+    radial-gradient(circle at 22% 18%, rgba(165, 118, 255, 0.12), transparent 36%),
+    radial-gradient(circle at 80% 78%, rgba(91, 124, 255, 0.09), transparent 40%),
+    var(--zpos-panel);
+}
+
+.zpos-shop-entry {
+  width: 100%;
+  max-width: 1180px;
+  min-width: 0;
+}
+
+.zpos-shop-entry-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(10px, 1vw, 16px);
+}
+
+.zpos-shop-entry-tile {
+  position: relative;
+  min-height: clamp(150px, 16vh, 220px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: clamp(18px, 2vw, 30px);
+  overflow: hidden;
+  text-align: left;
+  border: 1px solid rgba(165, 118, 255, 0.2);
+  border-radius: min(32px, var(--zpos-radius-xl));
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 18px 50px rgba(78, 52, 136, 0.08);
+  color: var(--zpos-text);
+  cursor: pointer;
+  font-family: var(--zpos-font);
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.zpos-shop-entry-tile::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+
+.zpos-shop-entry-tile--1::before {
+  background: linear-gradient(135deg, rgba(165, 118, 255, 0.2) 0%, transparent 62%);
+}
+
+.zpos-shop-entry-tile--2::before {
+  background: linear-gradient(135deg, rgba(107, 225, 184, 0.22) 0%, transparent 62%);
+}
+
+.zpos-shop-entry-tile--3::before {
+  background: linear-gradient(135deg, rgba(250, 190, 169, 0.24) 0%, transparent 62%);
+}
+
+.zpos-shop-entry-tile--4::before {
+  background: linear-gradient(135deg, rgba(112, 181, 244, 0.2) 0%, transparent 62%);
+}
+
+.zpos-shop-entry-tile:hover {
+  transform: translateY(-3px);
+  border-color: rgba(116, 77, 224, 0.42);
+  box-shadow: 0 24px 68px rgba(78, 52, 136, 0.13);
+}
+
+.zpos-shop-entry-tile:hover::before {
+  opacity: 1;
+}
+
+.zpos-shop-entry-tile > * {
+  position: relative;
+  z-index: 1;
+}
+
+.zpos-shop-entry-arrow {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 20px;
+  height: 20px;
+  color: #8b829e;
+  opacity: 0;
+  transform: translate(-4px, 4px);
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+.zpos-shop-entry-arrow svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.zpos-shop-entry-arrow path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.zpos-shop-entry-tile:hover .zpos-shop-entry-arrow {
+  opacity: 1;
+  transform: translate(0, 0);
+}
+
+.zpos-shop-entry-icon {
+  color: #6f6680;
+  font-family: var(--zpos-font-caps);
+  font-size: clamp(20px, 2vw, 28px);
+  line-height: 1;
+  transition:
+    color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.zpos-shop-entry-tile:hover .zpos-shop-entry-icon {
+  color: #744de0;
+  transform: scale(1.12);
+}
+
+.zpos-shop-entry-label {
+  color: #827893;
+  font-family: var(--zpos-font-caps);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.zpos-shop-entry-tile strong {
+  color: var(--zpos-text);
+  font-size: clamp(18px, 2vw, 27px);
+  line-height: 1;
+}
+
 .zpos-sidebar,
 .zpos-cart,
 .zpos-main {
@@ -2864,6 +3012,53 @@ body.zpos-fullscreen .container {
     height: 100%;
     position: relative;
     margin-top: 0;
+  }
+
+  .zpos-shell--entry {
+    display: flex;
+    grid-template-rows: none;
+    padding: 14px;
+  }
+
+  .zpos-shop-entry {
+    max-width: 520px;
+  }
+
+  .zpos-shop-entry-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .zpos-shop-entry-tile {
+    min-height: clamp(118px, 24vh, 172px);
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 14px;
+    text-align: center;
+    border-radius: 22px;
+  }
+
+  .zpos-shop-entry-arrow {
+    top: 14px;
+    right: 14px;
+    width: 16px;
+    height: 16px;
+    opacity: 1;
+    transform: translate(0, 0);
+  }
+
+  .zpos-shop-entry-icon {
+    font-size: 20px;
+  }
+
+  .zpos-shop-entry-label {
+    font-size: 7.5px;
+    letter-spacing: 0.055em;
+  }
+
+  .zpos-shop-entry-tile strong {
+    font-size: clamp(14px, 4.2vw, 17px);
   }
 
   .zpos-main,

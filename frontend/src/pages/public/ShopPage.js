@@ -271,6 +271,7 @@ const ShopPage = () => {
   const [pullRefresh, setPullRefresh] = useState({ active: false, ready: false, distance: 0 });
   const [productPage, setProductPage] = useState(1);
   const [showSlowFilterLoader, setShowSlowFilterLoader] = useState(false);
+  const [shopIntroOpen, setShopIntroOpen] = useState(true);
   const rootRef = useRef(null);
   const gridScrollRef = useRef(null);
   const tabsRef = useRef(null);
@@ -566,6 +567,10 @@ const ShopPage = () => {
     const filtered = partOptions.filter(([value]) => value === 'all' || availableParts.has(value));
     return filtered.length > 1 ? filtered : partOptions;
   }, [productFacets.parts]);
+  const shopIntroTiles = useMemo(
+    () => dynamicPartOptions.filter(([value]) => value !== 'all'),
+    [dynamicPartOptions],
+  );
 
   const cartSummary = useMemo(() => {
     const subtotal = cart.reduce((sum, item) => sum + item.basePrice * item.qty, 0);
@@ -655,6 +660,18 @@ const ShopPage = () => {
     setParts((current) =>
       current.includes(part) ? current.filter((value) => value !== part) : [...current, part],
     );
+  };
+
+  const openShopByPart = (part) => {
+    setParts([part]);
+    setBrands([]);
+    setModels([]);
+    setPriceMin('');
+    setPriceMax('');
+    setSearch('');
+    setProductPage(1);
+    setGridProducts([]);
+    setShopIntroOpen(false);
   };
 
   const toggleBrand = (brand) => {
@@ -928,7 +945,34 @@ const ShopPage = () => {
         </div>
       </div>
 
-      <div className="zpos-shell">
+      <div className={`zpos-shell ${shopIntroOpen ? 'zpos-shell--entry' : ''}`}>
+        {shopIntroOpen ? (
+          <section className="zpos-shop-entry" aria-label={t('shop.filters.partTypeTitle')}>
+            <div className="zpos-shop-entry-grid">
+              {shopIntroTiles.map(([value, labelKey], index) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={`zpos-shop-entry-tile zpos-shop-entry-tile--${(index % 4) + 1}`}
+                  onClick={() => openShopByPart(value)}
+                >
+                  <span className="zpos-shop-entry-arrow" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M7 17 17 7"></path>
+                      <path d="M9 7h8v8"></path>
+                    </svg>
+                  </span>
+                  <span className="zpos-shop-entry-icon" aria-hidden="true">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <span className="zpos-shop-entry-label">{t('shop.filters.partTypeKicker')}</span>
+                  <strong>{t(labelKey)}</strong>
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : (
+          <>
         <aside className="zpos-sidebar" aria-label={t('shop.aria.filters')}>
           <div className="zpos-sidebar-head">
             <div>
@@ -1353,6 +1397,8 @@ const ShopPage = () => {
             </button>
           </div>
         </aside>
+          </>
+        )}
       </div>
 
       {modalProduct && (
