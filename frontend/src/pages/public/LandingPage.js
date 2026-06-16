@@ -78,14 +78,14 @@ const LandingPage = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        px: { xs: 1.5, sm: 2.5, md: 3 },
-        py: { xs: 1.5, sm: 2.5, md: 3 },
+        px: { xs: 1.25, sm: 2.5, md: 3 },
+        py: { xs: 1.25, sm: 2.5, md: 3 },
         overflow: 'hidden',
         background:
           'radial-gradient(circle at 22% 18%, rgba(165,118,255,0.16), transparent 34%), radial-gradient(circle at 78% 76%, rgba(116,77,224,0.1), transparent 38%), linear-gradient(180deg, #fbf9ff 0%, #f3ecff 100%)',
       }}
     >
-      <Box sx={{ width: '100%', maxWidth: 720, minWidth: 0 }}>
+      <Box sx={{ width: '100%', maxWidth: { xs: 390, sm: 720 }, minWidth: 0 }}>
         <Typography
           component="h1"
           sx={{
@@ -107,7 +107,7 @@ const LandingPage = () => {
           sx={{
             display: 'grid',
             gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-            gap: { xs: 1, sm: 1.4, md: 1.5 },
+            gap: { xs: 1.1, sm: 1.4, md: 1.5 },
           }}
         >
           {tiles.map((tile) => {
@@ -122,13 +122,13 @@ const LandingPage = () => {
                   position: 'relative',
                   minHeight: 0,
                   height: {
-                    xs: 'clamp(128px, calc((100vh - 104px) / 2), 190px)',
+                    xs: 'clamp(122px, min(38vw, calc((100vh - 98px) / 2)), 174px)',
                     sm: 'clamp(170px, calc((100vh - 126px) / 2), 220px)',
                     md: 'clamp(190px, calc((100vh - 138px) / 2), 230px)',
                   },
                   '@supports (height: 100dvh)': {
                     height: {
-                      xs: 'clamp(128px, calc((100dvh - 104px) / 2), 190px)',
+                      xs: 'clamp(122px, min(38vw, calc((100dvh - 98px) / 2)), 174px)',
                       sm: 'clamp(170px, calc((100dvh - 126px) / 2), 220px)',
                       md: 'clamp(190px, calc((100dvh - 138px) / 2), 230px)',
                     },
@@ -136,11 +136,11 @@ const LandingPage = () => {
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'flex-end',
-                  gap: { xs: 0.8, sm: 1.15 },
-                  p: { xs: 1.45, sm: 2.35, md: 2.75 },
+                  gap: { xs: 0.65, sm: 1.15 },
+                  p: { xs: 1.35, sm: 2.35, md: 2.75 },
                   overflow: 'hidden',
                   textDecoration: 'none',
-                  borderRadius: { xs: '26px', sm: '32px' },
+                  borderRadius: { xs: '22px', sm: '32px' },
                   border: '1px solid rgba(165,118,255,0.2)',
                   background: 'rgba(255,255,255,0.82)',
                   boxShadow: '0 18px 50px rgba(78, 52, 136, 0.08)',
@@ -170,17 +170,27 @@ const LandingPage = () => {
                     opacity: 1,
                     transform: 'translate(0, 0) rotate(45deg)',
                   },
+                  '@media (hover: none)': {
+                    '& .landing-tile-arrow': {
+                      opacity: 1,
+                      transform: 'translate(0, 0) rotate(45deg)',
+                    },
+                    '&:active': {
+                      transform: 'scale(0.985)',
+                      borderColor: 'rgba(116,77,224,0.42)',
+                    },
+                  },
                 }}
               >
                 <ArrowIcon
                   className="landing-tile-arrow"
                   sx={{
                     position: 'absolute',
-                    top: { xs: 18, sm: 22 },
-                    right: { xs: 18, sm: 22 },
+                    top: { xs: 14, sm: 22 },
+                    right: { xs: 14, sm: 22 },
                     zIndex: 1,
                     color: '#8b829e',
-                    fontSize: 18,
+                    fontSize: { xs: 15, sm: 18 },
                     opacity: 0,
                     transform: 'translate(-4px, 4px) rotate(45deg)',
                     transition: 'opacity 180ms ease, transform 180ms ease',
@@ -191,12 +201,8 @@ const LandingPage = () => {
                   sx={{
                     position: 'relative',
                     zIndex: 1,
-                    width: 34,
-                    height: 34,
-                    '@media (max-width:420px)': {
-                      width: 28,
-                      height: 28,
-                    },
+                    width: { xs: 27, sm: 34 },
+                    height: { xs: 27, sm: 34 },
                     color: '#6f6680',
                     transition: 'color 180ms ease, transform 180ms ease',
                   }}
@@ -206,8 +212,8 @@ const LandingPage = () => {
                     position: 'relative',
                     zIndex: 1,
                     fontFamily: 'var(--font-platform-caps)',
-                    fontSize: { xs: 8, sm: 10, md: 11 },
-                    letterSpacing: { xs: '0.06em', sm: '0.1em' },
+                    fontSize: { xs: 7.5, sm: 10, md: 11 },
+                    letterSpacing: { xs: '0.055em', sm: '0.1em' },
                     textTransform: 'uppercase',
                     color: '#827893',
                   }}
@@ -218,7 +224,7 @@ const LandingPage = () => {
                   sx={{
                     position: 'relative',
                     zIndex: 1,
-                    fontSize: { xs: 16, sm: 23, md: 26 },
+                    fontSize: { xs: 'clamp(14px, 4.2vw, 17px)', sm: 23, md: 26 },
                     lineHeight: 1,
                     fontWeight: 800,
                     color: '#18181b',
