@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowUpwardRounded as ArrowIcon,
@@ -44,12 +44,37 @@ const tiles = [
 const LandingPage = () => {
   const { t } = useTranslation();
 
+  useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousBodyOverflowX = document.body.style.overflowX;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previousHtmlOverflowX = document.documentElement.style.overflowX;
+
+    document.body.style.overflow = 'hidden';
+    document.body.style.overflowX = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    document.documentElement.style.overflowX = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.body.style.overflowX = previousBodyOverflowX;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+      document.documentElement.style.overflowX = previousHtmlOverflowX;
+    };
+  }, []);
+
   return (
     <Box
       component="main"
       sx={{
-        minHeight: { xs: 'calc(100svh - 52px)', md: 'calc(100svh - 60px)' },
-        height: { xs: 'calc(100svh - 52px)', md: 'calc(100svh - 60px)' },
+        minHeight: { xs: 'calc(100vh - 52px)', md: 'calc(100vh - 60px)' },
+        height: { xs: 'calc(100vh - 52px)', md: 'calc(100vh - 60px)' },
+        maxHeight: { xs: 'calc(100vh - 52px)', md: 'calc(100vh - 60px)' },
+        '@supports (height: 100dvh)': {
+          minHeight: { xs: 'calc(100dvh - 52px)', md: 'calc(100dvh - 60px)' },
+          height: { xs: 'calc(100dvh - 52px)', md: 'calc(100dvh - 60px)' },
+          maxHeight: { xs: 'calc(100dvh - 52px)', md: 'calc(100dvh - 60px)' },
+        },
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -97,9 +122,16 @@ const LandingPage = () => {
                   position: 'relative',
                   minHeight: 0,
                   height: {
-                    xs: 'clamp(128px, calc((100svh - 104px) / 2), 190px)',
-                    sm: 'clamp(170px, calc((100svh - 126px) / 2), 220px)',
-                    md: 'clamp(190px, calc((100svh - 138px) / 2), 230px)',
+                    xs: 'clamp(128px, calc((100vh - 104px) / 2), 190px)',
+                    sm: 'clamp(170px, calc((100vh - 126px) / 2), 220px)',
+                    md: 'clamp(190px, calc((100vh - 138px) / 2), 230px)',
+                  },
+                  '@supports (height: 100dvh)': {
+                    height: {
+                      xs: 'clamp(128px, calc((100dvh - 104px) / 2), 190px)',
+                      sm: 'clamp(170px, calc((100dvh - 126px) / 2), 220px)',
+                      md: 'clamp(190px, calc((100dvh - 138px) / 2), 230px)',
+                    },
                   },
                   display: 'flex',
                   flexDirection: 'column',
