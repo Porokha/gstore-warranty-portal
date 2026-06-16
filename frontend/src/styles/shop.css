@@ -562,6 +562,9 @@ body.zpos-fullscreen .container {
 }
 
 .zpos-shop-entry-icon {
+  position: absolute;
+  right: clamp(16px, 1.8vw, 26px);
+  bottom: clamp(18px, 2vw, 30px);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -585,6 +588,7 @@ body.zpos-fullscreen .container {
 }
 
 .zpos-shop-entry-label {
+  padding-right: clamp(44px, 4vw, 58px);
   color: #827893;
   font-family: var(--zpos-font-caps);
   font-size: 10px;
@@ -594,6 +598,7 @@ body.zpos-fullscreen .container {
 }
 
 .zpos-shop-entry-tile strong {
+  padding-right: clamp(44px, 4vw, 58px);
   color: var(--zpos-text);
   font-size: clamp(18px, 2vw, 27px);
   line-height: 1;
@@ -3057,15 +3062,19 @@ body.zpos-fullscreen .container {
   }
 
   .zpos-shop-entry-icon {
+    right: 14px;
+    bottom: 14px;
     font-size: 26px;
   }
 
   .zpos-shop-entry-label {
+    padding-right: 34px;
     font-size: 7.5px;
     letter-spacing: 0.055em;
   }
 
   .zpos-shop-entry-tile strong {
+    padding-right: 34px;
     font-size: clamp(14px, 4.2vw, 17px);
   }
 
