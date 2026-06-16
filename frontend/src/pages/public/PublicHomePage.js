@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Box, Button, Typography, Paper, Container, Tabs, Tab } from '@mui/material';
 import {
   VerifiedUser as WarrantyIcon,
@@ -10,11 +10,17 @@ import { useTranslation } from 'react-i18next';
 
 const PublicHomePage = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState(0);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(requestedTab === 'case' ? 1 : 0);
+
+  useEffect(() => {
+    setActiveTab(requestedTab === 'case' ? 1 : 0);
+  }, [requestedTab]);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
+    setSearchParams({ tab: newValue === 1 ? 'case' : 'warranty' }, { replace: true });
   };
 
   return (

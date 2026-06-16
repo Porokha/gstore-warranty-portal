@@ -17,7 +17,7 @@ const PublicLayout = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const menuItems = [
-    { label: t('public.menuShop'), path: '/' },
+    { label: t('public.menuShop'), path: '/shop' },
     { label: t('public.menuService'), path: '/warranty-service' },
     { label: t('public.menuTerms'), path: '/terms' },
     { label: t('public.menuPrivacy'), path: '/privacy' },

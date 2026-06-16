@@ -28,6 +28,7 @@ const SettingsPage = lazy(() => import('./pages/staff/SettingsPage'));
 const AuditPage = lazy(() => import('./pages/staff/AuditPage'));
 const StatisticsPage = lazy(() => import('./pages/staff/StatisticsPage'));
 const ImportPage = lazy(() => import('./pages/staff/ImportPage'));
+const LandingPage = lazy(() => import('./pages/public/LandingPage'));
 const PublicHomePage = lazy(() => import('./pages/public/PublicHomePage'));
 const WarrantySearchPage = lazy(() => import('./pages/public/WarrantySearchPage'));
 const CaseSearchPage = lazy(() => import('./pages/public/CaseSearchPage'));
@@ -35,6 +36,7 @@ const ShopPage = lazy(() => import('./pages/public/ShopPage'));
 const TermsPage = lazy(() => import('./pages/public/TermsPage'));
 const PrivacyPage = lazy(() => import('./pages/public/PrivacyPage'));
 const ReviewsPage = lazy(() => import('./pages/public/ReviewsPage'));
+const TradeInPage = lazy(() => import('./pages/public/TradeInPage'));
 const MaintenancePage = lazy(() => import('./pages/public/MaintenancePage'));
 const ShopAdminLayout = lazy(() => import('./components/common/ShopAdminLayout'));
 const ShopAdminLoginPage = lazy(() => import('./pages/shop-admin/ShopAdminLoginPage'));
@@ -136,7 +138,9 @@ function AppRoutes() {
               <>
                 <Route path="/" element={<MaintenancePage />} />
                 <Route path="/maintenance" element={<MaintenancePage />} />
+                <Route path="/shop" element={<Navigate to="/maintenance" replace />} />
                 <Route path="/warranty-service" element={<Navigate to="/maintenance" replace />} />
+                <Route path="/trade-in" element={<Navigate to="/maintenance" replace />} />
                 <Route path="/terms" element={<Navigate to="/maintenance" replace />} />
                 <Route path="/privacy" element={<Navigate to="/maintenance" replace />} />
                 <Route path="/reviews" element={<Navigate to="/maintenance" replace />} />
@@ -145,8 +149,10 @@ function AppRoutes() {
               </>
             ) : (
               <Route path="/" element={<PublicLayout />}>
-                <Route index element={<ShopPage />} />
+                <Route index element={<LandingPage />} />
+                <Route path="shop" element={<ShopPage />} />
                 <Route path="warranty-service" element={<PublicHomePage />} />
+                <Route path="trade-in" element={<TradeInPage />} />
                 <Route path="terms" element={<TermsPage />} />
                 <Route path="privacy" element={<PrivacyPage />} />
                 <Route path="reviews" element={<ReviewsPage />} />
@@ -157,8 +163,10 @@ function AppRoutes() {
 
             <Route path="/preview" element={<PrivateRoute />}>
               <Route element={<PublicLayout />}>
-                <Route index element={<ShopPage />} />
+                <Route index element={<LandingPage />} />
+                <Route path="shop" element={<ShopPage />} />
                 <Route path="warranty-service" element={<PublicHomePage />} />
+                <Route path="trade-in" element={<TradeInPage />} />
                 <Route path="terms" element={<TermsPage />} />
                 <Route path="privacy" element={<PrivacyPage />} />
                 <Route path="reviews" element={<ReviewsPage />} />

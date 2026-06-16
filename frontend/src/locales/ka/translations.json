@@ -274,6 +274,31 @@
     "termsPlaceholder": "წესების გვერდი დროებით ცარიელია.",
     "privacyPlaceholder": "კონფიდენციალურობის გვერდი დროებით ცარიელია.",
     "reviewsPlaceholder": "შეფასების გვერდი დროებით ცარიელია.",
+    "landing": {
+      "title": "Zezva-ს საჯარო მიმართულებები",
+      "tiles": {
+        "shop": {
+          "label": "დათვალიერება",
+          "title": "მაღაზია"
+        },
+        "warranty": {
+          "label": "დაცვა",
+          "title": "გარანტია"
+        },
+        "service": {
+          "label": "მხარდაჭერა",
+          "title": "სერვისი"
+        },
+        "tradeIn": {
+          "label": "განახლება",
+          "title": "Trade-in"
+        }
+      }
+    },
+    "tradeIn": {
+      "title": "Trade-in",
+      "placeholder": "Trade-in გვერდი დროებით ცარიელია."
+    },
     "cookieConsent": {
       "message": "საიტით სარგებლობის გაგრძელებით, შენ ეთანხმები ქუქიებისა და ლოკალური მეხსიერების გამოყენებას.",
       "linkLabel": "კონფიდენციალურობის პოლიტიკა",
