@@ -534,7 +534,7 @@ const StaffLayout = () => {
         disableEscapeKeyDown={mustChangePassword}
         maxWidth="xs"
         fullWidth
-        PaperProps={{ sx: { borderRadius: 4 } }}
+        PaperProps={{ sx: { borderRadius: 3 } }}
       >
         <DialogTitle>
           {mustChangePassword

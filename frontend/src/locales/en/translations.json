@@ -159,7 +159,13 @@
     "lastName": "Last Name",
     "role": "Role",
     "language": "Language Preference",
-    "password": "Password"
+    "password": "Password",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "changePassword": "Change password",
+    "changePasswordRequired": "Change your password",
+    "changePasswordRequiredMessage": "Your administrator requires you to change the temporary password before continuing."
   },
   "login": {
     "welcomeBack": "Welcome Back",

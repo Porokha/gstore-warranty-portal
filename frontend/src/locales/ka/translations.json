@@ -165,7 +165,13 @@
     "lastName": "გვარი",
     "role": "როლი",
     "language": "ენის პრეფერენსი",
-    "password": "პაროლი"
+    "password": "პაროლი",
+    "currentPassword": "მიმდინარე პაროლი",
+    "newPassword": "ახალი პაროლი",
+    "confirmPassword": "გაიმეორეთ ახალი პაროლი",
+    "changePassword": "პაროლის შეცვლა",
+    "changePasswordRequired": "შეცვალეთ პაროლი",
+    "changePasswordRequiredMessage": "გაგრძელებამდე საჭიროა ადმინისტრატორის მიერ მინიჭებული დროებითი პაროლის შეცვლა."
   },
   "login": {
     "welcomeBack": "კეთილი იყოს თქვენი დაბრუნება",
