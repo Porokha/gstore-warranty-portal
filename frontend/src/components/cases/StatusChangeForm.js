@@ -40,14 +40,26 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
 
   const [error, setError] = useState('');
   const [generatedCode, setGeneratedCode] = useState('');
+  const payablePayment = case_.payments?.find((payment) => payment.offer_type === 'payable');
+  const hasPayablePayment = Boolean(payablePayment);
   const hasPaidPayablePayment = case_.payments?.some(
     (payment) => payment.offer_type === 'payable' && payment.payment_status === 'paid'
   );
+  const allowsResult = formData.new_status_level === 3 || formData.new_status_level === 4;
+  const hasStatusChange = formData.new_status_level !== case_.status_level;
+  const hasOfferAction =
+    formData.result_type === 'payable' && !hasPayablePayment && formData.new_status_level === 3;
+  const hasNotes = Boolean(formData.note_public || formData.note_private);
+  const canSubmit =
+    hasStatusChange ||
+    hasOfferAction ||
+    (canManageCases && allowsResult && (formData.result_type || hasNotes));
 
   const createOfferMutation = useMutation(
     (data) => paymentsService.createOffer(case_.id, data),
     {
       onSuccess: () => {
+        queryClient.invalidateQueries(['case', case_.id]);
         queryClient.invalidateQueries(['case-payments', case_.id]);
       },
     }
@@ -121,12 +133,20 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
 
     // Special validation for Payable
     if (formData.result_type === 'payable') {
-      if (!formData.offer_amount) {
+      if (!hasPayablePayment && !formData.offer_amount) {
         setError('Offer amount is required for Payable result');
         return;
       }
-      if (formData.payment_methods.length === 0) {
+      if (!hasPayablePayment && formData.payment_methods.length === 0) {
         setError('At least one payment method must be selected');
+        return;
+      }
+      if (formData.new_status_level === 4 && !hasPaidPayablePayment) {
+        setError(t('payment.payableCompletionBlocked'));
+        return;
+      }
+      if (formData.new_status_level !== 3 && formData.new_status_level !== 4) {
+        setError(t('payment.payableRequiresPending'));
         return;
       }
     }
@@ -173,7 +193,7 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
           offer_amount: 0,
         });
         await generateCodeMutation.mutateAsync(offer.id);
-      } else if (formData.result_type === 'payable') {
+      } else if (formData.result_type === 'payable' && !hasPayablePayment) {
         // Create payable offer
         await createOfferMutation.mutateAsync({
           offer_type: 'payable',
@@ -232,7 +252,7 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
         </Select>
       </FormControl>
 
-      {(formData.new_status_level === 3 || formData.new_status_level === 4) && (
+      {allowsResult && (
         <FormControl fullWidth margin="normal">
           <InputLabel>{t('common.result')}</InputLabel>
           <Select
@@ -250,8 +270,14 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
         </FormControl>
       )}
 
+      {!allowsResult && (
+        <Alert severity="info" sx={{ mt: 2 }}>
+          {t('payment.selectPendingForPayable')}
+        </Alert>
+      )}
+
       {/* Special fields for Payable */}
-      {formData.result_type === 'payable' && (
+      {formData.result_type === 'payable' && !hasPayablePayment && formData.new_status_level === 3 && (
         <Box sx={{ mt: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
           <Typography variant="subtitle2" gutterBottom>
             {t('result.payable')} - {t('payment.offerDetails') || 'Offer Details'}
@@ -303,6 +329,14 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
             />
           </FormGroup>
         </Box>
+      )}
+
+      {formData.result_type === 'payable' && hasPayablePayment && (
+        <Alert severity={payablePayment.payment_status === 'paid' ? 'success' : 'warning'} sx={{ mt: 2 }}>
+          {payablePayment.payment_status === 'paid'
+            ? t('payment.payableAlreadyPaid')
+            : t('payment.payableAlreadyPending')}
+        </Alert>
       )}
 
       {/* Special fields for Replaceable */}
@@ -362,7 +396,7 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
           variant="contained"
           disabled={
             isLoading ||
-            formData.new_status_level === case_.status_level ||
+            !canSubmit ||
             createOfferMutation.isLoading ||
             generateCodeMutation.isLoading
           }

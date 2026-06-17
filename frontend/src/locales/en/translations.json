@@ -127,7 +127,11 @@
     "markFailed": "Mark as failed",
     "markPaidFailed": "Failed to mark payment as paid",
     "markFailedFailed": "Failed to mark payment as failed",
-    "payableCompletionBlocked": "Payable cases can only be completed after the payment is marked as paid."
+    "payableCompletionBlocked": "Payable cases can only be completed after the payment is marked as paid.",
+    "payableRequiresPending": "Create payable offers while the case is pending.",
+    "selectPendingForPayable": "To create a payable offer, change the case status to Pending first.",
+    "payableAlreadyPending": "A payable offer already exists and is waiting for payment confirmation.",
+    "payableAlreadyPaid": "The payable offer is paid. You can now complete the case."
   },
   "settings": {
     "smsNotifications": "SMS Notifications",
