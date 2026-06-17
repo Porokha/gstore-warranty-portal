@@ -112,7 +112,14 @@
   "payment": {
     "status": "Payment Status",
     "method": "Payment Method",
-    "type": "Type"
+    "type": "Type",
+    "code": "Code",
+    "offersAndPayments": "Offers and payments",
+    "offerDetails": "Offer details",
+    "estimatedDays": "Estimated days after payment",
+    "allowedMethods": "Allowed payment methods",
+    "online": "Online",
+    "onsite": "On-site"
   },
   "settings": {
     "smsNotifications": "SMS Notifications",
@@ -223,11 +230,13 @@
   },
   "case": {
     "caseNumber": "Case number",
+    "warrantyId": "Warranty ID",
     "orderId": "Order ID",
     "productTitle": "Product title",
     "productId": "Product ID",
     "openDate": "Open date",
     "deadline": "Deadline",
+    "closeDate": "Close date",
     "customerName": "Customer name",
     "customerLastName": "Customer last name",
     "phone": "Phone",
