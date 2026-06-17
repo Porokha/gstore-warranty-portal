@@ -58,6 +58,13 @@ export class PaymentsService {
       throw new BadRequestException('Offers can only be created for pending or completed cases');
     }
 
+    if (
+      createOfferDto.offer_type === 'payable' &&
+      case_.status_level !== CaseStatusLevel.PENDING
+    ) {
+      throw new BadRequestException('Payable offers can only be created while the case is pending');
+    }
+
     // Check if offer already exists for this case and type
     const existingOffer = await this.paymentsRepository.findOne({
       where: {
@@ -225,13 +232,6 @@ export class PaymentsService {
     payment.code_used_at = new Date();
     payment.payment_status = PaymentStatus.PAID;
 
-    // Update case status if needed
-    if (payment.case_ && payment.case_.status_level === CaseStatusLevel.PENDING) {
-      payment.case_.status_level = CaseStatusLevel.COMPLETED;
-      payment.case_.result_type = payment.offer_type;
-      await this.casesRepository.save(payment.case_);
-    }
-
     return this.paymentsRepository.save(payment);
   }
 
@@ -254,13 +254,6 @@ export class PaymentsService {
     if (payment.generated_code && payment.code_status === CodeStatus.ACTIVE) {
       payment.code_status = CodeStatus.USED;
       payment.code_used_at = new Date();
-    }
-
-    // Update case status if needed
-    if (payment.case_ && payment.case_.status_level === CaseStatusLevel.PENDING) {
-      payment.case_.status_level = CaseStatusLevel.COMPLETED;
-      payment.case_.result_type = payment.offer_type;
-      await this.casesRepository.save(payment.case_);
     }
 
     const savedPayment = await this.paymentsRepository.save(payment);

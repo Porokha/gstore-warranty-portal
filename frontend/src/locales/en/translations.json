@@ -119,7 +119,15 @@
     "estimatedDays": "Estimated days after payment",
     "allowedMethods": "Allowed payment methods",
     "online": "Online",
-    "onsite": "On-site"
+    "onsite": "On-site",
+    "pending": "Pending",
+    "paid": "Paid",
+    "failed": "Failed",
+    "markPaid": "Mark as paid",
+    "markFailed": "Mark as failed",
+    "markPaidFailed": "Failed to mark payment as paid",
+    "markFailedFailed": "Failed to mark payment as failed",
+    "payableCompletionBlocked": "Payable cases can only be completed after the payment is marked as paid."
   },
   "settings": {
     "smsNotifications": "SMS Notifications",

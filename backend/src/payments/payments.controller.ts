@@ -13,6 +13,9 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
 import { PaymentsService } from './payments.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
@@ -65,7 +68,8 @@ export class PaymentsController {
   }
 
   @Post(':id/mark-paid')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @HttpCode(HttpStatus.OK)
   markAsPaid(
     @Param('id', ParseIntPipe) id: number,
@@ -75,7 +79,8 @@ export class PaymentsController {
   }
 
   @Post(':id/mark-failed')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @HttpCode(HttpStatus.OK)
   markAsFailed(@Param('id', ParseIntPipe) id: number) {
     return this.paymentsService.markAsFailed(id);

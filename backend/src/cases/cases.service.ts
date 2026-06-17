@@ -16,6 +16,7 @@ import { UsersService } from '../users/users.service';
 import { SmsService } from '../sms/sms.service';
 import { Language } from '../sms/entities/sms-template.entity';
 import { AuditService } from '../audit/audit.service';
+import { PaymentStatus } from '../payments/entities/case-payment.entity';
 
 @Injectable()
 export class CasesService {
@@ -321,6 +322,7 @@ export class CasesService {
     const previousResult = case_.result_type;
     const newStatus = changeStatusDto.new_status_level;
     const newResult = changeStatusDto.result_type;
+    const effectiveResult = newResult || case_.result_type;
 
     // Role-based restrictions
     if (user.role === UserRole.TECHNICIAN) {
@@ -332,6 +334,18 @@ export class CasesService {
       // Technicians cannot reopen completed cases
       if (case_.status_level === CaseStatusLevel.COMPLETED) {
         throw new ForbiddenException('Technicians cannot reopen completed cases');
+      }
+    }
+
+    if (newStatus === CaseStatusLevel.COMPLETED && effectiveResult === ResultType.PAYABLE) {
+      const hasPaidPayableOffer = case_.payments?.some(
+        (payment) =>
+          payment.offer_type === ResultType.PAYABLE &&
+          payment.payment_status === PaymentStatus.PAID,
+      );
+
+      if (!hasPaidPayableOffer) {
+        throw new BadRequestException('Payable cases can only be completed after payment is marked as paid');
       }
     }
 

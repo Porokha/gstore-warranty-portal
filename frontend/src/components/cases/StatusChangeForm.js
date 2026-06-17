@@ -40,6 +40,9 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
 
   const [error, setError] = useState('');
   const [generatedCode, setGeneratedCode] = useState('');
+  const hasPaidPayablePayment = case_.payments?.some(
+    (payment) => payment.offer_type === 'payable' && payment.payment_status === 'paid'
+  );
 
   const createOfferMutation = useMutation(
     (data) => paymentsService.createOffer(case_.id, data),
@@ -138,6 +141,15 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
 
     if (formData.new_status_level === 4 && !formData.result_type) {
       setError('Result type is required when completing a case');
+      return;
+    }
+
+    if (
+      formData.new_status_level === 4 &&
+      formData.result_type === 'payable' &&
+      !hasPaidPayablePayment
+    ) {
+      setError(t('payment.payableCompletionBlocked'));
       return;
     }
 

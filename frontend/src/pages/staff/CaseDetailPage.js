@@ -47,6 +47,7 @@ const CaseDetailPage = () => {
   const [tab, setTab] = useState(0);
   const [internalNote, setInternalNote] = useState('');
   const [internalNoteError, setInternalNoteError] = useState('');
+  const [paymentActionError, setPaymentActionError] = useState('');
   const closePath = `/staff/cases${location.search || ''}`;
 
   const { data: case_, isLoading } = useQuery(
@@ -129,6 +130,37 @@ const CaseDetailPage = () => {
     }
   );
 
+  const markPaymentPaidMutation = useMutation(
+    (paymentId) => paymentsService.markAsPaid(paymentId),
+    {
+      onSuccess: () => {
+        setPaymentActionError('');
+        queryClient.invalidateQueries(['case', id]);
+        queryClient.invalidateQueries(['case-payments', id]);
+        queryClient.invalidateQueries('cases');
+        queryClient.invalidateQueries('dashboard');
+      },
+      onError: (error) => {
+        setPaymentActionError(error.response?.data?.message || t('payment.markPaidFailed'));
+      },
+    }
+  );
+
+  const markPaymentFailedMutation = useMutation(
+    (paymentId) => paymentsService.markAsFailed(paymentId),
+    {
+      onSuccess: () => {
+        setPaymentActionError('');
+        queryClient.invalidateQueries(['case', id]);
+        queryClient.invalidateQueries(['case-payments', id]);
+        queryClient.invalidateQueries('dashboard');
+      },
+      onError: (error) => {
+        setPaymentActionError(error.response?.data?.message || t('payment.markFailedFailed'));
+      },
+    }
+  );
+
   const handleAddInternalNote = () => {
     const trimmedNote = internalNote.trim();
     if (!trimmedNote) {
@@ -141,6 +173,15 @@ const CaseDetailPage = () => {
 
   const handleDeleteInternalNote = (historyId) => {
     deleteInternalNoteMutation.mutate(historyId);
+  };
+
+  const getPaymentStatusLabel = (status) => {
+    const labels = {
+      pending: t('payment.pending'),
+      paid: t('payment.paid'),
+      failed: t('payment.failed'),
+    };
+    return labels[status] || status;
   };
 
   const handleFieldChange = (field, value) => {
@@ -504,26 +545,83 @@ const CaseDetailPage = () => {
                 <Typography variant="h6" gutterBottom>
                   {t('payment.offersAndPayments') || 'Offers & Payments'}
                 </Typography>
+                {paymentActionError && (
+                  <Alert severity="error" sx={{ mb: 2 }}>
+                    {paymentActionError}
+                  </Alert>
+                )}
                 {payments.map((payment) => (
-                  <Paper key={payment.id} sx={{ p: 2, mb: 2 }}>
-                    <Typography variant="subtitle1" gutterBottom>
-                      {payment.offer_type === 'payable' ? t('result.payable') : t('result.replaceable')}
-                    </Typography>
-                    <Typography variant="body2">
-                      <strong>{t('common.amount')}:</strong> {payment.offer_amount || 0} ₾
-                    </Typography>
-                    <Typography variant="body2">
-                      <strong>{t('payment.status')}:</strong> {payment.payment_status}
-                    </Typography>
-                    {payment.payment_method && (
-                      <Typography variant="body2">
-                        <strong>{t('payment.method')}:</strong> {payment.payment_method}
-                      </Typography>
-                    )}
-                    {payment.generated_code && (
-                      <Typography variant="body2">
-                        <strong>{t('payment.code') || 'Code'}:</strong> {payment.generated_code}
-                      </Typography>
+                  <Paper
+                    key={payment.id}
+                    variant="outlined"
+                    sx={{
+                      p: 2,
+                      mb: 2,
+                      borderRadius: 2,
+                      display: 'grid',
+                      gap: 1.5,
+                    }}
+                  >
+                    <Box display="flex" justifyContent="space-between" alignItems="flex-start" gap={2}>
+                      <Box>
+                        <Typography variant="subtitle1" gutterBottom>
+                          {payment.offer_type === 'payable'
+                            ? t('result.payable')
+                            : payment.offer_type === 'covered'
+                              ? t('result.covered')
+                              : payment.offer_type === 'returned'
+                                ? t('result.returned')
+                                : t('result.replaceable')}
+                        </Typography>
+                        <Typography variant="body2">
+                          <strong>{t('common.amount')}:</strong> {payment.offer_amount || 0} ₾
+                        </Typography>
+                        {payment.payment_method && (
+                          <Typography variant="body2">
+                            <strong>{t('payment.method')}:</strong> {payment.payment_method}
+                          </Typography>
+                        )}
+                        {payment.generated_code && (
+                          <Typography variant="body2">
+                            <strong>{t('payment.code') || 'Code'}:</strong> {payment.generated_code}
+                          </Typography>
+                        )}
+                      </Box>
+                      <Chip
+                        label={getPaymentStatusLabel(payment.payment_status)}
+                        color={
+                          payment.payment_status === 'paid'
+                            ? 'success'
+                            : payment.payment_status === 'failed'
+                              ? 'error'
+                              : 'warning'
+                        }
+                        size="small"
+                      />
+                    </Box>
+                    {canManageCases && payment.payment_status === 'pending' && (
+                      <Box display="flex" gap={1} flexWrap="wrap">
+                        <Button
+                          variant="contained"
+                          color="success"
+                          size="small"
+                          onClick={() => markPaymentPaidMutation.mutate(payment.id)}
+                          disabled={markPaymentPaidMutation.isLoading || markPaymentFailedMutation.isLoading}
+                        >
+                          {markPaymentPaidMutation.isLoading
+                            ? t('common.saving')
+                            : t('payment.markPaid')}
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          size="small"
+                          onClick={() => markPaymentFailedMutation.mutate(payment.id)}
+                          disabled={markPaymentPaidMutation.isLoading || markPaymentFailedMutation.isLoading}
+                        >
+                          {t('payment.markFailed')}
+                        </Button>
+                      </Box>
                     )}
                   </Paper>
                 ))}
