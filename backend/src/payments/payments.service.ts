@@ -7,7 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CasePayment, PaymentStatus, CodeStatus } from './entities/case-payment.entity';
-import { ServiceCase, CaseStatusLevel } from '../cases/entities/service-case.entity';
+import { CaseType, ServiceCase, CaseStatusLevel } from '../cases/entities/service-case.entity';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { GenerateCodeDto } from './dto/generate-code.dto';
@@ -84,7 +84,12 @@ export class PaymentsService {
     const savedPayment = await this.paymentsRepository.save(payment);
 
     // Send SMS notification for payable offers
-    if (createOfferDto.offer_type === 'payable' && case_.customer_phone && createOfferDto.offer_amount) {
+    if (
+      case_.case_type !== CaseType.PARTNER &&
+      createOfferDto.offer_type === 'payable' &&
+      case_.customer_phone &&
+      createOfferDto.offer_amount
+    ) {
       try {
         await this.smsService.sendSms({
           phone: case_.customer_phone,
@@ -261,7 +266,7 @@ export class PaymentsService {
     const savedPayment = await this.paymentsRepository.save(payment);
 
     // Send SMS notification for payment confirmation
-    if (payment.case_ && payment.case_.customer_phone) {
+    if (payment.case_ && payment.case_.case_type !== CaseType.PARTNER && payment.case_.customer_phone) {
       try {
         await this.smsService.sendSms({
           phone: payment.case_.customer_phone,

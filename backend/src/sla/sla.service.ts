@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan, MoreThan, Between } from 'typeorm';
-import { ServiceCase, CaseStatusLevel } from '../cases/entities/service-case.entity';
+import { CaseType, ServiceCase, CaseStatusLevel } from '../cases/entities/service-case.entity';
 import { SmsService } from '../sms/sms.service';
 import { Language } from '../sms/entities/sms-template.entity';
 
@@ -143,7 +143,7 @@ export class SlaService {
   }
 
   private async sendSLAAlert(case_: ServiceCase, alertType: string): Promise<void> {
-    if (!case_.customer_phone) {
+    if (case_.case_type === CaseType.PARTNER || !case_.customer_phone) {
       return;
     }
 
@@ -235,4 +235,3 @@ export class SlaService {
     );
   }
 }
-

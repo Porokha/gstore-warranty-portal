@@ -37,6 +37,7 @@ import {
   Notifications as NotificationsIcon,
   ExpandMore as ExpandMoreIcon,
   Person as PersonIcon,
+  Business as PartnersIcon,
   ChevronLeft,
   ChevronRight,
 } from '@mui/icons-material';
@@ -164,6 +165,7 @@ const StaffLayout = () => {
       ? [{ path: '/staff/my-cases', label: t('common.myServiceCases') || 'My Service Cases', icon: <OpenCasesIcon /> }]
       : []),
     { path: '/staff/cases', label: t('common.serviceCases'), icon: <OpenCasesIcon /> },
+    { path: '/staff/partners', label: t('common.partners') || 'Partners', icon: <PartnersIcon /> },
     { path: '/staff/warranties', label: t('common.warranties'), icon: <WarrantiesIcon /> },
     ...(hasManagementAccess
       ? [

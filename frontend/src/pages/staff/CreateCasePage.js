@@ -25,6 +25,7 @@ import {
 import { casesService } from '../../services/casesService';
 import { warrantiesService } from '../../services/warrantiesService';
 import { usersService } from '../../services/usersService';
+import { partnersService } from '../../services/partnersService';
 import { useQueryClient } from 'react-query';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -141,9 +142,19 @@ const CreateCasePage = () => {
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
   const [error, setError] = useState('');
-  const [mode, setMode] = useState('blank'); // 'blank' or 'warranty'
+  const [mode, setMode] = useState('blank'); // 'blank', 'warranty', or 'partner'
   const [selectedWarranty, setSelectedWarranty] = useState(null);
   const [warrantySearchTerm, setWarrantySearchTerm] = useState('');
+  const [selectedPartner, setSelectedPartner] = useState(null);
+  const [partnerSearchTerm, setPartnerSearchTerm] = useState('');
+  const [partnerMode, setPartnerMode] = useState('existing');
+  const [partnerForm, setPartnerForm] = useState({
+    name: '',
+    contact_person: '',
+    phone: '',
+    email: '',
+    notes: '',
+  });
 
   const warrantyIdFromUrl = searchParams.get('warranty_id');
 
@@ -172,6 +183,15 @@ const CreateCasePage = () => {
     () => warrantiesService.getAll({ search: warrantySearchTerm }),
     {
       enabled: mode === 'warranty' && warrantySearchTerm.length > 0,
+      keepPreviousData: true,
+    }
+  );
+
+  const { data: partners, isLoading: isLoadingPartners } = useQuery(
+    ['partners', partnerSearchTerm],
+    () => partnersService.getAll({ search: partnerSearchTerm }),
+    {
+      enabled: mode === 'partner' && partnerMode === 'existing',
       keepPreviousData: true,
     }
   );
@@ -230,6 +250,24 @@ const CreateCasePage = () => {
     fillFormFromWarranty(warranty);
   };
 
+  const fillFormFromPartner = (partner) => {
+    if (!partner) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      warranty_id: '',
+      customer_name: partner.contact_person || partner.name || '',
+      customer_last_name: '',
+      customer_phone: partner.phone || '',
+      customer_email: partner.email || '',
+    }));
+  };
+
+  const handlePartnerSelect = (partner) => {
+    setSelectedPartner(partner);
+    fillFormFromPartner(partner);
+  };
+
   const createMutation = useMutation(
     (data) => casesService.create(data),
     {
@@ -272,8 +310,20 @@ const CreateCasePage = () => {
     e.preventDefault();
     setError('');
 
+    const isPartnerCase = mode === 'partner';
+
+    if (isPartnerCase && partnerMode === 'existing' && !selectedPartner?.id) {
+      setError(t('partners.selectPartnerRequired') || 'Select a partner first');
+      return;
+    }
+
+    if (isPartnerCase && partnerMode === 'new' && !partnerForm.name.trim()) {
+      setError(t('partners.nameRequired') || 'Partner name is required');
+      return;
+    }
+
     // Validate required fields
-    if (!formData.customer_phone) {
+    if (!isPartnerCase && !formData.customer_phone) {
       setError('Phone number is required');
       return;
     }
@@ -284,17 +334,38 @@ const CreateCasePage = () => {
       return;
     }
 
+    let partnerId = selectedPartner?.id;
+    if (isPartnerCase && partnerMode === 'new') {
+      try {
+        const createdPartner = await partnersService.create({
+          name: partnerForm.name.trim(),
+          contact_person: partnerForm.contact_person.trim() || undefined,
+          phone: partnerForm.phone.trim() || undefined,
+          email: partnerForm.email.trim() || undefined,
+          notes: partnerForm.notes.trim() || undefined,
+          active: true,
+        });
+        partnerId = createdPartner.id;
+        queryClient.invalidateQueries('partners');
+      } catch (partnerError) {
+        setError(partnerError.response?.data?.message || t('partners.createFailed') || 'Failed to create partner');
+        return;
+      }
+    }
+
     // Build submit data, converting empty strings to undefined
     const submitData = {
       warranty_id: formData.warranty_id ? parseInt(formData.warranty_id) : undefined,
+      case_type: isPartnerCase ? 'partner' : 'standard',
+      partner_id: isPartnerCase ? partnerId : undefined,
       sku: formData.sku,
       imei: formData.imei || undefined,
       serial_number: formData.serial_number,
       device_type: formData.device_type,
       product_title: formData.product_title,
-      customer_name: formData.customer_name,
+      customer_name: formData.customer_name?.trim() || undefined,
       customer_last_name: formData.customer_last_name?.trim() || undefined,
-      customer_phone: formData.customer_phone,
+      customer_phone: formData.customer_phone?.trim() || undefined,
       customer_email: formData.customer_email?.trim() || undefined,
       customer_initial_note: formData.customer_initial_note?.trim() || undefined,
       order_id: formData.order_id ? parseInt(formData.order_id) : undefined,
@@ -321,7 +392,7 @@ const CreateCasePage = () => {
 
   const handleModeChange = (newMode) => {
     setMode(newMode);
-    if (newMode === 'blank') {
+    if (newMode === 'blank' || newMode === 'partner') {
       setSelectedWarranty(null);
       setFormData({
         warranty_id: '',
@@ -342,6 +413,11 @@ const CreateCasePage = () => {
         deadline_days: 14,
       });
       setTags([]);
+    }
+    if (newMode !== 'partner') {
+      setSelectedPartner(null);
+      setPartnerMode('existing');
+      setPartnerForm({ name: '', contact_person: '', phone: '', email: '', notes: '' });
     }
   };
 
@@ -367,6 +443,13 @@ const CreateCasePage = () => {
               fullWidth
             >
               {t('case.createFromBlank') || 'Create from Blank'}
+            </Button>
+            <Button
+              variant={mode === 'partner' ? 'contained' : 'outlined'}
+              onClick={() => handleModeChange('partner')}
+              fullWidth
+            >
+              {t('case.createForPartner') || 'For Partner'}
             </Button>
           </Box>
 
@@ -414,6 +497,133 @@ const CreateCasePage = () => {
                   {t('case.warrantySelected') || 'Warranty selected. Fields have been pre-filled. Please fill in any missing required fields.'}
                 </Alert>
               )}
+            </Box>
+          )}
+
+          {mode === 'partner' && (
+            <Box mb={3}>
+              <Box display="flex" gap={2} mb={2}>
+                <Button
+                  variant={partnerMode === 'existing' ? 'contained' : 'outlined'}
+                  onClick={() => setPartnerMode('existing')}
+                  fullWidth
+                >
+                  {t('partners.existingPartner') || 'Existing Partner'}
+                </Button>
+                <Button
+                  variant={partnerMode === 'new' ? 'contained' : 'outlined'}
+                  onClick={() => {
+                    setPartnerMode('new');
+                    setSelectedPartner(null);
+                  }}
+                  fullWidth
+                >
+                  {t('partners.newPartner') || 'New Partner'}
+                </Button>
+              </Box>
+
+              {partnerMode === 'existing' ? (
+                <Autocomplete
+                  options={partners || []}
+                  getOptionLabel={(option) => `${option.name}${option.phone ? ` - ${option.phone}` : ''}`}
+                  loading={isLoadingPartners}
+                  value={selectedPartner}
+                  onChange={(event, newValue) => handlePartnerSelect(newValue)}
+                  onInputChange={(event, newInputValue) => setPartnerSearchTerm(newInputValue)}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label={t('partners.selectPartner') || 'Search and select partner'}
+                      placeholder={t('partners.searchPlaceholder') || 'Type partner name, contact, phone, or email'}
+                      fullWidth
+                    />
+                  )}
+                  renderOption={(props, option) => (
+                    <Box component="li" {...props} key={option.id}>
+                      <Box>
+                        <Typography variant="body1" fontWeight="bold">
+                          {option.name}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {option.contact_person || '-'} | {option.phone || '-'} | {option.email || '-'}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  )}
+                />
+              ) : (
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      required
+                      label={t('partners.name') || 'Partner name'}
+                      value={partnerForm.name}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setPartnerForm((prev) => ({ ...prev, name: value }));
+                        setFormData((prev) => ({
+                          ...prev,
+                          customer_name: partnerForm.contact_person || value,
+                        }));
+                      }}
+                      margin="normal"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label={t('partners.contactPerson') || 'Contact person'}
+                      value={partnerForm.contact_person}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setPartnerForm((prev) => ({ ...prev, contact_person: value }));
+                        setFormData((prev) => ({ ...prev, customer_name: value || partnerForm.name }));
+                      }}
+                      margin="normal"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label={t('partners.phone') || 'Phone'}
+                      value={partnerForm.phone}
+                      onChange={(event) => {
+                        setPartnerForm((prev) => ({ ...prev, phone: event.target.value }));
+                        setFormData((prev) => ({ ...prev, customer_phone: event.target.value }));
+                      }}
+                      margin="normal"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      type="email"
+                      label={t('partners.email') || 'Email'}
+                      value={partnerForm.email}
+                      onChange={(event) => {
+                        setPartnerForm((prev) => ({ ...prev, email: event.target.value }));
+                        setFormData((prev) => ({ ...prev, customer_email: event.target.value }));
+                      }}
+                      margin="normal"
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      multiline
+                      minRows={2}
+                      label={t('partners.notes') || 'Notes'}
+                      value={partnerForm.notes}
+                      onChange={(event) => setPartnerForm((prev) => ({ ...prev, notes: event.target.value }))}
+                      margin="normal"
+                    />
+                  </Grid>
+                </Grid>
+              )}
+              <Alert severity="info" sx={{ mt: 2 }}>
+                {t('case.partnerSmsSuppressed') || 'Partner service cases do not send customer SMS notifications.'}
+              </Alert>
             </Box>
           )}
 
@@ -511,8 +721,9 @@ const CreateCasePage = () => {
                   value={formData.customer_name}
                   onChange={handleChange}
                   margin="normal"
-                  error={!formData.customer_name}
-                  helperText={!formData.customer_name ? t('case.fieldRequired') || 'This field is required' : ''}
+                  required={mode !== 'partner'}
+                  error={mode !== 'partner' && !formData.customer_name}
+                  helperText={mode !== 'partner' && !formData.customer_name ? t('case.fieldRequired') || 'This field is required' : ''}
                 />
               </Grid>
               <Grid item xs={12} md={6}>
@@ -534,8 +745,9 @@ const CreateCasePage = () => {
                   value={formData.customer_phone}
                   onChange={handleChange}
                   margin="normal"
-                  error={!formData.customer_phone}
-                  helperText={!formData.customer_phone ? t('case.phoneRequired') || 'Phone number is required' : ''}
+                  required={mode !== 'partner'}
+                  error={mode !== 'partner' && !formData.customer_phone}
+                  helperText={mode !== 'partner' && !formData.customer_phone ? t('case.phoneRequired') || 'Phone number is required' : ''}
                 />
               </Grid>
               <Grid item xs={12} md={6}>

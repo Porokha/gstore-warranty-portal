@@ -21,6 +21,7 @@ import { ImportModule } from './import/import.module';
 import { SettingsModule } from './settings/settings.module';
 import { ShopModule } from './shop/shop.module';
 import { IntegrationsModule } from './integrations/integrations.module';
+import { PartnersModule } from './partners/partners.module';
 import { DatabaseConfig } from './config/database.config';
 
 @Module({
@@ -50,6 +51,7 @@ import { DatabaseConfig } from './config/database.config';
     SettingsModule,
     ShopModule,
     IntegrationsModule,
+    PartnersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

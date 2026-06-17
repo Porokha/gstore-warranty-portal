@@ -1,5 +1,5 @@
 import { IsString, IsOptional, IsInt, IsEnum, IsArray, IsDateString } from 'class-validator';
-import { Priority } from '../entities/service-case.entity';
+import { CaseType, Priority } from '../entities/service-case.entity';
 
 export class UpdateCaseDto {
   @IsOptional()
@@ -47,6 +47,14 @@ export class UpdateCaseDto {
   warranty_id?: number;
 
   @IsOptional()
+  @IsEnum(CaseType)
+  case_type?: CaseType;
+
+  @IsOptional()
+  @IsInt()
+  partner_id?: number;
+
+  @IsOptional()
   @IsInt()
   order_id?: number;
 
@@ -71,4 +79,3 @@ export class UpdateCaseDto {
   @IsDateString()
   deadline_at?: string;
 }
-

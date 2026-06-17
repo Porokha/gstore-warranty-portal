@@ -1,10 +1,18 @@
 import { IsString, IsNotEmpty, IsOptional, IsInt, IsEnum, IsArray, ValidateIf } from 'class-validator';
-import { Priority } from '../entities/service-case.entity';
+import { CaseType, Priority } from '../entities/service-case.entity';
 
 export class CreateCaseDto {
   @IsOptional()
   @IsInt()
   warranty_id?: number;
+
+  @IsOptional()
+  @IsEnum(CaseType)
+  case_type?: CaseType;
+
+  @IsOptional()
+  @IsInt()
+  partner_id?: number;
 
   @IsString()
   @IsNotEmpty()
@@ -28,6 +36,7 @@ export class CreateCaseDto {
   @IsNotEmpty()
   product_title: string;
 
+  @ValidateIf((o) => o.case_type !== CaseType.PARTNER)
   @IsString()
   @IsNotEmpty()
   customer_name: string;
@@ -36,6 +45,7 @@ export class CreateCaseDto {
   @IsString()
   customer_last_name?: string;
 
+  @ValidateIf((o) => o.case_type !== CaseType.PARTNER)
   @IsString()
   @IsNotEmpty()
   customer_phone: string;
@@ -73,4 +83,3 @@ export class CreateCaseDto {
   @IsInt()
   deadline_days?: number; // Days from now to set deadline
 }
-

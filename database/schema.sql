@@ -47,17 +47,34 @@ CREATE TABLE IF NOT EXISTS warranties (
 );
 
 -- Service Cases
+CREATE TABLE IF NOT EXISTS partners (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL,
+    contact_person VARCHAR(255),
+    phone VARCHAR(50),
+    email VARCHAR(255),
+    notes TEXT,
+    active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_partner_name (name),
+    INDEX idx_partner_phone (phone),
+    INDEX idx_partner_active (active)
+);
+
 CREATE TABLE IF NOT EXISTS service_cases (
     id INT PRIMARY KEY AUTO_INCREMENT,
     case_number VARCHAR(50) UNIQUE NOT NULL,
     warranty_id INT,
+    case_type ENUM('standard', 'partner') NOT NULL DEFAULT 'standard',
+    partner_id INT,
     sku VARCHAR(255) NOT NULL,
     imei VARCHAR(255),
     serial_number VARCHAR(255) NOT NULL,
     device_type VARCHAR(100) NOT NULL,
     product_title VARCHAR(500) NOT NULL,
-    customer_name VARCHAR(255) NOT NULL,
-    customer_phone VARCHAR(50) NOT NULL,
+    customer_name VARCHAR(255),
+    customer_phone VARCHAR(50),
     customer_email VARCHAR(255),
     order_id INT,
     product_id INT,
@@ -72,9 +89,12 @@ CREATE TABLE IF NOT EXISTS service_cases (
     created_by INT NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (warranty_id) REFERENCES warranties(id) ON DELETE SET NULL,
+    FOREIGN KEY (partner_id) REFERENCES partners(id) ON DELETE SET NULL,
     FOREIGN KEY (assigned_technician_id) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (created_by) REFERENCES users(id),
     INDEX idx_case_number (case_number),
+    INDEX idx_case_type (case_type),
+    INDEX idx_partner_id (partner_id),
     INDEX idx_status_level (status_level),
     INDEX idx_customer_phone (customer_phone),
     INDEX idx_deadline_at (deadline_at)

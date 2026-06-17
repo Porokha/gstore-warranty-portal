@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan, MoreThan, Like, In } from 'typeorm';
-import { ServiceCase, CaseStatusLevel, ResultType, Priority } from './entities/service-case.entity';
+import { CaseType, ServiceCase, CaseStatusLevel, ResultType, Priority } from './entities/service-case.entity';
 import { CaseStatusHistory } from './entities/case-status-history.entity';
 import { CreateCaseDto } from './dto/create-case.dto';
 import { UpdateCaseDto } from './dto/update-case.dto';
@@ -47,9 +47,15 @@ export class CasesService {
   }
 
   async create(createDto: CreateCaseDto, createdBy: number): Promise<ServiceCase> {
+    const isPartnerCase = createDto.case_type === CaseType.PARTNER;
+
     // Validate IMEI for phones
     if (createDto.device_type.toLowerCase() === 'phone' && !createDto.imei) {
       throw new BadRequestException('IMEI is required for phone devices');
+    }
+
+    if (isPartnerCase && !createDto.partner_id) {
+      throw new BadRequestException('Partner is required for partner service cases');
     }
 
     const user = await this.usersService.findById(createdBy);
@@ -67,6 +73,8 @@ export class CasesService {
     const newCase = this.casesRepository.create({
       case_number: caseNumber,
       warranty_id: createDto.warranty_id,
+      case_type: createDto.case_type || CaseType.STANDARD,
+      partner_id: createDto.partner_id,
       sku: createDto.sku,
       imei: createDto.imei,
       serial_number: createDto.serial_number,
@@ -103,7 +111,7 @@ export class CasesService {
     );
 
     // Send SMS notification when case is opened
-    if (savedCase.customer_phone) {
+    if (!this.isPartnerCase(savedCase) && savedCase.customer_phone) {
       try {
         await this.smsService.sendSms({
           phone: savedCase.customer_phone,
@@ -146,6 +154,7 @@ export class CasesService {
       const query = this.casesRepository.createQueryBuilder('sc')
         .leftJoinAndSelect('sc.assigned_technician', 'technician')
         .leftJoinAndSelect('sc.warranty', 'warranty')
+        .leftJoinAndSelect('sc.partner', 'partner')
         .orderBy('sc.opened_at', 'DESC');
 
 
@@ -216,6 +225,10 @@ export class CasesService {
             OR sc.customer_phone LIKE :search
             OR sc.customer_email LIKE :search
             OR warranty.personal_identification_number LIKE :search
+            OR partner.name LIKE :search
+            OR partner.contact_person LIKE :search
+            OR partner.phone LIKE :search
+            OR partner.email LIKE :search
           )`,
           { search: `%${filters.search}%` },
         );
@@ -242,6 +255,7 @@ export class CasesService {
       relations: [
         'assigned_technician',
         'warranty',
+        'partner',
         'status_history',
         'status_history.changed_by_user',
         'payments',
@@ -363,7 +377,7 @@ export class CasesService {
     );
 
     // Send SMS notification if status changed and public note exists
-    if (changeStatusDto.note_public && case_.customer_phone) {
+    if (!this.isPartnerCase(case_) && changeStatusDto.note_public && case_.customer_phone) {
       try {
         await this.smsService.sendSms({
           phone: case_.customer_phone,
@@ -388,7 +402,7 @@ export class CasesService {
     }
 
     // Send SMS if case is completed
-    if (newStatus === CaseStatusLevel.COMPLETED && case_.customer_phone) {
+    if (!this.isPartnerCase(case_) && newStatus === CaseStatusLevel.COMPLETED && case_.customer_phone) {
       try {
         await this.smsService.sendSms({
           phone: case_.customer_phone,
@@ -561,5 +575,9 @@ export class CasesService {
       [CaseStatusLevel.COMPLETED]: 'დასრულებული',
     };
     return labels[status] || 'უცნობი';
+  }
+
+  private isPartnerCase(case_: Pick<ServiceCase, 'case_type'>): boolean {
+    return case_.case_type === CaseType.PARTNER;
   }
 }

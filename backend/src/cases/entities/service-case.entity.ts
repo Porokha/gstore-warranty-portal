@@ -13,6 +13,7 @@ import { Warranty } from '../../warranties/entities/warranty.entity';
 import { CaseStatusHistory } from './case-status-history.entity';
 import { CasePayment } from '../../payments/entities/case-payment.entity';
 import { CaseFile } from '../../files/entities/case-file.entity';
+import { Partner } from '../../partners/entities/partner.entity';
 
 export enum CaseStatusLevel {
   OPENED = 1,
@@ -35,6 +36,11 @@ export enum Priority {
   CRITICAL = 'critical',
 }
 
+export enum CaseType {
+  STANDARD = 'standard',
+  PARTNER = 'partner',
+}
+
 @Entity('service_cases')
 export class ServiceCase {
   @PrimaryGeneratedColumn()
@@ -45,6 +51,16 @@ export class ServiceCase {
 
   @Column({ nullable: true })
   warranty_id: number;
+
+  @Column({
+    type: 'enum',
+    enum: ['standard', 'partner'],
+    default: 'standard',
+  })
+  case_type: CaseType;
+
+  @Column({ nullable: true })
+  partner_id: number;
 
   @Column()
   sku: string;
@@ -61,13 +77,13 @@ export class ServiceCase {
   @Column()
   product_title: string;
 
-  @Column()
+  @Column({ nullable: true })
   customer_name: string;
 
   @Column({ nullable: true })
   customer_last_name: string;
 
-  @Column()
+  @Column({ nullable: true })
   customer_phone: string;
 
   @Column({ nullable: true })
@@ -128,6 +144,10 @@ export class ServiceCase {
   @JoinColumn({ name: 'warranty_id' })
   warranty: Warranty;
 
+  @ManyToOne(() => Partner, (partner) => partner.service_cases)
+  @JoinColumn({ name: 'partner_id' })
+  partner: Partner;
+
   @ManyToOne(() => User, (user) => user.assigned_cases)
   @JoinColumn({ name: 'assigned_technician_id' })
   assigned_technician: User;
@@ -145,4 +165,3 @@ export class ServiceCase {
   @OneToMany(() => CaseFile, (file) => file.case_)
   files: CaseFile[];
 }
-

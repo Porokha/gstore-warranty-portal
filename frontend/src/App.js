@@ -19,6 +19,7 @@ const CasesPage = lazy(() => import('./pages/staff/CasesPage'));
 const ClosedCasesPage = lazy(() => import('./pages/staff/ClosedCasesPage'));
 const CaseDetailPage = lazy(() => import('./pages/staff/CaseDetailPage'));
 const CreateCasePage = lazy(() => import('./pages/staff/CreateCasePage'));
+const PartnersPage = lazy(() => import('./pages/staff/PartnersPage'));
 const WarrantiesPage = lazy(() => import('./pages/staff/WarrantiesPage'));
 const WarrantyDetailPage = lazy(() => import('./pages/staff/WarrantyDetailPage'));
 const WarrantyEditPage = lazy(() => import('./pages/staff/WarrantyEditPage'));
@@ -187,6 +188,7 @@ function AppRoutes() {
                 <Route path="cases/closed" element={<ClosedCasesPage />} />
                 <Route path="cases/new" element={<CreateCasePage />} />
                 <Route path="cases/:id" element={<CaseDetailPage />} />
+                <Route path="partners" element={<PartnersPage />} />
                 <Route path="warranties" element={<WarrantiesPage />} />
                 <Route path="warranties/:id" element={<WarrantyDetailPage />} />
                 <Route element={<StaffRoleRoute allowedRoles={['admin', 'manager']} />}>
