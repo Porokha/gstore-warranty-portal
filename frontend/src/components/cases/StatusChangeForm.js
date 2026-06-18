@@ -2,18 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   TextField,
   Button,
+  ButtonBase,
   Alert,
   Typography,
   Checkbox,
   FormControlLabel,
   FormGroup,
+  Chip,
+  Divider,
 } from '@mui/material';
+import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
+import FlagRoundedIcon from '@mui/icons-material/FlagRounded';
 import { useAuth } from '../../contexts/AuthContext';
 import { paymentsService } from '../../services/paymentsService';
 import { useMutation, useQueryClient } from 'react-query';
@@ -85,16 +87,22 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
   }, [case_]);
 
   const statusOptions = [
-    { value: 1, label: t('status.opened'), labelGe: 'ღია' },
-    { value: 2, label: t('status.investigating'), labelGe: 'კვლევა' },
-    { value: 3, label: t('status.pending'), labelGe: 'მოლოდინში' },
-    { value: 4, label: t('status.completed'), labelGe: 'დასრულებული' },
+    { value: 1, label: t('status.opened'), description: t('case.statusOpenedHelp') },
+    { value: 2, label: t('status.investigating'), description: t('case.statusInvestigatingHelp') },
+    { value: 3, label: t('status.pending'), description: t('case.statusPendingHelp') },
+    { value: 4, label: t('status.completed'), description: t('case.statusCompletedHelp') },
+  ];
+  const resultOptions = [
+    { value: 'covered', label: t('result.covered'), description: t('case.resultCoveredHelp') },
+    { value: 'payable', label: t('result.payable'), description: t('case.resultPayableHelp') },
+    { value: 'returned', label: t('result.returned'), description: t('case.resultReturnedHelp') },
+    { value: 'replaceable', label: t('result.replaceable'), description: t('case.resultReplaceableHelp') },
   ];
 
   // Technicians can only move forward
   const availableStatuses = canManageCases
     ? statusOptions
-    : statusOptions.filter((s) => s.value > case_.status_level);
+    : statusOptions.filter((s) => s.value >= case_.status_level);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -111,6 +119,14 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
       payment_methods: checked
         ? [...prev.payment_methods, name]
         : prev.payment_methods.filter((m) => m !== name),
+    }));
+  };
+
+  const selectStatus = (status) => {
+    setFormData((prev) => ({
+      ...prev,
+      new_status_level: status,
+      result_type: status < 3 ? '' : prev.result_type,
     }));
   };
 
@@ -218,7 +234,47 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit}>
+    <Box
+      component="form"
+      onSubmit={handleSubmit}
+      sx={{
+        p: { xs: 2, sm: 2.5 },
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 3,
+        bgcolor: 'background.paper',
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          justifyContent: 'space-between',
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: 1,
+          mb: 2,
+        }}
+      >
+        <Box>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            {t('case.chooseNextStage')}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {canManageCases
+              ? t('case.chooseNextStageManagerHelp')
+              : t('case.chooseNextStageTechnicianHelp')}
+          </Typography>
+        </Box>
+        {hasStatusChange && (
+          <Chip
+            icon={<ArrowForwardRoundedIcon />}
+            label={t('case.statusChangeReady')}
+            color="primary"
+            variant="outlined"
+          />
+        )}
+      </Box>
+
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
@@ -236,43 +292,134 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
         </Alert>
       )}
 
-      <FormControl fullWidth margin="normal">
-        <InputLabel>{t('common.newStatus')}</InputLabel>
-        <Select
-          name="new_status_level"
-          value={formData.new_status_level}
-          onChange={handleChange}
-          label={t('common.newStatus')}
-        >
-          {availableStatuses.map((status) => (
-            <MenuItem key={status.value} value={status.value}>
-              {status.label} / {status.labelGe}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+          gap: 1,
+        }}
+      >
+        {availableStatuses.map((status) => {
+          const isSelected = formData.new_status_level === status.value;
+          const isCurrent = case_.status_level === status.value;
+          const isReadOnlyCurrent = !canManageCases && isCurrent;
+
+          return (
+            <ButtonBase
+              key={status.value}
+              disabled={isReadOnlyCurrent}
+              onClick={() => selectStatus(status.value)}
+              sx={{
+                justifyContent: 'flex-start',
+                alignItems: 'flex-start',
+                textAlign: 'left',
+                minHeight: 88,
+                p: 1.5,
+                border: '1px solid',
+                borderColor: isSelected ? 'primary.main' : 'divider',
+                borderRadius: 2.5,
+                bgcolor: isSelected ? 'rgba(165,118,255,0.09)' : 'background.paper',
+                transition: 'border-color 140ms ease, background-color 140ms ease',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  bgcolor: 'rgba(165,118,255,0.05)',
+                },
+                '&.Mui-disabled': {
+                  opacity: 1,
+                  color: 'inherit',
+                },
+              }}
+            >
+              <Box
+                sx={{
+                  width: 32,
+                  height: 32,
+                  flex: '0 0 32px',
+                  display: 'grid',
+                  placeItems: 'center',
+                  mr: 1.25,
+                  borderRadius: '50%',
+                  bgcolor: isSelected ? 'primary.main' : 'action.hover',
+                  color: isSelected ? '#fff' : 'text.secondary',
+                }}
+              >
+                {isSelected ? <CheckCircleRoundedIcon fontSize="small" /> : status.value}
+              </Box>
+              <Box sx={{ minWidth: 0 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
+                  <Typography variant="body1" sx={{ fontWeight: 700 }}>
+                    {status.label}
+                  </Typography>
+                  {isCurrent && (
+                    <Chip label={t('case.currentStage')} size="small" color="primary" />
+                  )}
+                </Box>
+                <Typography variant="caption" color="text.secondary">
+                  {status.description}
+                </Typography>
+              </Box>
+            </ButtonBase>
+          );
+        })}
+      </Box>
 
       {allowsResult && (
-        <FormControl fullWidth margin="normal">
-          <InputLabel>{t('common.result')}</InputLabel>
-          <Select
-            name="result_type"
-            value={formData.result_type}
-            onChange={handleChange}
-            label={t('common.result')}
+        <Box sx={{ mt: 2.5 }}>
+          <Divider sx={{ mb: 2 }} />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+            <FlagRoundedIcon color="primary" fontSize="small" />
+            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+              {t('case.chooseOutcome')}
+            </Typography>
+          </Box>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+            {formData.new_status_level === 4
+              ? t('case.completedOutcomeHelp')
+              : t('case.pendingOutcomeHelp')}
+          </Typography>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+              gap: 1,
+            }}
           >
-            <MenuItem value="">{t('common.none')}</MenuItem>
-            <MenuItem value="covered">{t('result.covered')}</MenuItem>
-            <MenuItem value="payable">{t('result.payable')}</MenuItem>
-            <MenuItem value="returned">{t('result.returned')}</MenuItem>
-            <MenuItem value="replaceable">{t('result.replaceable')}</MenuItem>
-          </Select>
-        </FormControl>
+            {resultOptions.map((result) => {
+              const isSelected = formData.result_type === result.value;
+              return (
+                <ButtonBase
+                  key={result.value}
+                  onClick={() => setFormData((prev) => ({ ...prev, result_type: result.value }))}
+                  sx={{
+                    justifyContent: 'flex-start',
+                    textAlign: 'left',
+                    minHeight: 72,
+                    p: 1.25,
+                    border: '1px solid',
+                    borderColor: isSelected ? 'primary.main' : 'divider',
+                    borderRadius: 2.5,
+                    bgcolor: isSelected ? 'rgba(165,118,255,0.09)' : 'background.paper',
+                    '&:hover': { borderColor: 'primary.main' },
+                  }}
+                >
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                      {result.label}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {result.description}
+                    </Typography>
+                  </Box>
+                </ButtonBase>
+              );
+            })}
+          </Box>
+        </Box>
       )}
 
       {!allowsResult && (
-        <Alert severity="info" sx={{ mt: 2 }}>
-          {t('payment.selectPendingForPayable')}
+        <Alert severity="info" sx={{ mt: 2.5 }}>
+          {t('case.outcomeAvailableLater')}
         </Alert>
       )}
 
@@ -367,33 +514,50 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
         </Box>
       )}
 
-      <TextField
-        fullWidth
-        multiline
-        rows={3}
-        label={t('common.publicNote')}
-        name="note_public"
-        value={formData.note_public}
-        onChange={handleChange}
-        margin="normal"
-        required={formData.result_type === 'covered'}
-      />
+      <Divider sx={{ mt: 2.5, mb: 2 }} />
+      <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+        {t('case.statusNotes')}
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+        {t('case.statusNotesHelp')}
+      </Typography>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+          gap: 1.5,
+        }}
+      >
+        <TextField
+          fullWidth
+          multiline
+          rows={3}
+          label={t('common.publicNote')}
+          name="note_public"
+          value={formData.note_public}
+          onChange={handleChange}
+          margin="normal"
+          required={formData.result_type === 'covered'}
+        />
 
-      <TextField
-        fullWidth
-        multiline
-        rows={3}
-        label={t('common.privateNote')}
-        name="note_private"
-        value={formData.note_private}
-        onChange={handleChange}
-        margin="normal"
-      />
+        <TextField
+          fullWidth
+          multiline
+          rows={3}
+          label={t('common.privateNote')}
+          name="note_private"
+          value={formData.note_private}
+          onChange={handleChange}
+          margin="normal"
+        />
+      </Box>
 
-      <Box mt={2}>
+      <Box mt={2} display="flex" justifyContent="flex-end">
         <Button
           type="submit"
           variant="contained"
+          size="large"
+          endIcon={<ArrowForwardRoundedIcon />}
           disabled={
             isLoading ||
             !canSubmit ||

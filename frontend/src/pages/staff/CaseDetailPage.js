@@ -28,7 +28,6 @@ import {
 import { casesService } from '../../services/casesService';
 import { paymentsService } from '../../services/paymentsService';
 import { usersService } from '../../services/usersService';
-import StatusBar from '../../components/cases/StatusBar';
 import ResultBar from '../../components/cases/ResultBar';
 import StatusStepper from '../../components/cases/StatusStepper';
 import StatusChangeForm from '../../components/cases/StatusChangeForm';
@@ -514,15 +513,8 @@ const CaseDetailPage = () => {
         {/* Tab 2: Status & Notes */}
         {tab === 1 && (
           <Box>
-            <Typography variant="h6" gutterBottom>
-              {t('common.currentStatus')}
-            </Typography>
             <StatusStepper currentStatus={case_.status_level} statusTimestamps={statusTimestamps} />
-            <StatusBar statusLevel={case_.status_level} size="large" />
-            <Box mt={3}>
-              <Typography variant="h6" gutterBottom>
-                {t('common.changeStatus')}
-              </Typography>
+            <Box mt={2.5}>
               <StatusChangeForm
                 case_={case_}
                 onStatusChange={handleStatusChange}
