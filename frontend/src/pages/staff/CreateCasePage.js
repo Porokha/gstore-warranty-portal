@@ -196,11 +196,21 @@ const CreateCasePage = () => {
     }
   );
 
-  // Fetch technicians only for roles allowed to assign work.
-  const { data: users } = useQuery('users', usersService.getAll, {
-    enabled: canAssignTechnician,
-  });
-  const availableTechnicians = users?.filter(u => u.role === 'technician') || [];
+  // Keep this query isolated from Settings user-management cache.
+  const {
+    data: availableTechnicians = [],
+    isLoading: isLoadingTechnicians,
+    isError: isTechniciansError,
+    refetch: refetchTechnicians,
+  } = useQuery(
+    ['case-create-technicians'],
+    usersService.getTechnicians,
+    {
+      enabled: canAssignTechnician,
+      refetchOnMount: 'always',
+      staleTime: 0,
+    },
+  );
 
   // If warranty_id is in URL, set mode to warranty and fetch warranty
   useEffect(() => {
@@ -392,9 +402,12 @@ const CreateCasePage = () => {
 
   const handleModeChange = (newMode) => {
     setMode(newMode);
+    if (canAssignTechnician) {
+      refetchTechnicians();
+    }
     if (newMode === 'blank' || newMode === 'partner') {
       setSelectedWarranty(null);
-      setFormData({
+      setFormData((prev) => ({
         warranty_id: '',
         sku: '',
         imei: '',
@@ -408,10 +421,11 @@ const CreateCasePage = () => {
         customer_initial_note: '',
         order_id: '',
         product_id: '',
-        assigned_technician_id: isTechnician && user?.id ? String(user.id) : '',
+        assigned_technician_id:
+          isTechnician && user?.id ? String(user.id) : prev.assigned_technician_id || '',
         priority: 'normal',
         deadline_days: 14,
-      });
+      }));
       setTags([]);
     }
     if (newMode !== 'partner') {
@@ -811,19 +825,41 @@ const CreateCasePage = () => {
                   <InputLabel>{t('case.technician')}</InputLabel>
                   <Select
                     name="assigned_technician_id"
-                    value={formData.assigned_technician_id}
+                    value={formData.assigned_technician_id || ''}
                     onChange={handleChange}
                     label={t('case.technician')}
-                    disabled={!canAssignTechnician}
+                    disabled={!canAssignTechnician || isLoadingTechnicians}
                   >
                     {canAssignTechnician && <MenuItem value="">{t('common.none')}</MenuItem>}
+                    {canAssignTechnician && isLoadingTechnicians && (
+                      <MenuItem disabled>
+                        <CircularProgress size={16} sx={{ mr: 1 }} />
+                        {t('case.loadingTechnicians')}
+                      </MenuItem>
+                    )}
+                    {canAssignTechnician &&
+                      !isLoadingTechnicians &&
+                      !isTechniciansError &&
+                      availableTechnicians.length === 0 && (
+                        <MenuItem disabled>{t('case.noTechnicians')}</MenuItem>
+                      )}
                     {availableTechnicians.map((tech) => (
-                      <MenuItem key={tech.id} value={tech.id}>
-                        {tech.name} {tech.last_name}
+                      <MenuItem key={tech.id} value={String(tech.id)}>
+                        {[tech.name, tech.last_name].filter(Boolean).join(' ') || tech.username}
                       </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
+                {canAssignTechnician && isTechniciansError && (
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Typography variant="caption" color="error">
+                      {t('case.techniciansLoadFailed')}
+                    </Typography>
+                    <Button size="small" onClick={() => refetchTechnicians()}>
+                      {t('case.retryTechnicians')}
+                    </Button>
+                  </Box>
+                )}
                 {isTechnician && (
                   <Typography variant="caption" color="text.secondary">
                     {t('case.technicianAutoAssigned') || 'You are assigned automatically.'}
