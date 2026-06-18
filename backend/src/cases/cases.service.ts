@@ -17,6 +17,7 @@ import { SmsService } from '../sms/sms.service';
 import { Language } from '../sms/entities/sms-template.entity';
 import { AuditService } from '../audit/audit.service';
 import { PaymentStatus } from '../payments/entities/case-payment.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class CasesService {
@@ -28,6 +29,7 @@ export class CasesService {
     private usersService: UsersService,
     private smsService: SmsService,
     private auditService: AuditService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async generateCaseNumber(): Promise<string> {
@@ -150,6 +152,7 @@ export class CasesService {
     end_date?: Date;
     closeToDeadline?: boolean;
     due?: boolean;
+    excludePendingFromDeadline?: boolean;
   }): Promise<ServiceCase[]> {
     try {
       const query = this.casesRepository.createQueryBuilder('sc')
@@ -172,6 +175,9 @@ export class CasesService {
         const now = new Date();
         const in48Hours = new Date(now.getTime() + 48 * 60 * 60 * 1000);
         query.andWhere('sc.status_level < :completed', { completed: CaseStatusLevel.COMPLETED });
+        if (filters.excludePendingFromDeadline) {
+          query.andWhere('sc.status_level != :pending', { pending: CaseStatusLevel.PENDING });
+        }
         query.andWhere('sc.deadline_at <= :in48Hours', { in48Hours });
         query.andWhere('sc.deadline_at > :now', { now });
       }
@@ -180,6 +186,9 @@ export class CasesService {
       if (filters?.due) {
         const now = new Date();
         query.andWhere('sc.status_level < :completed', { completed: CaseStatusLevel.COMPLETED });
+        if (filters.excludePendingFromDeadline) {
+          query.andWhere('sc.status_level != :pending', { pending: CaseStatusLevel.PENDING });
+        }
         query.andWhere('sc.deadline_at < :now', { now });
       }
 
@@ -389,6 +398,17 @@ export class CasesService {
       changeStatusDto.note_public,
       changeStatusDto.note_private,
     );
+
+    if (
+      newStatus === CaseStatusLevel.PENDING
+      && previousStatus !== CaseStatusLevel.PENDING
+    ) {
+      try {
+        await this.notificationsService.notifyManagersCasePending(savedCase);
+      } catch (error) {
+        console.error('Failed to create manager pending-case notification:', error);
+      }
+    }
 
     // Send SMS notification if status changed and public note exists
     if (!this.isPartnerCase(case_) && changeStatusDto.note_public && case_.customer_phone) {

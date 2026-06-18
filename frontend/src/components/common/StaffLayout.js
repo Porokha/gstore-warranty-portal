@@ -23,6 +23,8 @@ import {
   DialogActions,
   TextField,
   Alert,
+  Badge,
+  CircularProgress,
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
@@ -43,6 +45,8 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { usersService } from '../../services/usersService';
+import { notificationsService } from '../../services/notificationsService';
+import { useMutation, useQuery, useQueryClient } from 'react-query';
 
 const EXPANDED_DRAWER_WIDTH = 280;
 const COLLAPSED_DRAWER_WIDTH = 88;
@@ -53,6 +57,7 @@ const StaffLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [userMenuAnchor, setUserMenuAnchor] = React.useState(null);
+  const [notificationsAnchor, setNotificationsAnchor] = React.useState(null);
   const [passwordDialogOpen, setPasswordDialogOpen] = React.useState(false);
   const [passwordForm, setPasswordForm] = React.useState({
     current_password: '',
@@ -68,6 +73,40 @@ const StaffLayout = () => {
   });
   const drawerWidth = isCollapsed ? COLLAPSED_DRAWER_WIDTH : EXPANDED_DRAWER_WIDTH;
   const mustChangePassword = Boolean(user?.must_change_password);
+  const isManager = user?.role === 'manager';
+  const queryClient = useQueryClient();
+
+  const { data: unreadNotificationData } = useQuery(
+    ['staff-notifications-unread'],
+    notificationsService.getUnreadCount,
+    {
+      enabled: isManager,
+      refetchInterval: 30000,
+      refetchOnWindowFocus: true,
+    },
+  );
+
+  const {
+    data: staffNotifications = [],
+    isLoading: notificationsLoading,
+  } = useQuery(
+    ['staff-notifications'],
+    notificationsService.getAll,
+    {
+      enabled: isManager && Boolean(notificationsAnchor),
+      refetchOnWindowFocus: true,
+    },
+  );
+
+  const markAllNotificationsRead = useMutation(
+    notificationsService.markAllRead,
+    {
+      onSuccess: () => {
+        queryClient.setQueryData(['staff-notifications-unread'], { count: 0 });
+        queryClient.invalidateQueries(['staff-notifications']);
+      },
+    },
+  );
 
   React.useEffect(() => {
     if (mustChangePassword) {
@@ -156,8 +195,24 @@ const StaffLayout = () => {
   };
 
   const isAdmin = user?.role === 'admin';
-  const isManager = user?.role === 'manager';
   const hasManagementAccess = isAdmin || isManager;
+
+  const handleNotificationsOpen = (event) => {
+    setNotificationsAnchor(event.currentTarget);
+    if ((unreadNotificationData?.count || 0) > 0) {
+      markAllNotificationsRead.mutate();
+    }
+  };
+
+  const handleNotificationClick = async (notification) => {
+    if (!notification.read_at) {
+      await notificationsService.markRead(notification.id);
+    }
+    setNotificationsAnchor(null);
+    if (notification.case_id) {
+      navigate(`/staff/cases/${notification.case_id}`);
+    }
+  };
 
   const menuItems = [
     { path: '/staff/dashboard', label: t('common.dashboard'), icon: <DashboardIcon /> },
@@ -482,9 +537,21 @@ const StaffLayout = () => {
                 flexShrink: 0,
               }}
             >
-              <IconButton sx={{ color: '#64748b', flexShrink: 0 }}>
-                <NotificationsIcon />
-              </IconButton>
+              {isManager && (
+                <IconButton
+                  sx={{ color: '#64748b', flexShrink: 0 }}
+                  onClick={handleNotificationsOpen}
+                  aria-label={t('notifications.title')}
+                >
+                  <Badge
+                    badgeContent={unreadNotificationData?.count || 0}
+                    color="error"
+                    max={99}
+                  >
+                    <NotificationsIcon />
+                  </Badge>
+                </IconButton>
+              )}
               <IconButton sx={{ color: '#64748b', flexShrink: 0 }}>
                 <PersonIcon />
               </IconButton>
@@ -511,6 +578,65 @@ const StaffLayout = () => {
             </Box>
           </Toolbar>
         </AppBar>
+
+        <Menu
+          anchorEl={notificationsAnchor}
+          open={Boolean(notificationsAnchor)}
+          onClose={() => setNotificationsAnchor(null)}
+          PaperProps={{
+            sx: {
+              width: 360,
+              maxWidth: 'calc(100vw - 24px)',
+              maxHeight: 440,
+              borderRadius: '8px',
+            },
+          }}
+        >
+          <Box sx={{ px: 2, py: 1.25, borderBottom: '1px solid #e2e8f0' }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+              {t('notifications.title')}
+            </Typography>
+          </Box>
+          {notificationsLoading && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+              <CircularProgress size={24} />
+            </Box>
+          )}
+          {!notificationsLoading && staffNotifications.length === 0 && (
+            <Typography color="text.secondary" variant="body2" sx={{ p: 2 }}>
+              {t('notifications.empty')}
+            </Typography>
+          )}
+          {!notificationsLoading && staffNotifications.map((notification) => (
+            <MenuItem
+              key={notification.id}
+              onClick={() => handleNotificationClick(notification)}
+              sx={{
+                display: 'block',
+                whiteSpace: 'normal',
+                py: 1.25,
+                borderBottom: '1px solid #f1f5f9',
+                bgcolor: notification.read_at ? '#fff' : 'rgba(165,118,255,0.08)',
+              }}
+            >
+              <Typography variant="body2" sx={{ fontWeight: notification.read_at ? 600 : 800 }}>
+                {notification.type === 'case_pending'
+                  ? t('notifications.casePendingTitle', { caseNumber: notification.case_number })
+                  : notification.title}
+              </Typography>
+              {notification.message && (
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
+                  {notification.type === 'case_pending'
+                    ? t('notifications.casePendingMessage')
+                    : notification.message}
+                </Typography>
+              )}
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                {new Date(notification.created_at).toLocaleString()}
+              </Typography>
+            </MenuItem>
+          ))}
+        </Menu>
 
         {/* Main Content */}
         <Box

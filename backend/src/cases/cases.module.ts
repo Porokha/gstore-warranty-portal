@@ -7,6 +7,7 @@ import { CaseStatusHistory } from './entities/case-status-history.entity';
 import { UsersModule } from '../users/users.module';
 import { SmsModule } from '../sms/sms.module';
 import { AuditModule } from '../audit/audit.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -14,10 +15,10 @@ import { AuditModule } from '../audit/audit.module';
     UsersModule,
     SmsModule,
     AuditModule,
+    NotificationsModule,
   ],
   controllers: [CasesController],
   providers: [CasesService],
   exports: [CasesService],
 })
 export class CasesModule {}
-

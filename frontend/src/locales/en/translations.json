@@ -104,6 +104,12 @@
     "next": "Next",
     "inactive": "Inactive"
   },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications yet",
+    "casePendingTitle": "Case {{caseNumber}} moved to Pending",
+    "casePendingMessage": "Technician work is complete. The case is now waiting for customer payment, pickup, or another customer action."
+  },
   "replacement": {
     "details": "Replacement Details",
     "productTitle": "Replacement Product Title",

@@ -40,6 +40,7 @@ export class CasesController {
     @Query('end_date') end_date?: string,
     @Query('closeToDeadline') closeToDeadline?: string,
     @Query('due') due?: string,
+    @Request() req?,
   ) {
     const filters: any = {};
     
@@ -75,6 +76,9 @@ export class CasesController {
     if (end_date) filters.end_date = new Date(end_date);
     if (closeToDeadline === 'true') filters.closeToDeadline = true;
     if (due === 'true') filters.due = true;
+    if (req?.user?.role === UserRole.TECHNICIAN) {
+      filters.excludePendingFromDeadline = true;
+    }
 
     return this.casesService.findAll(filters);
   }

@@ -182,8 +182,8 @@ const DashboardPage = () => {
     return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
-  const isOverdue = (deadline) => {
-    if (!deadline) return false;
+  const isOverdue = (deadline, statusLevel) => {
+    if (!deadline || statusLevel === 3) return false;
     return new Date(deadline) < new Date();
   };
 
@@ -934,7 +934,7 @@ const DashboardPage = () => {
                     </Typography>
                   </TableCell>
                   <TableCell sx={{ py: 1.5 }}>
-                    {isOverdue(caseItem.deadline_at) ? (
+                    {isOverdue(caseItem.deadline_at, caseItem.status_level) ? (
                       <Typography variant="body2" sx={{ color: '#ef4444', fontWeight: 500, fontSize: '13px' }}>
                         ▲ {t('dashboard.table.overdue')}
                       </Typography>

@@ -22,6 +22,7 @@ import { SettingsModule } from './settings/settings.module';
 import { ShopModule } from './shop/shop.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { PartnersModule } from './partners/partners.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { DatabaseConfig } from './config/database.config';
 
 @Module({
@@ -52,6 +53,7 @@ import { DatabaseConfig } from './config/database.config';
     ShopModule,
     IntegrationsModule,
     PartnersModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

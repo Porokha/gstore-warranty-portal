@@ -29,12 +29,11 @@ export class SlaService {
     const oneDayFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
 
-    // Open cases (status 1, 2, or 3)
+    // Only technician-actionable cases participate in deadline metrics.
     const openCases = await this.casesRepository.find({
       where: [
         { status_level: CaseStatusLevel.OPENED },
         { status_level: CaseStatusLevel.INVESTIGATING },
-        { status_level: CaseStatusLevel.PENDING },
       ],
     });
 
@@ -107,7 +106,6 @@ export class SlaService {
       where: [
         { status_level: CaseStatusLevel.OPENED },
         { status_level: CaseStatusLevel.INVESTIGATING },
-        { status_level: CaseStatusLevel.PENDING },
       ],
     });
 
@@ -189,7 +187,6 @@ export class SlaService {
       where: [
         { status_level: CaseStatusLevel.OPENED },
         { status_level: CaseStatusLevel.INVESTIGATING },
-        { status_level: CaseStatusLevel.PENDING },
       ],
       relations: ['assigned_technician'],
     }).then((cases) =>
@@ -208,7 +205,6 @@ export class SlaService {
       where: [
         { status_level: CaseStatusLevel.OPENED },
         { status_level: CaseStatusLevel.INVESTIGATING },
-        { status_level: CaseStatusLevel.PENDING },
       ],
       relations: ['assigned_technician'],
     }).then((cases) =>
@@ -224,7 +220,6 @@ export class SlaService {
       where: [
         { status_level: CaseStatusLevel.OPENED },
         { status_level: CaseStatusLevel.INVESTIGATING },
-        { status_level: CaseStatusLevel.PENDING },
       ],
       relations: ['assigned_technician'],
     }).then((cases) =>

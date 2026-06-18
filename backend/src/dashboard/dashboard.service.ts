@@ -33,6 +33,7 @@ export class DashboardService {
     const closeToDeadline = await this.casesRepository
       .createQueryBuilder('case')
       .where('case.status_level < :completed', { completed: CaseStatusLevel.COMPLETED })
+      .andWhere('case.status_level != :pending', { pending: CaseStatusLevel.PENDING })
       .andWhere('case.deadline_at <= :in48Hours', { in48Hours })
       .andWhere('case.deadline_at > :now', { now })
       .getCount();
@@ -40,6 +41,7 @@ export class DashboardService {
     const dueCases = await this.casesRepository
       .createQueryBuilder('case')
       .where('case.status_level < :completed', { completed: CaseStatusLevel.COMPLETED })
+      .andWhere('case.status_level != :pending', { pending: CaseStatusLevel.PENDING })
       .andWhere('case.deadline_at < :now', { now })
       .getCount();
 
@@ -339,4 +341,3 @@ export class DashboardService {
     return result;
   }
 }
-
