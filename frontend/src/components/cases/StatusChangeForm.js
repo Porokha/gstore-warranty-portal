@@ -238,11 +238,17 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
       component="form"
       onSubmit={handleSubmit}
       sx={{
-        p: { xs: 2, sm: 2.5 },
+        p: { xs: 1.25, sm: 1.5 },
         border: '1px solid',
         borderColor: 'divider',
-        borderRadius: 3,
+        borderRadius: '6px',
         bgcolor: 'background.paper',
+        '& .MuiChip-root, & .MuiAlert-root, & .MuiButton-root': {
+          borderRadius: '6px',
+        },
+        '& .MuiOutlinedInput-root': {
+          borderRadius: '6px',
+        },
       }}
     >
       <Box
@@ -251,8 +257,8 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
           alignItems: { xs: 'flex-start', sm: 'center' },
           justifyContent: 'space-between',
           flexDirection: { xs: 'column', sm: 'row' },
-          gap: 1,
-          mb: 2,
+          gap: 0.75,
+          mb: 1.25,
         }}
       >
         <Box>
@@ -276,13 +282,13 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert severity="error" sx={{ mb: 1.25, py: 0.25 }}>
           {error}
         </Alert>
       )}
 
       {generatedCode && (
-        <Alert severity="success" sx={{ mb: 2 }}>
+        <Alert severity="success" sx={{ mb: 1.25, py: 0.25 }}>
           <Typography variant="body1" gutterBottom>
             <strong>6-digit Code Generated:</strong> {generatedCode}
           </Typography>
@@ -296,7 +302,7 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
         sx={{
           display: 'grid',
           gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
-          gap: 1,
+          gap: 0.75,
         }}
       >
         {availableStatuses.map((status) => {
@@ -313,11 +319,11 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
                 justifyContent: 'flex-start',
                 alignItems: 'flex-start',
                 textAlign: 'left',
-                minHeight: 88,
-                p: 1.5,
+                minHeight: 68,
+                p: 1,
                 border: '1px solid',
                 borderColor: isSelected ? 'primary.main' : 'divider',
-                borderRadius: 2.5,
+                borderRadius: '6px',
                 bgcolor: isSelected ? 'rgba(165,118,255,0.09)' : 'background.paper',
                 transition: 'border-color 140ms ease, background-color 140ms ease',
                 '&:hover': {
@@ -332,12 +338,12 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
             >
               <Box
                 sx={{
-                  width: 32,
-                  height: 32,
-                  flex: '0 0 32px',
+                  width: 28,
+                  height: 28,
+                  flex: '0 0 28px',
                   display: 'grid',
                   placeItems: 'center',
-                  mr: 1.25,
+                  mr: 0.875,
                   borderRadius: '50%',
                   bgcolor: isSelected ? 'primary.main' : 'action.hover',
                   color: isSelected ? '#fff' : 'text.secondary',
@@ -347,7 +353,7 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
               </Box>
               <Box sx={{ minWidth: 0 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
-                  <Typography variant="body1" sx={{ fontWeight: 700 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>
                     {status.label}
                   </Typography>
                   {isCurrent && (
@@ -364,15 +370,15 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
       </Box>
 
       {allowsResult && (
-        <Box sx={{ mt: 2.5 }}>
-          <Divider sx={{ mb: 2 }} />
+        <Box sx={{ mt: 1.5 }}>
+          <Divider sx={{ mb: 1.25 }} />
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
             <FlagRoundedIcon color="primary" fontSize="small" />
             <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
               {t('case.chooseOutcome')}
             </Typography>
           </Box>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
             {formData.new_status_level === 4
               ? t('case.completedOutcomeHelp')
               : t('case.pendingOutcomeHelp')}
@@ -381,7 +387,7 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
             sx={{
               display: 'grid',
               gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
-              gap: 1,
+              gap: 0.75,
             }}
           >
             {resultOptions.map((result) => {
@@ -393,11 +399,11 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
                   sx={{
                     justifyContent: 'flex-start',
                     textAlign: 'left',
-                    minHeight: 72,
-                    p: 1.25,
+                    minHeight: 58,
+                    p: 0.875,
                     border: '1px solid',
                     borderColor: isSelected ? 'primary.main' : 'divider',
-                    borderRadius: 2.5,
+                    borderRadius: '6px',
                     bgcolor: isSelected ? 'rgba(165,118,255,0.09)' : 'background.paper',
                     '&:hover': { borderColor: 'primary.main' },
                   }}
@@ -418,14 +424,14 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
       )}
 
       {!allowsResult && (
-        <Alert severity="info" sx={{ mt: 2.5 }}>
+        <Alert severity="info" sx={{ mt: 1.5, py: 0.25 }}>
           {t('case.outcomeAvailableLater')}
         </Alert>
       )}
 
       {/* Special fields for Payable */}
       {formData.result_type === 'payable' && !hasPayablePayment && formData.new_status_level === 3 && (
-        <Box sx={{ mt: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
+        <Box sx={{ mt: 1.25, p: 1.25, backgroundColor: '#f5f5f5', borderRadius: '6px' }}>
           <Typography variant="subtitle2" gutterBottom>
             {t('result.payable')} - {t('payment.offerDetails') || 'Offer Details'}
           </Typography>
@@ -479,7 +485,7 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
       )}
 
       {formData.result_type === 'payable' && hasPayablePayment && (
-        <Alert severity={payablePayment.payment_status === 'paid' ? 'success' : 'warning'} sx={{ mt: 2 }}>
+        <Alert severity={payablePayment.payment_status === 'paid' ? 'success' : 'warning'} sx={{ mt: 1.25, py: 0.25 }}>
           {payablePayment.payment_status === 'paid'
             ? t('payment.payableAlreadyPaid')
             : t('payment.payableAlreadyPending')}
@@ -488,7 +494,7 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
 
       {/* Special fields for Replaceable */}
       {formData.result_type === 'replaceable' && (
-        <Box sx={{ mt: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
+        <Box sx={{ mt: 1.25, p: 1.25, backgroundColor: '#f5f5f5', borderRadius: '6px' }}>
           <Typography variant="subtitle2" gutterBottom>
             {t('result.replaceable')} - {t('replacement.details') || 'Replacement Details'}
           </Typography>
@@ -514,7 +520,7 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
         </Box>
       )}
 
-      <Divider sx={{ mt: 2.5, mb: 2 }} />
+      <Divider sx={{ mt: 1.5, mb: 1.25 }} />
       <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
         {t('case.statusNotes')}
       </Typography>
@@ -525,13 +531,13 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
         sx={{
           display: 'grid',
           gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
-          gap: 1.5,
+          gap: 1,
         }}
       >
         <TextField
           fullWidth
           multiline
-          rows={3}
+          rows={2}
           label={t('common.publicNote')}
           name="note_public"
           value={formData.note_public}
@@ -543,7 +549,7 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
         <TextField
           fullWidth
           multiline
-          rows={3}
+          rows={2}
           label={t('common.privateNote')}
           name="note_private"
           value={formData.note_private}
@@ -552,7 +558,7 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
         />
       </Box>
 
-      <Box mt={2} display="flex" justifyContent="flex-end">
+      <Box mt={1.25} display="flex" justifyContent="flex-end">
         <Button
           type="submit"
           variant="contained"

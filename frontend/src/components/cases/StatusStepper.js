@@ -24,12 +24,13 @@ const StatusStepper = ({ currentStatus, statusTimestamps = {} }) => {
           alignItems: { xs: 'flex-start', sm: 'center' },
           justifyContent: 'space-between',
           flexDirection: { xs: 'column', sm: 'row' },
-          gap: 2,
-          p: 2.5,
-          mb: 2,
+          gap: 1,
+          px: 1.5,
+          py: 1.25,
+          mb: 1,
           border: '1px solid',
           borderColor: 'primary.light',
-          borderRadius: 3,
+          borderRadius: '6px',
           background: 'linear-gradient(135deg, rgba(165,118,255,0.14), rgba(255,255,255,0.96) 68%)',
         }}
       >
@@ -51,7 +52,8 @@ const StatusStepper = ({ currentStatus, statusTimestamps = {} }) => {
           icon={<RadioButtonCheckedRoundedIcon />}
           label={t('case.stageOf', { current: currentStatus, total: steps.length })}
           color="primary"
-          sx={{ fontWeight: 700 }}
+          size="small"
+          sx={{ fontWeight: 700, borderRadius: '6px' }}
         />
       </Box>
 
@@ -59,7 +61,7 @@ const StatusStepper = ({ currentStatus, statusTimestamps = {} }) => {
         sx={{
           display: 'grid',
           gridTemplateColumns: { xs: '1fr', sm: 'repeat(4, minmax(0, 1fr))' },
-          gap: 1,
+          gap: 0.75,
         }}
       >
         {steps.map((step) => {
@@ -74,12 +76,13 @@ const StatusStepper = ({ currentStatus, statusTimestamps = {} }) => {
                 position: 'relative',
                 display: 'flex',
                 alignItems: 'flex-start',
-                gap: 1.25,
+                gap: 0.75,
                 minWidth: 0,
-                p: 1.5,
+                px: 1,
+                py: 0.875,
                 border: '1px solid',
                 borderColor: isCurrent ? 'primary.main' : isCompleted ? 'success.light' : 'divider',
-                borderRadius: 2.5,
+                borderRadius: '6px',
                 bgcolor: isCurrent
                   ? 'rgba(165,118,255,0.09)'
                   : isCompleted
@@ -89,9 +92,9 @@ const StatusStepper = ({ currentStatus, statusTimestamps = {} }) => {
             >
               <Box
                 sx={{
-                  width: 30,
-                  height: 30,
-                  flex: '0 0 30px',
+                  width: 26,
+                  height: 26,
+                  flex: '0 0 26px',
                   display: 'grid',
                   placeItems: 'center',
                   borderRadius: '50%',
@@ -101,11 +104,11 @@ const StatusStepper = ({ currentStatus, statusTimestamps = {} }) => {
                 }}
               >
                 {isCompleted ? (
-                  <CheckRoundedIcon sx={{ fontSize: 18 }} />
+                  <CheckRoundedIcon sx={{ fontSize: 16 }} />
                 ) : isCurrent ? (
-                  <RadioButtonCheckedRoundedIcon sx={{ fontSize: 17 }} />
+                  <RadioButtonCheckedRoundedIcon sx={{ fontSize: 15 }} />
                 ) : (
-                  <LockClockRoundedIcon sx={{ fontSize: 17 }} />
+                  <LockClockRoundedIcon sx={{ fontSize: 15 }} />
                 )}
               </Box>
               <Box sx={{ minWidth: 0 }}>

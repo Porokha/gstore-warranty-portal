@@ -514,7 +514,7 @@ const CaseDetailPage = () => {
         {tab === 1 && (
           <Box>
             <StatusStepper currentStatus={case_.status_level} statusTimestamps={statusTimestamps} />
-            <Box mt={2.5}>
+            <Box mt={1}>
               <StatusChangeForm
                 case_={case_}
                 onStatusChange={handleStatusChange}
