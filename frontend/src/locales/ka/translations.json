@@ -241,6 +241,7 @@
     "replaceable": "შესაცვლელი"
   },
   "case": {
+    "reprintLabel": "ეტიკეტის ხელახლა ბეჭდვა",
     "stageOf": "ეტაპი {{current}} / {{total}}",
     "stageNumber": "ეტაპი {{number}}",
     "currentStage": "მიმდინარე",

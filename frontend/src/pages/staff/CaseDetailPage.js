@@ -25,6 +25,7 @@ import {
   Paper,
   Divider,
 } from '@mui/material';
+import PrintOutlinedIcon from '@mui/icons-material/PrintOutlined';
 import { casesService } from '../../services/casesService';
 import { paymentsService } from '../../services/paymentsService';
 import { usersService } from '../../services/usersService';
@@ -33,6 +34,7 @@ import StatusStepper from '../../components/cases/StatusStepper';
 import StatusChangeForm from '../../components/cases/StatusChangeForm';
 import FileUpload from '../../components/cases/FileUpload';
 import { useAuth } from '../../contexts/AuthContext';
+import { printServiceCaseLabel } from '../../utils/serviceCaseLabel';
 
 const CaseDetailPage = () => {
   const { id } = useParams();
@@ -235,14 +237,20 @@ const CaseDetailPage = () => {
         <DialogTitle>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Typography variant="h6">{localCaseData?.case_number || case_?.case_number}</Typography>
-            <Box>
+            <Box display="flex" alignItems="center" gap={1}>
+              <Button
+                variant="outlined"
+                startIcon={<PrintOutlinedIcon />}
+                onClick={() => printServiceCaseLabel(localCaseData)}
+              >
+                {t('case.reprintLabel')}
+              </Button>
               {hasUnsavedChanges && (
                 <Button
                   variant="contained"
                   color="primary"
                   onClick={handleSaveChanges}
                   disabled={updateCaseMutation.isLoading}
-                  sx={{ mr: 1 }}
                 >
                   {updateCaseMutation.isLoading ? <CircularProgress size={20} /> : t('common.save')}
                 </Button>

@@ -241,6 +241,7 @@
     "replaceable": "Replaceable"
   },
   "case": {
+    "reprintLabel": "Reprint label",
     "stageOf": "Stage {{current}} of {{total}}",
     "stageNumber": "Stage {{number}}",
     "currentStage": "Current",

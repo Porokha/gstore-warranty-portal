@@ -28,108 +28,7 @@ import { usersService } from '../../services/usersService';
 import { partnersService } from '../../services/partnersService';
 import { useQueryClient } from 'react-query';
 import { useAuth } from '../../contexts/AuthContext';
-
-const escapeLabelText = (value) =>
-  String(value || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-
-const printServiceCaseLabel = (caseData, fallbackInitialNote = '') => {
-  const caseNumber = escapeLabelText(caseData?.case_number || `CASE-${caseData?.id || ''}`);
-  const initialNote = escapeLabelText(caseData?.customer_initial_note || fallbackInitialNote || 'No problem description');
-  const printFrame = document.createElement('iframe');
-
-  printFrame.setAttribute('title', 'Service case label print frame');
-  printFrame.style.position = 'fixed';
-  printFrame.style.right = '0';
-  printFrame.style.bottom = '0';
-  printFrame.style.width = '0';
-  printFrame.style.height = '0';
-  printFrame.style.border = '0';
-
-  document.body.appendChild(printFrame);
-
-  const printDocument = printFrame.contentWindow?.document;
-  if (!printDocument) {
-    printFrame.remove();
-    return;
-  }
-
-  printDocument.open();
-  printDocument.write(`
-    <!doctype html>
-    <html>
-      <head>
-        <meta charset="utf-8" />
-        <style>
-          @page {
-            size: 56mm 20mm;
-            margin: 0;
-          }
-
-          * {
-            box-sizing: border-box;
-          }
-
-          html,
-          body {
-            width: 56mm;
-            height: 20mm;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            font-family: Arial, "Noto Sans Georgian", sans-serif;
-            color: #000;
-            background: #fff;
-          }
-
-          .label {
-            width: 56mm;
-            height: 20mm;
-            padding: 1.8mm 2.2mm;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            gap: 1.2mm;
-          }
-
-          .case-number {
-            font-size: 11pt;
-            line-height: 1;
-            font-weight: 800;
-            letter-spacing: 0.2mm;
-            white-space: nowrap;
-          }
-
-          .problem {
-            font-size: 7.2pt;
-            line-height: 1.12;
-            font-weight: 600;
-            max-height: 12mm;
-            overflow: hidden;
-            word-break: break-word;
-          }
-        </style>
-      </head>
-      <body>
-        <main class="label">
-          <div class="case-number">${caseNumber}</div>
-          <div class="problem">${initialNote}</div>
-        </main>
-      </body>
-    </html>
-  `);
-  printDocument.close();
-
-  printFrame.onload = () => {
-    printFrame.contentWindow?.focus();
-    printFrame.contentWindow?.print();
-    window.setTimeout(() => printFrame.remove(), 1000);
-  };
-};
+import { printServiceCaseLabel } from '../../utils/serviceCaseLabel';
 
 const CreateCasePage = () => {
   const { t } = useTranslation();
@@ -283,7 +182,13 @@ const CreateCasePage = () => {
     {
       onSuccess: (data) => {
         queryClient.invalidateQueries('cases');
-        printServiceCaseLabel(data, formData.customer_initial_note);
+        printServiceCaseLabel(data, {
+          customerName: [formData.customer_name, formData.customer_last_name]
+            .filter(Boolean)
+            .join(' '),
+          customerPhone: formData.customer_phone,
+          initialNote: formData.customer_initial_note,
+        });
         window.setTimeout(() => {
           navigate(`/staff/cases/${data.id}`);
         }, 400);
