@@ -13,6 +13,13 @@ import { ChangeOwnPasswordDto } from './dto/change-own-password.dto';
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
+  @Get('technicians')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  findTechnicians() {
+    return this.usersService.findTechnicians();
+  }
+
   @Get()
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.MANAGER)

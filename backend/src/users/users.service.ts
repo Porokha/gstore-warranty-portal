@@ -2,7 +2,7 @@ import { Injectable, ConflictException, NotFoundException, BadRequestException, 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { User } from './entities/user.entity';
+import { User, UserRole } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -35,6 +35,17 @@ export class UsersService {
 
   async findAll(): Promise<User[]> {
     return this.usersRepository.find();
+  }
+
+  async findTechnicians(): Promise<User[]> {
+    return this.usersRepository.find({
+      where: { role: UserRole.TECHNICIAN },
+      order: {
+        name: 'ASC',
+        last_name: 'ASC',
+        username: 'ASC',
+      },
+    });
   }
 
   async create(createDto: CreateUserDto): Promise<User> {

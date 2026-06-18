@@ -7,8 +7,8 @@ export const usersService = {
   },
 
   getTechnicians: async () => {
-    const users = await usersService.getAll();
-    return users.filter(user => user.role === 'technician');
+    const response = await api.get('/users/technicians');
+    return response.data;
   },
 
   create: async (userData) => {
