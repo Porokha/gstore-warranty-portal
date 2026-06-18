@@ -44,6 +44,7 @@ const ShopAdminLoginPage = lazy(() => import('./pages/shop-admin/ShopAdminLoginP
 const ShopAdminProductsPage = lazy(() => import('./pages/shop-admin/ShopAdminProductsPage'));
 const ShopAdminOrdersPage = lazy(() => import('./pages/shop-admin/ShopAdminOrdersPage'));
 const ShopAdminSettingsPage = lazy(() => import('./pages/shop-admin/ShopAdminSettingsPage'));
+const ShopAdminTradeInPage = lazy(() => import('./pages/shop-admin/ShopAdminTradeInPage'));
 
 const PageFallback = () => null;
 
@@ -211,6 +212,7 @@ function AppRoutes() {
                 <Route index element={<Navigate to="/shop/admin/products" replace />} />
                 <Route path="products" element={<ShopAdminProductsPage />} />
                 <Route path="orders" element={<ShopAdminOrdersPage />} />
+                <Route path="trade-in" element={<ShopAdminTradeInPage />} />
                 <Route path="settings" element={<ShopAdminSettingsPage />} />
               </Route>
             </Route>

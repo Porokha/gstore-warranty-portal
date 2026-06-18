@@ -23,6 +23,7 @@ import { ShopModule } from './shop/shop.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { PartnersModule } from './partners/partners.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { TradeInModule } from './trade-in/trade-in.module';
 import { DatabaseConfig } from './config/database.config';
 
 @Module({
@@ -54,6 +55,7 @@ import { DatabaseConfig } from './config/database.config';
     IntegrationsModule,
     PartnersModule,
     NotificationsModule,
+    TradeInModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zezva Trade — Get a Quote</title>
+<script src="/trade-in/widget/js/translations.js"></script>
+<link href="/trade-in/widget/css/styles-iwm.css" rel="stylesheet" type="text/css">
+<link href="/trade-in/widget/css/inter.css" rel="stylesheet" type="text/css">
+<style>
+@font-face{font-family:'BPG Banner Quadrosquare';src:url('/trade-in/widget/fonts/bpg-banner-quadrosquare-webfont.woff2') format('woff2'),url('/trade-in/widget/fonts/bpg-banner-quadrosquare-webfont.woff') format('woff');font-display:swap}
+:root{
+  --zt-brand:#18171d;--zt-accent:#7c4dff;
+  --zt-surface:#f7f4fc;--zt-card:#fff;--zt-border:#e4ddf2;
+  --zt-muted:#6b7280;--zt-radius:12px;
+  --zt-shadow:0 2px 12px rgba(0,0,0,.07);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{font-family:'BPG Banner Quadrosquare','Inter',sans-serif;background:transparent;color:var(--zt-brand);margin:0;padding-top:0!important}
+.zt-nav,.zt-footer,.product-v2-breadcrumb{display:none!important}
+.product-v2{padding-top:0!important}
+.product-v2-container{max-width:none!important;padding:0!important}
+
+/* ── Nav ── */
+.zt-nav{background:var(--zt-brand);height:64px;display:flex;align-items:center;padding:0 32px;justify-content:space-between;box-shadow:0 2px 16px rgba(0,0,0,.3);position:sticky;top:0;z-index:200}
+.zt-nav-logo{color:#fff;font-size:22px;font-weight:800;letter-spacing:-.5px;text-decoration:none}
+.zt-nav-logo em{color:var(--zt-accent);font-style:normal}
+.zt-nav-links{display:flex;gap:4px}
+.zt-nav-links a{color:rgba(255,255,255,.65);font-size:14px;font-weight:500;padding:7px 14px;border-radius:6px;text-decoration:none;transition:color .2s,background .2s}
+.zt-nav-links a:hover{color:#fff;background:rgba(255,255,255,.08)}
+
+/* ── Loading / error states ── */
+.zt-state{text-align:center;padding:100px 24px;max-width:600px;margin:0 auto}
+.zt-spinner{width:38px;height:38px;border:3px solid var(--zt-border);border-top-color:var(--zt-accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.zt-state p{color:var(--zt-muted);font-size:16px;margin:0}
+.zt-state a{color:var(--zt-accent);font-weight:600;text-decoration:none}
+.zt-state a:hover{text-decoration:underline}
+
+/* ── Widget color overrides ── */
+.design-v2 .primary-color,.design-v2 .success-color{color:var(--zt-accent)!important}
+.design-v2 .button.success,.design-v2 .button.success:hover{background-color:var(--zt-accent)!important;border-color:var(--zt-accent)!important;color:#fff!important}
+.design-v2 .button.secondary{background:#f4f5f9!important;border-color:var(--zt-border)!important;color:var(--zt-brand)!important}
+.design-v2 .product-pricing-ctrl .your-offer strong{color:var(--zt-accent)!important}
+.design-v2 .product-v2-breadcrumb a,.design-v2 .product-v2-breadcrumb{color:var(--zt-brand)}
+.design-v2 .product-v2-heading{color:var(--zt-brand)}
+.design-v2 .product-v2-info .product-brand{color:var(--zt-muted)}
+
+/* ── Final offer panel polish ── */
+.design-v2 .pricing-form-final-offer{padding:32px 28px;background:#fff;border-radius:var(--zt-radius);border:1.5px solid var(--zt-border)}
+.design-v2 .pricing-form-final-offer h3{font-size:15px;color:var(--zt-muted);font-weight:500;margin:0 0 24px;line-height:1.4}
+.design-v2 .pricing-form-final-offer h3 strong{color:var(--zt-brand);font-weight:700}
+.design-v2 .offer{text-align:center;padding:16px 0 24px}
+.design-v2 .your-offer{font-size:15px;color:var(--zt-muted);font-weight:500;margin:0 0 8px}
+.design-v2 .your-offer hr{border:none;border-top:1px solid var(--zt-border);margin:12px 0}
+.design-v2 .your-offer strong{font-size:56px;font-weight:800;letter-spacing:-2px;line-height:1;display:block;margin-bottom:8px}
+.design-v2 .add-to-box-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+.design-v2 .add-to-box-actions .button{border-radius:50px!important;padding:13px 28px!important;font-size:15px!important;font-weight:700!important;min-width:160px;cursor:pointer}
+.design-v2 .offer-loading{display:none}
+
+/* ── Condition grade bar ── */
+.zt-cond-list{display:flex;flex-direction:column;gap:0}
+
+/* Outer wrapper — labels hang below via absolute children */
+.zt-grade-track-wrap{position:relative;padding:10px 0 44px;margin:20px 0 8px}
+
+/* Track — inset by half-thumb so first/last thumb centers sit at label edges */
+.zt-grade-track-inner{margin:0 10px;position:relative}
+.zt-grade-track{height:6px;border-radius:99px;background:linear-gradient(to right,#22c55e,#a3e635,#facc15,#f97316,#ef4444);position:relative;cursor:pointer}
+
+/* Draggable thumb */
+.zt-grade-thumb{width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.2),0 0 0 2.5px var(--zt-tc,#22c55e);position:absolute;top:50%;transform:translate(-50%,-50%);transition:left .2s cubic-bezier(.4,0,.2,1),box-shadow .15s;cursor:grab;z-index:2}
+.zt-grade-thumb:active{cursor:grabbing;transform:translate(-50%,-50%) scale(1.15)}
+
+/* Tick dot on track */
+.zt-grade-tick{width:10px;height:10px;border-radius:50%;background:#fff;border:2px solid rgba(0,0,0,.15);position:absolute;top:50%;transform:translate(-50%,-50%);cursor:pointer;z-index:1;transition:transform .15s,border-color .15s}
+.zt-grade-tick:hover{transform:translate(-50%,-50%) scale(1.3);border-color:rgba(0,0,0,.3)}
+.zt-grade-tick.active{border-color:var(--zt-tc,#22c55e);background:var(--zt-tc,#22c55e);transform:translate(-50%,-50%) scale(1.1)}
+
+/* Label under each tick — absolutely positioned to align with tick center */
+.zt-grade-label{position:absolute;top:calc(100% - 32px);transform:translateX(-50%);font-size:10.5px;font-weight:600;color:var(--zt-muted);cursor:pointer;white-space:nowrap;user-select:none;transition:color .15s,font-weight .15s;text-align:center;line-height:1.3}
+.zt-grade-label.active{font-weight:800}
+
+/* Detail card */
+.zt-grade-detail{margin-top:4px;border-radius:10px;border:1.5px solid var(--zt-border);background:#fff;overflow:hidden}
+.zt-grade-detail-head{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--zt-border)}
+.zt-grade-detail-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;transition:background .2s}
+.zt-grade-detail-name{font-size:15px;font-weight:700;color:var(--zt-brand);flex:1}
+.zt-grade-detail-body{padding:10px 16px 14px;font-size:13px;line-height:1.7;color:#555}
+.zt-grade-detail-body ul{margin:0;padding-left:18px}
+.zt-grade-detail-body li{margin-bottom:3px}
+.zt-grade-detail-body strong{color:var(--zt-brand);font-weight:700}
+
+/* ── Back/Next gap ── */
+.design-v2 .pricing-form-actions{margin-top:20px}
+
+/* Strip .your-offer default styles inside our panel */
+.zt-final-offer .your-offer{all:unset;display:block}
+.zt-final-offer .your-offer hr{display:none}
+
+/* ── Final offer inline panel ── */
+.zt-final-offer{padding:28px 24px;background:#fff;border-radius:var(--zt-radius);border:1.5px solid var(--zt-border)}
+.zt-final-offer-label{font-size:13px;color:var(--zt-muted);font-weight:500;margin:0 0 4px;text-align:center}
+.zt-final-offer-amount{font-size:60px;font-weight:800;letter-spacing:-2px;color:var(--zt-accent);text-align:center;line-height:1;margin:8px 0 4px}
+.zt-final-offer-sub{font-size:13px;color:var(--zt-muted);text-align:center;margin:0 0 24px}
+.zt-final-offer-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.zt-final-offer-actions .button{border-radius:50px!important;padding:13px 32px!important;font-size:15px!important;font-weight:700!important;min-width:160px;cursor:pointer;text-align:center}
+
+/* ── Offer summary panel (left column, shown after final offer) ── */
+.zt-offer-summary{display:none;background:linear-gradient(135deg,var(--zt-accent) 0%,#5128b8 100%);border-radius:var(--zt-radius);padding:28px 24px;color:#fff;margin-top:20px}
+.zt-offer-summary h4{font-size:13px;font-weight:600;opacity:.8;text-transform:uppercase;letter-spacing:.5px;margin:0 0 8px}
+.zt-offer-summary .offer-amount{font-size:40px;font-weight:800;letter-spacing:-1px;margin:0 0 16px}
+.zt-offer-summary .offer-steps{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px}
+.zt-offer-summary .offer-steps li{display:flex;align-items:flex-start;gap:10px;font-size:13px;opacity:.9;line-height:1.45}
+.zt-offer-summary .offer-steps li svg{flex-shrink:0;margin-top:1px}
+
+/* ── Why sell panel ── */
+.zt-why-sell{background:var(--zt-card);border:1.5px solid var(--zt-border);border-radius:var(--zt-radius);padding:22px 20px;margin-top:16px}
+.zt-why-sell h4{font-size:13px;font-weight:700;color:var(--zt-brand);margin:0 0 12px;text-transform:uppercase;letter-spacing:.5px}
+.zt-why-sell ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:9px}
+.zt-why-sell li{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--zt-muted);line-height:1.4}
+.zt-why-sell li svg{flex-shrink:0;color:var(--zt-accent)}
+
+/* ── Quote modal ── */
+.zt-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:80px 24px 24px;overflow-y:auto}
+.zt-modal{background:#fff;border-radius:20px;padding:0;width:100%;max-width:480px;box-shadow:0 32px 100px rgba(0,0,0,.3);overflow:hidden}
+.zt-modal-head{background:linear-gradient(135deg,var(--zt-brand) 0%,#5128b8 100%);padding:28px 32px 24px;color:#fff}
+.zt-modal-head h2{font-size:20px;font-weight:800;margin:0 0 4px;color:#fff}
+.zt-modal-head .modal-product{font-size:13px;opacity:.65;margin:0 0 16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zt-modal-head .modal-price-row{display:flex;align-items:baseline;gap:8px}
+.zt-modal-head .modal-price{font-size:44px;font-weight:800;color:var(--zt-accent);letter-spacing:-1.5px;line-height:1}
+.zt-modal-head .modal-price-label{font-size:14px;opacity:.7}
+.zt-modal-body{padding:28px 32px}
+.zt-modal-body .form-hint{font-size:13px;color:var(--zt-muted);margin:0 0 20px;line-height:1.55}
+.zt-modal-body label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--zt-brand);margin-bottom:5px}
+.zt-modal-body input{width:100%;border:1.5px solid var(--zt-border);border-radius:9px;padding:11px 14px;font-size:15px;color:var(--zt-brand);margin-bottom:14px;outline:none;transition:border-color .2s;font-family:inherit}
+.zt-modal-body input:focus{border-color:var(--zt-accent);box-shadow:0 0 0 3px rgba(233,69,96,.1)}
+.zt-modal-err{color:var(--zt-accent);font-size:13px;font-weight:600;margin-bottom:12px;display:none}
+.zt-modal-actions{display:flex;gap:10px;margin-top:4px}
+.btn-confirm{flex:1;background:var(--zt-accent);color:#fff;border:none;border-radius:50px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;transition:background .2s,transform .1s;font-family:inherit}
+.btn-confirm:hover{background:#6436d6}
+.btn-confirm:active{transform:scale(.98)}
+.btn-confirm:disabled{opacity:.6;cursor:not-allowed}
+.btn-skip{background:transparent;color:var(--zt-muted);border:1.5px solid var(--zt-border);border-radius:50px;padding:14px 20px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit;transition:border-color .2s,color .2s}
+.btn-skip:hover{border-color:var(--zt-brand);color:var(--zt-brand)}
+
+/* ── Success confirmation (shown after submit) ── */
+.zt-modal-success{display:none;padding:40px 32px;text-align:center}
+.zt-modal-success .success-icon{width:64px;height:64px;background:linear-gradient(135deg,#26a269,#15834f);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.zt-modal-success h3{font-size:20px;font-weight:800;color:var(--zt-brand);margin:0 0 8px}
+.zt-modal-success p{font-size:14px;color:var(--zt-muted);line-height:1.6;margin:0 0 24px}
+.zt-modal-success .btn-done{display:inline-block;background:var(--zt-accent);color:#fff;border:none;border-radius:50px;padding:12px 32px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;font-family:inherit}
+
+/* ── Footer ── */
+.zt-footer{background:var(--zt-brand);color:rgba(255,255,255,.45);text-align:center;padding:24px;font-size:13px}
+.zt-footer strong{color:rgba(255,255,255,.8)}
+
+@media(max-width:720px){
+  .zt-nav{padding:0 16px}
+  .zt-modal-head{padding:22px 20px 18px}
+  .zt-modal-body{padding:20px}
+  .zt-modal-success{padding:28px 20px}
+}
+</style>
+</head>
+<body class="design-v2">
+
+<nav class="zt-nav">
+  <a href="/" class="zt-nav-logo">Zezva<em>Trade</em></a>
+  <div class="zt-nav-links">
+    <a href="/" data-t="nav_home">Home</a>
+    <button onclick="ztSetLang(ZT_LANG==='en'?'ka':'en')" style="background:rgba(255,255,255,.12);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.3px" id="lang-btn"></button>
+  </div>
+</nav>
+
+<!-- Loading state -->
+<div id="zt-loading" class="zt-state">
+  <div class="zt-spinner"></div>
+  <p data-t="product_loading">Loading product…</p>
+</div>
+
+<!-- Error state -->
+<div id="zt-error" class="zt-state" style="display:none">
+  <p><span data-t="product_not_found">Product not found.</span> <a href="/" data-t="nav_back_to_home">← Back to home</a></p>
+</div>
+
+<!-- Full product page — hidden until Angular bootstraps -->
+<div id="zt-product-page" style="display:none">
+
+  <section id="itsWorthMore">
+    <main id="main-content">
+      <section class="product-v2">
+        <div class="product-v2-container">
+
+          <!-- Breadcrumb -->
+          <div class="product-v2-breadcrumb">
+            <a href="/">Home</a>
+            <span class="product-v2-breadcrumb-sep">›</span>
+            <a href="#" id="cat-link" class="zt-cat-link"></a>
+            <span class="product-v2-breadcrumb-sep">›</span>
+            <span id="breadcrumb-name"></span>
+          </div>
+
+          <!-- Two-column layout -->
+          <div class="product-v2-layout">
+
+            <!-- Left column -->
+            <div class="product-v2-left">
+              <div class="product-v2-image" id="product-image-wrap"></div>
+              <div class="product-v2-info">
+                <h1 class="product-v2-heading" id="product-name"></h1>
+                <div class="product-brand" id="product-brand"></div>
+              </div>
+
+              <!-- Offer summary (appears after "Get This Offer" clicked) -->
+              <div class="zt-offer-summary" id="offer-summary">
+                <h4 data-t="offer_summary_heading">Your Offer</h4>
+                <div class="offer-amount" id="offer-summary-amount"></div>
+                <ul class="offer-steps">
+                  <li>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span data-t="offer_step_shipping">Free prepaid shipping label provided</span>
+                  </li>
+                  <li>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span data-t="offer_step_payment">Payment processed within 24 hours</span>
+                  </li>
+                  <li>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span data-t="offer_step_lock">Offer locked in for 10 days</span>
+                  </li>
+                </ul>
+              </div>
+
+              <!-- Why sell -->
+              <div class="zt-why-sell" id="why-sell">
+                <h4 data-t="why_sell_heading">Why sell with Zezva Trade?</h4>
+                <ul>
+                  <li>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span data-t="why_sell_shipping">Free shipping label — no cost to you</span>
+                  </li>
+                  <li>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span data-t="why_sell_payment">Fast payment within 24 hours of receipt</span>
+                  </li>
+                  <li>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span data-t="why_sell_secure">Secure, encrypted, eco-friendly process</span>
+                  </li>
+                  <li>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span data-t="why_sell_lock">Price lock guarantee for 10 days</span>
+                  </li>
+                </ul>
+              </div>
+            </div><!-- .product-v2-left -->
+
+            <!-- Right column: Angular pricing widget -->
+            <div class="product-v2-pricing">
+              <section id="product-pricing-ctrl"
+                ng-controller="product-pricing-ctrl"
+                class="product-pricing-ctrl"
+                ng-class="{ initialized : initializing == false }"
+                ng-cloak>
+
+                <!-- Calculating step -->
+                <div class="pricing-form" ng-show="status == 'calculating'">
+                  <h3 ng-show="breadcrumb.length">
+                    <strong>{{ productName }}</strong>: {{ breadcrumb }}
+                  </h3>
+                  <h5>{{ activeQuestion.text }}</h5>
+                  <div class="alert-box warning" ng-show="selectOptionMessage">
+                    Please select one of the following options
+                  </div>
+                  <div class="animate-wrap" ng-class="{ 'filterable-mode-on' : showFilterMode() }">
+                    <div class="filter-wrap">
+                      <i class="fi-magnifying-glass"></i>
+                      <input type="text" ng-model="answerFilter" placeholder="Type here to filter…">
+                    </div>
+                    <div class="answers" ng-class="{ 'v2-condition-question': activeQuestion.label === 'condition' }">
+                      <div
+                        ng-keydown="selectAnswer($index, $event)"
+                        ng-show="shouldShowAnswer(answer)"
+                        ng-repeat="answer in activeQuestion.answers"
+                        class="{{ 'answer-' + ($index + 1) }}"
+                        ng-class="{ selected : selectedAnswers.indexOf($index) !== -1, first : $index === 0, 'previously-selected' : previousAnswers && previousAnswers.indexOf($index) !== -1 }"
+                        ng-click="selectAnswer($index)"
+                        ng-hide="(activeAnswerMessages.length && selectedAnswers.indexOf($index) === -1) || shouldShowAnswer(answer) === false"
+                        role="checkbox"
+                        aria-checked="{{ (selectedAnswers == $index && 'true' || 'false') }}"
+                        aria-label="{{ answer.text }}"
+                        tabindex="0"
+                        disable-animation>
+                        <span class="selected-indicator">
+                          <span ng-show="isMulti && selectedAnswers.indexOf($index) !== -1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path d="M22 2v20H2V2h20zm2-2H0v24h24V0zm-5.541 8.409L17.037 7l-7.021 7.183-3.08-2.937-1.395 1.435 4.5 4.319 8.418-8.591z"/></svg>
+                          </span>
+                          <span ng-show="isMulti && selectedAnswers.indexOf($index) === -1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path d="M22 2v20H2V2h20zm2-2H0v24h24V0z"/></svg>
+                          </span>
+                          <span ng-show="!isMulti && (selectedAnswers.indexOf($index) !== -1 || (previousAnswers && previousAnswers.indexOf($index) !== -1))">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path d="M12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10S2 17.514 2 12 6.486 2 12 2zm0-2C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 6a6 6 0 10.002 12.002A6 6 0 0012 6z"/></svg>
+                          </span>
+                          <span ng-show="!isMulti && selectedAnswers.indexOf($index) === -1 && !(previousAnswers && previousAnswers.indexOf($index) !== -1)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path d="M12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10S2 17.514 2 12 6.486 2 12 2zm0-2C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0z"/></svg>
+                          </span>
+                        </span>
+                        {{ answer.text }}<br>
+                        <span class="extra-txt" ng-show="!answer.tooltip.length && answer.extra.txt.length">{{ answer.extra.txt }}</span>
+                        <span class="extra-txt" ng-show="answer.tooltip.length">{{ answer.tooltip }}</span>
+                        <span ng-style="answer.extra.img_style" ng-show="answer.extra.img.length" class="extra-img"></span>
+                      </div>
+                    </div>
+                    <!-- Condition descriptions rendered by $watch into #zt-cond-slot below -->
+                    <div class="clear"></div>
+                    <div class="pricing-form-actions">
+                      <button type="button" class="button secondary left" tabindex="0"
+                        ng-show="pricingPath.length || activeAnswerMessages.length"
+                        ng-keydown="backBtn($event)"
+                        ng-click="goToPreviousQuestion($event)" data-t="btn_back">Back</button>
+                      <button type="button" class="button success right" tabindex="0"
+                        ng-keydown="nextBtn($event)"
+                        ng-click="goToNextQuestion($event)"
+                        ng-class="{ success : selectedAnswers !== null }"
+                        ng-hide="isRequired && !selectedAnswers.length" data-t="btn_next_step">Next Step</button>
+                    </div>
+                  </div>
+                  <div class="clear"></div>
+                </div>
+
+                <!-- Final offer step -->
+                <div class="pricing-form-final-offer" ng-show="status == 'final-offer'">
+                  <div class="zt-final-offer">
+                    <p class="zt-final-offer-label" data-t="offer_label">Your device is worth up to</p>
+                    <!-- .your-offer > strong is what the widget's count-up animation targets -->
+                    <div class="your-offer">
+                      <strong id="zt-offer-amount" class="zt-final-offer-amount"></strong>
+                    </div>
+                    <p class="zt-final-offer-sub" id="zt-offer-sub"></p>
+                    <div class="zt-final-offer-actions">
+                      <button type="button" class="button success" tabindex="0"
+                        ng-click="saveInventoryPricing()" data-t="btn_get_offer">Get This Offer</button>
+                      <button type="button" class="button secondary" tabindex="0"
+                        ng-click="status = 'calculating'; goToPreviousQuestion($event)" data-t="btn_change_answers">Change Answers</button>
+                    </div>
+                  </div>
+                </div>
+
+              </section>
+            </div><!-- .product-v2-pricing -->
+
+          </div><!-- .product-v2-layout -->
+        </div><!-- .product-v2-container -->
+      </section><!-- .product-v2 -->
+    </main>
+  </section><!-- #itsWorthMore -->
+
+</div><!-- #zt-product-page -->
+
+<!-- ── Quote capture modal ── -->
+<div class="zt-modal-overlay" id="zt-modal" style="display:none" onclick="if(event.target===this){}">
+  <div class="zt-modal" id="modal-inner">
+
+    <!-- Default: form view -->
+    <div id="modal-form-view">
+      <div class="zt-modal-head">
+        <h2 data-t="modal_heading">Claim Your Offer</h2>
+        <p class="modal-product" id="modal-product-name"></p>
+        <div class="modal-price-row">
+          <div class="modal-price" id="modal-price-display"></div>
+          <div class="modal-price-label" data-t="modal_price_label">guaranteed</div>
+        </div>
+      </div>
+      <div class="zt-modal-body">
+        <p class="form-hint" data-t="modal_form_hint">Enter your details, we'll confirm your offer and send you instructions.</p>
+        <label for="modal-name" data-t="form_label_name">Your Name</label>
+        <input type="text" id="modal-name" autocomplete="name">
+        <label for="modal-email"><span data-t="form_label_email">Email Address</span> <span style="color:var(--zt-accent)">*</span></label>
+        <input type="email" id="modal-email" autocomplete="email">
+        <label for="modal-phone" data-t="form_label_phone">Phone (optional)</label>
+        <input type="tel" id="modal-phone" autocomplete="tel">
+        <div class="zt-modal-err" id="modal-err"></div>
+        <div class="zt-modal-actions">
+          <button class="btn-confirm" id="modal-submit" data-t="btn_confirm_offer">Confirm &amp; Send Offer</button>
+          <button class="btn-skip" id="modal-skip" data-t="btn_skip">Skip</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success view (shown after submit) -->
+    <div class="zt-modal-success" id="modal-success-view">
+      <div class="success-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <h3 data-t="modal_success_heading">You're all set!</h3>
+      <p data-t="modal_success_body">Your offer has been saved. Check your email for confirmation and shipping instructions.</p>
+      <button class="btn-done" data-t="btn_back_to_home" onclick="window.parent.location.href='/trade-in'">Back to Home</button>
+    </div>
+
+  </div>
+</div>
+
+<footer class="zt-footer"><strong>Zezva Trade</strong> &mdash; <span data-t="footer_text">Sell electronics with confidence</span></footer>
+
+<script>var baseUrl = "";</script>
+<script>
+(function(){
+  // Apply static translations (data-t attributes + lang button)
+  document.querySelectorAll('[data-t]').forEach(function(el){ el.textContent = T(el.getAttribute('data-t')); });
+  document.getElementById('lang-btn').textContent = ZT_LANG === 'en' ? 'ქართული' : 'English';
+  document.getElementById('modal-name').placeholder = T('form_placeholder_name');
+  document.getElementById('modal-email').placeholder = T('form_placeholder_email');
+  document.getElementById('modal-phone').placeholder = T('form_placeholder_phone');
+
+  var slug = (new URLSearchParams(location.search)).get('slug') || '';
+  if (!slug){ showError(); return; }
+
+  var capturedPrice = 0;
+  var productName = '';
+
+  function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function showError(){
+    document.getElementById('zt-loading').style.display = 'none';
+    document.getElementById('zt-error').style.display = '';
+  }
+
+  // ── Offer capture (called by ajax intercept when Angular hits save-inventory-pricing) ──
+  function captureOffer(price){
+    capturedPrice = price || 0;
+    var fmt = capturedPrice ? '₾' + capturedPrice.toLocaleString() : '—';
+    // Sub-label
+    var subEl = document.getElementById('zt-offer-sub');
+    if (subEl) subEl.textContent = productName;
+    // Right panel amount starts blank — countUpComplete listener fills it after animation
+    // Left panel summary
+    document.getElementById('offer-summary-amount').textContent = fmt;
+    document.getElementById('offer-summary').style.display = '';
+    document.getElementById('why-sell').style.display = 'none';
+  }
+
+  // ── Open modal (called only when user clicks "Get This Offer") ──
+  function openQuoteModal(){
+    var fmt = capturedPrice ? '₾' + capturedPrice.toLocaleString() : '—';
+    document.getElementById('modal-price-display').textContent = fmt;
+    document.getElementById('modal-product-name').textContent = productName;
+    document.getElementById('modal-form-view').style.display = '';
+    document.getElementById('modal-success-view').style.display = 'none';
+    // Reset submit button in case it was left disabled
+    var btn = document.getElementById('modal-submit');
+    btn.textContent = 'Confirm & Send Offer';
+    btn.disabled = false;
+    document.getElementById('modal-err').style.display = 'none';
+    document.getElementById('zt-modal').style.display = 'flex';
+  }
+
+  function submitQuote(name, email, phone){
+    return fetch('/api/trade-in/quotes', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        product_slug: slug,
+        final_price: capturedPrice,
+        customer_name: name,
+        customer_email: email,
+        customer_phone: phone
+      })
+    });
+  }
+
+  document.getElementById('modal-submit').addEventListener('click', function(){
+    var email = document.getElementById('modal-email').value.trim();
+    var errEl = document.getElementById('modal-err');
+    var name = document.getElementById('modal-name').value.trim();
+    var phone = document.getElementById('modal-phone').value.trim();
+    if (!name || !phone || !email){
+      errEl.textContent = 'Name, phone, and email are required.';
+      errEl.style.display = 'block';
+      document.getElementById('modal-email').focus();
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+      errEl.textContent = T('err_email_invalid');
+      errEl.style.display = 'block';
+      return;
+    }
+    errEl.style.display = 'none';
+    var btn = this;
+    btn.textContent = T('btn_sending');
+    btn.disabled = true;
+    submitQuote(
+      name,
+      email,
+      phone
+    ).then(function(response){
+      if (!response.ok) throw new Error('Quote submission failed');
+      // Show success view inside modal (no redirect)
+      document.getElementById('modal-form-view').style.display = 'none';
+      document.getElementById('modal-success-view').style.display = '';
+    }).catch(function(){
+      btn.textContent = T('btn_confirm_offer');
+      btn.disabled = false;
+      errEl.textContent = 'The offer could not be saved. Please try again.';
+      errEl.style.display = 'block';
+    });
+  });
+
+  document.getElementById('modal-skip').addEventListener('click', function(){
+    document.getElementById('zt-modal').style.display = 'none';
+  });
+
+  // ── Script loader ─────────────────────────────────────────────────────────
+  function loadScript(src){
+    return new Promise(function(resolve, reject){
+      var s = document.createElement('script');
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = function(){ reject(new Error('Failed to load: ' + src)); };
+      document.head.appendChild(s);
+    });
+  }
+
+  // ── Ajax intercept ────────────────────────────────────────────────────────
+  // scripts-iwm.js installs its own $.ajax wrapper for 'save-inventory-pricing'.
+  // We must wrap AFTER scripts-iwm so our layer is outermost and fires first.
+  // Do NOT set WIDGET_SAVE_URL — that causes scripts-iwm to bypass our wrapper.
+  function installAjaxIntercept(){
+    var $ = window.jQuery;
+    if (!$ || !$.ajax) return;
+    var _prev = $.ajax;  // wraps whatever is currently installed (may be scripts-iwm's wrapper)
+    $.ajax = function(opts){
+      var o = (typeof opts === 'string') ? { url: opts } : (opts || {});
+      var url = o.url || '';
+
+      if (url.indexOf('save-inventory-pricing') !== -1){
+        // Price is captured via scope.$watch('price') — no price field in this POST.
+        // Just resolve with shape Angular's addToBox handler expects (no redirect).
+        var def = $.Deferred();
+        setTimeout(function(){ def.resolve({ success: true, redirect: null }); }, 200);
+        return def.promise();
+      }
+
+      if (url.indexOf('save-product-pricing-quote') !== -1){
+        var def2 = $.Deferred();
+        setTimeout(function(){ def2.resolve('zt-token-' + Date.now()); }, 100);
+        return def2.promise();
+      }
+
+      return _prev.apply(this, arguments);
+    };
+  }
+
+  // ── Boot: fetch product → load scripts → bootstrap Angular ───────────────
+  fetch('/api/trade-in/product?slug=' + encodeURIComponent(slug))
+    .then(function(r){ if(!r.ok) throw new Error('not found'); return r.json(); })
+    .then(function(data){
+      productName = data.name || '';
+      var brand = data.brand || '';
+      var category = data.category || '';
+
+      document.title = productName + ' — Zezva Trade';
+      document.getElementById('product-name').textContent = productName;
+      document.getElementById('product-brand').textContent = brand;
+      document.getElementById('breadcrumb-name').textContent = productName;
+
+      var catLink = document.getElementById('cat-link');
+      catLink.textContent = category;
+      catLink.href = '/products-by-category.html?slug=' + encodeURIComponent((category||'').toLowerCase().replace(/\s+/g,'-'));
+
+      if (data.image_src){
+        var imageSrc = String(data.image_src)
+          .replace(/^(?:\.\.\/)+/, '/')
+          .replace(/^\/sell\/media\//, '/media/')
+          .replace(/^media\//, '/media/');
+        document.getElementById('product-image-wrap').innerHTML =
+          '<img src="/trade-in'+esc(imageSrc)+'" alt="'+esc(productName)+'" style="max-width:100%;max-height:260px;object-fit:contain" onerror="this.style.display=\'none\'">';
+      }
+
+      // Globals read by Angular controller on instantiation
+      window.productPricingExtraData = data.extraData || [];
+      window.initProductPricingOnLoad = {
+        productName:      productName,
+        productBrand:     brand,
+        productCategory:  category,
+        productCategory2: data.category2 || '',
+        productCategory3: '',
+        couponCode:       '',
+        pricingData:      btoa(unescape(encodeURIComponent(JSON.stringify(data.tree || [])))),
+        pricingToken:     data.slug || slug,
+        answerMessages:   data.answerMessages || btoa('[]'),
+        questionLabels:   data.questionLabels || {},
+        _token:           '',
+        countryCode:      'GE'
+      };
+
+      return loadScript('/trade-in/widget/js/vendor-iwm.js');
+    })
+    .then(function(){
+      return loadScript('/trade-in/widget/js/scripts-iwm.js');
+    })
+    .then(function(){
+      // Install AFTER scripts-iwm so our wrapper is outermost (first to run)
+      installAjaxIntercept();
+
+      if (window.angular && window.itsWorthMore){
+        itsWorthMore.directive('disableAnimation', function(){
+          return { restrict: 'A', link: function(){} };
+        });
+      }
+
+      document.getElementById('zt-loading').style.display = 'none';
+      document.getElementById('zt-product-page').style.display = '';
+
+      angular.bootstrap(document.getElementById('itsWorthMore'), ['itsWorthMore']);
+
+      // ── Post-bootstrap watchers ──────────────────────────────────────────
+      // Use $watch instead of relying on Angular's animation/ng-if for two features:
+      // 1. Condition descriptions — render into a plain div outside animate-wrap
+      // 2. Final offer modal — detect status change instead of intercepting ajax
+      (function wireWatchers(){
+        var ctrl = document.getElementById('product-pricing-ctrl');
+        var scope = window.angular && window.angular.element(ctrl).scope();
+        if (!scope){ setTimeout(wireWatchers, 100); return; }
+
+        // ── 1. Condition accordion — replace Angular .answers on condition question ──
+        // Build a custom accordion list that:
+        //   • Shows all condition options with radio + label + chevron
+        //   • Clicking a row selects it (scope.selectAnswer) AND expands its description
+        // Grade colors green→red per position
+        var GRADE_COLORS = ['#22c55e','#4ade80','#a3e635','#facc15','#f97316','#ef4444','#dc2626','#b91c1c','#7f1d1d'];
+
+        function buildConditionAccordion(){
+          var q = scope.activeQuestion;
+          if (!q || q.label !== 'condition') return;
+
+          // Build message map by index
+          var msgMap = {};
+          try {
+            var allMsgs = JSON.parse(atob(window.initProductPricingOnLoad.answerMessages));
+            q.answers.forEach(function(ans, i){ if (allMsgs[i]) msgMap[i] = allMsgs[i].message; });
+          } catch(e){}
+
+          // Hide Angular's native answers
+          var angularAnswers = ctrl.querySelector('.answers');
+          if (angularAnswers) angularAnswers.style.display = 'none';
+
+          // Remove existing widget if any
+          var existing = ctrl.querySelector('.zt-cond-list');
+          if (existing) existing.parentNode.removeChild(existing);
+
+          var n = q.answers.length;
+          var selectedIdx = 0;
+
+          var wrap = document.createElement('div');
+          wrap.className = 'zt-cond-list';
+
+          // ── Track wrapper (contains track, ticks, labels all absolutely positioned) ──
+          var trackWrap = document.createElement('div');
+          trackWrap.className = 'zt-grade-track-wrap';
+
+          var trackInner = document.createElement('div');
+          trackInner.className = 'zt-grade-track-inner';
+
+          var track = document.createElement('div');
+          track.className = 'zt-grade-track';
+
+          var thumb = document.createElement('div');
+          thumb.className = 'zt-grade-thumb';
+          track.appendChild(thumb);
+          trackInner.appendChild(track);
+          trackWrap.appendChild(trackInner);
+
+          // ── Tick dots + labels absolutely aligned to track positions ──
+          var tickEls = [];
+          var labelEls = [];
+          q.answers.forEach(function(ans, i){
+            var pct = n === 1 ? 50 : (i / (n - 1)) * 100;
+
+            // Tick dot on the track
+            var tick = document.createElement('div');
+            tick.className = 'zt-grade-tick';
+            tick.style.left = pct + '%';
+            tick.addEventListener('click', function(e){ e.stopPropagation(); selectGrade(i); });
+            track.appendChild(tick);
+            tickEls.push(tick);
+
+            // Labels are relative to trackWrap (full width).
+            // Track is inset 10px each side, so tick at pct% on track = (10 + pct*(W-20))/W on wrap.
+            // Use CSS calc to express: left = 10px + pct% of (100% - 20px)
+            var lbl = document.createElement('div');
+            lbl.className = 'zt-grade-label';
+            if (i === 0) {
+              lbl.style.left = '0';
+              lbl.style.transform = 'none';
+            } else if (i === n - 1) {
+              lbl.style.right = '0';
+              lbl.style.left = 'auto';
+              lbl.style.transform = 'none';
+            } else {
+              lbl.style.left = 'calc(10px + ' + (pct / 100).toFixed(4) + ' * (100% - 20px))';
+              // centered via CSS translateX(-50%)
+            }
+            lbl.textContent = ans.text;
+            lbl.addEventListener('click', function(){ selectGrade(i); });
+            trackWrap.appendChild(lbl);
+            labelEls.push(lbl);
+          });
+
+          wrap.appendChild(trackWrap);
+
+          // ── Detail card ──
+          var detail = document.createElement('div');
+          detail.className = 'zt-grade-detail';
+          detail.innerHTML =
+            '<div class="zt-grade-detail-head">'
+            + '<div class="zt-grade-detail-dot"></div>'
+            + '<div class="zt-grade-detail-name"></div>'
+            + '</div>'
+            + '<div class="zt-grade-detail-body"></div>';
+          wrap.appendChild(detail);
+
+          function selectGrade(idx){
+            selectedIdx = idx;
+            var pct = n === 1 ? 50 : (idx / (n - 1)) * 100;
+            var color = GRADE_COLORS[Math.min(idx, GRADE_COLORS.length - 1)];
+
+            // Move thumb
+            thumb.style.left = pct + '%';
+            thumb.style.setProperty('--zt-tc', color);
+
+            // Update ticks
+            tickEls.forEach(function(el, i){
+              el.classList.toggle('active', i === idx);
+              el.style.setProperty('--zt-tc', GRADE_COLORS[Math.min(i, GRADE_COLORS.length - 1)]);
+            });
+
+            // Update labels
+            labelEls.forEach(function(el, i){
+              el.classList.toggle('active', i === idx);
+              el.style.color = i === idx ? color : '';
+            });
+
+            // Update detail card
+            detail.querySelector('.zt-grade-detail-dot').style.background = color;
+            detail.querySelector('.zt-grade-detail-name').textContent = q.answers[idx].text;
+            var body = detail.querySelector('.zt-grade-detail-body');
+            body.innerHTML = msgMap[idx] || '';
+
+            // Tell Angular
+            scope.$apply(function(){ scope.selectAnswer(idx); });
+          }
+
+          // Click on track
+          track.addEventListener('click', function(e){
+            var rect = track.getBoundingClientRect();
+            var pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            var idx = Math.round(pct * (n - 1));
+            selectGrade(idx);
+          });
+
+          // Drag on thumb
+          var dragging = false;
+          thumb.style.pointerEvents = 'auto';
+          thumb.addEventListener('mousedown', function(e){ dragging = true; e.preventDefault(); });
+          document.addEventListener('mousemove', function(e){
+            if (!dragging) return;
+            var rect = track.getBoundingClientRect();
+            var pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            var idx = Math.round(pct * (n - 1));
+            selectGrade(idx);
+          });
+          document.addEventListener('mouseup', function(){ dragging = false; });
+
+          // Touch drag
+          thumb.addEventListener('touchstart', function(e){ dragging = true; e.preventDefault(); }, {passive:false});
+          document.addEventListener('touchmove', function(e){
+            if (!dragging) return;
+            var rect = track.getBoundingClientRect();
+            var pct = Math.max(0, Math.min(1, (e.touches[0].clientX - rect.left) / rect.width));
+            var idx = Math.round(pct * (n - 1));
+            selectGrade(idx);
+          });
+          document.addEventListener('touchend', function(){ dragging = false; });
+
+          // Select first option by default
+          selectGrade(0);
+
+          // Insert before Angular's answers
+          if (angularAnswers && angularAnswers.parentNode){
+            angularAnswers.parentNode.insertBefore(wrap, angularAnswers);
+          } else {
+            ctrl.querySelector('.animate-wrap').appendChild(wrap);
+          }
+        }
+
+        // Build immediately if already on condition question, then watch for question changes
+        if (scope.activeQuestion && scope.activeQuestion.label === 'condition'){
+          buildConditionAccordion();
+        }
+        scope.$watch('activeQuestion', function(q, prev){
+          if (!q || q === prev) return;
+          if (q.label === 'condition'){
+            buildConditionAccordion();
+          } else {
+            // Restore Angular's answers for non-condition questions
+            var angularAnswers = ctrl.querySelector('.answers');
+            if (angularAnswers) angularAnswers.style.display = '';
+            var existing = ctrl.querySelector('.zt-cond-list');
+            if (existing) existing.remove();
+          }
+        }, true);
+
+        // ── 2. Price capture and display ──
+        // The widget zeroes scope.price then animates a hidden .your-offer > strong.
+        // We track the last non-zero price, then sync our visible display after animation.
+        var _lastPrice = 0;
+        scope.$watch('price', function(price){
+          if (price > 0) _lastPrice = price;
+        });
+        scope.$watch('status', function(status){
+          if (status === 'final-offer'){
+            captureOffer(_lastPrice);
+          }
+        });
+
+
+        // Wire "Get This Offer" button — it lives inside Angular's ng-click (saveInventoryPricing)
+        // which triggers our ajax intercept → captureOffer. Then we open the modal.
+        // We also need to handle direct clicks on the button before ajax fires,
+        // so listen on the final-offer container and open modal after a short delay.
+        document.getElementById('product-pricing-ctrl').addEventListener('click', function(e){
+          var btn = e.target.closest('button');
+          if (!btn) return;
+          // "Get This Offer" button text or class check
+          if (btn.textContent.trim() === 'Get This Offer'){
+            setTimeout(openQuoteModal, 350);
+          }
+        });
+      })();
+    })
+    .catch(function(e){ console.error('Product page error:', e); showError(); });
+})();
+</script>
+</body>
+</html>
