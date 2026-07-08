@@ -176,7 +176,7 @@ const TradeInPage = () => {
             {t('public.tradeIn.eyebrow')}
           </Typography>
           <Typography component="h1" sx={{ mt: 1, fontSize: { xs: 34, md: 50 }, fontWeight: 900 }}>
-            {titleByStage}
+            {titleByStage[stage]}
           </Typography>
           <Typography sx={{ mt: 1, color: palette.muted, maxWidth: 660 }}>
             {t('public.tradeIn.subtitle')}
