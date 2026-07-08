@@ -23,7 +23,13 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { DeleteOutlineRounded, EditRounded, RefreshRounded, SearchRounded } from '@mui/icons-material';
+import {
+  DeleteOutlineRounded,
+  EditRounded,
+  PriceChangeRounded,
+  RefreshRounded,
+  SearchRounded,
+} from '@mui/icons-material';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { tradeInService } from '../../services/tradeInService';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
@@ -46,6 +52,15 @@ const imageUrl = (value) => {
   return `/trade-in${normalized.startsWith('/') ? normalized : `/${normalized}`}`;
 };
 
+const cloneTree = (tree) => JSON.parse(JSON.stringify(Array.isArray(tree) ? tree : []));
+
+const sectionLabel = (section, index) => section?.name || section?.breadcrumb || `Section ${index + 1}`;
+
+const questionTypeLabel = (type) => {
+  if (type === 2 || type === 'multi') return 'Multi';
+  return 'Single';
+};
+
 const ShopAdminTradeInPage = () => {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState(0);
@@ -53,6 +68,21 @@ const ShopAdminTradeInPage = () => {
   const [productCategory, setProductCategory] = useState('');
   const [productSubcategory, setProductSubcategory] = useState('');
   const [quoteStatus, setQuoteStatus] = useState('');
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [productForm, setProductForm] = useState({
+    name: '',
+    brand: '',
+    category: '',
+    category2: '',
+    image_src: '',
+    enabled: true,
+  });
+  const [pricingProduct, setPricingProduct] = useState(null);
+  const [pricingTree, setPricingTree] = useState([]);
+  const [pricingRaw, setPricingRaw] = useState('');
+  const [pricingRawMode, setPricingRawMode] = useState(false);
+  const [pricingError, setPricingError] = useState('');
+  const [activePricingSection, setActivePricingSection] = useState(0);
   const [editingQuote, setEditingQuote] = useState(null);
   const [quoteForm, setQuoteForm] = useState({
     status: 'pending',
@@ -121,7 +151,26 @@ const ShopAdminTradeInPage = () => {
   );
   const productMutation = useMutation(
     ({ id, payload }) => tradeInService.updateAdminProduct(id, payload),
-    { onSuccess: () => queryClient.invalidateQueries('trade-in-admin-products') },
+    {
+      onSuccess: () => {
+        setEditingProduct(null);
+        queryClient.invalidateQueries('trade-in-admin-products');
+        queryClient.invalidateQueries('trade-in-admin-product-subcategories');
+      },
+    },
+  );
+  const pricingMutation = useMutation(
+    ({ id, treeJson }) => tradeInService.updateAdminProductPricing(id, treeJson),
+    {
+      onSuccess: () => {
+        setPricingProduct(null);
+        setPricingTree([]);
+        setPricingRaw('');
+        setPricingRawMode(false);
+        setPricingError('');
+        queryClient.invalidateQueries('trade-in-admin-products');
+      },
+    },
   );
   const categoryMutation = useMutation(
     ({ id, payload }) => tradeInService.updateAdminCategory(id, payload),
@@ -129,6 +178,79 @@ const ShopAdminTradeInPage = () => {
   );
 
   const currentQuery = tab === 0 ? quotesQuery : tab === 1 ? productsQuery : categoriesQuery;
+  const openProductEditor = (product) => {
+    setEditingProduct(product);
+    setProductForm({
+      name: product.name || '',
+      brand: product.brand || '',
+      category: product.category || '',
+      category2: product.category2 || '',
+      image_src: product.image_src || '',
+      enabled: Boolean(product.enabled),
+    });
+  };
+
+  const saveProduct = () => {
+    if (!editingProduct) return;
+    productMutation.mutate({
+      id: editingProduct.id,
+      payload: productForm,
+    });
+  };
+
+  const openPricingEditor = async (product) => {
+    setPricingError('');
+    setPricingRawMode(false);
+    setActivePricingSection(0);
+    const detailed = await tradeInService.getAdminProduct(product.id);
+    const tree = cloneTree(detailed.pricing_tree);
+    setPricingProduct(detailed);
+    setPricingTree(tree);
+    setPricingRaw(JSON.stringify(tree, null, 2));
+  };
+
+  const updateAnswerValue = (sectionIndex, questionIndex, answerIndex, value) => {
+    const next = cloneTree(pricingTree);
+    const answer = next?.[sectionIndex]?.questions?.[questionIndex]?.answers?.[answerIndex];
+    if (!answer) return;
+    const parsed = Number(value);
+    answer.value = Number.isFinite(parsed) ? parsed : 0;
+    setPricingTree(next);
+    setPricingRaw(JSON.stringify(next, null, 2));
+  };
+
+  const togglePricingRawMode = () => {
+    setPricingError('');
+    if (pricingRawMode) {
+      try {
+        const parsed = JSON.parse(pricingRaw || '[]');
+        if (!Array.isArray(parsed)) {
+          throw new Error('Root value must be an array.');
+        }
+        setPricingTree(parsed);
+        setPricingRawMode(false);
+      } catch (error) {
+        setPricingError(error.message);
+      }
+      return;
+    }
+    setPricingRaw(JSON.stringify(pricingTree, null, 2));
+    setPricingRawMode(true);
+  };
+
+  const savePricing = () => {
+    if (!pricingProduct) return;
+    try {
+      const treeJson = pricingRawMode ? JSON.parse(pricingRaw || '[]') : pricingTree;
+      if (!Array.isArray(treeJson)) {
+        throw new Error('Root value must be an array.');
+      }
+      pricingMutation.mutate({ id: pricingProduct.id, treeJson });
+    } catch (error) {
+      setPricingError(error.message);
+    }
+  };
+
   const openQuoteEditor = (quote) => {
     setEditingQuote(quote);
     setQuoteForm({
@@ -309,11 +431,11 @@ const ShopAdminTradeInPage = () => {
             {tab === 1 && (
               <Box sx={{ overflowX: 'auto' }}>
                 <Box sx={{ minWidth: 860 }}>
-                  <Box sx={{ display: 'grid', gridTemplateColumns: '64px 1.6fr 1fr 1fr 120px 100px', gap: 2, px: 2, py: 1.25, bgcolor: '#f8f9fc' }}>
-                    {['Image', 'Product', 'Brand', 'Category', 'Max offer', 'Visible'].map((label) => <Typography key={label} sx={headerCell}>{label}</Typography>)}
+                  <Box sx={{ display: 'grid', gridTemplateColumns: '64px 1.6fr .8fr .8fr .9fr 110px 94px 100px', gap: 2, px: 2, py: 1.25, bgcolor: '#f8f9fc' }}>
+                    {['Image', 'Product', 'Brand', 'Category', 'Subcategory', 'Max offer', 'Visible', 'Actions'].map((label) => <Typography key={label} sx={headerCell}>{label}</Typography>)}
                   </Box>
                   {(productsQuery.data?.items || []).map((product) => (
-                    <Box key={product.id} sx={{ display: 'grid', gridTemplateColumns: '64px 1.6fr 1fr 1fr 120px 100px', gap: 2, alignItems: 'center', px: 2, py: 1, borderTop: '1px solid #edf0f5' }}>
+                    <Box key={product.id} sx={{ display: 'grid', gridTemplateColumns: '64px 1.6fr .8fr .8fr .9fr 110px 94px 100px', gap: 2, alignItems: 'center', px: 2, py: 1, borderTop: '1px solid #edf0f5' }}>
                       <Box component="img" src={imageUrl(product.image_src)} alt="" sx={{ width: 46, height: 46, objectFit: 'contain' }} />
                       <Box>
                         <Typography sx={{ fontSize: 13, fontWeight: 800 }}>{product.name}</Typography>
@@ -321,11 +443,24 @@ const ShopAdminTradeInPage = () => {
                       </Box>
                       <Typography sx={{ fontSize: 13 }}>{product.brand || '—'}</Typography>
                       <Typography sx={{ fontSize: 13 }}>{product.category || '—'}</Typography>
+                      <Typography sx={{ fontSize: 13 }}>{product.category2 || '—'}</Typography>
                       <Typography sx={{ fontSize: 13, fontWeight: 800 }}>₾{Math.round(Number(product.max_price || 0))}</Typography>
                       <Switch
                         checked={Boolean(product.enabled)}
                         onChange={(event) => productMutation.mutate({ id: product.id, payload: { enabled: event.target.checked } })}
                       />
+                      <Stack direction="row" spacing={0.5}>
+                        <Tooltip title="Edit product">
+                          <IconButton size="small" onClick={() => openProductEditor(product)}>
+                            <EditRounded fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Edit pricing">
+                          <IconButton size="small" onClick={() => openPricingEditor(product)}>
+                            <PriceChangeRounded fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Stack>
                     </Box>
                   ))}
                 </Box>
@@ -362,6 +497,180 @@ const ShopAdminTradeInPage = () => {
           </>
         )}
       </Paper>
+
+      <Dialog
+        open={Boolean(editingProduct)}
+        onClose={() => setEditingProduct(null)}
+        fullWidth
+        maxWidth="sm"
+        PaperProps={{ sx: { borderRadius: '18px !important' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 900 }}>Edit trade-in product</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <TextField
+              label="Product name"
+              value={productForm.name}
+              onChange={(event) => setProductForm((prev) => ({ ...prev, name: event.target.value }))}
+              fullWidth
+            />
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+              <TextField
+                label="Brand"
+                value={productForm.brand}
+                onChange={(event) => setProductForm((prev) => ({ ...prev, brand: event.target.value }))}
+                fullWidth
+              />
+              <TextField
+                label="Category"
+                value={productForm.category}
+                onChange={(event) => setProductForm((prev) => ({ ...prev, category: event.target.value }))}
+                fullWidth
+              />
+            </Stack>
+            <TextField
+              label="Subcategory"
+              value={productForm.category2}
+              onChange={(event) => setProductForm((prev) => ({ ...prev, category2: event.target.value }))}
+              fullWidth
+            />
+            <TextField
+              label="Image path"
+              value={productForm.image_src}
+              onChange={(event) => setProductForm((prev) => ({ ...prev, image_src: event.target.value }))}
+              fullWidth
+            />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Switch
+                checked={Boolean(productForm.enabled)}
+                onChange={(event) => setProductForm((prev) => ({ ...prev, enabled: event.target.checked }))}
+              />
+              <Typography sx={{ fontSize: 13, fontWeight: 800 }}>Visible in catalogue</Typography>
+            </Box>
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setEditingProduct(null)}>Cancel</Button>
+          <Button variant="contained" onClick={saveProduct} disabled={productMutation.isLoading}>
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(pricingProduct)}
+        onClose={() => setPricingProduct(null)}
+        fullWidth
+        maxWidth="lg"
+        PaperProps={{ sx: { borderRadius: '18px !important' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 900 }}>
+          Edit pricing rules
+          <Typography sx={{ color: '#667085', fontSize: 12, mt: 0.5 }}>
+            {pricingProduct?.name}
+          </Typography>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, alignItems: 'center' }}>
+              <Typography sx={{ fontSize: 12, color: '#667085' }}>
+                First section values are base offers. Later sections are adjustments.
+              </Typography>
+              <Button size="small" variant="outlined" onClick={togglePricingRawMode}>
+                {pricingRawMode ? 'Visual editor' : 'Raw JSON'}
+              </Button>
+            </Box>
+            {pricingError && <Alert severity="error">{pricingError}</Alert>}
+            {pricingRawMode ? (
+              <TextField
+                value={pricingRaw}
+                onChange={(event) => setPricingRaw(event.target.value)}
+                multiline
+                minRows={18}
+                fullWidth
+                inputProps={{ spellCheck: false }}
+                sx={{ '& textarea': { fontFamily: 'monospace', fontSize: 12 } }}
+              />
+            ) : (
+              <Box sx={{ display: 'grid', gridTemplateColumns: '230px 1fr', gap: 2, minHeight: 460 }}>
+                <Box sx={{ border: '1px solid #e5eaf2', borderRadius: '12px', p: 1 }}>
+                  <Typography sx={headerCell}>Sections</Typography>
+                  <Stack spacing={0.75} sx={{ mt: 1 }}>
+                    {pricingTree.length === 0 && (
+                      <Typography sx={{ color: '#667085', fontSize: 13 }}>No pricing sections.</Typography>
+                    )}
+                    {pricingTree.map((section, index) => (
+                      <Button
+                        key={`${sectionLabel(section, index)}-${index}`}
+                        variant={activePricingSection === index ? 'contained' : 'outlined'}
+                        onClick={() => setActivePricingSection(index)}
+                        sx={{ justifyContent: 'flex-start', borderRadius: '9px !important', textTransform: 'none' }}
+                      >
+                        {sectionLabel(section, index)}
+                      </Button>
+                    ))}
+                  </Stack>
+                </Box>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
+                  {(pricingTree[activePricingSection]?.questions || []).map((question, questionIndex) => (
+                    <Paper key={`${question.text}-${questionIndex}`} elevation={0} sx={{ border: '1px solid #e5eaf2', borderRadius: '12px !important', p: 1.5 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <Typography sx={{ flex: 1, fontSize: 14, fontWeight: 900 }}>{question.text}</Typography>
+                        <Chip size="small" label={questionTypeLabel(question.type)} />
+                      </Box>
+                      <Stack spacing={1}>
+                        {(question.answers || []).map((answer, answerIndex) => {
+                          const isBase = activePricingSection === 0 && questionIndex === 0;
+                          const value = Number(answer.value || 0);
+                          return (
+                            <Box
+                              key={`${answer.text}-${answerIndex}`}
+                              sx={{
+                                display: 'grid',
+                                gridTemplateColumns: '1fr 120px 120px',
+                                gap: 1,
+                                alignItems: 'center',
+                                border: '1px solid #eef2f7',
+                                borderRadius: '10px',
+                                p: 1,
+                              }}
+                            >
+                              <Box>
+                                <Typography sx={{ fontSize: 13, fontWeight: 800 }}>{answer.text}</Typography>
+                                {answer.tooltip && (
+                                  <Typography sx={{ color: '#667085', fontSize: 11 }}>{answer.tooltip}</Typography>
+                                )}
+                              </Box>
+                              <TextField
+                                size="small"
+                                type="number"
+                                label={isBase ? 'Base ₾' : 'Delta ₾'}
+                                value={value}
+                                onChange={(event) =>
+                                  updateAnswerValue(activePricingSection, questionIndex, answerIndex, event.target.value)
+                                }
+                              />
+                              <Typography sx={{ color: '#667085', fontSize: 11 }}>
+                                {answer.go_to ? `-> ${answer.go_to}` : 'Next'}
+                              </Typography>
+                            </Box>
+                          );
+                        })}
+                      </Stack>
+                    </Paper>
+                  ))}
+                </Box>
+              </Box>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setPricingProduct(null)}>Cancel</Button>
+          <Button variant="contained" onClick={savePricing} disabled={pricingMutation.isLoading}>
+            Save pricing
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog
         open={Boolean(editingQuote)}

@@ -18,6 +18,11 @@ export class UpdateTradeInProductDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(160)
+  category2?: string;
+
+  @IsOptional()
+  @IsString()
   @MaxLength(1000)
   image_src?: string;
 

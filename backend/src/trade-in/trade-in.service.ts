@@ -273,13 +273,60 @@ export class TradeInService {
     return rows.map((row) => row.subcategory).filter(Boolean);
   }
 
+  async getAdminProduct(id: number) {
+    const product = await this.productRepository.findOne({
+      where: { id },
+      relations: ['pricing_tree'],
+    });
+    if (!product) {
+      throw new NotFoundException('Trade-in product not found.');
+    }
+    return {
+      ...product,
+      pricing_tree: product.pricing_tree?.tree_json || [],
+      max_price: Number(product.pricing_tree?.max_price || 0),
+    };
+  }
+
   async updateProduct(id: number, dto: UpdateTradeInProductDto) {
     const product = await this.productRepository.findOne({ where: { id } });
     if (!product) {
       throw new NotFoundException('Trade-in product not found.');
     }
-    Object.assign(product, dto);
+    const next = {
+      ...dto,
+      name: dto.name?.trim(),
+      brand: dto.brand?.trim() || null,
+      category: dto.category?.trim() || null,
+      category2: dto.category2?.trim() || null,
+      image_src: dto.image_src?.trim() || null,
+    };
+    Object.entries(next).forEach(([key, value]) => {
+      if (value !== undefined) {
+        (product as any)[key] = value;
+      }
+    });
     return this.productRepository.save(product);
+  }
+
+  async updateProductPricing(id: number, treeJson: any[]) {
+    const product = await this.productRepository.findOne({ where: { id } });
+    if (!product) {
+      throw new NotFoundException('Trade-in product not found.');
+    }
+    const maxPrice = this.maxPriceFromTree(treeJson);
+    let pricing = await this.pricingRepository.findOne({ where: { product_id: id } });
+    if (!pricing) {
+      pricing = this.pricingRepository.create({
+        product_id: id,
+        tree_json: treeJson,
+        max_price: maxPrice.toFixed(2),
+      });
+    } else {
+      pricing.tree_json = treeJson;
+      pricing.max_price = maxPrice.toFixed(2);
+    }
+    return this.pricingRepository.save(pricing);
   }
 
   async listQuotes(status?: TradeInQuoteStatus, page = 1, limit = 50) {
@@ -409,5 +456,24 @@ export class TradeInService {
     } catch {
       return {};
     }
+  }
+
+  private maxPriceFromTree(treeJson: any[]) {
+    let maxPrice = 0;
+    if (!Array.isArray(treeJson)) {
+      return maxPrice;
+    }
+    const firstSection = treeJson[0];
+    const firstQuestion = firstSection?.questions?.[0];
+    if (!Array.isArray(firstQuestion?.answers)) {
+      return maxPrice;
+    }
+    firstQuestion.answers.forEach((answer) => {
+      const value = Number(answer?.value || 0);
+      if (Number.isFinite(value) && value > maxPrice) {
+        maxPrice = value;
+      }
+    });
+    return maxPrice;
   }
 }

@@ -46,6 +46,11 @@ export const tradeInService = {
     return response.data;
   },
 
+  getAdminProduct: async (id) => {
+    const response = await api.get(`/shop/admin/trade-in/products/${id}`);
+    return response.data;
+  },
+
   getAdminProductSubcategories: async (category) => {
     const response = await api.get('/shop/admin/trade-in/products/subcategories', {
       params: { category },
@@ -55,6 +60,13 @@ export const tradeInService = {
 
   updateAdminProduct: async (id, payload) => {
     const response = await api.patch(`/shop/admin/trade-in/products/${id}`, payload);
+    return response.data;
+  },
+
+  updateAdminProductPricing: async (id, treeJson) => {
+    const response = await api.patch(`/shop/admin/trade-in/products/${id}/pricing`, {
+      tree_json: treeJson,
+    });
     return response.data;
   },
 

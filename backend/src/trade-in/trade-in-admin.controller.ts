@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { UserRole } from '../users/entities/user.entity';
 import { UpdateTradeInCategoryDto } from './dto/update-trade-in-category.dto';
+import { UpdateTradeInPricingDto } from './dto/update-trade-in-pricing.dto';
 import { UpdateTradeInProductDto } from './dto/update-trade-in-product.dto';
 import { UpdateTradeInQuoteDto } from './dto/update-trade-in-quote.dto';
 import { TradeInQuoteStatus } from './entities/trade-in-quote.entity';
@@ -52,12 +53,25 @@ export class TradeInAdminController {
     return this.tradeInService.listAdminProductSubcategories(category);
   }
 
+  @Get('products/:id')
+  getProduct(@Param('id', ParseIntPipe) id: number) {
+    return this.tradeInService.getAdminProduct(id);
+  }
+
   @Patch('products/:id')
   updateProduct(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateTradeInProductDto,
   ) {
     return this.tradeInService.updateProduct(id, dto);
+  }
+
+  @Patch('products/:id/pricing')
+  updateProductPricing(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateTradeInPricingDto,
+  ) {
+    return this.tradeInService.updateProductPricing(id, dto.tree_json);
   }
 
   @Get('quotes')
