@@ -32,6 +32,7 @@ export class TradeInAdminController {
   listProducts(
     @Query('q') q?: string,
     @Query('category') category?: string,
+    @Query('subcategory') subcategory?: string,
     @Query('enabled') enabled?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -39,10 +40,16 @@ export class TradeInAdminController {
     return this.tradeInService.listAdminProducts({
       q,
       category,
+      subcategory,
       enabled,
       page: Number(page || 1),
       limit: Number(limit || 50),
     });
+  }
+
+  @Get('products/subcategories')
+  listProductSubcategories(@Query('category') category?: string) {
+    return this.tradeInService.listAdminProductSubcategories(category);
   }
 
   @Patch('products/:id')

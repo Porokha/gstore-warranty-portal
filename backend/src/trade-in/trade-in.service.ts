@@ -205,6 +205,7 @@ export class TradeInService {
   async listAdminProducts(params: {
     q?: string;
     category?: string;
+    subcategory?: string;
     enabled?: string;
     page?: number;
     limit?: number;
@@ -224,6 +225,11 @@ export class TradeInService {
     if (params.category) {
       query.andWhere('LOWER(product.category) = LOWER(:category)', {
         category: params.category,
+      });
+    }
+    if (params.subcategory) {
+      query.andWhere('LOWER(product.category2) = LOWER(:subcategory)', {
+        subcategory: params.subcategory,
       });
     }
     if (params.enabled === 'true' || params.enabled === 'false') {
@@ -247,6 +253,24 @@ export class TradeInService {
       limit,
       total_pages: Math.ceil(total / limit),
     };
+  }
+
+  async listAdminProductSubcategories(category?: string) {
+    const query = this.productRepository
+      .createQueryBuilder('product')
+      .select('DISTINCT product.category2', 'subcategory')
+      .where('product.category2 IS NOT NULL')
+      .andWhere("TRIM(product.category2) <> ''");
+
+    if (category) {
+      query.andWhere('LOWER(product.category) = LOWER(:category)', { category });
+    }
+
+    const rows = await query
+      .orderBy('product.category2', 'ASC')
+      .getRawMany();
+
+    return rows.map((row) => row.subcategory).filter(Boolean);
   }
 
   async updateProduct(id: number, dto: UpdateTradeInProductDto) {

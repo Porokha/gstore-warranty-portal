@@ -51,6 +51,7 @@ const ShopAdminTradeInPage = () => {
   const [tab, setTab] = useState(0);
   const [search, setSearch] = useState('');
   const [productCategory, setProductCategory] = useState('');
+  const [productSubcategory, setProductSubcategory] = useState('');
   const [quoteStatus, setQuoteStatus] = useState('');
   const [editingQuote, setEditingQuote] = useState(null);
   const [quoteForm, setQuoteForm] = useState({
@@ -75,13 +76,22 @@ const ShopAdminTradeInPage = () => {
     { enabled: tab === 0 },
   );
   const productsQuery = useQuery(
-    ['trade-in-admin-products', search, productCategory],
+    ['trade-in-admin-products', search, productCategory, productSubcategory],
     () => tradeInService.getAdminProducts({
       q: search || undefined,
       category: productCategory || undefined,
+      subcategory: productSubcategory || undefined,
       limit: 100,
     }),
     { enabled: tab === 1, keepPreviousData: true },
+  );
+  const subcategoriesQuery = useQuery(
+    ['trade-in-admin-product-subcategories', productCategory],
+    () => tradeInService.getAdminProductSubcategories(productCategory || undefined),
+    {
+      enabled: tab === 1,
+      keepPreviousData: true,
+    },
   );
   const categoriesQuery = useQuery(
     ['trade-in-admin-categories'],
@@ -202,12 +212,29 @@ const ShopAdminTradeInPage = () => {
                 <Select
                   value={productCategory}
                   displayEmpty
-                  onChange={(event) => setProductCategory(event.target.value)}
+                  onChange={(event) => {
+                    setProductCategory(event.target.value);
+                    setProductSubcategory('');
+                  }}
                 >
                   <MenuItem value="">All categories</MenuItem>
                   {(categoriesQuery.data || []).map((category) => (
                     <MenuItem key={category.slug} value={category.slug}>
                       {category.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl size="small" sx={{ minWidth: 210 }}>
+                <Select
+                  value={productSubcategory}
+                  displayEmpty
+                  onChange={(event) => setProductSubcategory(event.target.value)}
+                >
+                  <MenuItem value="">All subcategories</MenuItem>
+                  {(subcategoriesQuery.data || []).map((subcategory) => (
+                    <MenuItem key={subcategory} value={subcategory}>
+                      {subcategory}
                     </MenuItem>
                   ))}
                 </Select>

@@ -46,6 +46,13 @@ export const tradeInService = {
     return response.data;
   },
 
+  getAdminProductSubcategories: async (category) => {
+    const response = await api.get('/shop/admin/trade-in/products/subcategories', {
+      params: { category },
+    });
+    return response.data;
+  },
+
   updateAdminProduct: async (id, payload) => {
     const response = await api.patch(`/shop/admin/trade-in/products/${id}`, payload);
     return response.data;
