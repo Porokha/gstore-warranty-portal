@@ -13,8 +13,26 @@ import { AuditLog } from '../../audit/entities/audit-log.entity';
 export enum UserRole {
   ADMIN = 'admin',
   MANAGER = 'manager',
+  SUPER_TECHNICIAN = 'super_technician',
   TECHNICIAN = 'technician',
 }
+
+export const MANAGEMENT_ROLES = [
+  UserRole.ADMIN,
+  UserRole.MANAGER,
+  UserRole.SUPER_TECHNICIAN,
+];
+
+export const TECHNICIAN_ROLES = [
+  UserRole.TECHNICIAN,
+  UserRole.SUPER_TECHNICIAN,
+];
+
+export const isManagementRole = (role?: UserRole | string): boolean =>
+  MANAGEMENT_ROLES.includes(role as UserRole);
+
+export const isTechnicianRole = (role?: UserRole | string): boolean =>
+  TECHNICIAN_ROLES.includes(role as UserRole);
 
 export enum LanguagePreference {
   EN = 'en',
@@ -40,7 +58,7 @@ export class User {
 
   @Column({
     type: 'enum',
-    enum: ['admin', 'manager', 'technician'],
+    enum: ['admin', 'manager', 'super_technician', 'technician'],
     default: 'technician',
   })
   role: UserRole;
@@ -60,6 +78,9 @@ export class User {
 
   @Column({ default: false })
   must_change_password: boolean;
+
+  @Column({ default: false })
+  is_postponed: boolean;
 
   @CreateDateColumn()
   created_at: Date;

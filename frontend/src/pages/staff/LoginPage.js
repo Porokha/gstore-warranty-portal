@@ -46,7 +46,7 @@ const LoginPage = () => {
       await login(username, password);
       navigate('/staff/dashboard');
     } catch (err) {
-      setError(t('login.invalidCredentials'));
+      setError(err.response?.data?.message || t('login.invalidCredentials'));
       setLoading(false);
     }
   };

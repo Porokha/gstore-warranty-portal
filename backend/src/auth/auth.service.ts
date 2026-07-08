@@ -13,6 +13,9 @@ export class AuthService {
   async validateUser(username: string, password: string): Promise<any> {
     const user = await this.usersService.findByUsername(username);
     if (user && (await bcrypt.compare(password, user.password_hash))) {
+      if (user.is_postponed) {
+        throw new UnauthorizedException('Account access is postponed by administrator');
+      }
       const { password_hash, ...result } = user;
       return result;
     }
@@ -31,6 +34,7 @@ export class AuthService {
         role: user.role,
         language_pref: user.language_pref,
         must_change_password: Boolean(user.must_change_password),
+        is_postponed: Boolean(user.is_postponed),
       },
     };
   }
@@ -49,6 +53,7 @@ export class AuthService {
       role: user.role,
       language_pref: user.language_pref,
       must_change_password: Boolean(user.must_change_password),
+      is_postponed: Boolean(user.is_postponed),
     };
   }
 }

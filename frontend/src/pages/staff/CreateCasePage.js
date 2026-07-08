@@ -29,6 +29,7 @@ import { partnersService } from '../../services/partnersService';
 import { useQueryClient } from 'react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import { printServiceCaseLabel } from '../../utils/serviceCaseLabel';
+import { isManagementRole, ROLE } from '../../utils/roles';
 
 const CreateCasePage = () => {
   const { t } = useTranslation();
@@ -36,8 +37,8 @@ const CreateCasePage = () => {
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const isTechnician = user?.role === 'technician';
-  const canAssignTechnician = ['admin', 'manager'].includes(user?.role);
+  const isRegularTechnician = user?.role === ROLE.TECHNICIAN;
+  const canAssignTechnician = isManagementRole(user?.role);
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
   const [error, setError] = useState('');
@@ -71,7 +72,7 @@ const CreateCasePage = () => {
     customer_initial_note: '',
     order_id: '',
     product_id: '',
-    assigned_technician_id: isTechnician && user?.id ? String(user.id) : '',
+    assigned_technician_id: isRegularTechnician && user?.id ? String(user.id) : '',
     priority: 'normal',
     deadline_days: 14,
   });
@@ -123,12 +124,12 @@ const CreateCasePage = () => {
   }, [warrantyIdFromUrl]);
 
   useEffect(() => {
-    if (!isTechnician || !user?.id) return;
+    if (!isRegularTechnician || !user?.id) return;
     setFormData((prev) => ({
       ...prev,
       assigned_technician_id: String(user.id),
     }));
-  }, [isTechnician, user?.id]);
+  }, [isRegularTechnician, user?.id]);
 
   // Fill form from warranty data
   const fillFormFromWarranty = (warranty) => {
@@ -150,7 +151,7 @@ const CreateCasePage = () => {
       order_id: warranty.order_id || '',
       product_id: warranty.product_id || '',
       assigned_technician_id:
-        isTechnician && user?.id ? String(user.id) : prev.assigned_technician_id,
+        isRegularTechnician && user?.id ? String(user.id) : prev.assigned_technician_id,
     }));
   };
 
@@ -327,7 +328,7 @@ const CreateCasePage = () => {
         order_id: '',
         product_id: '',
         assigned_technician_id:
-          isTechnician && user?.id ? String(user.id) : prev.assigned_technician_id || '',
+          isRegularTechnician && user?.id ? String(user.id) : prev.assigned_technician_id || '',
         priority: 'normal',
         deadline_days: 14,
       }));
@@ -765,7 +766,7 @@ const CreateCasePage = () => {
                     </Button>
                   </Box>
                 )}
-                {isTechnician && (
+                {isRegularTechnician && (
                   <Typography variant="caption" color="text.secondary">
                     {t('case.technicianAutoAssigned') || 'You are assigned automatically.'}
                   </Typography>

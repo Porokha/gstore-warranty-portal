@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan, MoreThan, Between } from 'typeorm';
+import { Repository, LessThan, MoreThan, Between, In } from 'typeorm';
 import * as ExcelJS from 'exceljs';
 import { ServiceCase, CaseStatusLevel } from '../cases/entities/service-case.entity';
-import { User, UserRole } from '../users/entities/user.entity';
+import { TECHNICIAN_ROLES, User } from '../users/entities/user.entity';
 import { CasePayment, PaymentStatus } from '../payments/entities/case-payment.entity';
 
 @Injectable()
@@ -177,7 +177,7 @@ export class StatisticsService {
 
   async getAllTechniciansStats(startDate?: string, endDate?: string) {
     const technicians = await this.usersRepository.find({
-      where: { role: UserRole.TECHNICIAN },
+      where: { role: In(TECHNICIAN_ROLES) },
     });
 
     const stats = await Promise.all(
@@ -284,4 +284,3 @@ export class StatisticsService {
     return Buffer.from(buffer);
   }
 }
-

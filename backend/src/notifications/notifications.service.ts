@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { StaffNotification } from './entities/staff-notification.entity';
-import { User, UserRole } from '../users/entities/user.entity';
+import { MANAGEMENT_ROLES, User, UserRole } from '../users/entities/user.entity';
 import { ServiceCase } from '../cases/entities/service-case.entity';
 
 @Injectable()
@@ -16,7 +16,7 @@ export class NotificationsService {
 
   async notifyManagersCasePending(case_: ServiceCase): Promise<void> {
     const managers = await this.usersRepository.find({
-      where: { role: UserRole.MANAGER },
+      where: { role: In(MANAGEMENT_ROLES.filter((role) => role !== UserRole.ADMIN)) },
       select: ['id'],
     });
 

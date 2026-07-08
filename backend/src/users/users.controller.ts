@@ -15,14 +15,14 @@ export class UsersController {
 
   @Get('technicians')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.SUPER_TECHNICIAN)
   findTechnicians() {
     return this.usersService.findTechnicians();
   }
 
   @Get()
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.SUPER_TECHNICIAN)
   findAll() {
     return this.usersService.findAll();
   }
@@ -37,8 +37,12 @@ export class UsersController {
   @Put(':id')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
-  update(@Param('id', ParseIntPipe) id: number, @Body() updateDto: UpdateUserDto) {
-    return this.usersService.update(id, updateDto);
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateDto: UpdateUserDto,
+    @Request() req,
+  ) {
+    return this.usersService.update(id, updateDto, req.user.id);
   }
 
   @Post('me/password')

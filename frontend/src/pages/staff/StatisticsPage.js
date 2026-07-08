@@ -28,12 +28,13 @@ import {
 } from '@mui/icons-material';
 import { statisticsService } from '../../services/statisticsService';
 import { usersService } from '../../services/usersService';
+import { isManagementRole, isTechnicianRole } from '../../utils/roles';
 // Using native date inputs instead of MUI date picker to avoid dependency
 
 const StatisticsPage = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const hasManagementAccess = ['admin', 'manager'].includes(user?.role);
+  const hasManagementAccess = isManagementRole(user?.role);
   
   const [selectedTechnician, setSelectedTechnician] = useState(hasManagementAccess ? '' : user.id);
   const [timeFilter, setTimeFilter] = useState('all');
@@ -149,7 +150,7 @@ const StatisticsPage = () => {
                   onChange={(e) => setSelectedTechnician(e.target.value)}
                 >
                   <MenuItem value="">All Technicians</MenuItem>
-                  {technicians?.filter(t => t.role === 'technician').map((tech) => (
+                  {technicians?.filter(t => isTechnicianRole(t.role)).map((tech) => (
                     <MenuItem key={tech.id} value={tech.id}>
                       {tech.name} {tech.last_name}
                     </MenuItem>

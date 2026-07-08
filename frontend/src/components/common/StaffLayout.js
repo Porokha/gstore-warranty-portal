@@ -47,6 +47,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { usersService } from '../../services/usersService';
 import { notificationsService } from '../../services/notificationsService';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
+import { isManagementRole, isTechnicianRole, roleLabel, ROLE } from '../../utils/roles';
 
 const EXPANDED_DRAWER_WIDTH = 280;
 const COLLAPSED_DRAWER_WIDTH = 88;
@@ -73,14 +74,14 @@ const StaffLayout = () => {
   });
   const drawerWidth = isCollapsed ? COLLAPSED_DRAWER_WIDTH : EXPANDED_DRAWER_WIDTH;
   const mustChangePassword = Boolean(user?.must_change_password);
-  const isManager = user?.role === 'manager';
+  const receivesManagerNotifications = [ROLE.MANAGER, ROLE.SUPER_TECHNICIAN].includes(user?.role);
   const queryClient = useQueryClient();
 
   const { data: unreadNotificationData } = useQuery(
     ['staff-notifications-unread'],
     notificationsService.getUnreadCount,
     {
-      enabled: isManager,
+      enabled: receivesManagerNotifications,
       refetchInterval: 30000,
       refetchOnWindowFocus: true,
     },
@@ -93,7 +94,7 @@ const StaffLayout = () => {
     ['staff-notifications'],
     notificationsService.getAll,
     {
-      enabled: isManager && Boolean(notificationsAnchor),
+      enabled: receivesManagerNotifications && Boolean(notificationsAnchor),
       refetchOnWindowFocus: true,
     },
   );
@@ -195,7 +196,7 @@ const StaffLayout = () => {
   };
 
   const isAdmin = user?.role === 'admin';
-  const hasManagementAccess = isAdmin || isManager;
+  const hasManagementAccess = isManagementRole(user?.role);
 
   const handleNotificationsOpen = (event) => {
     setNotificationsAnchor(event.currentTarget);
@@ -216,7 +217,7 @@ const StaffLayout = () => {
 
   const menuItems = [
     { path: '/staff/dashboard', label: t('common.dashboard'), icon: <DashboardIcon /> },
-    ...(!hasManagementAccess
+    ...(isTechnicianRole(user?.role)
       ? [{ path: '/staff/my-cases', label: t('common.myServiceCases') || 'My Service Cases', icon: <OpenCasesIcon /> }]
       : []),
     { path: '/staff/cases', label: t('common.serviceCases'), icon: <OpenCasesIcon /> },
@@ -480,7 +481,7 @@ const StaffLayout = () => {
                       textTransform: 'capitalize',
                     }}
                   >
-                    {user?.role || 'User'}
+                    {roleLabel(user?.role)}
                   </Typography>
                 </Box>
                 <IconButton
@@ -537,7 +538,7 @@ const StaffLayout = () => {
                 flexShrink: 0,
               }}
             >
-              {isManager && (
+              {receivesManagerNotifications && (
                 <IconButton
                   sx={{ color: '#64748b', flexShrink: 0 }}
                   onClick={handleNotificationsOpen}

@@ -11,7 +11,12 @@ import { CaseStatusHistory } from './entities/case-status-history.entity';
 import { CreateCaseDto } from './dto/create-case.dto';
 import { UpdateCaseDto } from './dto/update-case.dto';
 import { ChangeStatusDto } from './dto/change-status.dto';
-import { User, UserRole } from '../users/entities/user.entity';
+import {
+  isManagementRole,
+  isTechnicianRole,
+  User,
+  UserRole,
+} from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
 import { SmsService } from '../sms/sms.service';
 import { Language } from '../sms/entities/sms-template.entity';
@@ -288,7 +293,7 @@ export class CasesService {
     const case_ = await this.findOne(id);
 
     // Technicians can only update limited fields.
-    if (user.role === UserRole.TECHNICIAN) {
+    if (!isManagementRole(user.role) && isTechnicianRole(user.role)) {
       // Technicians can only update limited fields
       const allowedFields = ['assigned_technician_id', 'priority', 'tags'];
       Object.keys(updateDto).forEach((key) => {
@@ -334,7 +339,7 @@ export class CasesService {
     const effectiveResult = newResult || case_.result_type;
 
     // Role-based restrictions
-    if (user.role === UserRole.TECHNICIAN) {
+    if (!isManagementRole(user.role) && isTechnicianRole(user.role)) {
       // Technicians can only move forward
       if (newStatus <= previousStatus) {
         throw new ForbiddenException('Technicians can only move status forward');
@@ -466,8 +471,8 @@ export class CasesService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    if (![UserRole.ADMIN, UserRole.MANAGER].includes(user.role)) {
-      throw new ForbiddenException('Only admins or managers can reopen cases');
+    if (!isManagementRole(user.role)) {
+      throw new ForbiddenException('Only admins, managers, or super technicians can reopen cases');
     }
 
     const case_ = await this.findOne(id);

@@ -16,13 +16,14 @@ import {
 import { ArrowBack, Edit } from '@mui/icons-material';
 import { warrantiesService } from '../../services/warrantiesService';
 import { useAuth } from '../../contexts/AuthContext';
+import { isManagementRole } from '../../utils/roles';
 
 const WarrantyDetailPage = () => {
   const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const canManageWarranties = ['admin', 'manager'].includes(user?.role);
+  const canManageWarranties = isManagementRole(user?.role);
 
   const { data: warranty, isLoading, error } = useQuery(
     ['warranty', id],

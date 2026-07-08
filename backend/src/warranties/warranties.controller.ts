@@ -29,7 +29,7 @@ export class WarrantiesController {
 
   @Post()
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.SUPER_TECHNICIAN)
   create(@Body() createDto: CreateWarrantyDto) {
     return this.warrantiesService.create(createDto);
   }
@@ -66,7 +66,7 @@ export class WarrantiesController {
 
   @Put(':id')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.SUPER_TECHNICIAN)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateWarrantyDto,
@@ -76,7 +76,7 @@ export class WarrantiesController {
 
   @Post(':id/extend')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.SUPER_TECHNICIAN)
   @HttpCode(HttpStatus.OK)
   extendWarranty(
     @Param('id', ParseIntPipe) id: number,

@@ -14,7 +14,7 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { UserRole } from '../users/entities/user.entity';
+import { isTechnicianRole, UserRole } from '../users/entities/user.entity';
 import { CasesService } from './cases.service';
 import { CreateCaseDto } from './dto/create-case.dto';
 import { UpdateCaseDto } from './dto/update-case.dto';
@@ -76,7 +76,7 @@ export class CasesController {
     if (end_date) filters.end_date = new Date(end_date);
     if (closeToDeadline === 'true') filters.closeToDeadline = true;
     if (due === 'true') filters.due = true;
-    if (req?.user?.role === UserRole.TECHNICIAN) {
+    if (isTechnicianRole(req?.user?.role)) {
       filters.excludePendingFromDeadline = true;
     }
 

@@ -69,7 +69,7 @@ export class PaymentsController {
 
   @Post(':id/mark-paid')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.SUPER_TECHNICIAN)
   @HttpCode(HttpStatus.OK)
   markAsPaid(
     @Param('id', ParseIntPipe) id: number,
@@ -80,7 +80,7 @@ export class PaymentsController {
 
   @Post(':id/mark-failed')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.SUPER_TECHNICIAN)
   @HttpCode(HttpStatus.OK)
   markAsFailed(@Param('id', ParseIntPipe) id: number) {
     return this.paymentsService.markAsFailed(id);

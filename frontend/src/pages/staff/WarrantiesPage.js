@@ -31,6 +31,7 @@ import { useQueryClient } from 'react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import CustomDataTable from '../../components/common/CustomDataTable';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
+import { isManagementRole } from '../../utils/roles';
 
 const WarrantiesPage = () => {
   const { t } = useTranslation();
@@ -38,7 +39,7 @@ const WarrantiesPage = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
-  const canManageWarranties = ['admin', 'manager'].includes(user?.role);
+  const canManageWarranties = isManagementRole(user?.role);
   const [searchParams, setSearchParams] = useSearchParams();
   
   const [filters, setFilters] = useState({

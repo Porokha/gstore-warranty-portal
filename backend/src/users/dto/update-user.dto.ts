@@ -33,4 +33,8 @@ export class UpdateUserDto {
   @IsOptional()
   @IsBoolean()
   must_change_password?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  is_postponed?: boolean;
 }

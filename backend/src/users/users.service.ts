@@ -1,8 +1,8 @@
 import { Injectable, ConflictException, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { User, UserRole } from './entities/user.entity';
+import { TECHNICIAN_ROLES, User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -39,7 +39,7 @@ export class UsersService {
 
   async findTechnicians(): Promise<User[]> {
     return this.usersRepository.find({
-      where: { role: UserRole.TECHNICIAN },
+      where: { role: In(TECHNICIAN_ROLES) },
       order: {
         name: 'ASC',
         last_name: 'ASC',
@@ -69,12 +69,13 @@ export class UsersService {
       email: createDto.email,
       language_pref: createDto.language_preference,
       must_change_password: Boolean(createDto.must_change_password),
+      is_postponed: Boolean(createDto.is_postponed),
     });
 
     return this.usersRepository.save(user);
   }
 
-  async update(id: number, updateDto: UpdateUserDto): Promise<User> {
+  async update(id: number, updateDto: UpdateUserDto, actorId?: number): Promise<User> {
     const user = await this.findById(id);
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
@@ -94,6 +95,12 @@ export class UsersService {
     if (updateDto.language_preference !== undefined) user.language_pref = updateDto.language_preference;
     if (updateDto.must_change_password !== undefined) {
       user.must_change_password = Boolean(updateDto.must_change_password);
+    }
+    if (updateDto.is_postponed !== undefined) {
+      if (actorId === id && Boolean(updateDto.is_postponed)) {
+        throw new BadRequestException('You cannot postpone your own account');
+      }
+      user.is_postponed = Boolean(updateDto.is_postponed);
     }
 
     return this.usersRepository.save(user);

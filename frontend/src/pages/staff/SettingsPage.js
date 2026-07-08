@@ -45,6 +45,7 @@ import { usersService } from '../../services/usersService';
 import { useAuth } from '../../contexts/AuthContext';
 import ApiKeysSettings from '../../components/settings/ApiKeysSettings';
 import api from '../../services/api';
+import { roleLabel } from '../../utils/roles';
 
 const SMS_SETTINGS_KEYS = [
   'global_enabled',
@@ -139,6 +140,7 @@ const SettingsPage = () => {
           role: 'technician',
           language_preference: 'ka',
           must_change_password: false,
+          is_postponed: false,
         });
         setEditingUser(null);
       },
@@ -168,6 +170,7 @@ const SettingsPage = () => {
           role: 'technician',
           language_preference: 'ka',
           must_change_password: false,
+          is_postponed: false,
         });
         setEditingUser(null);
       },
@@ -213,6 +216,7 @@ const SettingsPage = () => {
     role: 'technician',
     language_preference: 'ka',
     must_change_password: false,
+    is_postponed: false,
   });
 
   React.useEffect(() => {
@@ -324,6 +328,7 @@ const SettingsPage = () => {
       role: user.role,
       language_preference: user.language_pref || user.language_preference || 'ka',
       must_change_password: Boolean(user.must_change_password),
+      is_postponed: Boolean(user.is_postponed),
     });
     setUserDialogError('');
     setUserDialogOpen(true);
@@ -744,6 +749,7 @@ const SettingsPage = () => {
                     role: 'technician',
                     language_preference: 'ka',
                     must_change_password: false,
+                    is_postponed: false,
                   });
                   setUserDialogOpen(true);
                 }}
@@ -760,6 +766,7 @@ const SettingsPage = () => {
                     <TableCell>{t('user.name') || 'Name'}</TableCell>
                     <TableCell>{t('user.role') || 'Role'}</TableCell>
                     <TableCell>{t('user.language') || 'Language'}</TableCell>
+                    <TableCell>Status</TableCell>
                     <TableCell>{t('common.actions')}</TableCell>
                   </TableRow>
                 </TableHead>
@@ -771,8 +778,20 @@ const SettingsPage = () => {
                         <TableCell>
                           {u.name} {u.last_name}
                         </TableCell>
-                        <TableCell>{u.role}</TableCell>
-                        <TableCell>{u.language_preference}</TableCell>
+                        <TableCell>{roleLabel(u.role)}</TableCell>
+                        <TableCell>{u.language_pref || u.language_preference}</TableCell>
+                        <TableCell>
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            {u.is_postponed ? (
+                              <Chip size="small" color="warning" label="Postponed" />
+                            ) : (
+                              <Chip size="small" color="success" label="Active" />
+                            )}
+                            {u.must_change_password && (
+                              <Chip size="small" variant="outlined" label="Password reset" />
+                            )}
+                          </Stack>
+                        </TableCell>
                         <TableCell>
                           <IconButton size="small" onClick={() => handleEditUser(u)}>
                             <EditIcon />
@@ -782,7 +801,7 @@ const SettingsPage = () => {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} align="center">
+                      <TableCell colSpan={6} align="center">
                         {t('common.noUsers') || 'No users found'}
                       </TableCell>
                     </TableRow>
@@ -964,6 +983,16 @@ const SettingsPage = () => {
               }
               label="Require password change at first login"
             />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={Boolean(userForm.is_postponed)}
+                  onChange={(e) => setUserForm({ ...userForm, is_postponed: e.target.checked })}
+                  disabled={editingUser?.id === user?.id}
+                />
+              }
+              label="Postpone user login"
+            />
           <TextField
             fullWidth
             label={t('user.name') || 'Name'}
@@ -987,6 +1016,7 @@ const SettingsPage = () => {
             >
               <MenuItem value="admin">Admin</MenuItem>
               <MenuItem value="manager">Manager</MenuItem>
+              <MenuItem value="super_technician">Super Technician</MenuItem>
               <MenuItem value="technician">Technician</MenuItem>
             </Select>
           </FormControl>

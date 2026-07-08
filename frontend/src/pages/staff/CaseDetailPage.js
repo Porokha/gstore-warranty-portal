@@ -35,6 +35,7 @@ import StatusChangeForm from '../../components/cases/StatusChangeForm';
 import FileUpload from '../../components/cases/FileUpload';
 import { useAuth } from '../../contexts/AuthContext';
 import { printServiceCaseLabel } from '../../utils/serviceCaseLabel';
+import { isManagementRole } from '../../utils/roles';
 
 const CaseDetailPage = () => {
   const { id } = useParams();
@@ -43,7 +44,7 @@ const CaseDetailPage = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
-  const canManageCases = ['admin', 'manager'].includes(user?.role);
+  const canManageCases = isManagementRole(user?.role);
   const queryClient = useQueryClient();
   const [tab, setTab] = useState(0);
   const [internalNote, setInternalNote] = useState('');

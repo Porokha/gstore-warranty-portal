@@ -47,12 +47,13 @@ import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Toolti
 import { dashboardService } from '../../services/dashboardService';
 import { casesService } from '../../services/casesService';
 import { useAuth } from '../../contexts/AuthContext';
+import { isManagementRole } from '../../utils/roles';
 
 const DashboardPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const hasManagementAccess = ['admin', 'manager'].includes(user?.role);
+  const hasManagementAccess = isManagementRole(user?.role);
   const brand = {
     violet: '#A576FF',
     violetSoft: '#EFE7FF',

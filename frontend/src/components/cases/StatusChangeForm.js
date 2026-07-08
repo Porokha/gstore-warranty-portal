@@ -19,12 +19,13 @@ import FlagRoundedIcon from '@mui/icons-material/FlagRounded';
 import { useAuth } from '../../contexts/AuthContext';
 import { paymentsService } from '../../services/paymentsService';
 import { useMutation, useQueryClient } from 'react-query';
+import { isManagementRole } from '../../utils/roles';
 
 const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const canManageCases = ['admin', 'manager'].includes(user?.role);
+  const canManageCases = isManagementRole(user?.role);
 
   const [formData, setFormData] = useState({
     new_status_level: case_.status_level,

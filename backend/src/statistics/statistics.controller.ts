@@ -3,7 +3,7 @@ import { Response } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { UserRole } from '../users/entities/user.entity';
+import { isTechnicianRole, UserRole } from '../users/entities/user.entity';
 import { StatisticsService } from './statistics.service';
 
 @Controller('statistics')
@@ -12,7 +12,7 @@ export class StatisticsController {
   constructor(private statisticsService: StatisticsService) {}
 
   @Get('technicians')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.TECHNICIAN)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.SUPER_TECHNICIAN, UserRole.TECHNICIAN)
   async getTechnicianStats(
     @Query('technician_id') technicianId?: string,
     @Query('start_date') startDate?: string,
@@ -20,7 +20,7 @@ export class StatisticsController {
     @Request() req?: any,
   ) {
     // If technician, only show their own stats
-    if (req.user.role === UserRole.TECHNICIAN) {
+    if (isTechnicianRole(req.user.role) && req.user.role !== UserRole.SUPER_TECHNICIAN) {
       return this.statisticsService.getTechnicianStats(req.user.id, startDate, endDate);
     }
     
@@ -30,7 +30,7 @@ export class StatisticsController {
   }
 
   @Get('technicians/all')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.SUPER_TECHNICIAN)
   async getAllTechniciansStats(
     @Query('start_date') startDate?: string,
     @Query('end_date') endDate?: string,
@@ -39,7 +39,7 @@ export class StatisticsController {
   }
 
   @Get('technicians/export')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.TECHNICIAN)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.SUPER_TECHNICIAN, UserRole.TECHNICIAN)
   @Header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
   @Header('Content-Disposition', 'attachment; filename=technician-statistics.xlsx')
   async exportTechnicianStats(
@@ -62,7 +62,7 @@ export class StatisticsController {
   }
 
   @Get('technicians/all/export')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.SUPER_TECHNICIAN)
   @Header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
   @Header('Content-Disposition', 'attachment; filename=all-technicians-statistics.xlsx')
   async exportAllTechniciansStats(
