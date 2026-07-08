@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Query, UseGuards } from '@nestjs/common';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -66,11 +66,22 @@ export class TradeInAdminController {
     );
   }
 
+  @Get('quotes/counts')
+  quoteCounts() {
+    return this.tradeInService.getQuoteCounts();
+  }
+
   @Patch('quotes/:id')
   updateQuote(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateTradeInQuoteDto,
   ) {
     return this.tradeInService.updateQuote(id, dto);
+  }
+
+  @Delete('quotes/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteQuote(@Param('id', ParseIntPipe) id: number) {
+    return this.tradeInService.deleteQuote(id);
   }
 }

@@ -286,8 +286,51 @@ export class TradeInService {
     if (!quote) {
       throw new NotFoundException('Trade-in quote not found.');
     }
-    Object.assign(quote, dto);
+    const next = {
+      ...dto,
+      customer_name: dto.customer_name?.trim(),
+      customer_email: dto.customer_email?.trim() || null,
+      customer_phone: dto.customer_phone?.trim(),
+      product_name: dto.product_name?.trim(),
+      final_price: dto.final_price !== undefined ? Number(dto.final_price).toFixed(2) : undefined,
+      notes: dto.notes?.trim() || null,
+    };
+    Object.entries(next).forEach(([key, value]) => {
+      if (value !== undefined) {
+        (quote as any)[key] = value;
+      }
+    });
     return this.quoteRepository.save(quote);
+  }
+
+  async deleteQuote(id: number) {
+    const quote = await this.quoteRepository.findOne({ where: { id } });
+    if (!quote) {
+      throw new NotFoundException('Trade-in quote not found.');
+    }
+    await this.quoteRepository.delete(id);
+  }
+
+  async getQuoteCounts() {
+    const rows = await this.quoteRepository
+      .createQueryBuilder('quote')
+      .select('quote.status', 'status')
+      .addSelect('COUNT(quote.id)', 'count')
+      .groupBy('quote.status')
+      .getRawMany();
+
+    const byStatus = rows.reduce((acc, row) => {
+      acc[row.status] = Number(row.count || 0);
+      return acc;
+    }, {} as Record<string, number>);
+
+    const counts = Object.values(byStatus) as number[];
+
+    return {
+      pending: byStatus[TradeInQuoteStatus.PENDING] || 0,
+      total: counts.reduce((sum, count) => sum + count, 0),
+      by_status: byStatus,
+    };
   }
 
   private toPublicProduct(product: TradeInProduct, selectedMaxPrice?: string | number) {

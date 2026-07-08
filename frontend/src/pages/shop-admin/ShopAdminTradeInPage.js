@@ -2,10 +2,16 @@ import React, { useState } from 'react';
 import {
   Alert,
   Box,
+  Button,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   FormControl,
   IconButton,
   InputAdornment,
+  Stack,
   MenuItem,
   Paper,
   Select,
@@ -17,9 +23,10 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { RefreshRounded, SearchRounded } from '@mui/icons-material';
+import { DeleteOutlineRounded, EditRounded, RefreshRounded, SearchRounded } from '@mui/icons-material';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { tradeInService } from '../../services/tradeInService';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 
 const headerCell = {
   color: '#667085',
@@ -43,7 +50,24 @@ const ShopAdminTradeInPage = () => {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState(0);
   const [search, setSearch] = useState('');
+  const [productCategory, setProductCategory] = useState('');
   const [quoteStatus, setQuoteStatus] = useState('');
+  const [editingQuote, setEditingQuote] = useState(null);
+  const [quoteForm, setQuoteForm] = useState({
+    status: 'pending',
+    customer_name: '',
+    customer_phone: '',
+    customer_email: '',
+    product_name: '',
+    final_price: '',
+    notes: '',
+  });
+  const [confirmState, setConfirmState] = useState({
+    open: false,
+    title: '',
+    message: '',
+    onConfirm: null,
+  });
 
   const quotesQuery = useQuery(
     ['trade-in-admin-quotes', quoteStatus],
@@ -51,19 +75,39 @@ const ShopAdminTradeInPage = () => {
     { enabled: tab === 0 },
   );
   const productsQuery = useQuery(
-    ['trade-in-admin-products', search],
-    () => tradeInService.getAdminProducts({ q: search || undefined, limit: 100 }),
+    ['trade-in-admin-products', search, productCategory],
+    () => tradeInService.getAdminProducts({
+      q: search || undefined,
+      category: productCategory || undefined,
+      limit: 100,
+    }),
     { enabled: tab === 1, keepPreviousData: true },
   );
   const categoriesQuery = useQuery(
     ['trade-in-admin-categories'],
     tradeInService.getAdminCategories,
-    { enabled: tab === 2 },
+    { enabled: tab === 1 || tab === 2 },
   );
 
   const quoteMutation = useMutation(
     ({ id, payload }) => tradeInService.updateAdminQuote(id, payload),
-    { onSuccess: () => queryClient.invalidateQueries('trade-in-admin-quotes') },
+    {
+      onSuccess: () => {
+        setEditingQuote(null);
+        queryClient.invalidateQueries('trade-in-admin-quotes');
+        queryClient.invalidateQueries('shop-admin-trade-in-badge');
+      },
+    },
+  );
+  const deleteQuoteMutation = useMutation(
+    (id) => tradeInService.deleteAdminQuote(id),
+    {
+      onSuccess: () => {
+        setConfirmState({ open: false, title: '', message: '', onConfirm: null });
+        queryClient.invalidateQueries('trade-in-admin-quotes');
+        queryClient.invalidateQueries('shop-admin-trade-in-badge');
+      },
+    },
   );
   const productMutation = useMutation(
     ({ id, payload }) => tradeInService.updateAdminProduct(id, payload),
@@ -75,6 +119,29 @@ const ShopAdminTradeInPage = () => {
   );
 
   const currentQuery = tab === 0 ? quotesQuery : tab === 1 ? productsQuery : categoriesQuery;
+  const openQuoteEditor = (quote) => {
+    setEditingQuote(quote);
+    setQuoteForm({
+      status: quote.status || 'pending',
+      customer_name: quote.customer_name || '',
+      customer_phone: quote.customer_phone || '',
+      customer_email: quote.customer_email || '',
+      product_name: quote.product_name || '',
+      final_price: quote.final_price || '',
+      notes: quote.notes || '',
+    });
+  };
+
+  const saveQuote = () => {
+    if (!editingQuote) return;
+    quoteMutation.mutate({
+      id: editingQuote.id,
+      payload: {
+        ...quoteForm,
+        final_price: Number(quoteForm.final_price || 0),
+      },
+    });
+  };
 
   return (
     <Box>
@@ -118,18 +185,34 @@ const ShopAdminTradeInPage = () => {
             </FormControl>
           )}
           {tab === 1 && (
-            <TextField
-              size="small"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search product, brand, or slug"
-              sx={{ width: 380 }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start"><SearchRounded fontSize="small" /></InputAdornment>
-                ),
-              }}
-            />
+            <>
+              <TextField
+                size="small"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search product, brand, or slug"
+                sx={{ width: 380 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start"><SearchRounded fontSize="small" /></InputAdornment>
+                  ),
+                }}
+              />
+              <FormControl size="small" sx={{ minWidth: 190 }}>
+                <Select
+                  value={productCategory}
+                  displayEmpty
+                  onChange={(event) => setProductCategory(event.target.value)}
+                >
+                  <MenuItem value="">All categories</MenuItem>
+                  {(categoriesQuery.data || []).map((category) => (
+                    <MenuItem key={category.slug} value={category.slug}>
+                      {category.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </>
           )}
           <Typography sx={{ ml: 'auto', color: '#667085', fontSize: 12 }}>
             {tab === 0 ? quotesQuery.data?.total || 0 : tab === 1 ? productsQuery.data?.total || 0 : categoriesQuery.data?.length || 0} records
@@ -146,11 +229,11 @@ const ShopAdminTradeInPage = () => {
             {tab === 0 && (
               <Box sx={{ overflowX: 'auto' }}>
                 <Box sx={{ minWidth: 900 }}>
-                  <Box sx={{ display: 'grid', gridTemplateColumns: '140px 1.5fr 1fr 140px 150px 180px', gap: 2, px: 2, py: 1.25, bgcolor: '#f8f9fc' }}>
-                    {['Quote', 'Device / customer', 'Phone', 'Offer', 'Created', 'Status'].map((label) => <Typography key={label} sx={headerCell}>{label}</Typography>)}
+                  <Box sx={{ display: 'grid', gridTemplateColumns: '140px 1.4fr 1fr 120px 140px 170px 96px', gap: 2, px: 2, py: 1.25, bgcolor: '#f8f9fc' }}>
+                    {['Quote', 'Device / customer', 'Phone', 'Offer', 'Created', 'Status', 'Actions'].map((label) => <Typography key={label} sx={headerCell}>{label}</Typography>)}
                   </Box>
                   {(quotesQuery.data?.items || []).map((quote) => (
-                    <Box key={quote.id} sx={{ display: 'grid', gridTemplateColumns: '140px 1.5fr 1fr 140px 150px 180px', gap: 2, alignItems: 'center', px: 2, py: 1.4, borderTop: '1px solid #edf0f5' }}>
+                    <Box key={quote.id} sx={{ display: 'grid', gridTemplateColumns: '140px 1.4fr 1fr 120px 140px 170px 96px', gap: 2, alignItems: 'center', px: 2, py: 1.4, borderTop: '1px solid #edf0f5' }}>
                       <Typography sx={{ fontSize: 13, fontWeight: 800 }}>{quote.quote_number}</Typography>
                       <Box>
                         <Typography sx={{ fontSize: 13, fontWeight: 800 }}>{quote.product_name}</Typography>
@@ -167,6 +250,29 @@ const ShopAdminTradeInPage = () => {
                       >
                         {['pending', 'contacted', 'accepted', 'completed', 'cancelled'].map((status) => <MenuItem key={status} value={status}>{status}</MenuItem>)}
                       </Select>
+                      <Stack direction="row" spacing={0.5}>
+                        <Tooltip title="Edit quote">
+                          <IconButton size="small" onClick={() => openQuoteEditor(quote)}>
+                            <EditRounded fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete quote">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() =>
+                              setConfirmState({
+                                open: true,
+                                title: 'Delete trade-in quote',
+                                message: `Delete ${quote.quote_number}? This cannot be undone.`,
+                                onConfirm: () => deleteQuoteMutation.mutate(quote.id),
+                              })
+                            }
+                          >
+                            <DeleteOutlineRounded fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Stack>
                     </Box>
                   ))}
                 </Box>
@@ -229,6 +335,89 @@ const ShopAdminTradeInPage = () => {
           </>
         )}
       </Paper>
+
+      <Dialog
+        open={Boolean(editingQuote)}
+        onClose={() => setEditingQuote(null)}
+        fullWidth
+        maxWidth="sm"
+        PaperProps={{ sx: { borderRadius: '18px !important' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 900 }}>Edit trade-in quote</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <TextField
+              select
+              label="Status"
+              value={quoteForm.status}
+              onChange={(event) => setQuoteForm((prev) => ({ ...prev, status: event.target.value }))}
+              fullWidth
+            >
+              {['pending', 'contacted', 'accepted', 'completed', 'cancelled'].map((status) => (
+                <MenuItem key={status} value={status}>{status}</MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              label="Product"
+              value={quoteForm.product_name}
+              onChange={(event) => setQuoteForm((prev) => ({ ...prev, product_name: event.target.value }))}
+              fullWidth
+            />
+            <TextField
+              label="Customer name"
+              value={quoteForm.customer_name}
+              onChange={(event) => setQuoteForm((prev) => ({ ...prev, customer_name: event.target.value }))}
+              fullWidth
+            />
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+              <TextField
+                label="Phone"
+                value={quoteForm.customer_phone}
+                onChange={(event) => setQuoteForm((prev) => ({ ...prev, customer_phone: event.target.value }))}
+                fullWidth
+              />
+              <TextField
+                label="Email"
+                value={quoteForm.customer_email}
+                onChange={(event) => setQuoteForm((prev) => ({ ...prev, customer_email: event.target.value }))}
+                fullWidth
+              />
+            </Stack>
+            <TextField
+              label="Final offer"
+              type="number"
+              value={quoteForm.final_price}
+              onChange={(event) => setQuoteForm((prev) => ({ ...prev, final_price: event.target.value }))}
+              fullWidth
+            />
+            <TextField
+              label="Notes"
+              value={quoteForm.notes}
+              onChange={(event) => setQuoteForm((prev) => ({ ...prev, notes: event.target.value }))}
+              multiline
+              minRows={4}
+              fullWidth
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setEditingQuote(null)}>Cancel</Button>
+          <Button variant="contained" onClick={saveQuote} disabled={quoteMutation.isLoading}>
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        message={confirmState.message}
+        confirmText="Delete"
+        severity="error"
+        loading={deleteQuoteMutation.isLoading}
+        onClose={() => setConfirmState({ open: false, title: '', message: '', onConfirm: null })}
+        onConfirm={confirmState.onConfirm}
+      />
     </Box>
   );
 };

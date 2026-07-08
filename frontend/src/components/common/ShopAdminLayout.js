@@ -15,6 +15,7 @@ import { CurrencyExchangeRounded, Inventory2, ReceiptLong, Settings } from '@mui
 import { useQuery } from 'react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import { shopService } from '../../services/shopService';
+import { tradeInService } from '../../services/tradeInService';
 import LanguageSwitcher from './LanguageSwitcher';
 
 const navItems = [
@@ -39,6 +40,15 @@ const ShopAdminLayout = () => {
     },
   );
   const unreadOrdersCount = activeOrders.filter((order) => !order.viewed_at).length;
+  const { data: tradeInCounts } = useQuery(
+    ['shop-admin-trade-in-badge'],
+    tradeInService.getAdminQuoteCounts,
+    {
+      refetchInterval: 15000,
+      refetchOnWindowFocus: true,
+    },
+  );
+  const pendingTradeInCount = tradeInCounts?.pending || 0;
 
   return (
     <Box
@@ -97,11 +107,19 @@ const ShopAdminLayout = () => {
                     key={item.path}
                     onClick={() => navigate(item.path)}
                     startIcon={
-                      item.path === '/shop/admin/orders' ? (
+                      item.path === '/shop/admin/orders' || item.path === '/shop/admin/trade-in' ? (
                         <Badge
                           color="error"
-                          badgeContent={unreadOrdersCount}
-                          invisible={unreadOrdersCount === 0}
+                          badgeContent={
+                            item.path === '/shop/admin/orders'
+                              ? unreadOrdersCount
+                              : pendingTradeInCount
+                          }
+                          invisible={
+                            item.path === '/shop/admin/orders'
+                              ? unreadOrdersCount === 0
+                              : pendingTradeInCount === 0
+                          }
                           max={99}
                           sx={{
                             '& .MuiBadge-badge': {

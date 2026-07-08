@@ -56,8 +56,18 @@ export const tradeInService = {
     return response.data;
   },
 
+  getAdminQuoteCounts: async () => {
+    const response = await api.get('/shop/admin/trade-in/quotes/counts');
+    return response.data;
+  },
+
   updateAdminQuote: async (id, payload) => {
     const response = await api.patch(`/shop/admin/trade-in/quotes/${id}`, payload);
+    return response.data;
+  },
+
+  deleteAdminQuote: async (id) => {
+    const response = await api.delete(`/shop/admin/trade-in/quotes/${id}`);
     return response.data;
   },
 };
