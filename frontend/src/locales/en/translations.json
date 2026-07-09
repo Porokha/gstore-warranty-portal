@@ -404,7 +404,21 @@
       "submitQuote": "Save offer",
       "quoteSaved": "Your offer has been saved",
       "quoteNumber": "Quote number",
-      "quoteError": "The offer could not be saved. Please try again."
+      "quoteError": "The offer could not be saved. Please try again.",
+      "next": "Next",
+      "previous": "Back",
+      "answerRequired": "Choose one answer to continue.",
+      "requiredFields": "Name and phone number are required.",
+      "emailInvalid": "Enter a valid email address.",
+      "noOffer": "We cannot calculate a valid offer for this configuration.",
+      "quoteSavedText": "Our team will review the request and contact you shortly.",
+      "whyZezva": "Why choose ZEZVA TRADE-IN?",
+      "benefits": {
+        "1": "Transparent offer and clear handoff",
+        "2": "Fast review within 24 hours",
+        "3": "Safe process",
+        "4": "Price guarantee for 10 days"
+      }
     },
     "cookieConsent": {
       "message": "By continuing to use the site, you agree to the use of cookies and local storage features.",
