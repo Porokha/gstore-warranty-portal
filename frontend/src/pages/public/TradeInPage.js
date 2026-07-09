@@ -309,10 +309,28 @@ const TradeInPage = () => {
             src={`/trade-in/widget/index.html?slug=${encodeURIComponent(product.slug)}&lang=${
               i18n.language?.startsWith('ka') ? 'ka' : 'en'
             }`}
+            onLoad={(event) => {
+              const frame = event.currentTarget;
+              const syncHeight = () => {
+                const doc = frame.contentDocument || frame.contentWindow?.document;
+                if (!doc) return;
+                const height = Math.max(
+                  640,
+                  doc.documentElement?.scrollHeight || 0,
+                  doc.body?.scrollHeight || 0,
+                );
+                frame.style.height = `${height}px`;
+              };
+              if (frame.tradeInResizeTimer) {
+                clearInterval(frame.tradeInResizeTimer);
+              }
+              syncHeight();
+              frame.tradeInResizeTimer = setInterval(syncHeight, 500);
+            }}
             sx={{
               display: 'block',
               width: '100%',
-              minHeight: { xs: 980, md: 780 },
+              minHeight: { xs: 680, md: 640 },
               border: 0,
               bgcolor: 'transparent',
             }}
