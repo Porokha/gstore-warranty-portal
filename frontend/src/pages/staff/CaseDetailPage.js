@@ -543,7 +543,7 @@ const CaseDetailPage = () => {
           <Box>
             <StatusStepper currentStatus={case_.status_level} statusTimestamps={statusTimestamps} />
             {partsWaitingError && (
-              <Alert severity="error" sx={{ mt: 2, borderRadius: 2 }}>
+              <Alert severity="error" sx={{ mt: 2, borderRadius: '6px' }}>
                 {partsWaitingError}
               </Alert>
             )}
@@ -553,7 +553,7 @@ const CaseDetailPage = () => {
                 sx={{
                   mt: 2,
                   p: 2,
-                  borderRadius: 2,
+                  borderRadius: '6px',
                   borderColor: case_.parts_waiting ? 'warning.main' : 'divider',
                   background: case_.parts_waiting
                     ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(255, 255, 255, 0.9))'
@@ -595,7 +595,7 @@ const CaseDetailPage = () => {
                     onClick={() =>
                       partsWaitingMutation.mutate(case_.parts_waiting ? 'received' : 'start')
                     }
-                    sx={{ borderRadius: 2, whiteSpace: 'nowrap' }}
+                    sx={{ borderRadius: '6px', whiteSpace: 'nowrap' }}
                   >
                     {partsWaitingMutation.isLoading
                       ? 'Saving...'
