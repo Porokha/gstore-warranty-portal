@@ -16,8 +16,13 @@ i18n
         translation: kaTranslations,
       },
     },
-    fallbackLng: 'en',
-    lng: 'en',
+    fallbackLng: 'ka',
+    supportedLngs: ['ka', 'en'],
+    detection: {
+      order: ['localStorage'],
+      lookupLocalStorage: 'zezva_language',
+      caches: ['localStorage'],
+    },
     debug: process.env.NODE_ENV === 'development',
     interpolation: {
       escapeValue: false,
@@ -25,4 +30,3 @@ i18n
   });
 
 export default i18n;
-
