@@ -412,12 +412,22 @@
       "emailInvalid": "Enter a valid email address.",
       "noOffer": "We cannot calculate a valid offer for this configuration.",
       "quoteSavedText": "Our team will review the request and contact you shortly.",
+      "offerLabel": "Your device is worth up to",
+      "getThisOffer": "Get This Offer",
+      "changeAnswers": "Change Answers",
+      "claimOffer": "Claim Your Offer",
+      "claimHint": "Enter your details and we will confirm the offer with next steps.",
       "whyZezva": "Why choose ZEZVA TRADE-IN?",
       "benefits": {
         "1": "Transparent offer and clear handoff",
         "2": "Fast review within 24 hours",
         "3": "Safe process",
         "4": "Price guarantee for 10 days"
+      },
+      "offerSteps": {
+        "1": "Free handoff guidance provided",
+        "2": "Payment processed after verification",
+        "3": "Offer locked in for 10 days"
       }
     },
     "cookieConsent": {

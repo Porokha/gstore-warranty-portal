@@ -5,6 +5,7 @@ import {
   Button,
   CircularProgress,
   InputAdornment,
+  Modal,
   Skeleton,
   TextField,
   Typography,
@@ -157,6 +158,8 @@ const TradeInValuation = ({ product, t }) => {
   const [formError, setFormError] = useState('');
   const [quoteResult, setQuoteResult] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [displayPrice, setDisplayPrice] = useState(0);
+  const [quoteOpen, setQuoteOpen] = useState(false);
 
   const productQuery = useQuery(
     ['trade-in-product', product?.slug],
@@ -174,6 +177,8 @@ const TradeInValuation = ({ product, t }) => {
     setFormError('');
     setQuoteResult(null);
     setSaving(false);
+    setDisplayPrice(0);
+    setQuoteOpen(false);
   }, [product?.slug]);
 
   const detail = productQuery.data || product;
@@ -187,6 +192,28 @@ const TradeInValuation = ({ product, t }) => {
   const currentMessage = getAnswerMessage(answerMessages, selectedAnswers[0]);
   const isMulti = Number(activeQuestion?.type || 0) > 0;
   const finalPrice = Math.max(0, Math.round(price));
+
+  useEffect(() => {
+    if (mode !== 'final') {
+      setDisplayPrice(mode === 'no-offer' ? 0 : finalPrice);
+      return undefined;
+    }
+
+    let frameId;
+    const startedAt = performance.now();
+    const duration = 1100;
+    const tick = (time) => {
+      const progress = Math.min(1, (time - startedAt) / duration);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplayPrice(Math.round(finalPrice * eased));
+      if (progress < 1) {
+        frameId = requestAnimationFrame(tick);
+      }
+    };
+    setDisplayPrice(0);
+    frameId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frameId);
+  }, [finalPrice, mode]);
 
   const selectAnswer = (index) => {
     setFormError('');
@@ -295,6 +322,7 @@ const TradeInValuation = ({ product, t }) => {
       const response = await tradeInService.createQuote(payload);
       setQuoteResult(response);
       setMode('success');
+      setQuoteOpen(false);
     } catch (error) {
       setFormError(t('public.tradeIn.quoteError'));
     } finally {
@@ -359,17 +387,38 @@ const TradeInValuation = ({ product, t }) => {
             bgcolor: '#fff',
           }}
         >
-          <Typography sx={{ mb: 1.5, fontWeight: 900, letterSpacing: '.04em' }}>
-            {t('public.tradeIn.whyZezva')}
-          </Typography>
-          {[1, 2, 3, 4].map((item) => (
-            <Typography key={item} sx={{ color: palette.muted, fontSize: 14, lineHeight: 1.8 }}>
-              <Box component="span" sx={{ color: palette.purple, fontWeight: 900, mr: 1.25 }}>
-                ✓
-              </Box>
-              {t(`public.tradeIn.benefits.${item}`)}
-            </Typography>
-          ))}
+          {mode === 'final' || mode === 'success' ? (
+            <>
+              <Typography sx={{ color: palette.purpleDark, fontSize: 12, fontWeight: 900, letterSpacing: '.12em' }}>
+                {t('public.tradeIn.yourOffer')}
+              </Typography>
+              <Typography sx={{ mt: 0.5, color: palette.purple, fontSize: 38, fontWeight: 900 }}>
+                ₾{finalPrice.toLocaleString()}
+              </Typography>
+              {[1, 2, 3].map((item) => (
+                <Typography key={item} sx={{ color: palette.muted, fontSize: 13, lineHeight: 1.75 }}>
+                  <Box component="span" sx={{ color: palette.purple, fontWeight: 900, mr: 1.25 }}>
+                    ✓
+                  </Box>
+                  {t(`public.tradeIn.offerSteps.${item}`)}
+                </Typography>
+              ))}
+            </>
+          ) : (
+            <>
+              <Typography sx={{ mb: 1.5, fontWeight: 900, letterSpacing: '.04em' }}>
+                {t('public.tradeIn.whyZezva')}
+              </Typography>
+              {[1, 2, 3, 4].map((item) => (
+                <Typography key={item} sx={{ color: palette.muted, fontSize: 14, lineHeight: 1.8 }}>
+                  <Box component="span" sx={{ color: palette.purple, fontWeight: 900, mr: 1.25 }}>
+                    ✓
+                  </Box>
+                  {t(`public.tradeIn.benefits.${item}`)}
+                </Typography>
+              ))}
+            </>
+          )}
         </Box>
       </Box>
 
@@ -477,59 +526,57 @@ const TradeInValuation = ({ product, t }) => {
         )}
 
         {(mode === 'final' || mode === 'no-offer') && (
-          <Box component="form" onSubmit={submitQuote}>
-            <Typography sx={{ color: palette.purpleDark, fontSize: 12, fontWeight: 900, letterSpacing: '.12em' }}>
-              {t('public.tradeIn.offerReady')}
-            </Typography>
-            <Typography sx={{ mt: 1, fontSize: { xs: 40, md: 54 }, fontWeight: 900 }}>
-              ₾{finalPrice.toLocaleString()}
-            </Typography>
-            <Typography sx={{ color: palette.muted, mb: 3 }}>
+          <Box
+            sx={{
+              minHeight: 460,
+              display: 'grid',
+              placeItems: 'center',
+              textAlign: 'center',
+              animation: 'tradeOfferIn 420ms cubic-bezier(.2,.9,.2,1) both',
+              '@keyframes tradeOfferIn': {
+                from: { opacity: 0, transform: 'translateY(14px) scale(.985)' },
+                to: { opacity: 1, transform: 'translateY(0) scale(1)' },
+              },
+            }}
+          >
+            <Box sx={{ width: '100%', maxWidth: 620 }}>
+              <Typography sx={{ color: palette.muted, fontSize: 15, fontWeight: 800 }}>
+                {t('public.tradeIn.offerLabel')}
+              </Typography>
+              <Typography
+                sx={{
+                  mt: 1,
+                  color: palette.purple,
+                  fontSize: { xs: 64, md: 86 },
+                  fontWeight: 900,
+                  letterSpacing: '-.06em',
+                  lineHeight: 1,
+                }}
+              >
+                ₾{displayPrice.toLocaleString()}
+              </Typography>
+              <Typography sx={{ mt: 1.5, color: palette.muted, mb: 4 }}>
               {mode === 'no-offer' ? t('public.tradeIn.noOffer') : t('public.tradeIn.yourOffer')}
             </Typography>
-            {formError && (
-              <Alert severity="error" sx={{ mb: 2, borderRadius: '10px' }}>
-                {formError}
-              </Alert>
-            )}
-            <Box sx={{ display: 'grid', gap: 1.5 }}>
-              <TextField
-                value={form.customer_name}
-                onChange={(event) => setForm((current) => ({ ...current, customer_name: event.target.value }))}
-                label={t('public.tradeIn.fullName')}
-                fullWidth
-              />
-              <TextField
-                value={form.customer_phone}
-                onChange={(event) => setForm((current) => ({ ...current, customer_phone: event.target.value }))}
-                label={t('public.tradeIn.phone')}
-                fullWidth
-              />
-              <TextField
-                value={form.customer_email}
-                onChange={(event) => setForm((current) => ({ ...current, customer_email: event.target.value }))}
-                label={t('public.tradeIn.email')}
-                fullWidth
-              />
-            </Box>
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.5, mt: 2.5 }}>
-              <Button
-                variant="contained"
-                disableElevation
-                onClick={goPreviousQuestion}
-                sx={{ py: 1.4, borderRadius: '10px', bgcolor: '#f1eff7', color: palette.ink }}
-              >
-                {t('public.tradeIn.previous')}
-              </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                disableElevation
-                disabled={saving || mode === 'no-offer'}
-                sx={{ py: 1.4, borderRadius: '10px', bgcolor: palette.purple }}
-              >
-                {saving ? <CircularProgress size={20} color="inherit" /> : t('public.tradeIn.submitQuote')}
-              </Button>
+              <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+                <Button
+                  variant="contained"
+                  disableElevation
+                  disabled={mode === 'no-offer'}
+                  onClick={() => setQuoteOpen(true)}
+                  sx={{ minWidth: 170, py: 1.5, borderRadius: '999px', bgcolor: palette.purple }}
+                >
+                  {t('public.tradeIn.getThisOffer')}
+                </Button>
+                <Button
+                  variant="contained"
+                  disableElevation
+                  onClick={goPreviousQuestion}
+                  sx={{ minWidth: 170, py: 1.5, borderRadius: '999px', bgcolor: '#f1eff7', color: palette.ink }}
+                >
+                  {t('public.tradeIn.changeAnswers')}
+                </Button>
+              </Box>
             </Box>
           </Box>
         )}
@@ -550,6 +597,80 @@ const TradeInValuation = ({ product, t }) => {
           </Box>
         )}
       </Box>
+
+      <Modal open={quoteOpen} onClose={() => setQuoteOpen(false)}>
+        <Box
+          component="form"
+          onSubmit={submitQuote}
+          sx={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 'min(520px, calc(100vw - 28px))',
+            maxHeight: 'calc(100vh - 28px)',
+            overflow: 'auto',
+            p: { xs: 2.4, md: 3.5 },
+            borderRadius: '18px',
+            bgcolor: '#fff',
+            boxShadow: '0 28px 90px rgba(22, 17, 40, .28)',
+            outline: 'none',
+          }}
+        >
+          <Typography sx={{ fontSize: { xs: 28, md: 36 }, fontWeight: 900 }}>
+            {t('public.tradeIn.claimOffer')}
+          </Typography>
+          <Typography sx={{ mt: 0.5, color: palette.muted }}>{detail?.name}</Typography>
+          <Typography sx={{ mt: 2, color: palette.purple, fontSize: 44, fontWeight: 900, lineHeight: 1 }}>
+            ₾{finalPrice.toLocaleString()}
+          </Typography>
+          <Typography sx={{ mt: 1, mb: 2.5, color: palette.muted }}>{t('public.tradeIn.claimHint')}</Typography>
+          {formError && (
+            <Alert severity="error" sx={{ mb: 2, borderRadius: '10px' }}>
+              {formError}
+            </Alert>
+          )}
+          <Box sx={{ display: 'grid', gap: 1.5 }}>
+            <TextField
+              value={form.customer_name}
+              onChange={(event) => setForm((current) => ({ ...current, customer_name: event.target.value }))}
+              label={t('public.tradeIn.fullName')}
+              fullWidth
+            />
+            <TextField
+              value={form.customer_phone}
+              onChange={(event) => setForm((current) => ({ ...current, customer_phone: event.target.value }))}
+              label={t('public.tradeIn.phone')}
+              fullWidth
+            />
+            <TextField
+              value={form.customer_email}
+              onChange={(event) => setForm((current) => ({ ...current, customer_email: event.target.value }))}
+              label={t('public.tradeIn.email')}
+              fullWidth
+            />
+          </Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.2, mt: 2.4 }}>
+            <Button
+              type="submit"
+              variant="contained"
+              disableElevation
+              disabled={saving}
+              sx={{ py: 1.4, borderRadius: '12px', bgcolor: palette.purple }}
+            >
+              {saving ? <CircularProgress size={20} color="inherit" /> : t('public.tradeIn.submitQuote')}
+            </Button>
+            <Button
+              variant="contained"
+              disableElevation
+              onClick={() => setQuoteOpen(false)}
+              sx={{ py: 1.4, borderRadius: '12px', bgcolor: '#f1eff7', color: palette.ink }}
+            >
+              {t('common.cancel')}
+            </Button>
+          </Box>
+        </Box>
+      </Modal>
     </Box>
   );
 };
