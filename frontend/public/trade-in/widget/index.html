@@ -21,21 +21,22 @@ body{font-family:'BPG Banner Quadrosquare','Inter',sans-serif;background:transpa
 .zt-nav,.zt-footer,.product-v2-breadcrumb{display:none!important}
 .product-v2{padding-top:0!important}
 .product-v2-container{max-width:none!important;padding:0!important}
-.product-v2-layout{display:grid!important;grid-template-columns:minmax(320px,.95fr) minmax(360px,1.05fr);min-height:680px;background:#fff}
-.product-v2-left{background:#f7f7f8;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:54px 38px}
-.product-v2-image{width:100%;max-width:360px;min-height:280px;display:flex;align-items:center;justify-content:center;margin:0 auto 28px}
-.product-v2-info{text-align:center;margin-bottom:30px}
+.product-v2-layout{display:grid!important;grid-template-columns:minmax(300px,.82fr) minmax(420px,1.18fr);gap:22px;align-items:stretch;min-height:680px;background:transparent}
+.product-v2-left{background:rgba(255,255,255,.86);border:1px solid var(--zt-border);border-radius:16px;box-shadow:0 20px 48px rgba(81,45,156,.08);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:42px 32px}
+.product-v2-image{width:100%;max-width:330px;min-height:245px;display:flex;align-items:center;justify-content:center;margin:0 auto 22px}
 .product-v2-heading{font-size:24px!important;line-height:1.18!important;margin:0 0 12px!important}
 .product-brand{font-size:17px;color:var(--zt-muted)}
-.product-v2-pricing{padding:54px 48px;display:flex;align-items:center}
-.product-v2-pricing .product-pricing-ctrl{width:100%;max-width:560px;margin:0 auto}
-.product-v2-pricing .pricing-form,.product-v2-pricing .pricing-form-final-offer{width:100%}
+.product-v2-info{text-align:center;margin-bottom:22px}
+.product-v2-pricing{background:rgba(255,255,255,.94);border:1px solid var(--zt-border);border-radius:16px;box-shadow:0 20px 48px rgba(81,45,156,.08);padding:42px;display:flex;align-items:center}
+.product-v2-pricing .product-pricing-ctrl{width:100%;max-width:620px;margin:0 auto}
+.product-v2-pricing .pricing-form,.product-v2-pricing .pricing-form-final-offer{width:100%;background:transparent!important;border:0!important;box-shadow:none!important}
+.product-v2-pricing .pricing-form{padding:0!important}
 
 @media(max-width:900px){
-  .product-v2-layout{grid-template-columns:1fr;min-height:0}
-  .product-v2-left{padding:30px 22px}
+  .product-v2-layout{grid-template-columns:1fr;gap:14px;min-height:0}
+  .product-v2-left{padding:26px 20px}
   .product-v2-image{min-height:190px;max-width:280px;margin-bottom:18px}
-  .product-v2-pricing{padding:24px 18px 32px}
+  .product-v2-pricing{padding:24px 18px 30px}
 }
 
 /* ── Nav ── */

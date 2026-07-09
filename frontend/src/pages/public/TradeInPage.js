@@ -186,7 +186,14 @@ const TradeInPage = () => {
         </Box>
       </Box>
 
-      <Box sx={{ maxWidth: 1180, mx: 'auto', px: { xs: 2, md: 5 }, py: { xs: 3, md: 5 } }}>
+      <Box
+        sx={{
+          maxWidth: stage === 'valuation' ? 1360 : 1180,
+          mx: 'auto',
+          px: { xs: stage === 'valuation' ? 1.25 : 2, md: stage === 'valuation' ? 4 : 5 },
+          py: { xs: stage === 'valuation' ? 1.5 : 3, md: stage === 'valuation' ? 3 : 5 },
+        }}
+      >
         {stage !== 'categories' && (
           <Button
             onClick={goBack}
@@ -297,29 +304,19 @@ const TradeInPage = () => {
 
         {!loading && stage === 'valuation' && product && (
           <Box
+            component="iframe"
+            title={`${product.name} trade-in valuation`}
+            src={`/trade-in/widget/index.html?slug=${encodeURIComponent(product.slug)}&lang=${
+              i18n.language?.startsWith('ka') ? 'ka' : 'en'
+            }`}
             sx={{
-              bgcolor: '#fff',
-              border: `1px solid ${palette.border}`,
-              borderRadius: '12px',
-              overflow: 'hidden',
-              minHeight: { xs: 760, md: 720 },
+              display: 'block',
+              width: '100%',
+              minHeight: { xs: 980, md: 780 },
+              border: 0,
+              bgcolor: 'transparent',
             }}
-          >
-            <Box
-              component="iframe"
-              title={`${product.name} trade-in valuation`}
-              src={`/trade-in/widget/index.html?slug=${encodeURIComponent(product.slug)}&lang=${
-                i18n.language?.startsWith('ka') ? 'ka' : 'en'
-              }`}
-              sx={{
-                display: 'block',
-                width: '100%',
-                minHeight: { xs: 900, md: 760 },
-                border: 0,
-                bgcolor: '#fff',
-              }}
-            />
-          </Box>
+          />
         )}
       </Box>
     </Box>
