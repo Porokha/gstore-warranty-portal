@@ -36,6 +36,7 @@ export class CasesController {
     @Query('technician_id') technician_id?: string,
     @Query('tags') tags?: string,
     @Query('search') search?: string,
+    @Query('customer') customer?: string,
     @Query('start_date') start_date?: string,
     @Query('end_date') end_date?: string,
     @Query('closeToDeadline') closeToDeadline?: string,
@@ -72,6 +73,7 @@ export class CasesController {
     
     if (tags) filters.tags = tags.split(',');
     if (search) filters.search = search;
+    if (customer) filters.customer = customer;
     if (start_date) filters.start_date = new Date(start_date);
     if (end_date) filters.end_date = new Date(end_date);
     if (closeToDeadline === 'true') filters.closeToDeadline = true;

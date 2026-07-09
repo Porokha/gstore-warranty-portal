@@ -16,10 +16,13 @@ import {
   Button,
   CircularProgress,
   Tooltip,
+  Popover,
+  Divider,
 } from '@mui/material';
 import {
   Visibility as ViewIcon,
   Add as AddIcon,
+  FilterAlt as FilterIcon,
 } from '@mui/icons-material';
 import { casesService } from '../../services/casesService';
 import StatusBar from '../../components/cases/StatusBar';
@@ -45,9 +48,12 @@ const CasesPage = () => {
     device_type: searchParams.get('device_type') || '',
     technician_id: searchParams.get('technician_id') || '',
     search: searchParams.get('search') || '',
+    customer: searchParams.get('customer') || '',
     closeToDeadline: closeToDeadline === 'true',
     due: due === 'true',
   });
+  const [customerFilterAnchor, setCustomerFilterAnchor] = useState(null);
+  const [customerFilterDraft, setCustomerFilterDraft] = useState(searchParams.get('customer') || '');
 
   const { data: cases, isLoading } = useQuery(
     ['cases', filters],
@@ -83,6 +89,17 @@ const CasesPage = () => {
       critical: 'error',
     };
     return colors[priority] || 'default';
+  };
+
+  const applyCustomerFilter = () => {
+    handleFilterChange('customer', customerFilterDraft.trim());
+    setCustomerFilterAnchor(null);
+  };
+
+  const clearCustomerFilter = () => {
+    setCustomerFilterDraft('');
+    handleFilterChange('customer', '');
+    setCustomerFilterAnchor(null);
   };
 
   const columns = useMemo(
@@ -130,6 +147,45 @@ const CasesPage = () => {
         key: 'customerFullName',
         label: t('case.customerName'),
         width: 200,
+        headerRender: () => (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0, flex: 1 }}>
+            <Tooltip title={t('case.customerName')} arrow>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 600,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  flex: 1,
+                }}
+              >
+                {t('case.customerName')}
+              </Typography>
+            </Tooltip>
+            <Tooltip title={filters.customer ? `Customer: ${filters.customer}` : 'Filter customer'}>
+              <IconButton
+                size="small"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setCustomerFilterDraft(filters.customer || '');
+                  setCustomerFilterAnchor(event.currentTarget);
+                }}
+                sx={{
+                  p: 0.4,
+                  color: filters.customer ? '#7c3aed' : '#9ca3af',
+                  bgcolor: filters.customer ? 'rgba(124, 58, 237, 0.1)' : 'transparent',
+                  flexShrink: 0,
+                  '&:hover': {
+                    bgcolor: 'rgba(124, 58, 237, 0.14)',
+                  },
+                }}
+              >
+                <FilterIcon sx={{ fontSize: 16 }} />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        ),
       },
       {
         key: 'customer_phone',
@@ -210,7 +266,7 @@ const CasesPage = () => {
         ),
       },
     ],
-    [t, navigate, location.search]
+    [t, navigate, location.search, filters.customer]
   );
 
   const handleFilterChange = (key, value) => {
@@ -308,6 +364,53 @@ const CasesPage = () => {
           </FormControl>
         </Box>
       </Paper>
+
+      <Popover
+        open={Boolean(customerFilterAnchor)}
+        anchorEl={customerFilterAnchor}
+        onClose={() => setCustomerFilterAnchor(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        PaperProps={{
+          sx: {
+            width: 320,
+            p: 2,
+            borderRadius: '14px !important',
+            border: '1px solid #e5e7eb',
+            boxShadow: '0 18px 45px rgba(17, 24, 39, 0.14)',
+          },
+        }}
+      >
+        <Typography sx={{ fontWeight: 900, fontSize: 14, color: '#172033' }}>
+          Filter by customer
+        </Typography>
+        <Typography sx={{ mt: 0.5, mb: 1.5, color: '#667085', fontSize: 12 }}>
+          Matches first name, last name, or full name.
+        </Typography>
+        <TextField
+          size="small"
+          autoFocus
+          fullWidth
+          label={t('case.customerName')}
+          value={customerFilterDraft}
+          onChange={(event) => setCustomerFilterDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              applyCustomerFilter();
+            }
+          }}
+        />
+        <Divider sx={{ my: 1.5 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+          <Button size="small" onClick={clearCustomerFilter}>
+            Clear
+          </Button>
+          <Button size="small" variant="contained" onClick={applyCustomerFilter}>
+            Apply
+          </Button>
+        </Box>
+      </Popover>
 
       <CustomDataTable
         columns={columns}

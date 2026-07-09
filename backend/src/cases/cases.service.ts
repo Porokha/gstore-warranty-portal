@@ -153,6 +153,7 @@ export class CasesService {
     technician_id?: number;
     tags?: string[];
     search?: string;
+    customer?: string;
     start_date?: Date;
     end_date?: Date;
     closeToDeadline?: boolean;
@@ -246,6 +247,17 @@ export class CasesService {
             OR partner.email LIKE :search
           )`,
           { search: `%${filters.search}%` },
+        );
+      }
+
+      if (filters?.customer?.trim()) {
+        query.andWhere(
+          `(
+            sc.customer_name LIKE :customer
+            OR sc.customer_last_name LIKE :customer
+            OR CONCAT(COALESCE(sc.customer_name, ''), ' ', COALESCE(sc.customer_last_name, '')) LIKE :customer
+          )`,
+          { customer: `%${filters.customer.trim()}%` },
         );
       }
 

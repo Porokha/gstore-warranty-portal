@@ -682,6 +682,9 @@ const CustomDataTable = ({
                         boxShadow: isFrozen ? '2px 0 4px rgba(0,0,0,0.05)' : 'none',
                       }}
                     >
+                      {(() => {
+                        const currentCol = initialColumns.find((item) => item.key === col.key) || col;
+                        return (
                       <Box
                         sx={{
                           display: 'flex',
@@ -690,20 +693,24 @@ const CustomDataTable = ({
                           overflow: 'hidden',
                         }}
                       >
-                        <Tooltip title={col.label} arrow>
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              fontWeight: 600,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              flex: 1,
-                            }}
-                          >
-                            {col.label}
-                          </Typography>
-                        </Tooltip>
+                        {currentCol.headerRender ? (
+                          currentCol.headerRender({ column: currentCol })
+                        ) : (
+                          <Tooltip title={col.label} arrow>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                fontWeight: 600,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                flex: 1,
+                              }}
+                            >
+                              {col.label}
+                            </Typography>
+                          </Tooltip>
+                        )}
                         <IconButton
                           size="small"
                           onClick={() => toggleColumnFreeze(col.key)}
@@ -719,6 +726,8 @@ const CustomDataTable = ({
                           {isFrozen ? <LockIcon sx={{ fontSize: 16 }} /> : <LockOpenIcon sx={{ fontSize: 16 }} />}
                         </IconButton>
                       </Box>
+                        );
+                      })()}
                       {col.key !== 'actions' && (
                         <Box
                           onMouseDown={(e) => startResize(e, col.key)}
