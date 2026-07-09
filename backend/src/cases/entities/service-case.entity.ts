@@ -107,6 +107,12 @@ export class ServiceCase {
   @Column()
   deadline_at: Date;
 
+  @Column({ default: false })
+  parts_waiting: boolean;
+
+  @Column({ nullable: true })
+  parts_waiting_started_at: Date;
+
   @Column({
     type: 'int',
     default: CaseStatusLevel.OPENED,

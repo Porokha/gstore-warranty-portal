@@ -181,6 +181,7 @@ export class CasesService {
         const now = new Date();
         const in48Hours = new Date(now.getTime() + 48 * 60 * 60 * 1000);
         query.andWhere('sc.status_level < :completed', { completed: CaseStatusLevel.COMPLETED });
+        query.andWhere('sc.parts_waiting = :partsWaiting', { partsWaiting: false });
         if (filters.excludePendingFromDeadline) {
           query.andWhere('sc.status_level != :pending', { pending: CaseStatusLevel.PENDING });
         }
@@ -192,6 +193,7 @@ export class CasesService {
       if (filters?.due) {
         const now = new Date();
         query.andWhere('sc.status_level < :completed', { completed: CaseStatusLevel.COMPLETED });
+        query.andWhere('sc.parts_waiting = :partsWaiting', { partsWaiting: false });
         if (filters.excludePendingFromDeadline) {
           query.andWhere('sc.status_level != :pending', { pending: CaseStatusLevel.PENDING });
         }
@@ -533,6 +535,84 @@ export class CasesService {
       null,
       trimmedNote,
     );
+  }
+
+  async startPartsWaiting(id: number, userId: number): Promise<ServiceCase> {
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    const case_ = await this.findOne(id);
+    if (case_.status_level !== CaseStatusLevel.INVESTIGATING) {
+      throw new BadRequestException('Waiting parts can only be enabled during investigation');
+    }
+    if (case_.parts_waiting) {
+      return case_;
+    }
+
+    case_.parts_waiting = true;
+    case_.parts_waiting_started_at = new Date();
+    const savedCase = await this.casesRepository.save(case_);
+
+    await this.auditService.log(user.id, 'case.parts_waiting.started', {
+      case_id: id,
+      case_number: case_.case_number,
+      parts_waiting_started_at: case_.parts_waiting_started_at,
+    });
+
+    await this.createHistoryEntry(
+      id,
+      user.id,
+      null,
+      case_.status_level,
+      null,
+      case_.result_type || null,
+      'Waiting Necessary parts to Received - ველოდებით საჭირო ნაწილების მიღებას',
+      null,
+    );
+
+    return savedCase;
+  }
+
+  async receivePartsWaiting(id: number, userId: number): Promise<ServiceCase> {
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    const case_ = await this.findOne(id);
+    if (!case_.parts_waiting) {
+      return case_;
+    }
+
+    const now = new Date();
+    const startedAt = case_.parts_waiting_started_at
+      ? new Date(case_.parts_waiting_started_at)
+      : now;
+    const pausedMs = Math.max(0, now.getTime() - startedAt.getTime());
+    case_.deadline_at = new Date(new Date(case_.deadline_at).getTime() + pausedMs);
+    case_.parts_waiting = false;
+    case_.parts_waiting_started_at = null;
+    const savedCase = await this.casesRepository.save(case_);
+
+    await this.auditService.log(user.id, 'case.parts_waiting.received', {
+      case_id: id,
+      case_number: case_.case_number,
+      paused_ms: pausedMs,
+      new_deadline_at: case_.deadline_at,
+    });
+
+    await this.createHistoryEntry(
+      id,
+      user.id,
+      null,
+      case_.status_level,
+      null,
+      case_.result_type || null,
+      'Parts delivered - ნაწილები მიღებულია',
+      null,
+    );
+
+    return savedCase;
   }
 
   async deleteInternalNote(

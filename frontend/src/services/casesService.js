@@ -40,6 +40,16 @@ export const casesService = {
     return response.data;
   },
 
+  startPartsWaiting: async (id) => {
+    const response = await api.post(`/cases/${id}/parts-waiting/start`);
+    return response.data;
+  },
+
+  receivePartsWaiting: async (id) => {
+    const response = await api.post(`/cases/${id}/parts-waiting/received`);
+    return response.data;
+  },
+
   addInternalNote: async (id, note) => {
     const response = await api.post(`/cases/${id}/internal-notes`, { note });
     return response.data;

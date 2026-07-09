@@ -50,6 +50,7 @@ const CaseDetailPage = () => {
   const [internalNote, setInternalNote] = useState('');
   const [internalNoteError, setInternalNoteError] = useState('');
   const [paymentActionError, setPaymentActionError] = useState('');
+  const [partsWaitingError, setPartsWaitingError] = useState('');
   const closePath = `/staff/cases${location.search || ''}`;
 
   const { data: case_, isLoading } = useQuery(
@@ -77,6 +78,24 @@ const CaseDetailPage = () => {
         queryClient.invalidateQueries(['case', id]);
         queryClient.invalidateQueries('cases');
         queryClient.invalidateQueries('dashboard');
+      },
+    }
+  );
+
+  const partsWaitingMutation = useMutation(
+    (mode) =>
+      mode === 'received'
+        ? casesService.receivePartsWaiting(id)
+        : casesService.startPartsWaiting(id),
+    {
+      onSuccess: () => {
+        setPartsWaitingError('');
+        queryClient.invalidateQueries(['case', id]);
+        queryClient.invalidateQueries('cases');
+        queryClient.invalidateQueries('dashboard');
+      },
+      onError: (error) => {
+        setPartsWaitingError(error.response?.data?.message || 'Could not update parts delivery state');
       },
     }
   );
@@ -523,6 +542,70 @@ const CaseDetailPage = () => {
         {tab === 1 && (
           <Box>
             <StatusStepper currentStatus={case_.status_level} statusTimestamps={statusTimestamps} />
+            {partsWaitingError && (
+              <Alert severity="error" sx={{ mt: 2, borderRadius: 2 }}>
+                {partsWaitingError}
+              </Alert>
+            )}
+            {(case_.status_level === 2 || case_.parts_waiting) && (
+              <Paper
+                variant="outlined"
+                sx={{
+                  mt: 2,
+                  p: 2,
+                  borderRadius: 2,
+                  borderColor: case_.parts_waiting ? 'warning.main' : 'divider',
+                  background: case_.parts_waiting
+                    ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(255, 255, 255, 0.9))'
+                    : 'background.paper',
+                }}
+              >
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: { xs: 'stretch', sm: 'center' },
+                    justifyContent: 'space-between',
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    gap: 1.5,
+                  }}
+                >
+                  <Box>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                      Waiting parts delivery
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {case_.parts_waiting
+                        ? 'Deadline is frozen until necessary parts are marked received.'
+                        : 'Freeze this investigation deadline while necessary parts are being delivered.'}
+                    </Typography>
+                    {case_.parts_waiting_started_at && (
+                      <Chip
+                        size="small"
+                        color="warning"
+                        variant="outlined"
+                        label={`Started ${new Date(case_.parts_waiting_started_at).toLocaleString()}`}
+                        sx={{ mt: 1 }}
+                      />
+                    )}
+                  </Box>
+                  <Button
+                    variant={case_.parts_waiting ? 'contained' : 'outlined'}
+                    color={case_.parts_waiting ? 'success' : 'warning'}
+                    disabled={partsWaitingMutation.isLoading}
+                    onClick={() =>
+                      partsWaitingMutation.mutate(case_.parts_waiting ? 'received' : 'start')
+                    }
+                    sx={{ borderRadius: 2, whiteSpace: 'nowrap' }}
+                  >
+                    {partsWaitingMutation.isLoading
+                      ? 'Saving...'
+                      : case_.parts_waiting
+                        ? 'Mark parts received'
+                        : 'Waiting parts'}
+                  </Button>
+                </Box>
+              </Paper>
+            )}
             <Box mt={1}>
               <StatusChangeForm
                 case_={case_}

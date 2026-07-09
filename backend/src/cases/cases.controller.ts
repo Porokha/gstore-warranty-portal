@@ -115,6 +115,16 @@ export class CasesController {
     return this.casesService.changeStatus(id, changeStatusDto, req.user.id);
   }
 
+  @Post(':id/parts-waiting/start')
+  startPartsWaiting(@Param('id', ParseIntPipe) id: number, @Request() req) {
+    return this.casesService.startPartsWaiting(id, req.user.id);
+  }
+
+  @Post(':id/parts-waiting/received')
+  receivePartsWaiting(@Param('id', ParseIntPipe) id: number, @Request() req) {
+    return this.casesService.receivePartsWaiting(id, req.user.id);
+  }
+
   @Post(':id/internal-notes')
   addInternalNote(
     @Param('id', ParseIntPipe) id: number,

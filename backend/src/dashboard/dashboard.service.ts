@@ -34,6 +34,7 @@ export class DashboardService {
       .createQueryBuilder('case')
       .where('case.status_level < :completed', { completed: CaseStatusLevel.COMPLETED })
       .andWhere('case.status_level != :pending', { pending: CaseStatusLevel.PENDING })
+      .andWhere('case.parts_waiting = :partsWaiting', { partsWaiting: false })
       .andWhere('case.deadline_at <= :in48Hours', { in48Hours })
       .andWhere('case.deadline_at > :now', { now })
       .getCount();
@@ -42,6 +43,7 @@ export class DashboardService {
       .createQueryBuilder('case')
       .where('case.status_level < :completed', { completed: CaseStatusLevel.COMPLETED })
       .andWhere('case.status_level != :pending', { pending: CaseStatusLevel.PENDING })
+      .andWhere('case.parts_waiting = :partsWaiting', { partsWaiting: false })
       .andWhere('case.deadline_at < :now', { now })
       .getCount();
 

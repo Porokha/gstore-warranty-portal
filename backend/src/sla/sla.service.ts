@@ -40,13 +40,14 @@ export class SlaService {
     // Cases close to deadline (within 1 day)
     const casesCloseToDeadline = openCases.filter(
       (case_) =>
+        !case_.parts_waiting &&
         new Date(case_.deadline_at) <= oneDayFromNow &&
         new Date(case_.deadline_at) >= now,
     ).length;
 
     // Cases past deadline
     const casesDue = openCases.filter(
-      (case_) => new Date(case_.deadline_at) < now,
+      (case_) => !case_.parts_waiting && new Date(case_.deadline_at) < now,
     ).length;
 
     // Cases stalled (no activity for 3+ days)
@@ -111,7 +112,7 @@ export class SlaService {
 
     // Check for cases due (past deadline)
     const dueCases = openCases.filter(
-      (case_) => new Date(case_.deadline_at) < now,
+      (case_) => !case_.parts_waiting && new Date(case_.deadline_at) < now,
     );
 
     for (const case_ of dueCases) {
@@ -121,6 +122,7 @@ export class SlaService {
     // Check for cases close to deadline (within 1 day)
     const closeToDeadlineCases = openCases.filter(
       (case_) =>
+        !case_.parts_waiting &&
         new Date(case_.deadline_at) <= oneDayFromNow &&
         new Date(case_.deadline_at) >= now,
     );
@@ -192,6 +194,7 @@ export class SlaService {
     }).then((cases) =>
       cases.filter(
         (case_) =>
+          !case_.parts_waiting &&
           new Date(case_.deadline_at) <= deadline &&
           new Date(case_.deadline_at) >= now,
       ),
@@ -208,7 +211,7 @@ export class SlaService {
       ],
       relations: ['assigned_technician'],
     }).then((cases) =>
-      cases.filter((case_) => new Date(case_.deadline_at) < now),
+      cases.filter((case_) => !case_.parts_waiting && new Date(case_.deadline_at) < now),
     );
   }
 
