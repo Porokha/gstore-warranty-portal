@@ -50,31 +50,49 @@ export class TradeInService {
     return rows.map((row) => ({
       brand: row.brand,
       product_count: Number(row.product_count),
+      image_src: this.getBrandImage(row.brand, category),
     }));
   }
 
   async listSeries(category: string, brand: string) {
-    const products = await this.productRepository.find({
-      where: { enabled: true },
-      select: ['name', 'brand', 'category', 'category2'],
-    });
-    const matching = products.filter(
-      (product) =>
-        this.equals(product.category, category) &&
-        (this.equals(product.brand, brand) || this.productMatchesBrand(product.name, brand)),
-    );
-    const counts = new Map<string, number>();
+    const result = await this.productRepository
+      .createQueryBuilder('product')
+      .leftJoin('product.pricing_tree', 'pricing')
+      .addSelect('pricing.max_price', 'pricing_max_price')
+      .where('product.enabled = :enabled', { enabled: true })
+      .andWhere('LOWER(product.category) = LOWER(:category)', { category })
+      .andWhere('LOWER(product.brand) = LOWER(:brand)', { brand })
+      .orderBy('pricing.max_price', 'DESC')
+      .addOrderBy('product.name', 'ASC')
+      .getRawAndEntities();
 
-    matching.forEach((product) => {
+    const groups = new Map<string, {
+      product_count: number;
+      image_src: string | null;
+      max_price: number;
+    }>();
+
+    result.entities.forEach((product, index) => {
       const series = product.category2?.trim() || this.inferSeries(product.name, brand);
       if (series) {
-        counts.set(series, (counts.get(series) || 0) + 1);
+        const current = groups.get(series) || {
+          product_count: 0,
+          image_src: null,
+          max_price: 0,
+        };
+        const maxPrice = Number(result.raw[index]?.pricing_max_price || 0);
+        current.product_count += 1;
+        current.max_price = Math.max(current.max_price, maxPrice);
+        if (!current.image_src && product.image_src) {
+          current.image_src = this.normalizeImageSrc(product.image_src);
+        }
+        groups.set(series, current);
       }
     });
 
-    return Array.from(counts.entries())
-      .map(([series, product_count]) => ({ series, product_count }))
-      .sort((a, b) => b.product_count - a.product_count || a.series.localeCompare(b.series));
+    return Array.from(groups.entries())
+      .map(([series, data]) => ({ series, ...data }))
+      .sort((a, b) => b.max_price - a.max_price || b.product_count - a.product_count || a.series.localeCompare(b.series));
   }
 
   async listProducts(params: {
@@ -118,7 +136,7 @@ export class TradeInService {
     }
 
     const total = await query.getCount();
-    query.orderBy('product.brand', 'ASC').addOrderBy('product.name', 'ASC');
+    query.orderBy('pricing.max_price', 'DESC').addOrderBy('product.name', 'ASC');
     const result = await query.skip((page - 1) * limit).take(limit).getRawAndEntities();
 
     return {
@@ -412,7 +430,7 @@ export class TradeInService {
       brand: product.brand,
       category: product.category,
       series: product.category2,
-      image_src: product.image_src,
+      image_src: this.normalizeImageSrc(product.image_src),
       max_price: Number(selectedMaxPrice ?? product.pricing_tree?.max_price ?? 0),
     };
   }
@@ -440,6 +458,97 @@ export class TradeInService {
 
   private productMatchesBrand(name: string, brand: string) {
     return name.toLowerCase().includes(brand.toLowerCase());
+  }
+
+  private normalizeImageSrc(src?: string | null) {
+    if (!src) return null;
+    return String(src)
+      .replace(/^(?:\.\.\/)+/, '/')
+      .replace(/^\/sell\//, '/')
+      .replace(/^sell\//, '/')
+      .replace(/^media\//, '/media/')
+      .replace(/^\/trade-in\//, '/');
+  }
+
+  private getBrandImage(brand?: string | null, category?: string | null) {
+    const brandKey = this.slugify(brand);
+    const categoryKey = this.slugify(category);
+    if (!brandKey) return null;
+
+    const brandImages: Record<string, string> = {
+      'apple-phone': '/media/brands/apple.jpg',
+      'samsung-phone': '/media/brands/samsung.jpg',
+      'google-phone': '/media/brands/google.jpg',
+      'motorola-phone': '/media/brands/motorola.jpg',
+      'oneplus-phone': '/media/brands/oneplus.jpg',
+      'asus-phone': '/media/brands/asus.png',
+      'sony-phone': '/media/brands/sony.jpg',
+      'nothing-phone': '/media/brands/nothing.jpg',
+      'xiaomi-phone': '/media/brands/xiaomi.png',
+      'lg-phone': '/media/brands/lg.jpg',
+      'blackberry-phone': '/media/brands/blackberry.jpg',
+      'microsoft-phone': '/media/brands/microsoft.png',
+      'apple-laptop': '/media/brands/apple-laptop.jpg',
+      'dell-laptop': '/media/brands/dell-laptop.jpg',
+      'hp-laptop': '/media/brands/hp-laptop.jpg',
+      'lenovo-laptop': '/media/brands/lenovo-laptop.jpg',
+      'asus-laptop': '/media/brands/asus-laptop.png',
+      'acer-laptop': '/media/brands/acer-laptop.jpg',
+      'microsoft-laptop': '/media/brands/microsoft-laptop.png',
+      'razer-laptop': '/media/brands/razer-laptop.png',
+      'samsung-laptop': '/media/brands/samsung-laptop.jpg',
+      'msi-laptop': '/media/brands/msi-laptop.jpg',
+      'apple-tablet': '/media/brands/apple-tablet.jpg',
+      'samsung-tablet': '/media/brands/samsung-tablet.jpg',
+      'microsoft-tablet': '/media/brands/microsoft-tablet.png',
+      'lenovo-tablet': '/media/brands/lenovo-tablet.jpg',
+      'google-tablet': '/media/brands/google-tablet.jpg',
+      'sony-game-console': '/media/brands/sony-console.jpg',
+      'microsoft-game-console': '/media/brands/microsoft-console.jpg',
+      'nintendo-game-console': '/media/brands/nintendo-console.jpg',
+      'valve-game-console': '/media/brands/valve-console.jpg',
+      'asus-game-console': '/media/brands/asus.png',
+      'apple-smartwatch': '/media/brands/apple-watch.jpg',
+      'samsung-smartwatch': '/media/brands/samsung-watch.jpg',
+      'garmin-smartwatch': '/media/brands/garmin-smartwatch.jpg',
+      'google-smartwatch': '/media/brands/google-smartwatch.jpg',
+      'apple-desktop': '/media/brands/apple-desktop.jpg',
+      'dell-desktop': '/media/brands/dell-desktop.jpg',
+      'hp-desktop': '/media/brands/hp-desktop.jpg',
+      'asus-desktop': '/media/brands/asus-desktop.png',
+      'bose-audio': '/media/brands/bose-audio.jpg',
+      'apple-audio': '/media/brands/apple-audio.jpg',
+      'sony-audio': '/media/brands/sony-audio.jpg',
+      'canon-camera': '/media/brands/canon-camera.png',
+      'nikon-camera': '/media/brands/nikon-camera.jpg',
+      'sony-camera': '/media/brands/sony-camera.jpg',
+      'dji-drone': '/media/brands/dji-drone.jpg',
+      'apple-vr': '/media/brands/apple-vr.jpg',
+      'meta-vr': '/media/brands/meta-vr.jpg',
+      'apple-monitor': '/media/brands/apple-monitor.jpg',
+    };
+
+    const categoryAliases = [categoryKey];
+    if (categoryKey === 'phone') categoryAliases.push('phones');
+    if (categoryKey === 'game-console') categoryAliases.push('console');
+    if (categoryKey === 'watch') categoryAliases.push('smartwatch');
+
+    for (const alias of categoryAliases) {
+      const exact = brandImages[`${brandKey}-${alias}`];
+      if (exact) return exact;
+    }
+
+    const fallbackKey = Object.keys(brandImages).find((key) => key.startsWith(`${brandKey}-`));
+    return fallbackKey ? brandImages[fallbackKey] : null;
+  }
+
+  private slugify(value?: string | null) {
+    return String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/&/g, 'and')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
   }
 
   private inferSeries(name: string, brand: string) {

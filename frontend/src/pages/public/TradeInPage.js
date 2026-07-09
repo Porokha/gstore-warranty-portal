@@ -32,7 +32,9 @@ const imageUrl = (value) => {
   const normalized = String(value)
     .replace(/^(\.\.\/)+/, '/')
     .replace(/^\/sell\/media\//, '/media/')
-    .replace(/^media\//, '/media/');
+    .replace(/^sell\//, '/')
+    .replace(/^media\//, '/media/')
+    .replace(/^\/trade-in\//, '/');
   return `/trade-in${normalized.startsWith('/') ? normalized : `/${normalized}`}`;
 };
 
@@ -242,6 +244,7 @@ const TradeInPage = () => {
                 key={item.brand}
                 title={item.brand}
                 subtitle={`${item.product_count} ${t('public.tradeIn.models')}`}
+                image={imageUrl(item.image_src)}
                 onClick={() => {
                   setBrand(item.brand);
                   setStage('series');
@@ -263,6 +266,7 @@ const TradeInPage = () => {
                 key={item.series}
                 title={item.series}
                 subtitle={`${item.product_count} ${t('public.tradeIn.models')}`}
+                image={imageUrl(item.image_src)}
                 onClick={() => {
                   setSeries(item.series);
                   setStage('products');

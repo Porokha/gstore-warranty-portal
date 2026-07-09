@@ -421,6 +421,17 @@ body{font-family:'BPG Banner Quadrosquare','Inter',sans-serif;background:transpa
   var productName = '';
 
   function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function tradeAssetUrl(src){
+    if (!src) return '';
+    if (/^https?:\/\//i.test(src)) return src;
+    var normalized = String(src)
+      .replace(/^(?:\.\.\/)+/, '/')
+      .replace(/^\/sell\/media\//, '/media/')
+      .replace(/^sell\//, '/')
+      .replace(/^media\//, '/media/')
+      .replace(/^\/trade-in\//, '/');
+    return '/trade-in' + (normalized.charAt(0) === '/' ? normalized : '/' + normalized);
+  }
 
   function showError(){
     document.getElementById('zt-loading').style.display = 'none';
@@ -450,7 +461,7 @@ body{font-family:'BPG Banner Quadrosquare','Inter',sans-serif;background:transpa
     document.getElementById('modal-success-view').style.display = 'none';
     // Reset submit button in case it was left disabled
     var btn = document.getElementById('modal-submit');
-    btn.textContent = 'Confirm & Send Offer';
+    btn.textContent = T('btn_confirm_offer');
     btn.disabled = false;
     document.getElementById('modal-err').style.display = 'none';
     document.getElementById('zt-modal').style.display = 'flex';
@@ -570,12 +581,9 @@ body{font-family:'BPG Banner Quadrosquare','Inter',sans-serif;background:transpa
       catLink.href = '/products-by-category.html?slug=' + encodeURIComponent((category||'').toLowerCase().replace(/\s+/g,'-'));
 
       if (data.image_src){
-        var imageSrc = String(data.image_src)
-          .replace(/^(?:\.\.\/)+/, '/')
-          .replace(/^\/sell\/media\//, '/media/')
-          .replace(/^media\//, '/media/');
+        var imageSrc = tradeAssetUrl(data.image_src);
         document.getElementById('product-image-wrap').innerHTML =
-          '<img src="/trade-in'+esc(imageSrc)+'" alt="'+esc(productName)+'" style="max-width:100%;max-height:260px;object-fit:contain" onerror="this.style.display=\'none\'">';
+          '<img src="'+esc(imageSrc)+'" alt="'+esc(productName)+'" style="max-width:100%;max-height:260px;object-fit:contain" onerror="this.style.display=\'none\'">';
       }
 
       // Globals read by Angular controller on instantiation
@@ -833,8 +841,8 @@ body{font-family:'BPG Banner Quadrosquare','Inter',sans-serif;background:transpa
         document.getElementById('product-pricing-ctrl').addEventListener('click', function(e){
           var btn = e.target.closest('button');
           if (!btn) return;
-          // "Get This Offer" button text or class check
-          if (btn.textContent.trim() === 'Get This Offer'){
+          // Language-independent target: the CTA keeps this data-t marker after translation.
+          if (btn.getAttribute('data-t') === 'btn_get_offer'){
             setTimeout(openQuoteModal, 350);
           }
         });
