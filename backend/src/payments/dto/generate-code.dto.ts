@@ -1,9 +1,9 @@
-import { IsInt, Min, Max } from 'class-validator';
+import { IsInt, IsOptional, Max, Min } from 'class-validator';
 
 export class GenerateCodeDto {
+  @IsOptional()
   @IsInt()
   @Min(1)
   @Max(365)
-  estimated_days_after_payment: number;
+  estimated_days_after_payment?: number;
 }
-

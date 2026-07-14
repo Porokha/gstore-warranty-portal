@@ -69,9 +69,13 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
   );
 
   const generateCodeMutation = useMutation(
-    (paymentId) => paymentsService.generateCode(paymentId, {
-      estimated_days_after_payment: formData.estimated_days_after_payment || null,
-    }),
+    (paymentId) => {
+      const estimatedDays = parseInt(formData.estimated_days_after_payment, 10);
+      const payload = Number.isInteger(estimatedDays)
+        ? { estimated_days_after_payment: estimatedDays }
+        : {};
+      return paymentsService.generateCode(paymentId, payload);
+    },
     {
       onSuccess: (data) => {
         setGeneratedCode(data.generated_code);

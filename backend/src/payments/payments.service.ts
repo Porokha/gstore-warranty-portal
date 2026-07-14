@@ -204,7 +204,9 @@ export class PaymentsService {
     payment.generated_code = code;
     payment.code_status = CodeStatus.ACTIVE;
     payment.code_generated_at = new Date();
-    payment.estimated_days_after_payment = generateCodeDto.estimated_days_after_payment;
+    if (generateCodeDto.estimated_days_after_payment) {
+      payment.estimated_days_after_payment = generateCodeDto.estimated_days_after_payment;
+    }
 
     return this.paymentsRepository.save(payment);
   }
