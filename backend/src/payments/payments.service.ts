@@ -140,7 +140,9 @@ export class PaymentsService {
   }): Promise<CasePayment[]> {
     const query = this.paymentsRepository.createQueryBuilder('payment')
       .leftJoinAndSelect('payment.case_', 'case')
-      .orderBy('payment.created_at', 'DESC');
+      .leftJoinAndSelect('case.status_history', 'history')
+      .orderBy('payment.created_at', 'DESC')
+      .addOrderBy('history.created_at', 'ASC');
 
     if (filters?.start_date) {
       query.andWhere('payment.created_at >= :start_date', { start_date: filters.start_date });

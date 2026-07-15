@@ -44,9 +44,70 @@ const FinancePage = () => {
     setFilters({ ...filters, [key]: value });
   };
 
+  const csvEscape = (value) => {
+    const stringValue = value == null ? '' : String(value);
+    return `"${stringValue.replace(/"/g, '""')}"`;
+  };
+
+  const collectNotes = (payment, type) => {
+    const history = payment.case_?.status_history || [];
+    return history
+      .map((entry) => entry?.[type])
+      .filter(Boolean)
+      .join(' | ');
+  };
+
   const handleExport = () => {
-    // TODO: Implement CSV/Excel export
-    alert('Export functionality coming soon');
+    const rows = payments || [];
+    const headers = [
+      'Payment Date',
+      'Case Number',
+      'Customer Name',
+      'Customer Phone',
+      'Payment Type',
+      'Amount',
+      'Payment Method',
+      'Payment Status',
+      'Device Type',
+      'Product Title',
+      'Serial Number',
+      'IMEI',
+      'Customer Initial Note',
+      'Public Notes',
+      'Internal Notes',
+    ];
+    const csvRows = rows.map((payment) => {
+      const caseData = payment.case_ || {};
+      return [
+        payment.created_at ? format(new Date(payment.created_at), 'yyyy-MM-dd HH:mm') : '',
+        caseData.case_number || '',
+        `${caseData.customer_name || ''} ${caseData.customer_last_name || ''}`.trim(),
+        caseData.customer_phone || '',
+        payment.offer_type || '',
+        payment.offer_amount || 0,
+        payment.payment_method || '',
+        payment.payment_status || '',
+        caseData.device_type || '',
+        caseData.product_title || '',
+        caseData.serial_number || '',
+        caseData.imei || '',
+        caseData.customer_initial_note || '',
+        collectNotes(payment, 'note_public'),
+        collectNotes(payment, 'note_private'),
+      ].map(csvEscape).join(',');
+    });
+
+    const csv = ['\uFEFF' + headers.map(csvEscape).join(','), ...csvRows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const exportedAt = format(new Date(), 'yyyy-MM-dd-HHmm');
+    link.href = url;
+    link.download = `zezva-finance-${exportedAt}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const getPaymentStatusColor = (status) => {
@@ -79,6 +140,7 @@ const FinancePage = () => {
           variant="outlined"
           startIcon={<DownloadIcon />}
           onClick={handleExport}
+          disabled={!payments || payments.length === 0}
         >
           {t('common.export')}
         </Button>
@@ -156,6 +218,7 @@ const FinancePage = () => {
               <TableCell>{t('common.date') || 'Date'}</TableCell>
               <TableCell>{t('case.caseNumber')}</TableCell>
               <TableCell>{t('case.customerName')}</TableCell>
+              <TableCell>{t('common.phone')}</TableCell>
               <TableCell>{t('payment.type') || 'Type'}</TableCell>
               <TableCell>{t('common.amount') || 'Amount'}</TableCell>
               <TableCell>{t('payment.method') || 'Payment Method'}</TableCell>
@@ -174,6 +237,7 @@ const FinancePage = () => {
                   <TableCell>
                     {payment.case_?.customer_name} {payment.case_?.customer_last_name}
                   </TableCell>
+                  <TableCell>{payment.case_?.customer_phone || '-'}</TableCell>
                   <TableCell>{payment.offer_type}</TableCell>
                   <TableCell>{payment.offer_amount || 0} ₾</TableCell>
                   <TableCell>{payment.payment_method || '-'}</TableCell>
@@ -189,7 +253,7 @@ const FinancePage = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={8} align="center">
+                <TableCell colSpan={9} align="center">
                   {t('common.noPayments') || 'No payments found'}
                 </TableCell>
               </TableRow>
@@ -202,4 +266,3 @@ const FinancePage = () => {
 };
 
 export default FinancePage;
-
