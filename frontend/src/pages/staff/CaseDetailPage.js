@@ -51,6 +51,7 @@ const CaseDetailPage = () => {
   const [internalNoteError, setInternalNoteError] = useState('');
   const [paymentActionError, setPaymentActionError] = useState('');
   const [partsWaitingError, setPartsWaitingError] = useState('');
+  const [statusDraft, setStatusDraft] = useState(null);
   const closePath = `/staff/cases${location.search || ''}`;
 
   const { data: case_, isLoading } = useQuery(
@@ -75,6 +76,7 @@ const CaseDetailPage = () => {
     (data) => casesService.changeStatus(id, data),
     {
       onSuccess: () => {
+        setStatusDraft(null);
         queryClient.invalidateQueries(['case', id]);
         queryClient.invalidateQueries('cases');
         queryClient.invalidateQueries('dashboard');
@@ -251,6 +253,18 @@ const CaseDetailPage = () => {
   }
 
   const statusTimestamps = getStatusTimestamps();
+  const resultPreview = statusDraft
+    ? {
+        ...case_,
+        status_level: statusDraft.new_status_level,
+        result_type: statusDraft.result_type || case_.result_type,
+      }
+    : case_;
+  const hasPersistedPayablePayment = payments?.some((payment) => payment.offer_type === 'payable');
+  const hasUnsavedPayableDraft =
+    statusDraft?.new_status_level === 3 &&
+    statusDraft?.result_type === 'payable' &&
+    !hasPersistedPayablePayment;
 
   return (
     <Dialog open={true} onClose={() => navigate(closePath)} maxWidth="lg" fullWidth>
@@ -611,6 +625,7 @@ const CaseDetailPage = () => {
                 case_={case_}
                 onStatusChange={handleStatusChange}
                 isLoading={statusChangeMutation.isLoading}
+                onDraftChange={setStatusDraft}
               />
             </Box>
           </Box>
@@ -622,7 +637,57 @@ const CaseDetailPage = () => {
             <Typography variant="h6" gutterBottom>
               {t('common.result')}
             </Typography>
-            <ResultBar resultType={case_.result_type} size="large" />
+            <ResultBar resultType={resultPreview.result_type} size="large" />
+            {statusDraft?.new_status_level !== case_.status_level && (
+              <Alert severity="info" sx={{ mt: 2, borderRadius: '6px' }}>
+                {t('case.statusChangeReady')}:{' '}
+                {statusDraft.new_status_level === 3
+                  ? t('status.pending')
+                  : statusDraft.new_status_level === 4
+                    ? t('status.completed')
+                    : statusDraft.new_status_level === 2
+                      ? t('status.investigating')
+                      : t('status.opened')}
+              </Alert>
+            )}
+            {hasUnsavedPayableDraft && (
+              <Paper
+                variant="outlined"
+                sx={{
+                  mt: 2,
+                  p: 2,
+                  borderRadius: '6px',
+                  borderColor: 'warning.main',
+                  bgcolor: 'rgba(245, 158, 11, 0.08)',
+                }}
+              >
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  {t('result.payable')} - {t('payment.offerDetails') || 'Offer Details'}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Save the status update first. The payment confirmation buttons will become active
+                  immediately after the payable offer is created.
+                </Typography>
+                {statusDraft.offer_amount && (
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    <strong>{t('common.amount')}:</strong> {statusDraft.offer_amount} ₾
+                  </Typography>
+                )}
+                {statusDraft.payment_methods?.length > 0 && (
+                  <Typography variant="body2">
+                    <strong>{t('payment.method')}:</strong> {statusDraft.payment_methods.join(', ')}
+                  </Typography>
+                )}
+                <Box display="flex" gap={1} flexWrap="wrap" sx={{ mt: 1.5 }}>
+                  <Button variant="contained" color="success" size="small" disabled>
+                    {t('payment.markPaid')}
+                  </Button>
+                  <Button variant="outlined" color="error" size="small" disabled>
+                    {t('payment.markFailed')}
+                  </Button>
+                </Box>
+              </Paper>
+            )}
             
             {payments && payments.length > 0 && (
               <Box mt={3}>

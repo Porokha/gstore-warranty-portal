@@ -21,7 +21,7 @@ import { paymentsService } from '../../services/paymentsService';
 import { useMutation, useQueryClient } from 'react-query';
 import { isManagementRole } from '../../utils/roles';
 
-const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
+const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -63,7 +63,9 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['case', case_.id]);
+        queryClient.invalidateQueries(['case', String(case_.id)]);
         queryClient.invalidateQueries(['case-payments', case_.id]);
+        queryClient.invalidateQueries(['case-payments', String(case_.id)]);
       },
     }
   );
@@ -90,6 +92,22 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
       result_type: case_.result_type || '',
     }));
   }, [case_]);
+
+  useEffect(() => {
+    if (!onDraftChange) return;
+    onDraftChange({
+      new_status_level: formData.new_status_level,
+      result_type: formData.result_type || null,
+      offer_amount: formData.offer_amount,
+      payment_methods: formData.payment_methods,
+    });
+  }, [
+    formData.new_status_level,
+    formData.result_type,
+    formData.offer_amount,
+    formData.payment_methods,
+    onDraftChange,
+  ]);
 
   const statusOptions = [
     { value: 1, label: t('status.opened'), description: t('case.statusOpenedHelp') },
@@ -233,6 +251,7 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading }) => {
             : null,
         });
       }
+      onDraftChange?.(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update case');
     }
