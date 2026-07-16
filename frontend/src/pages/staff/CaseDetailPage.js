@@ -638,7 +638,7 @@ const CaseDetailPage = () => {
               {t('common.result')}
             </Typography>
             <ResultBar resultType={resultPreview.result_type} size="large" />
-            {statusDraft?.new_status_level !== case_.status_level && (
+            {statusDraft && statusDraft.new_status_level !== case_.status_level && (
               <Alert severity="info" sx={{ mt: 2, borderRadius: '6px' }}>
                 {t('case.statusChangeReady')}:{' '}
                 {statusDraft.new_status_level === 3
