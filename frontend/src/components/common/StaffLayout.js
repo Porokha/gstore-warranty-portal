@@ -47,7 +47,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { usersService } from '../../services/usersService';
 import { notificationsService } from '../../services/notificationsService';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
-import { isManagementRole, isTechnicianRole, roleLabel, ROLE } from '../../utils/roles';
+import { hasFinanceStatisticsAccess, isManagementRole, isTechnicianRole, roleLabel, ROLE } from '../../utils/roles';
 
 const EXPANDED_DRAWER_WIDTH = 280;
 const COLLAPSED_DRAWER_WIDTH = 88;
@@ -197,6 +197,7 @@ const StaffLayout = () => {
 
   const isAdmin = user?.role === 'admin';
   const hasManagementAccess = isManagementRole(user?.role);
+  const canViewFinanceStatistics = hasFinanceStatisticsAccess(user?.role);
 
   const handleNotificationsOpen = (event) => {
     setNotificationsAnchor(event.currentTarget);
@@ -225,8 +226,12 @@ const StaffLayout = () => {
     { path: '/staff/warranties', label: t('common.warranties'), icon: <WarrantiesIcon /> },
     ...(hasManagementAccess
       ? [
-          { path: '/staff/finance', label: t('common.finance'), icon: <FinanceIcon /> },
-          { path: '/staff/statistics', label: t('common.statistics') || 'Statistics', icon: <StatisticsIcon /> },
+          ...(canViewFinanceStatistics
+            ? [
+                { path: '/staff/finance', label: t('common.finance'), icon: <FinanceIcon /> },
+                { path: '/staff/statistics', label: t('common.statistics') || 'Statistics', icon: <StatisticsIcon /> },
+              ]
+            : []),
           ...(isAdmin ? [{ path: '/staff/import', label: t('common.importData'), icon: <ImportIcon /> }] : []),
         ]
       : []),

@@ -11,6 +11,9 @@ export const isManagementRole = (role) =>
 export const isTechnicianRole = (role) =>
   [ROLE.TECHNICIAN, ROLE.SUPER_TECHNICIAN].includes(role);
 
+export const hasFinanceStatisticsAccess = (role) =>
+  [ROLE.ADMIN, ROLE.SUPER_TECHNICIAN].includes(role);
+
 export const roleLabel = (role) => {
   const labels = {
     [ROLE.ADMIN]: 'Admin',

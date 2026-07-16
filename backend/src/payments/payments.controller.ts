@@ -102,7 +102,8 @@ export class PaymentsController {
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_TECHNICIAN)
   findAll(
     @Query('start_date') startDate?: string,
     @Query('end_date') endDate?: string,
@@ -136,7 +137,8 @@ export class PaymentsController {
   }
 
   @Get('stats/summary')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_TECHNICIAN)
   getStats(@Query('case_id') caseId?: number) {
     return this.paymentsService.getStats(caseId ? parseInt(caseId.toString()) : undefined);
   }

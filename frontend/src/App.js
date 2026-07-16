@@ -195,6 +195,8 @@ function AppRoutes() {
                 <Route element={<StaffRoleRoute allowedRoles={['admin', 'manager', 'super_technician']} />}>
                   <Route path="warranties/:id/edit" element={<WarrantyEditPage />} />
                   <Route path="warranties/new" element={<CreateWarrantyPage />} />
+                </Route>
+                <Route element={<StaffRoleRoute allowedRoles={['admin', 'super_technician']} />}>
                   <Route path="finance" element={<FinancePage />} />
                   <Route path="statistics" element={<StatisticsPage />} />
                 </Route>
