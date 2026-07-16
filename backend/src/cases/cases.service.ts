@@ -149,6 +149,7 @@ export class CasesService {
     status?: CaseStatusLevel | CaseStatusLevel[];
     result?: ResultType;
     priority?: Priority;
+    case_type?: CaseType;
     device_type?: string;
     technician_id?: number;
     tags?: string[];
@@ -206,6 +207,10 @@ export class CasesService {
 
       if (filters?.priority) {
         query.andWhere('sc.priority = :priority', { priority: filters.priority });
+      }
+
+      if (filters?.case_type) {
+        query.andWhere('sc.case_type = :case_type', { case_type: filters.case_type });
       }
 
       if (filters?.device_type) {

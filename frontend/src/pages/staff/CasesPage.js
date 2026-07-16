@@ -18,6 +18,8 @@ import {
   Tooltip,
   Popover,
   Divider,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import {
   Visibility as ViewIcon,
@@ -72,6 +74,7 @@ const CasesPage = () => {
   const defaultTimeRange = closeToDeadline || due ? 'all' : 'today';
   
   const [filters, setFilters] = useState({
+    case_scope: searchParams.get('case_scope') || 'all',
     status: statusParam || (closeToDeadline || due ? '' : ''),
     result: searchParams.get('result') || '',
     priority: searchParams.get('priority') || '',
@@ -87,13 +90,18 @@ const CasesPage = () => {
   const [customerFilterDraft, setCustomerFilterDraft] = useState(searchParams.get('customer') || '');
 
   const queryFilters = useMemo(() => {
-    const { time_range: timeRange, ...baseFilters } = filters;
-    const shouldSearchAllTime = Boolean(baseFilters.search?.trim());
+    const { case_scope: caseScope, time_range: timeRange, ...baseFilters } = filters;
+    const scopedFilters = {
+      ...baseFilters,
+      ...(caseScope === 'standard' ? { case_type: 'standard' } : {}),
+      ...(caseScope === 'partner' ? { case_type: 'partner' } : {}),
+    };
+    const shouldSearchAllTime = Boolean(scopedFilters.search?.trim());
     if (shouldSearchAllTime) {
-      return baseFilters;
+      return scopedFilters;
     }
     return {
-      ...baseFilters,
+      ...scopedFilters,
       ...getTimeRangeDates(timeRange),
     };
   }, [filters]);
@@ -331,6 +339,12 @@ const CasesPage = () => {
     { value: 'all', label: t('case.timeAll') },
   ];
 
+  const caseScopeOptions = [
+    { value: 'all', label: t('case.allCases') },
+    { value: 'standard', label: t('case.standardCases') },
+    { value: 'partner', label: t('case.partnerCases') },
+  ];
+
   if (isLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -362,6 +376,25 @@ const CasesPage = () => {
 
       {/* Filters */}
       <Paper sx={{ p: 2, mb: 3 }}>
+        <Tabs
+          value={filters.case_scope}
+          onChange={(_, value) => handleFilterChange('case_scope', value)}
+          sx={{
+            mb: 2,
+            minHeight: 38,
+            '& .MuiTabs-indicator': { height: 3, borderRadius: 999 },
+            '& .MuiTab-root': {
+              minHeight: 38,
+              textTransform: 'none',
+              fontWeight: 800,
+              borderRadius: '10px 10px 0 0',
+            },
+          }}
+        >
+          {caseScopeOptions.map((option) => (
+            <Tab key={option.value} value={option.value} label={option.label} />
+          ))}
+        </Tabs>
         <Box display="flex" gap={1} flexWrap="wrap" mb={2}>
           {timeRangeOptions.map((option) => (
             <Button
@@ -391,6 +424,20 @@ const CasesPage = () => {
             onChange={(e) => handleFilterChange('search', e.target.value)}
             sx={{ minWidth: 200 }}
           />
+          <FormControl size="small" sx={{ minWidth: 170 }}>
+            <InputLabel>{t('case.deviceType')}</InputLabel>
+            <Select
+              value={filters.device_type}
+              label={t('case.deviceType')}
+              onChange={(e) => handleFilterChange('device_type', e.target.value)}
+            >
+              <MenuItem value="">{t('common.all') || 'All'}</MenuItem>
+              <MenuItem value="Phone">Phone</MenuItem>
+              <MenuItem value="Tablet">Tablet</MenuItem>
+              <MenuItem value="Laptop">Laptop</MenuItem>
+              <MenuItem value="Desktop">Desktop</MenuItem>
+            </Select>
+          </FormControl>
           <FormControl size="small" sx={{ minWidth: 150 }}>
             <InputLabel>{t('common.status')}</InputLabel>
             <Select

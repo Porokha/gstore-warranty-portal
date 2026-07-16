@@ -20,7 +20,7 @@ import { CreateCaseDto } from './dto/create-case.dto';
 import { UpdateCaseDto } from './dto/update-case.dto';
 import { ChangeStatusDto } from './dto/change-status.dto';
 import { AddInternalNoteDto } from './dto/add-internal-note.dto';
-import { CaseStatusLevel, ResultType, Priority } from './entities/service-case.entity';
+import { CaseStatusLevel, CaseType, ResultType, Priority } from './entities/service-case.entity';
 
 @Controller('cases')
 @UseGuards(JwtAuthGuard)
@@ -32,6 +32,7 @@ export class CasesController {
     @Query('status') status?: string,
     @Query('result') result?: ResultType,
     @Query('priority') priority?: Priority,
+    @Query('case_type') case_type?: CaseType,
     @Query('device_type') device_type?: string,
     @Query('technician_id') technician_id?: string,
     @Query('tags') tags?: string,
@@ -61,6 +62,7 @@ export class CasesController {
     
     if (result) filters.result = result;
     if (priority) filters.priority = priority;
+    if (case_type && Object.values(CaseType).includes(case_type)) filters.case_type = case_type;
     if (device_type) filters.device_type = device_type;
     
     // Parse technician_id - validate it's a valid number
