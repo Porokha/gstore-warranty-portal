@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan, LessThanOrEqual, MoreThan, Between } from 'typeorm';
-import { ServiceCase, CaseStatusLevel } from '../cases/entities/service-case.entity';
+import { ServiceCase, CaseStatusLevel, ResultType } from '../cases/entities/service-case.entity';
 import { Warranty } from '../warranties/entities/warranty.entity';
 import { CasePayment, PaymentStatus } from '../payments/entities/case-payment.entity';
 @Injectable()
@@ -33,8 +33,24 @@ export class DashboardService {
     const closeToDeadline = await this.casesRepository
       .createQueryBuilder('case')
       .where('case.status_level < :completed', { completed: CaseStatusLevel.COMPLETED })
-      .andWhere('case.status_level != :pending', { pending: CaseStatusLevel.PENDING })
       .andWhere('case.parts_waiting = :partsWaiting', { partsWaiting: false })
+      .andWhere(
+        `NOT (
+          case.status_level = :pendingStatus
+          AND case.result_type = :payableResult
+          AND EXISTS (
+            SELECT 1 FROM case_payments cp
+            WHERE cp.case_id = case.id
+              AND cp.offer_type = :payableResult
+              AND cp.payment_status = :pendingPayment
+          )
+        )`,
+        {
+          pendingStatus: CaseStatusLevel.PENDING,
+          payableResult: ResultType.PAYABLE,
+          pendingPayment: PaymentStatus.PENDING,
+        },
+      )
       .andWhere('case.deadline_at <= :in48Hours', { in48Hours })
       .andWhere('case.deadline_at > :now', { now })
       .getCount();
@@ -42,8 +58,24 @@ export class DashboardService {
     const dueCases = await this.casesRepository
       .createQueryBuilder('case')
       .where('case.status_level < :completed', { completed: CaseStatusLevel.COMPLETED })
-      .andWhere('case.status_level != :pending', { pending: CaseStatusLevel.PENDING })
       .andWhere('case.parts_waiting = :partsWaiting', { partsWaiting: false })
+      .andWhere(
+        `NOT (
+          case.status_level = :pendingStatus
+          AND case.result_type = :payableResult
+          AND EXISTS (
+            SELECT 1 FROM case_payments cp
+            WHERE cp.case_id = case.id
+              AND cp.offer_type = :payableResult
+              AND cp.payment_status = :pendingPayment
+          )
+        )`,
+        {
+          pendingStatus: CaseStatusLevel.PENDING,
+          payableResult: ResultType.PAYABLE,
+          pendingPayment: PaymentStatus.PENDING,
+        },
+      )
       .andWhere('case.deadline_at < :now', { now })
       .getCount();
 

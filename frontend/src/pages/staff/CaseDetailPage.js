@@ -184,6 +184,20 @@ const CaseDetailPage = () => {
     }
   );
 
+  const sendPaymentReminderMutation = useMutation(
+    (paymentId) => paymentsService.sendPaymentReminder(paymentId),
+    {
+      onSuccess: () => {
+        setPaymentActionError('');
+        queryClient.invalidateQueries(['case-payments', id]);
+        queryClient.invalidateQueries(['case', id]);
+      },
+      onError: (error) => {
+        setPaymentActionError(error.response?.data?.message || 'Payment reminder SMS failed');
+      },
+    }
+  );
+
   const handleAddInternalNote = () => {
     const trimmedNote = internalNote.trim();
     if (!trimmedNote) {
@@ -205,6 +219,18 @@ const CaseDetailPage = () => {
       failed: t('payment.failed'),
     };
     return labels[status] || status;
+  };
+
+  const getReminderCooldownRemaining = (payment) => {
+    if (!payment.last_reminder_sent_at) return 0;
+    const cooldownMs = 30 * 60 * 1000;
+    const elapsedMs = Date.now() - new Date(payment.last_reminder_sent_at).getTime();
+    return Math.max(0, cooldownMs - elapsedMs);
+  };
+
+  const formatReminderCooldown = (milliseconds) => {
+    const minutes = Math.ceil(milliseconds / (60 * 1000));
+    return `${minutes} min`;
   };
 
   const handleFieldChange = (field, value) => {
@@ -770,6 +796,30 @@ const CaseDetailPage = () => {
                         >
                           {t('payment.markFailed')}
                         </Button>
+                        {payment.offer_type === 'payable' && (() => {
+                          const cooldownRemaining = getReminderCooldownRemaining(payment);
+                          const reminderDisabled =
+                            cooldownRemaining > 0 ||
+                            sendPaymentReminderMutation.isLoading ||
+                            markPaymentPaidMutation.isLoading ||
+                            markPaymentFailedMutation.isLoading;
+
+                          return (
+                            <Button
+                              variant="outlined"
+                              color="primary"
+                              size="small"
+                              onClick={() => sendPaymentReminderMutation.mutate(payment.id)}
+                              disabled={reminderDisabled}
+                            >
+                              {cooldownRemaining > 0
+                                ? `SMS reminder (${formatReminderCooldown(cooldownRemaining)})`
+                                : sendPaymentReminderMutation.isLoading
+                                  ? t('common.saving')
+                                  : 'Send payment SMS'}
+                            </Button>
+                          );
+                        })()}
                       </Box>
                     )}
                   </Paper>

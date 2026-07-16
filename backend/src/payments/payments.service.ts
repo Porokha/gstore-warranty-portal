@@ -14,6 +14,7 @@ import { GenerateCodeDto } from './dto/generate-code.dto';
 import { VerifyCodeDto } from './dto/verify-code.dto';
 import { SmsService } from '../sms/sms.service';
 import { Language } from '../sms/entities/sms-template.entity';
+import { SmsStatus } from '../sms/entities/sms-log.entity';
 
 @Injectable()
 export class PaymentsService {
@@ -287,6 +288,60 @@ export class PaymentsService {
     const payment = await this.findOne(paymentId);
 
     payment.payment_status = PaymentStatus.FAILED;
+    return this.paymentsRepository.save(payment);
+  }
+
+  async sendPaymentReminder(paymentId: number): Promise<CasePayment> {
+    const payment = await this.findOne(paymentId);
+
+    if (payment.offer_type !== 'payable') {
+      throw new BadRequestException('Payment reminders can only be sent for payable offers');
+    }
+
+    if (payment.payment_status !== PaymentStatus.PENDING) {
+      throw new BadRequestException('Payment reminders can only be sent for pending payments');
+    }
+
+    if (!payment.case_) {
+      throw new NotFoundException(`Case for payment ${paymentId} not found`);
+    }
+
+    if (payment.case_.case_type === CaseType.PARTNER) {
+      throw new BadRequestException('Partner cases do not send customer SMS notifications');
+    }
+
+    if (!payment.case_.customer_phone) {
+      throw new BadRequestException('Customer phone number is missing');
+    }
+
+    const cooldownMs = 30 * 60 * 1000;
+    if (
+      payment.last_reminder_sent_at &&
+      Date.now() - new Date(payment.last_reminder_sent_at).getTime() < cooldownMs
+    ) {
+      throw new BadRequestException('Payment reminder was already sent in the last 30 minutes');
+    }
+
+    const log = await this.smsService.sendSms({
+      phone: payment.case_.customer_phone,
+      templateKey: 'Case_needs_payment',
+      eventType: 'manual.payment_reminder',
+      language: Language.KA,
+      variables: {
+        case_number: payment.case_.case_number,
+        customer_name: payment.case_.customer_name || '',
+        customer_last_name: payment.case_.customer_last_name || '',
+        product_title: payment.case_.product_title || '',
+        amount: payment.offer_amount || 0,
+      },
+      skipIfDisabled: false,
+    });
+
+    if (log.status !== SmsStatus.SENT) {
+      throw new BadRequestException(log.api_response || 'Payment reminder SMS failed');
+    }
+
+    payment.last_reminder_sent_at = new Date();
     return this.paymentsRepository.save(payment);
   }
 

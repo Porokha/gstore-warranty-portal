@@ -48,10 +48,14 @@ export const paymentsService = {
     return response.data;
   },
 
+  sendPaymentReminder: async (id) => {
+    const response = await api.post(`/payments/${id}/send-payment-reminder`);
+    return response.data;
+  },
+
   getStats: async (caseId) => {
     const url = caseId ? `/payments/stats/summary?case_id=${caseId}` : '/payments/stats/summary';
     const response = await api.get(url);
     return response.data;
   },
 };
-

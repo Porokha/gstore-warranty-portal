@@ -185,6 +185,24 @@ export class CasesService {
         query.andWhere('sc.parts_waiting = :partsWaiting', { partsWaiting: false });
         if (filters.excludePendingFromDeadline) {
           query.andWhere('sc.status_level != :pending', { pending: CaseStatusLevel.PENDING });
+        } else {
+          query.andWhere(
+            `NOT (
+              sc.status_level = :deadlinePendingStatus
+              AND sc.result_type = :deadlinePayableResult
+              AND EXISTS (
+                SELECT 1 FROM case_payments cp
+                WHERE cp.case_id = sc.id
+                  AND cp.offer_type = :deadlinePayableResult
+                  AND cp.payment_status = :deadlinePendingPayment
+              )
+            )`,
+            {
+              deadlinePendingStatus: CaseStatusLevel.PENDING,
+              deadlinePayableResult: ResultType.PAYABLE,
+              deadlinePendingPayment: 'pending',
+            },
+          );
         }
         query.andWhere('sc.deadline_at <= :in48Hours', { in48Hours });
         query.andWhere('sc.deadline_at > :now', { now });
@@ -197,6 +215,24 @@ export class CasesService {
         query.andWhere('sc.parts_waiting = :partsWaiting', { partsWaiting: false });
         if (filters.excludePendingFromDeadline) {
           query.andWhere('sc.status_level != :pending', { pending: CaseStatusLevel.PENDING });
+        } else {
+          query.andWhere(
+            `NOT (
+              sc.status_level = :deadlinePendingStatus
+              AND sc.result_type = :deadlinePayableResult
+              AND EXISTS (
+                SELECT 1 FROM case_payments cp
+                WHERE cp.case_id = sc.id
+                  AND cp.offer_type = :deadlinePayableResult
+                  AND cp.payment_status = :deadlinePendingPayment
+              )
+            )`,
+            {
+              deadlinePendingStatus: CaseStatusLevel.PENDING,
+              deadlinePayableResult: ResultType.PAYABLE,
+              deadlinePendingPayment: 'pending',
+            },
+          );
         }
         query.andWhere('sc.deadline_at < :now', { now });
       }

@@ -86,6 +86,14 @@ export class PaymentsController {
     return this.paymentsService.markAsFailed(id);
   }
 
+  @Post(':id/send-payment-reminder')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.SUPER_TECHNICIAN)
+  @HttpCode(HttpStatus.OK)
+  sendPaymentReminder(@Param('id', ParseIntPipe) id: number) {
+    return this.paymentsService.sendPaymentReminder(id);
+  }
+
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)

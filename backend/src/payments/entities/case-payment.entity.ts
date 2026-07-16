@@ -78,6 +78,9 @@ export class CasePayment {
   @Column({ nullable: true })
   code_used_at: Date;
 
+  @Column({ nullable: true })
+  last_reminder_sent_at: Date;
+
   @CreateDateColumn()
   created_at: Date;
 
@@ -89,4 +92,3 @@ export class CasePayment {
   @JoinColumn({ name: 'case_id' })
   case_: ServiceCase;
 }
-
