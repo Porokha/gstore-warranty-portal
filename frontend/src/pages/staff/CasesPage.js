@@ -29,6 +29,35 @@ import StatusBar from '../../components/cases/StatusBar';
 import ResultBar from '../../components/cases/ResultBar';
 import CustomDataTable from '../../components/common/CustomDataTable';
 
+const formatDateTimeForApi = (date) => {
+  const pad = (value) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+};
+
+const getTimeRangeDates = (range) => {
+  if (range === 'all') return {};
+
+  const now = new Date();
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(now);
+  end.setHours(23, 59, 59, 999);
+
+  if (range === 'yesterday') {
+    start.setDate(start.getDate() - 1);
+    end.setDate(end.getDate() - 1);
+  }
+
+  if (range === 'last30') {
+    start.setDate(start.getDate() - 29);
+  }
+
+  return {
+    start_date: formatDateTimeForApi(start),
+    end_date: formatDateTimeForApi(end),
+  };
+};
+
 const CasesPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -40,6 +69,7 @@ const CasesPage = () => {
   const closeToDeadline = searchParams.get('closeToDeadline');
   const due = searchParams.get('due');
   const statusParam = searchParams.get('status');
+  const defaultTimeRange = closeToDeadline || due ? 'all' : 'today';
   
   const [filters, setFilters] = useState({
     status: statusParam || (closeToDeadline || due ? '' : ''),
@@ -49,15 +79,28 @@ const CasesPage = () => {
     technician_id: searchParams.get('technician_id') || '',
     search: searchParams.get('search') || '',
     customer: searchParams.get('customer') || '',
+    time_range: searchParams.get('time_range') || defaultTimeRange,
     closeToDeadline: closeToDeadline === 'true',
     due: due === 'true',
   });
   const [customerFilterAnchor, setCustomerFilterAnchor] = useState(null);
   const [customerFilterDraft, setCustomerFilterDraft] = useState(searchParams.get('customer') || '');
 
+  const queryFilters = useMemo(() => {
+    const { time_range: timeRange, ...baseFilters } = filters;
+    const shouldSearchAllTime = Boolean(baseFilters.search?.trim());
+    if (shouldSearchAllTime) {
+      return baseFilters;
+    }
+    return {
+      ...baseFilters,
+      ...getTimeRangeDates(timeRange),
+    };
+  }, [filters]);
+
   const { data: cases, isLoading } = useQuery(
-    ['cases', filters],
-    () => casesService.getAll(filters),
+    ['cases', queryFilters],
+    () => casesService.getAll(queryFilters),
     {
       keepPreviousData: true,
     }
@@ -276,10 +319,17 @@ const CasesPage = () => {
     // Update URL params
     const params = new URLSearchParams();
     Object.keys(newFilters).forEach((k) => {
-      if (newFilters[k]) params.set(k, newFilters[k]);
+      if (newFilters[k] && !['start_date', 'end_date'].includes(k)) params.set(k, newFilters[k]);
     });
     setSearchParams(params);
   };
+
+  const timeRangeOptions = [
+    { value: 'today', label: t('case.timeToday') },
+    { value: 'yesterday', label: t('case.timeYesterday') },
+    { value: 'last30', label: t('case.timeLast30') },
+    { value: 'all', label: t('case.timeAll') },
+  ];
 
   if (isLoading) {
     return (
@@ -312,6 +362,27 @@ const CasesPage = () => {
 
       {/* Filters */}
       <Paper sx={{ p: 2, mb: 3 }}>
+        <Box display="flex" gap={1} flexWrap="wrap" mb={2}>
+          {timeRangeOptions.map((option) => (
+            <Button
+              key={option.value}
+              size="small"
+              variant={filters.time_range === option.value ? 'contained' : 'outlined'}
+              onClick={() => handleFilterChange('time_range', option.value)}
+              sx={{ borderRadius: '10px' }}
+            >
+              {option.label}
+            </Button>
+          ))}
+          {filters.search?.trim() && (
+            <Chip
+              size="small"
+              color="info"
+              label={t('case.searchIgnoresTime')}
+              sx={{ ml: 0.5, height: 32, borderRadius: '10px' }}
+            />
+          )}
+        </Box>
         <Box display="flex" gap={2} flexWrap="wrap">
           <TextField
             size="small"
