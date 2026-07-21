@@ -1471,9 +1471,6 @@ const ShopPage = () => {
                   .join(' • ')}
               </p>
               <h2 id="zpos-modal-title">{modalProduct.title}</h2>
-              <p id="zpos-modal-desc" className="zpos-modal-desc">
-                {modalProduct.description}
-              </p>
 
               <div className="zpos-modal-prices">
                 <button
