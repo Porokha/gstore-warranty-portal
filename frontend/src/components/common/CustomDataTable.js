@@ -108,8 +108,14 @@ const CustomDataTable = ({
       if (storedFrozenCols) {
         setFrozenCols(JSON.parse(storedFrozenCols));
       }
-      if (storedPageSize) {
-        setPageSize(parseInt(storedPageSize, 10));
+      if (storedPageSize === 'all') {
+        setShowAll(true);
+      } else if (storedPageSize) {
+        const parsedPageSize = parseInt(storedPageSize, 10);
+        if (!Number.isNaN(parsedPageSize)) {
+          setPageSize(parsedPageSize);
+          setShowAll(false);
+        }
       }
     } catch (e) {
       console.error('Failed to load table preferences:', e);
@@ -334,6 +340,7 @@ const CustomDataTable = ({
   const handlePageSizeChange = (event) => {
     const newSize = parseInt(event.target.value, 10);
     setPageSize(newSize);
+    setShowAll(false);
     setCurrentPage(1);
     setSelected([]);
     try {
@@ -435,8 +442,14 @@ const CustomDataTable = ({
             <Select value={showAll ? 'all' : pageSize} label="Show" onChange={(e) => {
               if (e.target.value === 'all') {
                 setShowAll(true);
+                setCurrentPage(1);
+                setSelected([]);
+                try {
+                  localStorage.setItem(`${tableKey}_pageSize`, 'all');
+                } catch (error) {
+                  console.error('Failed to save page size:', error);
+                }
               } else {
-                setShowAll(false);
                 handlePageSizeChange(e);
               }
             }}>
