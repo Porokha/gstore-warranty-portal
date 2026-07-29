@@ -245,6 +245,29 @@ export class WarrantiesService {
     return this.warrantiesRepository.save(warranty);
   }
 
+  async resendWarrantyCreatedSms(id: number): Promise<{ success: boolean; message: string; log_id?: number }> {
+    const warranty = await this.findOne(id);
+
+    if (!warranty.customer_phone) {
+      throw new BadRequestException('Warranty has no customer phone number');
+    }
+
+    const log = await this.smsService.notifyWarrantyCreated(warranty);
+
+    if (!log) {
+      return {
+        success: false,
+        message: 'Warranty SMS was not sent. Check SMS settings and warranty phone number.',
+      };
+    }
+
+    return {
+      success: log.status === 'sent',
+      message: log.status === 'sent' ? 'Warranty SMS resent successfully' : log.api_response || 'Warranty SMS failed',
+      log_id: log.id,
+    };
+  }
+
   async remove(id: number, deletedBy: number): Promise<void> {
     const warranty = await this.findOne(id);
     

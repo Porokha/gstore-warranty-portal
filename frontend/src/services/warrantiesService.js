@@ -41,6 +41,11 @@ export const warrantiesService = {
     return response.data;
   },
 
+  resendCreatedSms: async (id) => {
+    const response = await api.post(`/warranties/${id}/resend-created-sms`);
+    return response.data;
+  },
+
   delete: async (id) => {
     const response = await api.delete(`/warranties/${id}`);
     return response.data;
@@ -68,4 +73,3 @@ export const warrantiesService = {
     return response.data;
   },
 };
-

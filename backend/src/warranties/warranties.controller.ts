@@ -85,6 +85,14 @@ export class WarrantiesController {
     return this.warrantiesService.extendWarranty(id, days);
   }
 
+  @Post(':id/resend-created-sms')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.SUPER_TECHNICIAN)
+  @HttpCode(HttpStatus.OK)
+  resendWarrantyCreatedSms(@Param('id', ParseIntPipe) id: number) {
+    return this.warrantiesService.resendWarrantyCreatedSms(id);
+  }
+
   @Post('bulk-delete')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)

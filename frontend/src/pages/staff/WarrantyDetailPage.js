@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from 'react-query';
+import { useMutation, useQuery } from 'react-query';
 import {
   Box,
   Paper,
@@ -12,8 +12,9 @@ import {
   CircularProgress,
   Alert,
   Divider,
+  Snackbar,
 } from '@mui/material';
-import { ArrowBack, Edit } from '@mui/icons-material';
+import { ArrowBack, Edit, Sms } from '@mui/icons-material';
 import { warrantiesService } from '../../services/warrantiesService';
 import { useAuth } from '../../contexts/AuthContext';
 import { isManagementRole } from '../../utils/roles';
@@ -24,12 +25,37 @@ const WarrantyDetailPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const canManageWarranties = isManagementRole(user?.role);
+  const [notification, setNotification] = React.useState({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
 
   const { data: warranty, isLoading, error } = useQuery(
     ['warranty', id],
     () => warrantiesService.getById(id),
     {
       enabled: !!id,
+    }
+  );
+
+  const resendSmsMutation = useMutation(
+    () => warrantiesService.resendCreatedSms(id),
+    {
+      onSuccess: (result) => {
+        setNotification({
+          open: true,
+          message: result?.message || 'Warranty SMS resent successfully',
+          severity: result?.success === false ? 'warning' : 'success',
+        });
+      },
+      onError: (err) => {
+        setNotification({
+          open: true,
+          message: err.response?.data?.message || 'Warranty SMS could not be resent',
+          severity: 'error',
+        });
+      },
     }
   );
 
@@ -109,14 +135,25 @@ const WarrantyDetailPage = () => {
           <Typography variant="h4">{t('warranty.warrantyDetails') || 'Warranty Details'}</Typography>
         </Box>
         {canManageWarranties && (
-          <Button
-            variant="contained"
-            startIcon={<Edit />}
-            onClick={() => navigate(`/staff/warranties/${id}/edit`)}
-            sx={{ textTransform: 'none' }}
-          >
-            {t('warranty.editWarranty') || 'Edit Warranty'}
-          </Button>
+          <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
+            <Button
+              variant="outlined"
+              startIcon={resendSmsMutation.isLoading ? <CircularProgress size={16} /> : <Sms />}
+              disabled={resendSmsMutation.isLoading || !warranty.customer_phone}
+              onClick={() => resendSmsMutation.mutate()}
+              sx={{ textTransform: 'none' }}
+            >
+              {t('warranty.resendWarrantySms') || 'Resend warranty SMS'}
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<Edit />}
+              onClick={() => navigate(`/staff/warranties/${id}/edit`)}
+              sx={{ textTransform: 'none' }}
+            >
+              {t('warranty.editWarranty') || 'Edit Warranty'}
+            </Button>
+          </Box>
         )}
       </Box>
 
@@ -300,6 +337,20 @@ const WarrantyDetailPage = () => {
           )}
         </Grid>
       </Paper>
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={5000}
+        onClose={() => setNotification((prev) => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          severity={notification.severity}
+          onClose={() => setNotification((prev) => ({ ...prev, open: false }))}
+          sx={{ width: '100%' }}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
