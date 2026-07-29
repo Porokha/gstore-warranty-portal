@@ -349,6 +349,7 @@
     "adminNotes": "Admin Notes",
     "adminNotesPlaceholder": "Internal notes (not visible to customers)",
     "editWarranty": "Edit Warranty",
+    "resendWarrantySms": "Resend warranty SMS",
     "saveChanges": "Save Changes",
     "warrantyUpdated": "Warranty updated successfully",
     "adminOnlyInfo": "Admin Only Information",
