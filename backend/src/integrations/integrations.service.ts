@@ -848,7 +848,7 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
     if (eventRecord?.processing_status === PosWarrantyInboundEventStatus.PROCESSED) {
       return this.buildResponse(
         eventRecord.action_taken as PosOrderUpsertAction,
-        payload.woo_order_id,
+        payload,
         eventRecord.warranty_number || undefined,
       );
     }
@@ -885,12 +885,12 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
       eventRecord.action_taken = result.action;
       eventRecord.warranty_number = result.warrantyNumber || null;
       eventRecord.external_response = JSON.stringify(
-        this.buildResponse(result.action, payload.woo_order_id, result.warrantyNumber),
+        this.buildResponse(result.action, payload, result.warrantyNumber),
       );
       eventRecord.processed_at = new Date();
       await this.posInboundEventsRepository.save(eventRecord);
 
-      return this.buildResponse(result.action, payload.woo_order_id, result.warrantyNumber);
+      return this.buildResponse(result.action, payload, result.warrantyNumber);
     } catch (error) {
       eventRecord.processing_status = PosWarrantyInboundEventStatus.FAILED;
       eventRecord.error_message = error.message || 'Unknown processing error';
@@ -907,6 +907,7 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
     const preorderFinished = (payload.preorder_status || '').toLowerCase() === 'finished';
     const eligibleStatus = this.eligibleNonPreorderStatuses.has((payload.order_status || '').toLowerCase());
     const price = this.resolvePrice(payload);
+    const deviceType = this.detectWarrantyEligibleDeviceType(payload);
 
     if (hasPreorder && !preorderFinished) {
       return { action: 'deferred' };
@@ -920,11 +921,13 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
       return { action: 'ignored' };
     }
 
-    const existingWarranty = await this.warrantiesRepository.findOne({
-      where: { order_id: payload.woo_order_id },
-    });
+    if (!deviceType) {
+      return { action: 'ignored' };
+    }
 
-    const warrantyData = this.mapPayloadToWarranty(payload);
+    const existingWarranty = await this.findExistingPosWarranty(payload);
+
+    const warrantyData = this.mapPayloadToWarranty(payload, deviceType);
 
     if (existingWarranty) {
       Object.assign(existingWarranty, warrantyData, {
@@ -934,7 +937,7 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
       });
       const saved = await this.warrantiesRepository.save(existingWarranty);
       this.logger.log(
-        `Updated warranty ${saved.warranty_id} from POS order ${payload.woo_order_id}`,
+        `Updated warranty ${saved.warranty_id} from POS order ${this.resolvePosWarrantyReference(payload)}`,
       );
       return { action: 'updated', warrantyNumber: saved.warranty_id };
     }
@@ -949,7 +952,7 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
     });
     const saved = await this.warrantiesRepository.save(warranty);
     this.logger.log(
-      `Created warranty ${saved.warranty_id} from POS order ${payload.woo_order_id}`,
+      `Created warranty ${saved.warranty_id} from POS order ${this.resolvePosWarrantyReference(payload)}`,
     );
     try {
       await this.smsService.notifyWarrantyCreated(saved);
@@ -1553,7 +1556,50 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
     return (this.configService.get<string>('PORTAL_URL') || 'https://zezva.ge').replace(/\/+$/, '');
   }
 
-  private mapPayloadToWarranty(payload: PosOrderUpsertDto) {
+  private async findExistingPosWarranty(payload: PosOrderUpsertDto): Promise<Warranty | null> {
+    if (payload.analytics_order_id) {
+      const byAnalyticsOrder = await this.warrantiesRepository.findOne({
+        where: { product_id: payload.analytics_order_id },
+      });
+      if (byAnalyticsOrder) {
+        return byAnalyticsOrder;
+      }
+    }
+
+    const sku = payload.item.sku?.trim();
+    const serialNumber =
+      payload.item.serial?.trim() ||
+      payload.item.imei?.trim();
+
+    if (sku && serialNumber) {
+      return this.warrantiesRepository.findOne({
+        where: {
+          order_id: payload.woo_order_id,
+          sku,
+          serial_number: serialNumber,
+        },
+      });
+    }
+
+    if (serialNumber) {
+      return this.warrantiesRepository.findOne({
+        where: {
+          order_id: payload.woo_order_id,
+          serial_number: serialNumber,
+        },
+      });
+    }
+
+    if (!payload.analytics_order_id && !payload.order_number) {
+      return this.warrantiesRepository.findOne({
+        where: { order_id: payload.woo_order_id },
+      });
+    }
+
+    return null;
+  }
+
+  private mapPayloadToWarranty(payload: PosOrderUpsertDto, deviceType: string) {
     const purchaseDate = this.resolvePurchaseDate(payload);
     const warrantyEnd = new Date(purchaseDate);
     warrantyEnd.setFullYear(warrantyEnd.getFullYear() + this.warrantyYears);
@@ -1574,7 +1620,7 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
       sku: payload.item.sku?.trim() || fallbackSku,
       imei: payload.item.imei?.trim() || null,
       serial_number: serialNumber,
-      device_type: this.detectDeviceType(payload.item.product_name, payload.item.category, payload.item.sku),
+      device_type: deviceType,
       title: payload.item.product_name.trim(),
       thumbnail_url: null,
       price: this.resolvePrice(payload),
@@ -1620,26 +1666,43 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
     return 0;
   }
 
-  private detectDeviceType(productName?: string, category?: string, sku?: string): string {
-    const haystack = `${productName || ''} ${category || ''} ${sku || ''}`.toLowerCase();
-    if (haystack.includes('phone') || haystack.includes('iphone') || haystack.includes('smart')) {
+  private detectWarrantyEligibleDeviceType(payload: PosOrderUpsertDto): string | null {
+    const item = payload.item;
+    const haystack = `${item.product_name || ''} ${item.category || ''} ${item.sku || ''} ${item.brand || ''}`.toLowerCase();
+    const category = (item.category || '').toLowerCase();
+    const categoryBlockerPattern =
+      /\b(accessor(?:y|ies)|part|parts|battery|lcd|screen|display|camera|speaker|dock|port|connector|charger|cable|case|cover|protector|glass|film)\b/;
+    const titleBlockerPattern =
+      /\b(accessor(?:y|ies)|case|cover|charger|charging|cable|adapter|headphone|headphones|earphone|earphones|airpods|watch|band|strap|protector|glass|film|power\s*bank|keyboard|mouse|bag|pencil|stylus|lcd|screen|display|dock|port|connector)\b/;
+
+    if (categoryBlockerPattern.test(category) || titleBlockerPattern.test(haystack)) {
+      return null;
+    }
+
+    if (
+      /\b(phone|smartphone|mobile)\b/.test(haystack) ||
+      /\biphone\b/.test(haystack) ||
+      /\bpixel\b/.test(haystack) ||
+      /\bgalaxy\b/.test(haystack)
+    ) {
       return 'Phone';
     }
-    if (haystack.includes('tablet') || haystack.includes('ipad')) {
-      return 'Tablet';
+
+    if (
+      /\b(laptop|notebook|macbook|ultrabook)\b/.test(haystack) ||
+      category.includes('laptop')
+    ) {
+      return 'Laptop';
     }
-    if (haystack.includes('desktop') || haystack.includes('pc')) {
-      return 'Desktop';
-    }
-    if (haystack.includes('watch')) {
-      return 'Watch';
-    }
-    return 'Laptop';
+
+    return null;
   }
 
   private buildAdminNotes(payload: PosOrderUpsertDto): string {
     const parts = [
       `Source: ${payload.source}`,
+      `Warranty identity: ${this.resolvePosWarrantyReference(payload)}`,
+      `Parent Woo order ID: ${payload.woo_order_id}`,
       payload.order_number ? `Order number: ${payload.order_number}` : null,
       payload.analytics_order_id ? `Analytics order ID: ${payload.analytics_order_id}` : null,
       payload.payment_type ? `Payment type: ${payload.payment_type}` : null,
@@ -1654,16 +1717,44 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
     return parts.join('\n');
   }
 
+  private resolvePosWarrantyReference(payload: PosOrderUpsertDto): string {
+    if (payload.analytics_order_id) {
+      return String(payload.analytics_order_id);
+    }
+
+    if (payload.order_number?.trim()) {
+      return payload.order_number.trim();
+    }
+
+    const sku = payload.item.sku?.trim();
+    const serial = payload.item.serial?.trim() || payload.item.imei?.trim();
+    if (sku && serial) {
+      return `${payload.woo_order_id}:${sku}:${serial}`;
+    }
+
+    return String(payload.woo_order_id);
+  }
+
   private buildResponse(
     action: PosOrderUpsertAction,
-    wooOrderId: number,
+    payloadOrWooOrderId: PosOrderUpsertDto | number,
     warrantyNumber?: string,
   ) {
+    const externalReference =
+      typeof payloadOrWooOrderId === 'number'
+        ? String(payloadOrWooOrderId)
+        : this.resolvePosWarrantyReference(payloadOrWooOrderId);
+    const parentWooOrderId =
+      typeof payloadOrWooOrderId === 'number'
+        ? payloadOrWooOrderId
+        : payloadOrWooOrderId.woo_order_id;
+
     return {
       success: true,
       received: true,
       action,
-      external_reference: String(wooOrderId),
+      external_reference: externalReference,
+      parent_woo_order_id: parentWooOrderId,
       warranty_number: warrantyNumber || null,
     };
   }
