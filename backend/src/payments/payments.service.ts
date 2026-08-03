@@ -141,6 +141,7 @@ export class PaymentsService {
   }): Promise<CasePayment[]> {
     const query = this.paymentsRepository.createQueryBuilder('payment')
       .leftJoinAndSelect('payment.case_', 'case')
+      .leftJoinAndSelect('case.assigned_technician', 'technician')
       .leftJoinAndSelect('case.status_history', 'history')
       .orderBy('payment.created_at', 'DESC')
       .addOrderBy('history.created_at', 'ASC');
