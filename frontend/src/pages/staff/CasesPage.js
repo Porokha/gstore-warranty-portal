@@ -536,6 +536,9 @@ const CasesPage = () => {
         tableKey="cases-table"
         frozenColumns={['select', 'case_number']}
         defaultColumnWidth={150}
+        pageSizeOptions={[25, 50, 100, 250]}
+        defaultPageSize={50}
+        maxShowAllRows={500}
         onRowClick={(row) => navigate(`/staff/cases/${row.id}${location.search}`)}
         onBulkDelete={async (selectedIds) => {
           try {

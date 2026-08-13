@@ -374,6 +374,9 @@ const WarrantiesPage = () => {
         tableKey="warranties-table"
         frozenColumns={['select', 'warranty_id']}
         defaultColumnWidth={150}
+        pageSizeOptions={[25, 50, 100, 250]}
+        defaultPageSize={50}
+        maxShowAllRows={300}
         onRowClick={(row) => navigate(`/staff/warranties/${row.id}`)}
         onBulkDelete={(selectedIds) => {
           setDeleteDialog({

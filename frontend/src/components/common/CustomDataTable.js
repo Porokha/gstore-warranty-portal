@@ -43,6 +43,8 @@ const CustomDataTable = ({
   defaultColumnWidth = 150,
   pageSizeOptions = [10, 25, 50, 100],
   defaultPageSize = 25,
+  allowShowAll = true,
+  maxShowAllRows = 500,
 }) => {
   const [columns, setColumns] = useState(initialColumns);
   const [hiddenCols, setHiddenCols] = useState([]);
@@ -59,6 +61,8 @@ const CustomDataTable = ({
   const tableContainerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const prevDataLengthRef = useRef(data?.length || 0);
+  const totalRowCount = data?.length || 0;
+  const showAllAllowed = allowShowAll && totalRowCount <= maxShowAllRows;
 
   // Clear selection when data changes (e.g., after deletion)
   useEffect(() => {
@@ -121,6 +125,20 @@ const CustomDataTable = ({
       console.error('Failed to load table preferences:', e);
     }
   }, [tableKey]);
+
+  useEffect(() => {
+    if (!showAll || showAllAllowed) return;
+
+    setShowAll(false);
+    setPageSize(defaultPageSize);
+    setCurrentPage(1);
+    setSelected([]);
+    try {
+      localStorage.setItem(`${tableKey}_pageSize`, String(defaultPageSize));
+    } catch (e) {
+      console.error('Failed to save page size:', e);
+    }
+  }, [defaultPageSize, showAll, showAllAllowed, tableKey]);
 
   // Save column widths
   const saveWidths = useCallback(
@@ -325,6 +343,12 @@ const CustomDataTable = ({
 
   const totalPages = useMemo(() => Math.ceil(data.length / pageSize), [data.length, pageSize]);
 
+  useEffect(() => {
+    if (!showAll && currentPage > Math.max(totalPages, 1)) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, showAll, totalPages]);
+
   // Separate frozen and regular rows
   const { frozenRowsData, regularRowsData } = useMemo(() => {
     const frozen = paginatedData.filter((row) => frozenRows.includes(row.id));
@@ -441,6 +465,7 @@ const CustomDataTable = ({
             <InputLabel>Show</InputLabel>
             <Select value={showAll ? 'all' : pageSize} label="Show" onChange={(e) => {
               if (e.target.value === 'all') {
+                if (!showAllAllowed) return;
                 setShowAll(true);
                 setCurrentPage(1);
                 setSelected([]);
@@ -458,7 +483,11 @@ const CustomDataTable = ({
                   {size} per page
                 </MenuItem>
               ))}
-              <MenuItem value="all">All</MenuItem>
+              {allowShowAll && (
+                <MenuItem value="all" disabled={!showAllAllowed}>
+                  {showAllAllowed ? 'All' : `All disabled (${totalRowCount} rows)`}
+                </MenuItem>
+              )}
             </Select>
           </FormControl>
           {!showAll && totalPages > 1 && (
