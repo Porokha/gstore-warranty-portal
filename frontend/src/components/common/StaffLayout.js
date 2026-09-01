@@ -74,7 +74,7 @@ const StaffLayout = () => {
   });
   const drawerWidth = isCollapsed ? COLLAPSED_DRAWER_WIDTH : EXPANDED_DRAWER_WIDTH;
   const mustChangePassword = Boolean(user?.must_change_password);
-  const receivesManagerNotifications = [ROLE.MANAGER, ROLE.SUPER_TECHNICIAN].includes(user?.role);
+  const receivesManagerNotifications = [ROLE.MANAGER, ROLE.TECH_MANAGER, ROLE.SUPER_TECHNICIAN].includes(user?.role);
   const queryClient = useQueryClient();
 
   const { data: unreadNotificationData } = useQuery(

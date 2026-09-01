@@ -13,6 +13,7 @@ import { AuditLog } from '../../audit/entities/audit-log.entity';
 export enum UserRole {
   ADMIN = 'admin',
   MANAGER = 'manager',
+  TECH_MANAGER = 'tech-manager',
   SUPER_TECHNICIAN = 'super_technician',
   TECHNICIAN = 'technician',
 }
@@ -20,11 +21,13 @@ export enum UserRole {
 export const MANAGEMENT_ROLES = [
   UserRole.ADMIN,
   UserRole.MANAGER,
+  UserRole.TECH_MANAGER,
   UserRole.SUPER_TECHNICIAN,
 ];
 
 export const TECHNICIAN_ROLES = [
   UserRole.TECHNICIAN,
+  UserRole.TECH_MANAGER,
   UserRole.SUPER_TECHNICIAN,
 ];
 
@@ -58,7 +61,7 @@ export class User {
 
   @Column({
     type: 'enum',
-    enum: ['admin', 'manager', 'super_technician', 'technician'],
+    enum: ['admin', 'manager', 'tech-manager', 'super_technician', 'technician'],
     default: 'technician',
   })
   role: UserRole;

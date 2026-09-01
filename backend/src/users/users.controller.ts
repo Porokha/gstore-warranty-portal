@@ -15,14 +15,14 @@ export class UsersController {
 
   @Get('technicians')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.SUPER_TECHNICIAN)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.TECH_MANAGER, UserRole.SUPER_TECHNICIAN)
   findTechnicians() {
     return this.usersService.findTechnicians();
   }
 
   @Get()
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.SUPER_TECHNICIAN)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.TECH_MANAGER, UserRole.SUPER_TECHNICIAN)
   findAll() {
     return this.usersService.findAll();
   }

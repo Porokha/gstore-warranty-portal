@@ -182,7 +182,7 @@ function AppRoutes() {
             <Route path="/staff" element={<PrivateRoute />}>
               <Route element={<StaffLayout />}>
                 <Route path="dashboard" element={<DashboardPage />} />
-                <Route element={<StaffRoleRoute allowedRoles={['technician', 'super_technician']} />}>
+                <Route element={<StaffRoleRoute allowedRoles={['technician', 'tech-manager', 'super_technician']} />}>
                   <Route path="my-cases" element={<MyCasesPage />} />
                 </Route>
                 <Route path="cases" element={<CasesPage />} />
@@ -192,7 +192,7 @@ function AppRoutes() {
                 <Route path="partners" element={<PartnersPage />} />
                 <Route path="warranties" element={<WarrantiesPage />} />
                 <Route path="warranties/:id" element={<WarrantyDetailPage />} />
-                <Route element={<StaffRoleRoute allowedRoles={['admin', 'manager', 'super_technician']} />}>
+                <Route element={<StaffRoleRoute allowedRoles={['admin', 'manager', 'tech-manager', 'super_technician']} />}>
                   <Route path="warranties/:id/edit" element={<WarrantyEditPage />} />
                   <Route path="warranties/new" element={<CreateWarrantyPage />} />
                 </Route>

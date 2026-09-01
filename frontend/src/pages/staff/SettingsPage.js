@@ -1016,6 +1016,7 @@ const SettingsPage = () => {
             >
               <MenuItem value="admin">Admin</MenuItem>
               <MenuItem value="manager">Manager</MenuItem>
+              <MenuItem value="tech-manager">Tech Manager</MenuItem>
               <MenuItem value="super_technician">Super Technician</MenuItem>
               <MenuItem value="technician">Technician</MenuItem>
             </Select>
