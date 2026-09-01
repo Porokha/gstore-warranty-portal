@@ -77,7 +77,7 @@ export class WarrantiesService {
     return savedWarranty;
   }
 
-  async findAll(filters?: FilterWarrantyDto): Promise<Warranty[]> {
+  async findAll(filters?: FilterWarrantyDto): Promise<Warranty[] | { data: Warranty[]; total: number; page: number; limit: number }> {
     const queryBuilder = this.warrantiesRepository.createQueryBuilder('warranty');
 
     if (filters) {
@@ -181,6 +181,19 @@ export class WarrantiesService {
     }
 
     queryBuilder.orderBy('warranty.created_at', 'DESC');
+
+    const hasPagination = filters?.page !== undefined && filters?.limit !== undefined;
+    const page = Math.max(1, Number(filters?.page) || 1);
+    const limit = Math.min(250, Math.max(1, Number(filters?.limit) || 50));
+
+    if (hasPagination) {
+      const [data, total] = await queryBuilder
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return { data, total, page, limit };
+    }
 
     return queryBuilder.getMany();
   }

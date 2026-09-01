@@ -65,5 +65,14 @@ export class FilterWarrantyDto {
   @IsOptional()
   @IsDateString()
   warranty_end_to?: string;
-}
 
+  @IsOptional()
+  @IsInt()
+  @Type(() => Number)
+  page?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Type(() => Number)
+  limit?: number;
+}

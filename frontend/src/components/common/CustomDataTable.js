@@ -45,6 +45,7 @@ const CustomDataTable = ({
   defaultPageSize = 25,
   allowShowAll = true,
   maxShowAllRows = 500,
+  serverPagination = null,
 }) => {
   const [columns, setColumns] = useState(initialColumns);
   const [hiddenCols, setHiddenCols] = useState([]);
@@ -63,6 +64,10 @@ const CustomDataTable = ({
   const prevDataLengthRef = useRef(data?.length || 0);
   const totalRowCount = data?.length || 0;
   const showAllAllowed = allowShowAll && totalRowCount <= maxShowAllRows;
+  const isServerPaginated = Boolean(serverPagination);
+  const effectivePage = isServerPaginated ? serverPagination.page : currentPage;
+  const effectivePageSize = isServerPaginated ? serverPagination.pageSize : pageSize;
+  const effectiveTotalRows = isServerPaginated ? serverPagination.total : totalRowCount;
 
   // Clear selection when data changes (e.g., after deletion)
   useEffect(() => {
@@ -335,19 +340,22 @@ const CustomDataTable = ({
 
   // Pagination
   const paginatedData = useMemo(() => {
-    if (showAll) return data;
+    if (isServerPaginated || (showAll && showAllAllowed)) return data;
     const start = (currentPage - 1) * pageSize;
     const end = start + pageSize;
     return data.slice(start, end);
-  }, [data, currentPage, pageSize, showAll]);
+  }, [data, currentPage, isServerPaginated, pageSize, showAll, showAllAllowed]);
 
-  const totalPages = useMemo(() => Math.ceil(data.length / pageSize), [data.length, pageSize]);
+  const totalPages = useMemo(
+    () => Math.ceil(effectiveTotalRows / effectivePageSize),
+    [effectivePageSize, effectiveTotalRows],
+  );
 
   useEffect(() => {
-    if (!showAll && currentPage > Math.max(totalPages, 1)) {
+    if (!isServerPaginated && !showAll && currentPage > Math.max(totalPages, 1)) {
       setCurrentPage(1);
     }
-  }, [currentPage, showAll, totalPages]);
+  }, [currentPage, isServerPaginated, showAll, totalPages]);
 
   // Separate frozen and regular rows
   const { frozenRowsData, regularRowsData } = useMemo(() => {
@@ -357,12 +365,28 @@ const CustomDataTable = ({
   }, [paginatedData, frozenRows]);
 
   const handlePageChange = (event, value) => {
+    if (isServerPaginated) {
+      serverPagination.onPageChange?.(value);
+      setSelected([]);
+      return;
+    }
     setCurrentPage(value);
     setSelected([]); // Clear selection on page change
   };
 
   const handlePageSizeChange = (event) => {
     const newSize = parseInt(event.target.value, 10);
+    if (isServerPaginated) {
+      serverPagination.onPageSizeChange?.(newSize);
+      setShowAll(false);
+      setSelected([]);
+      try {
+        localStorage.setItem(`${tableKey}_pageSize`, String(newSize));
+      } catch (e) {
+        console.error('Failed to save page size:', e);
+      }
+      return;
+    }
     setPageSize(newSize);
     setShowAll(false);
     setCurrentPage(1);
@@ -463,7 +487,7 @@ const CustomDataTable = ({
         <Box display="flex" alignItems="center" gap={2}>
           <FormControl size="small" sx={{ minWidth: 120 }}>
             <InputLabel>Show</InputLabel>
-            <Select value={showAll ? 'all' : pageSize} label="Show" onChange={(e) => {
+            <Select value={showAll && showAllAllowed ? 'all' : effectivePageSize} label="Show" onChange={(e) => {
               if (e.target.value === 'all') {
                 if (!showAllAllowed) return;
                 setShowAll(true);
@@ -485,7 +509,7 @@ const CustomDataTable = ({
               ))}
               {allowShowAll && (
                 <MenuItem value="all" disabled={!showAllAllowed}>
-                  {showAllAllowed ? 'All' : `All disabled (${totalRowCount} rows)`}
+                  {showAllAllowed ? 'All' : `All disabled (${effectiveTotalRows} rows)`}
                 </MenuItem>
               )}
             </Select>
@@ -493,7 +517,7 @@ const CustomDataTable = ({
           {!showAll && totalPages > 1 && (
             <Pagination
               count={totalPages}
-              page={currentPage}
+              page={effectivePage}
               onChange={handlePageChange}
               color="primary"
               size="small"

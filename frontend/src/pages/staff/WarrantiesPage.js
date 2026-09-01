@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from 'react-query';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -49,6 +49,13 @@ const WarrantiesPage = () => {
     active_only: searchParams.get('active_only') || '',
     expired_only: searchParams.get('expired_only') || '',
   });
+  const [tablePage, setTablePage] = useState(1);
+  const [tablePageSize, setTablePageSize] = useState(() => {
+    if (typeof window === 'undefined') return 50;
+    const stored = localStorage.getItem('warranties-table_pageSize');
+    const parsed = parseInt(stored, 10);
+    return [25, 50, 100, 250].includes(parsed) ? parsed : 50;
+  });
 
   const [deleteDialog, setDeleteDialog] = useState({
     open: false,
@@ -62,9 +69,18 @@ const WarrantiesPage = () => {
   });
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const warrantyQueryParams = useMemo(
+    () => ({
+      ...filters,
+      page: tablePage,
+      limit: tablePageSize,
+    }),
+    [filters, tablePage, tablePageSize],
+  );
+
   const { data: warranties, isLoading, error } = useQuery(
-    ['warranties', filters],
-    () => warrantiesService.getAll(filters),
+    ['warranties', warrantyQueryParams],
+    () => warrantiesService.getAll(warrantyQueryParams),
     {
       keepPreviousData: true,
     }
@@ -81,6 +97,7 @@ const WarrantiesPage = () => {
   const handleFilterChange = (key, value) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
+    setTablePage(1);
     
     // Update URL params
     const params = new URLSearchParams();
@@ -109,6 +126,20 @@ const WarrantiesPage = () => {
     if (Array.isArray(warranties?.data?.data)) return warranties.data.data;
     return [];
   }, [warranties]);
+
+  const totalWarranties = useMemo(() => {
+    if (Array.isArray(warranties)) return warranties.length;
+    if (typeof warranties?.total === 'number') return warranties.total;
+    if (typeof warranties?.data?.total === 'number') return warranties.data.total;
+    return rawData.length;
+  }, [rawData.length, warranties]);
+
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(totalWarranties / tablePageSize));
+    if (tablePage > totalPages) {
+      setTablePage(1);
+    }
+  }, [tablePage, tablePageSize, totalWarranties]);
 
   const rows = useMemo(() => rawData.map((warranty) => ({
     ...warranty,
@@ -377,6 +408,17 @@ const WarrantiesPage = () => {
         pageSizeOptions={[25, 50, 100, 250]}
         defaultPageSize={50}
         maxShowAllRows={300}
+        allowShowAll={false}
+        serverPagination={{
+          page: tablePage,
+          pageSize: tablePageSize,
+          total: totalWarranties,
+          onPageChange: setTablePage,
+          onPageSizeChange: (nextPageSize) => {
+            setTablePageSize(nextPageSize);
+            setTablePage(1);
+          },
+        }}
         onRowClick={(row) => navigate(`/staff/warranties/${row.id}`)}
         onBulkDelete={(selectedIds) => {
           setDeleteDialog({
