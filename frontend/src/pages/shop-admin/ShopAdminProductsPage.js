@@ -918,10 +918,10 @@ const ShopAdminProductsPage = () => {
   );
 
   return (
-    <Grid container spacing={3}>
+    <Grid className="zzv-admin-page zzv-admin-page--shop-products" container spacing={3}>
       <Grid item xs={12}>
-        <Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid #dce4f0', overflow: 'hidden' }}>
-          <Box sx={{ p: 3, borderBottom: '1px solid #e6edf7' }}>
+        <Paper className="zzv-admin-table-card zzv-shop-products-panel" elevation={0} sx={{ borderRadius: 3, border: '1px solid #dce4f0', overflow: 'hidden' }}>
+          <Box className="zzv-admin-filter-card" sx={{ p: 3, borderBottom: '1px solid #e6edf7' }}>
             <Tabs
               value={productSource}
               onChange={(event, value) => setProductSource(value)}
@@ -1385,6 +1385,7 @@ const ShopAdminProductsPage = () => {
           ) : (
             <>
             <Paper
+              className="zzv-admin-filter-card zzv-shop-products-toolbar"
               elevation={0}
               sx={{
                 m: 2,

@@ -276,8 +276,8 @@ const ShopAdminTradeInPage = () => {
   };
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 2, mb: 2 }}>
+    <Box className="zzv-admin-page zzv-admin-page--shop-tradein">
+      <Box className="zzv-admin-page-head" sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 2, mb: 2 }}>
         <Box>
           <Typography component="h1" sx={{ fontSize: 28, fontWeight: 900, color: '#172033' }}>
             Trade-in
@@ -296,8 +296,8 @@ const ShopAdminTradeInPage = () => {
         </Tooltip>
       </Box>
 
-      <Paper elevation={0} sx={{ border: '1px solid #dce4f0', borderRadius: '10px !important', overflow: 'hidden' }}>
-        <Box sx={{ px: 2, borderBottom: '1px solid #e5eaf2' }}>
+      <Paper className="zzv-admin-table-card zzv-shop-tradein-panel" elevation={0} sx={{ border: '1px solid #dce4f0', borderRadius: '10px !important', overflow: 'hidden' }}>
+        <Box className="zzv-admin-filter-card" sx={{ px: 2, borderBottom: '1px solid #e5eaf2' }}>
           <Tabs value={tab} onChange={(_, value) => setTab(value)}>
             <Tab label="Quotes" />
             <Tab label="Products" />
@@ -305,7 +305,7 @@ const ShopAdminTradeInPage = () => {
           </Tabs>
         </Box>
 
-        <Box sx={{ p: 2, display: 'flex', gap: 1.5, alignItems: 'center', borderBottom: '1px solid #e5eaf2' }}>
+        <Box className="zzv-shop-tradein-toolbar" sx={{ p: 2, display: 'flex', gap: 1.5, alignItems: 'center', borderBottom: '1px solid #e5eaf2' }}>
           {tab === 0 && (
             <FormControl size="small" sx={{ minWidth: 180 }}>
               <Select value={quoteStatus} displayEmpty onChange={(event) => setQuoteStatus(event.target.value)}>

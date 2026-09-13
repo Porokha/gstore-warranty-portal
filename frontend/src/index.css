@@ -180,6 +180,102 @@ code {
   box-shadow: 0 22px 70px rgba(63, 30, 120, 0.07);
 }
 
+.zzv-admin-page--shop-products,
+.zzv-admin-page--shop-orders,
+.zzv-admin-page--shop-tradein {
+  padding-bottom: 20px;
+}
+
+.zzv-shop-products-panel,
+.zzv-shop-orders-panel,
+.zzv-shop-tradein-panel {
+  border-color: var(--zzv-admin-border) !important;
+  border-radius: 20px !important;
+}
+
+.zzv-shop-products-panel > .zzv-admin-filter-card,
+.zzv-shop-orders-panel > .zzv-admin-filter-card,
+.zzv-shop-tradein-panel > .zzv-admin-filter-card {
+  border-bottom-color: var(--zzv-admin-border) !important;
+}
+
+.zzv-shop-products-panel .MuiTypography-root,
+.zzv-shop-orders-panel .MuiTypography-root,
+.zzv-shop-tradein-panel .MuiTypography-root {
+  letter-spacing: -0.015em;
+}
+
+.zzv-shop-products-panel .MuiChip-root,
+.zzv-shop-orders-panel .MuiChip-root,
+.zzv-shop-tradein-panel .MuiChip-root {
+  border-radius: 10px !important;
+  font-family: var(--font-platform-caps);
+}
+
+.zzv-shop-products-panel .MuiTable-root,
+.zzv-shop-tradein-panel [style*="grid-template-columns"] {
+  background: #ffffff;
+}
+
+.zzv-shop-products-panel .MuiTableCell-root {
+  border-bottom-color: #eee7fa;
+}
+
+.zzv-shop-products-panel .MuiTableBody-root .MuiTableRow-root {
+  transition: background 160ms ease;
+}
+
+.zzv-shop-products-panel .MuiTableBody-root .MuiTableRow-root.Mui-selected,
+.zzv-shop-products-panel .MuiTableBody-root .MuiTableRow-root.Mui-selected:hover {
+  background: #fbf7ff;
+}
+
+.zzv-shop-products-toolbar,
+.zzv-shop-tradein-toolbar {
+  background:
+    linear-gradient(135deg, rgba(130, 76, 255, 0.05), transparent 44%),
+    #fffefd !important;
+  border-color: var(--zzv-admin-border) !important;
+}
+
+.zzv-shop-orders-panel [class*="MuiGrid-item"] > .MuiBox-root {
+  scrollbar-width: thin;
+  scrollbar-color: #d7c7f6 transparent;
+}
+
+.zzv-shop-orders-panel .MuiPaper-root {
+  border-color: var(--zzv-admin-border) !important;
+}
+
+.zzv-shop-orders-panel .MuiPaper-root:hover {
+  border-color: #cdbdf5 !important;
+}
+
+.zzv-shop-tradein-panel > .MuiBox-root:not(.zzv-admin-filter-card):not(.zzv-shop-tradein-toolbar) {
+  background: #ffffff;
+}
+
+.zzv-shop-tradein-panel .MuiSelect-select,
+.zzv-shop-products-panel .MuiSelect-select,
+.zzv-shop-orders-panel .MuiSelect-select {
+  font-family: var(--font-platform);
+}
+
+.zzv-shop-tradein-panel .MuiSwitch-switchBase.Mui-checked,
+.zzv-shop-products-panel .MuiSwitch-switchBase.Mui-checked {
+  color: var(--zzv-admin-purple);
+}
+
+.zzv-shop-tradein-panel .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track,
+.zzv-shop-products-panel .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track {
+  background-color: var(--zzv-admin-purple);
+}
+
+.zzv-admin-page--shop-tradein .zzv-admin-page-head h1 {
+  font-family: var(--font-platform-caps);
+  letter-spacing: -0.03em;
+}
+
 @media (max-width: 720px) {
   .zzv-admin-page-head {
     padding-top: 10px;
