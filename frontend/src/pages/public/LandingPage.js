@@ -1,398 +1,299 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import {
-  ArrowForwardRounded as ArrowForwardIcon,
-  AutorenewRounded as TradeIcon,
-  BuildRounded as ServiceIcon,
-  CheckCircleRounded as CheckIcon,
-  Inventory2Rounded as PartsIcon,
-  LocalShippingRounded as ShippingIcon,
-  SearchRounded as SearchIcon,
-  ShieldRounded as WarrantyIcon,
-  ShoppingBagRounded as ShopIcon,
-  StarRounded as StarIcon,
-} from '@mui/icons-material';
-import { Box, Typography } from '@mui/material';
-import { useTranslation } from 'react-i18next';
+import { ArrowForwardRounded, ExpandMoreRounded } from '@mui/icons-material';
 
-const processSteps = [
-  ['01', SearchIcon, 'select', 'აირჩიე მოწყობილობა', 'მიუთითე მოდელი, მეხსიერება და მდგომარეობა.'],
-  ['02', PartsIcon, 'diagnose', 'მიიღე ზუსტი შეფასება', 'სერვისი, გარანტია და დეტალები ერთ სივრცეშია.'],
-  ['03', ShippingIcon, 'complete', 'დაასრულე სწრაფად', 'შეკვეთას ან ქეისს სტატუსით ადევნებ თვალს.'],
+const asset = (name) => `/figma-home/${name}`;
+
+const selectFields = [
+  ['ბრენდი', 'Apple', true],
+  ['მოდელი', 'აირჩიე მოდელი', false],
+  ['მეხსიერება', '64GB', true],
+  ['მდგომარეობა', 'როგორც ახალი', false],
 ];
 
-const serviceCards = [
-  [
-    ShopIcon,
-    '/shop',
-    'shop',
-    'მაღაზია',
-    'სმარტფონებისა და ლეპტოპების ნაწილები, სერვისთან ერთად შეკვეთის შესაძლებლობით.',
-  ],
-  [
-    WarrantyIcon,
-    '/warranty-service?tab=warranty',
-    'warranty',
-    'გარანტია',
-    'შეამოწმე მოწყობილობის გარანტია ნომრით, ტელეფონით ან პირადი მონაცემებით.',
-  ],
-  [
-    ServiceIcon,
-    '/warranty-service?tab=case',
-    'service',
-    'სერვისი',
-    'აკონტროლე სერვის ქეისის სტატუსი და მიიღე განახლებები გამჭვირვალედ.',
-  ],
-  [
-    TradeIcon,
-    '/trade-in',
-    'tradeIn',
-    'Trade-in',
-    'აირჩიე მოწყობილობა, უპასუხე კითხვებს და მიიღე სავარაუდო შეთავაზება.',
-  ],
+const kpis = [
+  ['2,700+', 'ნაწილი'],
+  ['1,200+', 'შეკეთება'],
+  ['4.9', '218 შეფასება'],
+];
+
+const steps = [
+  ['01', 'აირჩიე მოწყობილობა', 'მიუთითე მოდელი, მეხსიერება და მდგომარეობა.', 'imgImage347.png'],
+  ['02', 'შეაფასე ონლაინ', 'ნახე ფასის დიაპაზონი მომენტალურად, ვიზიტის გარეშე.', 'imgImage348.png'],
+  ['03', 'მიიღე შეთავაზება', 'გადაცვლე ტექნიკა ნაღდ ფულში ან ჯისთორის ახალ ტექნიკაში.', 'imgImage349.png'],
+];
+
+const partIcons = [
+  ['ეკრანი', 'imgIconSmartphone.svg'],
+  ['ბატარეა', 'imgIconBattery.svg'],
+  ['კამერა', 'imgIconCamera.svg'],
+  ['დინამიკი', 'imgIconVolume2.svg'],
+  ['დაფა', 'imgIconCpu.svg'],
+  ['პორტი', 'imgIconPlug.svg'],
 ];
 
 const faqItems = [
-  ['0', 'როგორ შევამოწმო გარანტია?', 'გადადით Warranty | Service გვერდზე და აირჩიეთ გარანტიის ძებნის ჩანართი.'],
-  ['1', 'შემიძლია ნაწილების შეძენა სერვისთან ერთად?', 'დიახ, მაღაზიაში პროდუქტის შეკვეთისას შეგიძლიათ აირჩიოთ სერვისთან ერთად ყიდვა.'],
-  ['2', 'Trade-in შეთავაზება საბოლოოა?', 'ონლაინ მიღებული შეთავაზება სავარაუდოა და საბოლოოდ დასტურდება მოწყობილობის შემოწმების შემდეგ.'],
+  'გატეხილ ტელეფონს იბარებთ?',
+  'რამდენ ხანში მივიღებ თანხას?',
+  'შემიძლია Trade-in Gstore-ში?',
+  'გარანტია როგორ მოწმდება?',
 ];
 
-const useCopy = () => {
-  const { t } = useTranslation();
-  return (key, fallback) => t(key, { defaultValue: fallback });
-};
+const footerLinks = [
+  ['Trade-in', '/trade-in'],
+  ['მაღაზია', '/shop'],
+  ['გარანტია', '/warranty-service?tab=warranty'],
+  ['სერვისი', '/warranty-service?tab=case'],
+];
 
-const LandingPage = () => {
-  const copy = useCopy();
-
+function ButtonLink({ to, variant = 'primary', children }) {
   return (
-    <Box component="main" className="zzv-redesign-shell" sx={{ overflow: 'hidden' }}>
-      <Box
-        component="section"
-        sx={{
-          position: 'relative',
-          minHeight: { xs: 'calc(100svh - 64px)', md: 'calc(100svh - 72px)' },
-          display: 'flex',
-          alignItems: 'center',
-          py: { xs: 8, md: 10 },
-        }}
-      >
-        <Box
-          aria-hidden
-          sx={{
-            position: 'absolute',
-            inset: 0,
-            opacity: 0.34,
-            backgroundImage:
-              'linear-gradient(rgba(165,118,254,0.16) 1px, transparent 1px), linear-gradient(90deg, rgba(165,118,254,0.14) 1px, transparent 1px)',
-            backgroundSize: { xs: '34px 34px', md: '52px 52px' },
-            maskImage: 'linear-gradient(90deg, transparent, #000 18%, #000 76%, transparent)',
-          }}
-        />
-        <Box className="zzv-container" sx={{ position: 'relative', zIndex: 1 }}>
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1fr) 420px' },
-              alignItems: 'center',
-              gap: { xs: 5, lg: 8 },
-            }}
-          >
-            <Box sx={{ maxWidth: 760 }}>
-              <Typography className="zzv-kicker" sx={{ mb: 2 }}>
-                {copy('public.landing.hero.kicker', 'ZEZVA SERVICE ECOSYSTEM')}
-              </Typography>
-              <Typography component="h1" className="zzv-title-xl">
-                {copy('public.landing.hero.title', 'სერვისი, გარანტია და ნაწილები ერთ გამართულ სივრცეში')}
-              </Typography>
-              <Typography
-                className="zzv-text"
-                sx={{ maxWidth: 620, mt: { xs: 2.5, md: 3 }, fontSize: { xs: 15, md: 18 } }}
-              >
-                {copy(
-                  'public.landing.hero.text',
-                  'შეამოწმე გარანტია, მოძებნე სერვის ქეისი, შეუკვეთე ნაწილი ან დაიწყე Trade-in შეფასება სწრაფად და გამჭვირვალედ.'
-                )}
-              </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mt: { xs: 3, md: 4 } }}>
-                <Box component={Link} to="/trade-in" className="zzv-button">
-                  {copy('public.landing.hero.primary', 'შეფასების დაწყება')}
-                  <ArrowForwardIcon sx={{ fontSize: 18 }} />
-                </Box>
-                <Box
-                  component={Link}
-                  to="/warranty-service"
-                  className="zzv-button"
-                  sx={{
-                    color: 'var(--zzv-color-ink)',
-                    background: 'rgba(255,255,255,0.86)',
-                    border: '1px solid var(--zzv-color-border)',
-                    boxShadow: 'none',
-                  }}
-                >
-                  {copy('public.landing.hero.secondary', 'სტატუსის შემოწმება')}
-                </Box>
-              </Box>
-            </Box>
-
-            <Box className="zzv-card" sx={{ p: { xs: 2.5, sm: 3 }, display: 'grid', gap: 1.5 }}>
-              {serviceCards.map(([Icon, to, key, fallbackTitle, fallbackText]) => (
-                <Box
-                  key={key}
-                  component={Link}
-                  to={to}
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: '44px 1fr auto',
-                    gap: 1.5,
-                    alignItems: 'center',
-                    p: 1.5,
-                    borderRadius: '18px',
-                    border: '1px solid rgba(165,118,254,0.16)',
-                    color: 'inherit',
-                    textDecoration: 'none',
-                    background: 'rgba(255,255,255,0.74)',
-                    transition: 'transform 160ms ease, border-color 160ms ease',
-                    '&:hover': {
-                      transform: 'translateX(4px)',
-                      borderColor: 'rgba(165,118,254,0.42)',
-                    },
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 44,
-                      height: 44,
-                      display: 'grid',
-                      placeItems: 'center',
-                      borderRadius: '14px',
-                      background: 'var(--zzv-color-primary-soft)',
-                      color: 'var(--zzv-color-primary-deep)',
-                    }}
-                  >
-                    <Icon sx={{ fontSize: 22 }} />
-                  </Box>
-                  <Box>
-                    <Typography sx={{ fontFamily: 'var(--zzv-font-caps)', fontSize: 15, lineHeight: 1.15 }}>
-                      {copy(`public.landing.services.${key}.title`, fallbackTitle)}
-                    </Typography>
-                    <Typography sx={{ color: 'var(--zzv-color-muted)', fontSize: 11, mt: 0.35, lineHeight: 1.35 }}>
-                      {copy(`public.landing.services.${key}.text`, fallbackText)}
-                    </Typography>
-                  </Box>
-                  <ArrowForwardIcon sx={{ fontSize: 18, color: 'var(--zzv-color-primary)' }} />
-                </Box>
-              ))}
-            </Box>
-          </Box>
-        </Box>
-      </Box>
-
-      <Box component="section" sx={{ py: { xs: 7, md: 10 }, background: '#ffffff' }}>
-        <Box className="zzv-container">
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 3, alignItems: 'end', mb: 4 }}>
-            <Typography component="h2" className="zzv-title-lg">
-              {copy('public.landing.process.title', 'როგორ ვმუშაობთ')}
-            </Typography>
-            <Box component={Link} to="/trade-in" className="zzv-button" sx={{ display: { xs: 'none', md: 'inline-flex' } }}>
-              {copy('public.landing.process.cta', 'დაიწყე შეფასება')}
-            </Box>
-          </Box>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 3 }}>
-            {processSteps.map(([number, Icon, key, fallbackTitle, fallbackText]) => (
-              <Box
-                key={number}
-                className="zzv-card"
-                sx={{
-                  minHeight: 300,
-                  p: 3,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  boxShadow: 'none',
-                  background: 'linear-gradient(180deg, #ffffff 0%, #f8f4ff 100%)',
-                }}
-              >
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                  <Typography sx={{ fontFamily: 'var(--zzv-font-caps)', fontSize: 34, color: 'var(--zzv-color-primary)' }}>
-                    {number}
-                  </Typography>
-                  <Box sx={{ width: 52, height: 52, display: 'grid', placeItems: 'center', borderRadius: 16, bgcolor: '#fff' }}>
-                    <Icon sx={{ color: 'var(--zzv-color-primary-deep)' }} />
-                  </Box>
-                </Box>
-                <Box>
-                  <Typography sx={{ fontFamily: 'var(--zzv-font-caps)', fontSize: 20, mb: 1 }}>
-                    {copy(`public.landing.process.${key}.title`, fallbackTitle)}
-                  </Typography>
-                  <Typography className="zzv-text" sx={{ fontSize: 14 }}>
-                    {copy(`public.landing.process.${key}.text`, fallbackText)}
-                  </Typography>
-                </Box>
-              </Box>
-            ))}
-          </Box>
-        </Box>
-      </Box>
-
-      <Box component="section" sx={{ py: { xs: 7, md: 10 } }}>
-        <Box className="zzv-container">
-          <Typography component="h2" className="zzv-title-lg" sx={{ mb: 4 }}>
-            {copy('public.landing.services.title', 'ჩვენი სერვისები')}
-          </Typography>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 2 }}>
-            {serviceCards.map(([Icon, to, key, fallbackTitle, fallbackText]) => (
-              <Box
-                key={key}
-                component={Link}
-                to={to}
-                className="zzv-card"
-                sx={{
-                  minHeight: 220,
-                  p: 2.5,
-                  color: 'inherit',
-                  textDecoration: 'none',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  boxShadow: 'none',
-                  transition: 'transform 160ms ease, box-shadow 160ms ease',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: 'var(--zzv-shadow-card)',
-                  },
-                }}
-              >
-                <Icon sx={{ fontSize: 32, color: 'var(--zzv-color-primary)' }} />
-                <Box>
-                  <Typography sx={{ fontFamily: 'var(--zzv-font-caps)', fontSize: 22, mb: 1 }}>
-                    {copy(`public.landing.services.${key}.title`, fallbackTitle)}
-                  </Typography>
-                  <Typography className="zzv-text" sx={{ fontSize: 13 }}>
-                    {copy(`public.landing.services.${key}.text`, fallbackText)}
-                  </Typography>
-                </Box>
-              </Box>
-            ))}
-          </Box>
-        </Box>
-      </Box>
-
-      <Box component="section" sx={{ py: { xs: 7, md: 10 }, background: '#ffffff' }}>
-        <Box className="zzv-container">
-          <Box
-            className="zzv-card"
-            sx={{
-              p: { xs: 3, md: 5 },
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', md: '1fr 360px' },
-              gap: 4,
-              alignItems: 'center',
-            }}
-          >
-            <Box>
-              <Typography className="zzv-kicker" sx={{ mb: 1.5 }}>
-                {copy('public.landing.status.kicker', 'STATUS CHECK')}
-              </Typography>
-              <Typography component="h2" className="zzv-title-lg">
-                {copy('public.landing.status.title', 'შეამოწმე გარანტია ან სერვის ქეისი')}
-              </Typography>
-              <Typography className="zzv-text" sx={{ mt: 2 }}>
-                {copy('public.landing.status.text', 'ერთი გვერდიდან მოძებნე გარანტიის ჩანაწერი ან სერვისის მიმდინარე სტატუსი.')}
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'grid', gap: 1.5 }}>
-              <Box component={Link} to="/warranty-service?tab=warranty" className="zzv-button">
-                {copy('public.landing.status.warranty', 'გარანტიის ძებნა')}
-              </Box>
-              <Box component={Link} to="/warranty-service?tab=case" className="zzv-button" sx={{ background: 'var(--zzv-color-ink)', boxShadow: 'none' }}>
-                {copy('public.landing.status.case', 'ქეისის ძებნა')}
-              </Box>
-            </Box>
-          </Box>
-        </Box>
-      </Box>
-
-      <Box component="section" sx={{ py: { xs: 7, md: 10 } }}>
-        <Box className="zzv-container">
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 3 }}>
-            <Box className="zzv-card" sx={{ p: { xs: 3, md: 4 }, minHeight: 330 }}>
-              <ShopIcon sx={{ color: 'var(--zzv-color-primary)', fontSize: 34, mb: 3 }} />
-              <Typography component="h2" className="zzv-title-lg">
-                {copy('public.landing.shop.title', 'მაღაზია სერვისთან ერთად')}
-              </Typography>
-              <Typography className="zzv-text" sx={{ mt: 2, mb: 3 }}>
-                {copy('public.landing.shop.text', 'შეუკვეთე ნაწილი, დაამატე კალათაში და დაგეგმე სერვისი პირდაპირ შეკვეთის პროცესში.')}
-              </Typography>
-              <Box component={Link} to="/shop" className="zzv-button">
-                {copy('public.menuShop', 'მაღაზია')}
-              </Box>
-            </Box>
-            <Box className="zzv-card" sx={{ p: { xs: 3, md: 4 }, minHeight: 330, background: '#202020', color: '#fff' }}>
-              <StarIcon sx={{ color: '#f8d56b', fontSize: 34, mb: 3 }} />
-              <Typography component="h2" className="zzv-title-lg" sx={{ color: '#fff' }}>
-                {copy('public.landing.reviews.title', 'რას ამბობენ მომხმარებლები')}
-              </Typography>
-              <Typography sx={{ color: 'rgba(255,255,255,0.72)', mt: 2, mb: 3, lineHeight: 1.55 }}>
-                {copy('public.landing.reviews.text', 'დატოვე შეფასება ან ნახე მომხმარებლების გამოცდილება სერვისზე, გარანტიასა და Trade-in-ზე.')}
-              </Typography>
-              <Box component={Link} to="/reviews" className="zzv-button">
-                {copy('public.menuReviews', 'შეფასება')}
-              </Box>
-            </Box>
-          </Box>
-        </Box>
-      </Box>
-
-      <Box component="section" sx={{ py: { xs: 7, md: 10 }, background: '#ffffff' }}>
-        <Box className="zzv-container">
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '0.8fr 1.2fr' }, gap: 4 }}>
-            <Box>
-              <Typography className="zzv-kicker" sx={{ mb: 1.5 }}>
-                {copy('public.landing.gstore.kicker', 'PARTNER NETWORK')}
-              </Typography>
-              <Typography component="h2" className="zzv-title-lg">
-                {copy('public.landing.gstore.title', 'GStore-ის პარტნიორი სერვის ეკოსისტემა')}
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'grid', gap: 1.5 }}>
-              {[
-                copy('public.landing.gstore.points.0', 'გარანტიის ჩანაწერები და სერვის ქეისები ერთ სისტემაშია.'),
-                copy('public.landing.gstore.points.1', 'მომხმარებელი სტატუსს თვითონ ამოწმებს.'),
-                copy('public.landing.gstore.points.2', 'სერვის ცენტრი იღებს საჭირო კონტექსტს და სწრაფად რეაგირებს.'),
-              ].map((point) => (
-                <Box key={point} sx={{ display: 'flex', gap: 1.25, alignItems: 'start' }}>
-                  <CheckIcon sx={{ color: 'var(--zzv-color-success)', fontSize: 22, mt: 0.1 }} />
-                  <Typography className="zzv-text">{point}</Typography>
-                </Box>
-              ))}
-            </Box>
-          </Box>
-        </Box>
-      </Box>
-
-      <Box component="section" sx={{ py: { xs: 7, md: 10 } }}>
-        <Box className="zzv-container">
-          <Typography component="h2" className="zzv-title-lg" sx={{ mb: 3 }}>
-            {copy('public.landing.faq.title', 'ხშირი კითხვები')}
-          </Typography>
-          <Box sx={{ display: 'grid', gap: 1.5 }}>
-            {faqItems.map(([key, fallbackQuestion, fallbackAnswer]) => (
-              <Box key={key} className="zzv-card" sx={{ p: { xs: 2.25, md: 3 }, boxShadow: 'none' }}>
-                <Typography sx={{ fontFamily: 'var(--zzv-font-caps)', fontSize: 18, mb: 1 }}>
-                  {copy(`public.landing.faq.${key}.question`, fallbackQuestion)}
-                </Typography>
-                <Typography className="zzv-text" sx={{ fontSize: 14 }}>
-                  {copy(`public.landing.faq.${key}.answer`, fallbackAnswer)}
-                </Typography>
-              </Box>
-            ))}
-          </Box>
-        </Box>
-      </Box>
-    </Box>
+    <Link className={`zzv-figma-btn zzv-figma-btn--${variant}`} to={to}>
+      {children}
+    </Link>
   );
-};
+}
+
+function SelectField({ label, value, active }) {
+  return (
+    <div className="zzv-figma-select-field">
+      <span>{label}</span>
+      <div className={`zzv-figma-select ${active ? '' : 'is-muted'}`}>
+        <strong>{value}</strong>
+        <ExpandMoreRounded />
+      </div>
+    </div>
+  );
+}
+
+function BrandPair() {
+  return (
+    <div className="zzv-figma-brand-pair" aria-hidden="true">
+      <img src={asset('imgZezvaBrandColor.svg')} alt="" />
+      <span />
+      <img src={asset('imgGstoreBrandColor.svg')} alt="" />
+    </div>
+  );
+}
+
+function StepCard({ step }) {
+  return (
+    <article className="zzv-figma-step">
+      <span className="zzv-figma-step-number">{step[0]}</span>
+      <div className="zzv-figma-step-visual">
+        <img src={asset(step[3])} alt="" />
+      </div>
+      <div className="zzv-figma-step-caption">
+        <strong>{step[1]}</strong>
+        <span>{step[2]}</span>
+      </div>
+    </article>
+  );
+}
+
+function LandingPage() {
+  return (
+    <main className="zzv-figma-home">
+      <section className="zzv-figma-hero">
+        <div className="zzv-figma-pattern" aria-hidden="true" />
+        <div className="zzv-figma-wrap zzv-figma-hero-grid">
+          <div className="zzv-figma-hero-copy">
+            <div className="zzv-figma-partner">
+              <img src={asset('imgLayer1.svg')} alt="" />
+              <span>ოფიციალური პარტნიორი</span>
+            </div>
+            <h1>
+              ჩააბარე ძველი <span>მიიღე ახალი</span>
+            </h1>
+            <p>ან აიღე თანხა ხელზე — არჩევანი შენზეა, გატეხილსაც ვიბარებთ.</p>
+            <div className="zzv-figma-actions">
+              <ButtonLink to="/trade-in">დაიწყე შეფასება</ButtonLink>
+              <ButtonLink to="/warranty-service" variant="secondary">
+                სერვისი და გარანტია
+              </ButtonLink>
+            </div>
+            <div className="zzv-figma-kpis">
+              {kpis.map(([value, label], index) => (
+                <React.Fragment key={value}>
+                  {index > 0 && <i />}
+                  <div>
+                    <strong>{value}</strong>
+                    <span>{label}</span>
+                  </div>
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+
+          <aside className="zzv-figma-selector">
+            <h2>შეაფასე შენი მოწყობილობა</h2>
+            <div className="zzv-figma-selector-grid">
+              {selectFields.map(([label, value, active]) => (
+                <SelectField key={label} label={label} value={value} active={active} />
+              ))}
+            </div>
+            <Link className="zzv-figma-estimate" to="/trade-in">
+              შეაფასე
+            </Link>
+            <small>შეფასება სრულიად უფასოა</small>
+          </aside>
+        </div>
+      </section>
+
+      <section className="zzv-figma-section">
+        <div className="zzv-figma-wrap">
+          <div className="zzv-figma-section-head">
+            <h2>როგორ ვმუშაობთ</h2>
+            <ButtonLink to="/trade-in">დაიწყე შეფასება</ButtonLink>
+          </div>
+          <div className="zzv-figma-steps">
+            {steps.map((step) => (
+              <StepCard key={step[0]} step={step} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="zzv-figma-section zzv-figma-section--tight">
+        <div className="zzv-figma-wrap">
+          <h2 className="zzv-figma-heading">ჩვენი სერვისები</h2>
+          <div className="zzv-figma-bento">
+            <Link className="zzv-figma-trade-card" to="/trade-in">
+              <span>Trade-in</span>
+              <p>ძველი — თანხად ან ტექნიკად.</p>
+              <strong>₾2,282</strong>
+              <small>მაქსიმალური შეფასება</small>
+              <img src={asset('imgImage350.png')} alt="" />
+            </Link>
+            <Link className="zzv-figma-mini-card" to="/shop">
+              <span>მაღაზია</span>
+              <strong>2,700+</strong>
+              <small>ნაწილი მარაგში</small>
+              <img src={asset('imgShop1.png')} alt="" />
+            </Link>
+            <Link className="zzv-figma-mini-card" to="/warranty-service?tab=warranty">
+              <span>გარანტია</span>
+              <strong>12 თვე</strong>
+              <small>დაცული შენაძენი</small>
+              <img src={asset('imgShield1.png')} alt="" />
+            </Link>
+            <Link className="zzv-figma-wide-card" to="/warranty-service?tab=case">
+              <span>სერვისი</span>
+              <strong>1,200+</strong>
+              <small>დასრულებული შეკეთება</small>
+              <img src={asset('imgShield2.png')} alt="" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="zzv-figma-status zzv-figma-wrap">
+        <div className="zzv-figma-status-copy">
+          <BrandPair />
+          <h2>შეამოწმე შენი მოწყობილობის სტატუსი ერთ წუთში</h2>
+          <p>გარანტიის კოდით ან სერვისის ნომრით — რეგისტრაცია არ სჭირდება.</p>
+          <ul>
+            <li>გარანტიის ვადა და დაფარვა</li>
+            <li>სერვისის მიმდინარე სტატუსი</li>
+            <li>საჯარო შენიშვნები და ვადები</li>
+          </ul>
+        </div>
+        <div className="zzv-figma-status-widget">
+          <div className="zzv-figma-tabs">
+            <span>გარანტია</span>
+            <span>სერვისი</span>
+          </div>
+          <label>გარანტიის კოდი</label>
+          <div className="zzv-figma-input">WP-12852-1409</div>
+          <ButtonLink to="/warranty-service?tab=warranty">შემოწმება</ButtonLink>
+        </div>
+      </section>
+
+      <section className="zzv-figma-section">
+        <div className="zzv-figma-wrap">
+          <h2 className="zzv-figma-heading">მაღაზია</h2>
+          <div className="zzv-figma-shop-grid">
+            <div className="zzv-figma-shop-feature">
+              <strong>2,700+</strong>
+              <span>ნაწილი მარაგში</span>
+            </div>
+            {partIcons.map(([label, icon]) => (
+              <Link className="zzv-figma-part-card" key={label} to="/shop">
+                <img src={asset(icon)} alt="" />
+                <span>{label}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="zzv-figma-review zzv-figma-wrap">
+        <div>
+          <h2>რას ამბობენ</h2>
+          <p>ეკრანი შემიცვალეს ორ დღეში, გარანტიაც მომცეს. ძველი ტელეფონიც ჩავაბარე — თანხა იმავე დღეს ავიღე.</p>
+          <small>სერვისი და Trade-in · Google</small>
+        </div>
+        <strong>4.9</strong>
+      </section>
+
+      <section className="zzv-figma-gstore zzv-figma-wrap">
+        <div className="zzv-figma-gstore-copy">
+          <BrandPair />
+          <h2>Gstore-ში ნაყიდი ტექნიკა ჩვენ ვემსახურებით</h2>
+          <p>ყველა Gstore-ის მოწყობილობა ავტომატურად რეგისტრირდება — შეამოწმე ტელეფონის ნომრით.</p>
+          <ButtonLink to="/warranty-service" variant="dark">
+            ნახე Gstore
+          </ButtonLink>
+        </div>
+        <div className="zzv-figma-gstore-panels">
+          <div>
+            <img src={asset('imgLandingShieldCheck.svg')} alt="" />
+            <span>გარანტია</span>
+            <strong>აქტიური</strong>
+          </div>
+          <div>
+            <img src={asset('imgLandingWrench.svg')} alt="" />
+            <span>სერვისი</span>
+            <strong>მიღებულია</strong>
+          </div>
+        </div>
+      </section>
+
+      <section className="zzv-figma-faq">
+        <div className="zzv-figma-wrap">
+          <h2>ხშირი კითხვები</h2>
+          <div>
+            {faqItems.map((item) => (
+              <button key={item} type="button">
+                <span>{item}</span>
+                <ArrowForwardRounded />
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <footer className="zzv-figma-footer">
+        <div className="zzv-figma-wrap">
+          <div className="zzv-figma-footer-cta">
+            <span>2 წუთი და გაიგებ, რა ღირს შენი ტელეფონი</span>
+            <ButtonLink to="/trade-in">დაიწყე შეფასება</ButtonLink>
+          </div>
+          <div className="zzv-figma-footer-bottom">
+            <img src={asset('imgBrandMark.svg')} alt="ZEZVA" />
+            <nav>
+              {footerLinks.map(([label, to]) => (
+                <Link key={label} to={to}>
+                  {label}
+                </Link>
+              ))}
+            </nav>
+            <span>© 2026 ZEZVA</span>
+          </div>
+        </div>
+      </footer>
+    </main>
+  );
+}
 
 export default LandingPage;
