@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  frontend-staging:
+    image: nginx:1.27-alpine
+    container_name: gstore-warranty-frontend-staging
+    ports:
+      - "3002:80"
+    volumes:
+      - ./frontend/build:/usr/share/nginx/html:ro
+      - ./frontend/nginx.staging.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - gstore-production
+    restart: unless-stopped
+
+networks:
+  gstore-production:
+    external: true
+    name: gstore-warranty-portal_gstore-network
