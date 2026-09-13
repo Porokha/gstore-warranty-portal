@@ -128,22 +128,25 @@ const PublicLayout = () => {
       <AppBar
         position="sticky"
         sx={{
-          bgcolor: 'rgba(255,255,255,0.92)',
-          backdropFilter: 'blur(14px)',
-          boxShadow: '0 8px 30px rgba(17, 17, 17, 0.06)',
+          bgcolor: 'rgba(255,255,255,0.86)',
+          backdropFilter: 'blur(18px)',
+          borderBottom: '1px solid rgba(165,118,254,0.16)',
+          boxShadow: 'none',
           zIndex: 1000,
         }}
       >
         <Toolbar
           sx={{
-            minHeight: '60px !important',
-            px: { xs: 1.25, sm: 2, md: 3 },
+            minHeight: '72px !important',
+            width: 'min(100%, 1440px)',
+            mx: 'auto',
+            px: { xs: 1.5, sm: 2, md: 4 },
             gap: 2,
             display: 'grid',
             gridTemplateColumns: '1fr auto 1fr',
             alignItems: 'center',
             '@media (max-width:920px)': {
-              minHeight: '52px !important',
+              minHeight: '64px !important',
               gap: 0.75,
               gridTemplateColumns: '76px minmax(0, 1fr) 76px',
             },
@@ -164,10 +167,11 @@ const PublicLayout = () => {
               onClick={() => setMobileMenuOpen(true)}
               sx={{
                 color: '#18181b',
-                border: '1px solid #e3d7ff',
-                borderRadius: '14px',
-                width: 38,
-                height: 38,
+                border: '1px solid rgba(165,118,254,0.22)',
+                borderRadius: '16px',
+                width: 42,
+                height: 42,
+                bgcolor: 'rgba(255,255,255,0.74)',
               }}
             >
               <MenuIcon sx={{ fontSize: 20 }} />
@@ -192,9 +196,9 @@ const PublicLayout = () => {
           >
             <Box
               sx={{
-                '& img': { width: '110px !important', maxWidth: '110px' },
+                '& img': { width: '122px !important', maxWidth: '122px' },
                 '@media (max-width:920px)': {
-                  '& img': { width: '94px !important', maxWidth: '94px' },
+                  '& img': { width: '104px !important', maxWidth: '104px' },
                 },
               }}
             >
@@ -228,10 +232,12 @@ const PublicLayout = () => {
                     color: isActive ? '#18181b' : '#5b5568',
                     textTransform: 'none',
                     fontWeight: isActive ? 800 : 700,
-                    fontSize: { xs: '13px', md: '14px' },
+                    fontSize: { xs: '13px', md: '13px' },
+                    letterSpacing: '0.03em',
                     minWidth: 'auto',
-                    px: 1,
+                    px: 1.25,
                     borderRadius: 999,
+                    fontFamily: 'var(--font-platform-caps)',
                     '&:hover': {
                       bgcolor: '#f3ecff',
                       color: '#18181b',
@@ -307,8 +313,9 @@ const PublicLayout = () => {
             minWidth: 260,
             p: 2,
             display: 'flex',
-            background: 'rgba(255,255,255,0.96)',
-            backdropFilter: 'blur(14px)',
+            background: 'rgba(255,255,255,0.94)',
+            backdropFilter: 'blur(18px)',
+            borderRight: '1px solid rgba(165,118,254,0.18)',
             '@media (min-width:921px)': {
               display: 'none',
             },
@@ -355,6 +362,7 @@ const PublicLayout = () => {
                     borderColor: isActive ? '#d8c7ff' : '#ece6f8',
                     bgcolor: isActive ? '#f3ecff' : '#ffffff',
                     boxShadow: isActive ? '0 8px 18px rgba(140, 99, 255, 0.12)' : '0 2px 6px rgba(17,17,17,0.04)',
+                    fontFamily: 'var(--font-platform-caps)',
                     '&::after': {
                       content: '""',
                       width: 6,
