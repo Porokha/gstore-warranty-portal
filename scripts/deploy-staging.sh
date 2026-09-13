@@ -64,14 +64,7 @@ fi
 
 REMOTE_PREP_CMD=$(cat <<EOF
 set -euo pipefail
-if [[ ! -d "$REMOTE_PATH/.git" ]]; then
-  git clone --branch "$BRANCH" git@github.com:$(git config --get remote.origin.url | sed -E 's#.*github.com[:/]([^/]+/[^/.]+)(\\.git)?#\\1#') "$REMOTE_PATH"
-fi
-cd "$REMOTE_PATH"
-git fetch origin
-git checkout "$BRANCH"
-git pull --ff-only origin "$BRANCH"
-mkdir -p frontend/build
+mkdir -p "$REMOTE_PATH/frontend/build"
 EOF
 )
 
