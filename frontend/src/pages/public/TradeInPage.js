@@ -20,13 +20,13 @@ import { useTranslation } from 'react-i18next';
 import { tradeInService } from '../../services/tradeInService';
 
 const palette = {
-  purple: '#7c4dff',
-  purpleDark: '#4f2ab8',
-  lavender: '#eee8ff',
+  purple: '#824cff',
+  purpleDark: '#452386',
+  lavender: '#f0e9ff',
   ink: '#18171d',
   muted: '#6e687a',
   border: '#e4ddf2',
-  canvas: '#f7f4fc',
+  canvas: '#fbf9ff',
 };
 
 const imageUrl = (value) => {
@@ -100,7 +100,7 @@ const SelectionCard = ({ title, subtitle, image, icon, onClick, disabled }) => (
       minHeight: 170,
       p: 2.25,
       border: `1px solid ${palette.border}`,
-      borderRadius: '12px',
+      borderRadius: '18px',
       bgcolor: '#fff',
       color: palette.ink,
       textAlign: 'left',
@@ -114,7 +114,7 @@ const SelectionCard = ({ title, subtitle, image, icon, onClick, disabled }) => (
         : {
             transform: 'translateY(-3px)',
             borderColor: '#bca8f7',
-            boxShadow: '0 16px 34px rgba(81, 45, 156, 0.10)',
+            boxShadow: '0 18px 42px rgba(81, 45, 156, 0.10)',
           },
     }}
   >
@@ -341,20 +341,27 @@ const TradeInValuation = ({ product, t }) => {
 
   return (
     <Box
+      className="zzv-trade-valuation"
       sx={{
         display: 'grid',
         gridTemplateColumns: { xs: '1fr', md: '0.85fr 1.15fr' },
-        gap: { xs: 1.5, md: 2 },
+        gap: 0,
         alignItems: 'stretch',
+        overflow: 'hidden',
+        border: `1px solid ${palette.border}`,
+        borderRadius: { xs: '20px', md: '28px' },
+        bgcolor: '#fff',
+        boxShadow: '0 26px 80px rgba(73, 43, 130, .08)',
       }}
     >
       <Box
+        className="zzv-trade-device-panel"
         sx={{
           minHeight: { xs: 'auto', md: 620 },
           p: { xs: 2, md: 4 },
-          border: `1px solid ${palette.border}`,
-          borderRadius: '16px',
-          bgcolor: 'rgba(255,255,255,.76)',
+          border: 0,
+          borderRadius: 0,
+          bgcolor: '#f8f8f9',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -423,13 +430,14 @@ const TradeInValuation = ({ product, t }) => {
       </Box>
 
       <Box
+        className="zzv-trade-question-panel"
         sx={{
           minHeight: { xs: 'auto', md: 620 },
           p: { xs: 2, md: 4 },
-          border: `1px solid ${palette.border}`,
-          borderRadius: '16px',
+          border: 0,
+          borderRadius: 0,
           bgcolor: '#fff',
-          boxShadow: '0 20px 70px rgba(85, 52, 160, .07)',
+          boxShadow: 'none',
         }}
       >
         {mode === 'question' && activeQuestion && (
@@ -509,7 +517,7 @@ const TradeInValuation = ({ product, t }) => {
                 disableElevation
                 disabled={!steps.length}
                 onClick={goPreviousQuestion}
-                sx={{ py: 1.4, borderRadius: '10px', bgcolor: '#f1eff7', color: palette.ink }}
+                sx={{ py: 1.4, borderRadius: '12px', bgcolor: '#f1eff7', color: palette.ink }}
               >
                 {t('public.tradeIn.previous')}
               </Button>
@@ -517,7 +525,7 @@ const TradeInValuation = ({ product, t }) => {
                 variant="contained"
                 disableElevation
                 onClick={goNextQuestion}
-                sx={{ py: 1.4, borderRadius: '10px', bgcolor: palette.purple }}
+                sx={{ py: 1.4, borderRadius: '12px', bgcolor: palette.purple }}
               >
                 {t('public.tradeIn.next')}
               </Button>
@@ -564,7 +572,7 @@ const TradeInValuation = ({ product, t }) => {
                   disableElevation
                   disabled={mode === 'no-offer'}
                   onClick={() => setQuoteOpen(true)}
-                  sx={{ minWidth: 170, py: 1.5, borderRadius: '999px', bgcolor: palette.purple }}
+                  sx={{ minWidth: 170, py: 1.5, borderRadius: '12px', bgcolor: palette.purple }}
                 >
                   {t('public.tradeIn.getThisOffer')}
                 </Button>
@@ -572,7 +580,7 @@ const TradeInValuation = ({ product, t }) => {
                   variant="contained"
                   disableElevation
                   onClick={goPreviousQuestion}
-                  sx={{ minWidth: 170, py: 1.5, borderRadius: '999px', bgcolor: '#f1eff7', color: palette.ink }}
+                  sx={{ minWidth: 170, py: 1.5, borderRadius: '12px', bgcolor: '#f1eff7', color: palette.ink }}
                 >
                   {t('public.tradeIn.changeAnswers')}
                 </Button>
@@ -611,7 +619,7 @@ const TradeInValuation = ({ product, t }) => {
             maxHeight: 'calc(100vh - 28px)',
             overflow: 'auto',
             p: { xs: 2.4, md: 3.5 },
-            borderRadius: '18px',
+            borderRadius: '24px',
             bgcolor: '#fff',
             boxShadow: '0 28px 90px rgba(22, 17, 40, .28)',
             outline: 'none',
@@ -742,8 +750,9 @@ const TradeInPage = () => {
     productsQuery.isLoading;
 
   return (
-    <Box sx={{ minHeight: 'calc(100vh - 60px)', bgcolor: palette.canvas, color: palette.ink }}>
+    <Box className="zzv-trade-page" sx={{ minHeight: 'calc(100vh - 60px)', bgcolor: palette.canvas, color: palette.ink }}>
       <Box
+        className="zzv-trade-hero"
         sx={{
           px: { xs: 2, md: 5 },
           py: { xs: 4, md: 6 },

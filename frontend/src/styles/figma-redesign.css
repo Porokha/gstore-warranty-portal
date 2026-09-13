@@ -1162,6 +1162,56 @@
   color: rgba(255, 255, 255, 0.52);
 }
 
+.zzv-trade-page {
+  background:
+    radial-gradient(circle at 8% 4%, rgba(130, 76, 255, 0.12), transparent 28%),
+    linear-gradient(180deg, #ffffff 0%, #fbf9ff 46%, #f4efff 100%);
+}
+
+.zzv-trade-hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.zzv-trade-hero::before {
+  position: absolute;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  opacity: 0.38;
+  background-image:
+    linear-gradient(rgba(130, 76, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(130, 76, 255, 0.07) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: linear-gradient(180deg, #000 0%, transparent 92%);
+}
+
+.zzv-trade-hero > * {
+  position: relative;
+}
+
+.zzv-trade-valuation {
+  isolation: isolate;
+}
+
+.zzv-trade-device-panel {
+  position: relative;
+}
+
+.zzv-trade-device-panel::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  content: "";
+  background: #e4ddf2;
+}
+
+.zzv-trade-question-panel {
+  position: relative;
+}
+
 @media (max-width: 1100px) {
   .zzv-figma-hero-grid,
   .zzv-figma-status {
@@ -1688,5 +1738,34 @@
 
   .zzv-figma-footer-bottom {
     gap: 32px;
+  }
+
+  .zzv-trade-hero {
+    padding-top: 32px !important;
+    padding-bottom: 28px !important;
+  }
+
+  .zzv-trade-hero h1 {
+    font-size: 34px !important;
+    line-height: 1.05;
+    letter-spacing: -0.34px;
+  }
+
+  .zzv-trade-valuation {
+    border-radius: 20px !important;
+  }
+
+  .zzv-trade-device-panel::after {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    height: 1px;
+  }
+
+  .zzv-trade-device-panel,
+  .zzv-trade-question-panel {
+    padding: 22px !important;
   }
 }
