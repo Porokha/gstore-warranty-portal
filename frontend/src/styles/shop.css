@@ -1,20 +1,20 @@
 :root {
-  --zpos-bg: #eff2f5;
+  --zpos-bg: #fbf9ff;
   --zpos-panel: #ffffff;
-  --zpos-panel-soft: #f8fafc;
-  --zpos-panel-muted: #f3f5f7;
-  --zpos-border: #d9e0e7;
-  --zpos-border-soft: #e1e7ee;
-  --zpos-text: #18212b;
-  --zpos-muted: #697586;
-  --zpos-brand: #5b7cff;
-  --zpos-brand-deep: #3f5ed6;
-  --zpos-accent: #00a67e;
+  --zpos-panel-soft: #fbfaff;
+  --zpos-panel-muted: #f4f0fb;
+  --zpos-border: #e4ddf2;
+  --zpos-border-soft: #eee8f8;
+  --zpos-text: #18171d;
+  --zpos-muted: #70687e;
+  --zpos-brand: #824cff;
+  --zpos-brand-deep: #5f31cf;
+  --zpos-accent: #23bd75;
   --zpos-sale: #f45757;
-  --zpos-shadow: 0 14px 32px rgba(20, 30, 46, 0.07);
-  --zpos-radius-xl: 20px;
-  --zpos-radius-lg: 16px;
-  --zpos-radius-md: 12px;
+  --zpos-shadow: 0 28px 90px rgba(63, 30, 120, 0.08);
+  --zpos-radius-xl: 24px;
+  --zpos-radius-lg: 18px;
+  --zpos-radius-md: 14px;
   --zpos-radius-sm: 10px;
   --zpos-font: var(--font-platform, 'BPG Banner Quadrosquare', sans-serif);
   --zpos-font-caps: var(--font-platform-caps, 'BPG Banner Quadrosquare Caps', sans-serif);
@@ -28,7 +28,9 @@ body {
 
 body.zpos-fullscreen {
   background:
-    linear-gradient(180deg, rgba(91, 124, 255, 0.06), transparent 180px),
+    radial-gradient(circle at 12% 0%, rgba(130, 76, 255, 0.12), transparent 30%),
+    radial-gradient(circle at 90% 18%, rgba(233, 220, 255, 0.58), transparent 34%),
+    linear-gradient(180deg, #ffffff 0%, transparent 280px),
     var(--zpos-bg);
   overflow: hidden;
 }
@@ -61,10 +63,10 @@ body.zpos-fullscreen .container {
 .zpos-root {
   height: calc(var(--zpos-app-height, 100dvh) - 60px);
   max-height: calc(var(--zpos-app-height, 100dvh) - 60px);
-  padding: 16px;
+  padding: 18px 16px 16px;
   color: var(--zpos-text);
   font-family: var(--zpos-font);
-  width: min(90vw, 2000px);
+  width: min(92vw, 2000px);
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -623,16 +625,18 @@ body.zpos-fullscreen .container {
 
 .zpos-sidebar {
   border-right: 1px solid var(--zpos-border);
+  background: linear-gradient(180deg, #ffffff 0%, #fbfaff 100%);
   overflow: hidden;
 }
 
 .zpos-cart {
   border-left: 1px solid var(--zpos-border);
+  background: linear-gradient(180deg, #ffffff 0%, #fbfaff 100%);
   overflow: hidden;
 }
 
 .zpos-main {
-  padding: 2px 32px 0;
+  padding: 8px 32px 0;
   min-height: 0;
   overflow: hidden;
   display: flex;
@@ -806,10 +810,10 @@ body.zpos-fullscreen .container {
   flex-wrap: wrap;
   gap: 8px;
   padding: 6px;
-  border-radius: 14px;
-  background: linear-gradient(180deg, #f6f8fb 0%, #eef2f6 100%);
+  border-radius: 16px;
+  background: linear-gradient(180deg, #fbfaff 0%, #f3effb 100%);
   border: 1px solid var(--zpos-border);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.85);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
 }
 
 .zpos-filter-search {
@@ -818,10 +822,10 @@ body.zpos-fullscreen .container {
   gap: 8px;
   margin: 0 0 8px;
   padding: 8px 10px;
-  border-radius: 12px;
+  border-radius: 14px;
   border: 1px solid var(--zpos-border);
-  background: #fff;
-  color: #667085;
+  background: #fbfaff;
+  color: var(--zpos-muted);
 }
 
 .zpos-filter-search svg {
@@ -893,14 +897,14 @@ body.zpos-fullscreen .container {
 .zpos-filter-pill {
   position: relative;
   padding: 7px 10px;
-  border-radius: 10px;
-  background: linear-gradient(180deg, #ffffff 0%, #f1f4f7 100%);
-  color: #4d5a6d;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #f9f7ff 100%);
+  color: #5d566b;
   font-size: 11px;
   font-weight: 600;
   line-height: 1.1;
-  border: 1px solid #d7dee6;
-  box-shadow: 0 1px 2px rgba(20, 30, 46, 0.05);
+  border: 1px solid #e5def3;
+  box-shadow: 0 1px 2px rgba(63, 30, 120, 0.04);
   transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
   overflow: hidden;
 }
@@ -912,12 +916,12 @@ body.zpos-fullscreen .container {
 
 .zpos-filter-pill.is-active,
 .zpos-tab.is-active {
-  background: linear-gradient(180deg, #8c63ff 0%, #744de0 100%);
+  background: linear-gradient(180deg, #8d63ff 0%, #7244e8 100%);
   color: #fff;
-  border-color: #744de0;
+  border-color: #7244e8;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.15),
-    0 6px 14px rgba(140, 99, 255, 0.2);
+    0 8px 18px rgba(130, 76, 255, 0.22);
   transform: translateY(1px);
 }
 
@@ -930,8 +934,8 @@ body.zpos-fullscreen .container {
 
 .zpos-filter-pill:hover {
   transform: translateY(-1px);
-  border-color: #c9d3df;
-  box-shadow: 0 4px 10px rgba(20, 30, 46, 0.08);
+  border-color: rgba(130, 76, 255, 0.32);
+  box-shadow: 0 8px 18px rgba(63, 30, 120, 0.08);
 }
 
 .zpos-filter-pill::before,
@@ -1036,8 +1040,8 @@ body.zpos-fullscreen .container {
 .zpos-search input {
   width: 100%;
   border: 1px solid var(--zpos-border);
-  border-radius: var(--zpos-radius-sm);
-  background: var(--zpos-panel-soft);
+  border-radius: 14px;
+  background: #fbfaff;
   color: var(--zpos-text);
   font-size: 13px;
 }
@@ -1060,7 +1064,7 @@ body.zpos-fullscreen .container {
   margin: -16px -16px 14px;
   padding: 16px 16px 12px;
   background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.94) 82%, rgba(255,255,255,0) 100%);
-  border-bottom: 1px solid rgba(217, 224, 231, 0.85);
+  border-bottom: 1px solid rgba(228, 221, 242, 0.82);
 }
 
 .zpos-toolbar {
@@ -1080,13 +1084,13 @@ body.zpos-fullscreen .container {
   justify-content: center;
   gap: 8px;
   padding: 10px 14px;
-  border-radius: 12px;
-  background: linear-gradient(180deg, #ffffff 0%, #f1f4f7 100%);
-  color: #4d5a6d;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #f9f7ff 100%);
+  color: #5d566b;
   font-size: 12px;
   font-weight: 700;
-  border: 1px solid #d7dee6;
-  box-shadow: 0 1px 2px rgba(20, 30, 46, 0.05);
+  border: 1px solid #e5def3;
+  box-shadow: 0 1px 2px rgba(63, 30, 120, 0.04);
   transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
 }
 
@@ -1100,8 +1104,8 @@ body.zpos-fullscreen .container {
 
 .zpos-filter-toggle:hover {
   transform: translateY(-1px);
-  border-color: #c9d3df;
-  box-shadow: 0 4px 10px rgba(20, 30, 46, 0.08);
+  border-color: rgba(130, 76, 255, 0.32);
+  box-shadow: 0 8px 18px rgba(63, 30, 120, 0.08);
 }
 
 .zpos-tabs {
@@ -1113,9 +1117,9 @@ body.zpos-fullscreen .container {
   position: relative;
   align-self: center;
   padding: 4px;
-  border-radius: 14px;
-  background: linear-gradient(180deg, rgba(140, 99, 255, 0.18) 0%, rgba(140, 99, 255, 0.09) 100%);
-  border: 1px solid rgba(140, 99, 255, 0.2);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(130, 76, 255, 0.16) 0%, rgba(130, 76, 255, 0.08) 100%);
+  border: 1px solid rgba(130, 76, 255, 0.2);
   box-shadow:
     inset 1px 1px 4px rgba(255, 255, 255, 0.45),
     inset -1px -1px 6px rgba(116, 77, 224, 0.1),
@@ -1420,12 +1424,16 @@ body.zpos-fullscreen .container {
   height: 100%;
   overflow: hidden;
   border: 1px solid var(--zpos-border);
-  border-radius: var(--zpos-radius-lg);
+  border-radius: 20px;
   background: var(--zpos-panel);
   cursor: pointer;
   opacity: 1;
   transform: none;
-  transition: border-color 0.14s ease, background-color 0.14s ease;
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
 }
 
 .zpos-card.is-visible {
@@ -1499,8 +1507,9 @@ body.zpos-fullscreen .container {
 }
 
 .zpos-card:hover {
-  border-color: #c7d4ff;
-  box-shadow: 0 6px 14px rgba(20, 30, 46, 0.05);
+  transform: translateY(-2px);
+  border-color: rgba(130, 76, 255, 0.32);
+  box-shadow: 0 18px 44px rgba(63, 30, 120, 0.1);
 }
 
 .zpos-card:focus-visible {
@@ -1512,7 +1521,9 @@ body.zpos-fullscreen .container {
   position: relative;
   height: 144px;
   padding: 12px;
-  background: linear-gradient(180deg, #eef3ff 0%, #f7fafc 100%);
+  background:
+    radial-gradient(circle at 50% 42%, rgba(130, 76, 255, 0.08), transparent 54%),
+    linear-gradient(180deg, #f8f5ff 0%, #fbfcff 100%);
   overflow: hidden;
 }
 
@@ -1633,21 +1644,22 @@ body.zpos-fullscreen .container {
 .zpos-add {
   flex: 0 0 auto;
   padding: 7px 10px;
-  border-radius: 10px;
-  background: linear-gradient(180deg, #ffffff 0%, #f1f4f7 100%);
-  color: #4d5a6d;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #f9f7ff 100%);
+  color: #5d566b;
   font-size: 18px;
   line-height: 1;
   font-weight: 700;
-  border: 1px solid #d7dee6;
-  box-shadow: 0 1px 2px rgba(20, 30, 46, 0.05);
+  border: 1px solid #e5def3;
+  box-shadow: 0 1px 2px rgba(63, 30, 120, 0.04);
   transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
 }
 
 .zpos-add:hover {
   transform: translateY(-1px);
-  border-color: #c9d3df;
-  box-shadow: 0 4px 10px rgba(20, 30, 46, 0.08);
+  border-color: rgba(130, 76, 255, 0.34);
+  color: #824cff;
+  box-shadow: 0 8px 18px rgba(63, 30, 120, 0.08);
 }
 
 .zpos-cart-head {
@@ -1682,6 +1694,10 @@ body.zpos-fullscreen .container {
   place-items: center;
   min-width: 34px;
   height: 34px;
+  border-radius: 12px;
+  background: #f2ecff;
+  color: #7244e8;
+  border: 1px solid rgba(130, 76, 255, 0.16);
   padding: 0 8px;
   border-radius: 999px;
   background: #edf2ff;
