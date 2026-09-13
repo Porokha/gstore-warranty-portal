@@ -354,8 +354,8 @@ const CasesPage = () => {
   }
 
   return (
-    <div>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+    <div className="zzv-admin-page zzv-admin-page--cases">
+      <Box className="zzv-admin-page-head" display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4">{t('common.openCases')}</Typography>
         <Box display="flex" gap={1}>
           <Button
@@ -375,7 +375,7 @@ const CasesPage = () => {
       </Box>
 
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3 }}>
+      <Paper className="zzv-admin-filter-card" sx={{ p: 2, mb: 3 }}>
         <Tabs
           value={filters.case_scope}
           onChange={(_, value) => handleFilterChange('case_scope', value)}
@@ -530,6 +530,7 @@ const CasesPage = () => {
         </Box>
       </Popover>
 
+      <Box className="zzv-admin-table-card">
       <CustomDataTable
         columns={columns}
         data={rows}
@@ -575,6 +576,7 @@ const CasesPage = () => {
           a.click();
         }}
       />
+      </Box>
     </div>
   );
 };

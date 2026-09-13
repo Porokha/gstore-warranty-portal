@@ -50,3 +50,149 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.zzv-admin-page {
+  --zzv-admin-ink: #18171d;
+  --zzv-admin-muted: #70687e;
+  --zzv-admin-border: #e6def5;
+  --zzv-admin-purple: #824cff;
+  --zzv-admin-purple-soft: #f2ecff;
+  width: 100%;
+}
+
+.zzv-admin-page-head {
+  position: relative;
+  padding: 18px 0 4px;
+}
+
+.zzv-admin-page-head h4,
+.zzv-admin-page h4,
+.zzv-admin-page h5,
+.zzv-admin-page h6 {
+  font-family: var(--font-platform-caps);
+  letter-spacing: -0.03em;
+  color: var(--zzv-admin-ink);
+}
+
+.zzv-admin-page-head h4 {
+  font-size: clamp(28px, 3vw, 42px);
+  line-height: 1.05;
+}
+
+.zzv-admin-page .MuiPaper-root {
+  border: 1px solid var(--zzv-admin-border);
+  box-shadow: 0 22px 70px rgba(63, 30, 120, 0.07);
+}
+
+.zzv-admin-filter-card {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(130, 76, 255, 0.065), transparent 42%),
+    #ffffff;
+}
+
+.zzv-admin-filter-card .MuiBox-root {
+  align-items: center;
+}
+
+.zzv-admin-page .MuiOutlinedInput-root {
+  background: #fbfaff;
+}
+
+.zzv-admin-page .MuiOutlinedInput-notchedOutline {
+  border-color: var(--zzv-admin-border);
+}
+
+.zzv-admin-page .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline,
+.zzv-admin-page .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: var(--zzv-admin-purple);
+}
+
+.zzv-admin-page .MuiButton-contained {
+  background: var(--zzv-admin-purple);
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(130, 76, 255, 0.22);
+}
+
+.zzv-admin-page .MuiButton-contained:hover {
+  background: #6f3ee8;
+  box-shadow: 0 14px 30px rgba(130, 76, 255, 0.28);
+}
+
+.zzv-admin-page .MuiButton-outlined {
+  border-color: var(--zzv-admin-border);
+  color: #4d455e;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.zzv-admin-page .MuiButton-outlined:hover {
+  border-color: var(--zzv-admin-purple);
+  background: var(--zzv-admin-purple-soft);
+}
+
+.zzv-admin-table-card {
+  overflow: hidden;
+  border: 1px solid var(--zzv-admin-border);
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 22px 70px rgba(63, 30, 120, 0.07);
+}
+
+.zzv-admin-table-card .MuiPaper-root {
+  border: 0;
+  border-radius: 0 !important;
+  box-shadow: none;
+}
+
+.zzv-admin-page .MuiTableHead-root .MuiTableCell-root {
+  background: #fbfaff;
+  color: #4d455e;
+  font-family: var(--font-platform-caps);
+  font-size: 12px;
+}
+
+.zzv-admin-page .MuiTableBody-root .MuiTableRow-root:hover {
+  background: #fbfaff;
+}
+
+.zzv-admin-page .MuiTabs-root {
+  border-bottom: 1px solid var(--zzv-admin-border);
+}
+
+.zzv-admin-page .MuiTab-root {
+  color: var(--zzv-admin-muted);
+  font-family: var(--font-platform-caps);
+}
+
+.zzv-admin-page .MuiTab-root.Mui-selected {
+  color: var(--zzv-admin-purple);
+}
+
+.zzv-admin-page .MuiTabs-indicator {
+  background: var(--zzv-admin-purple);
+}
+
+.zzv-admin-page--dashboard > .MuiGrid-root .MuiPaper-root,
+.zzv-admin-page--dashboard > .MuiGrid-root .MuiCard-root {
+  border: 1px solid var(--zzv-admin-border);
+  border-radius: 20px;
+  box-shadow: 0 22px 70px rgba(63, 30, 120, 0.07);
+}
+
+@media (max-width: 720px) {
+  .zzv-admin-page-head {
+    padding-top: 10px;
+  }
+
+  .zzv-admin-page-head > .MuiBox-root,
+  .zzv-admin-page-head {
+    align-items: flex-start !important;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .zzv-admin-page-head h4 {
+    font-size: 30px;
+  }
+}

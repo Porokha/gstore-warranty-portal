@@ -323,8 +323,8 @@ const WarrantiesPage = () => {
   }
 
   return (
-    <div>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+    <div className="zzv-admin-page zzv-admin-page--warranties">
+      <Box className="zzv-admin-page-head" display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4">{t('common.warranties')}</Typography>
         <Box display="flex" gap={1}>
           {isAdmin && (
@@ -356,7 +356,7 @@ const WarrantiesPage = () => {
       </Box>
 
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3 }}>
+      <Paper className="zzv-admin-filter-card" sx={{ p: 2, mb: 3 }}>
         <Box display="flex" gap={2} flexWrap="wrap">
           <TextField
             size="small"
@@ -399,6 +399,7 @@ const WarrantiesPage = () => {
         </Box>
       </Paper>
 
+      <Box className="zzv-admin-table-card">
       <CustomDataTable
         columns={columns}
         data={rows}
@@ -484,6 +485,7 @@ const WarrantiesPage = () => {
           a.click();
         }}
       />
+      </Box>
       
       <ConfirmDialog
         open={deleteDialog.open}
