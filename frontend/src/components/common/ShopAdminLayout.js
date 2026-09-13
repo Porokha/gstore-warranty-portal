@@ -52,17 +52,20 @@ const ShopAdminLayout = () => {
 
   return (
     <Box
+      className="zzv-shop-admin-shell"
       sx={{
         minHeight: '100vh',
-        bgcolor: '#f4f6fb',
+        bgcolor: '#fbf9ff',
+        background:
+          'radial-gradient(circle at 8% 0%, rgba(130,76,255,0.11), transparent 28%), linear-gradient(180deg, #ffffff 0%, #fbf9ff 48%, #f3eeff 100%)',
         '& .MuiPaper-root': {
-          borderRadius: '24px !important',
+          borderRadius: '20px !important',
         },
         '& .MuiButton-root, & .MuiChip-root, & .MuiOutlinedInput-root, & .MuiAlert-root, & .MuiTabs-root .MuiTab-root': {
-          borderRadius: '18px !important',
+          borderRadius: '14px !important',
         },
         '& .MuiAvatar-root': {
-          borderRadius: '18px !important',
+          borderRadius: '14px !important',
         },
       }}
     >
@@ -70,9 +73,10 @@ const ShopAdminLayout = () => {
         position="sticky"
         elevation={0}
         sx={{
-          bgcolor: 'rgba(255,255,255,0.95)',
-          color: '#172033',
-          borderBottom: '1px solid #dce4f0',
+          bgcolor: 'rgba(255,255,255,0.92)',
+          color: '#18171d',
+          borderBottom: '1px solid #e6def5',
+          backdropFilter: 'blur(18px)',
         }}
       >
         <Toolbar sx={{ minHeight: '72px !important' }}>
@@ -91,7 +95,7 @@ const ShopAdminLayout = () => {
                 <Typography sx={{ fontWeight: 800, fontSize: '18px', lineHeight: 1.1 }}>
                   Shop Admin
                 </Typography>
-                <Typography sx={{ color: '#667085', fontSize: '13px' }}>
+                <Typography sx={{ color: '#70687e', fontSize: '13px' }}>
                   Products, orders, and catalog controls
                 </Typography>
               </Box>
@@ -142,10 +146,10 @@ const ShopAdminLayout = () => {
                       textTransform: 'none',
                       fontWeight: 700,
                       px: 2,
-                      color: active ? '#ffffff' : '#26334d',
-                      bgcolor: active ? '#172033' : 'transparent',
+                      color: active ? '#ffffff' : '#4d455e',
+                      bgcolor: active ? '#18171d' : 'transparent',
                       '&:hover': {
-                        bgcolor: active ? '#172033' : '#e9eef7',
+                        bgcolor: active ? '#18171d' : '#f3effb',
                       },
                     }}
                   >
@@ -162,8 +166,8 @@ const ShopAdminLayout = () => {
                 sx={{
                   px: 1.5,
                   py: 0.75,
-                  bgcolor: '#eef3fb',
-                  border: '1px solid #dbe4f3',
+                  bgcolor: '#fbfaff',
+                  border: '1px solid #e6def5',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 1,
@@ -173,7 +177,7 @@ const ShopAdminLayout = () => {
                   sx={{
                     width: 28,
                     height: 28,
-                    bgcolor: '#172033',
+                    bgcolor: '#18171d',
                     color: '#ffffff',
                     fontSize: '13px',
                     fontWeight: 800,
@@ -181,7 +185,7 @@ const ShopAdminLayout = () => {
                 >
                   {displayInitial}
                 </Avatar>
-                <Typography sx={{ fontSize: '13px', color: '#52607a', lineHeight: 1.1 }}>
+                <Typography sx={{ fontSize: '13px', color: '#70687e', lineHeight: 1.1 }}>
                   {displayName}
                 </Typography>
               </Paper>
@@ -193,7 +197,7 @@ const ShopAdminLayout = () => {
                 sx={{
                   textTransform: 'none',
                   fontWeight: 700,
-                  color: '#172033',
+                  color: '#4d455e',
                 }}
               >
                 Logout
