@@ -146,9 +146,10 @@ const PublicLayout = () => {
             gridTemplateColumns: '1fr auto 1fr',
             alignItems: 'center',
             '@media (max-width:920px)': {
-              minHeight: '64px !important',
-              gap: 0.75,
-              gridTemplateColumns: '76px minmax(0, 1fr) 76px',
+              minHeight: '72px !important',
+              px: '16px',
+              gap: 1,
+              gridTemplateColumns: '1fr auto',
             },
           }}
         >
@@ -158,7 +159,8 @@ const PublicLayout = () => {
               justifySelf: 'start',
               '@media (max-width:920px)': {
                 display: 'inline-flex',
-                width: '76px',
+                justifySelf: 'end',
+                order: 2,
               },
             }}
           >
@@ -167,14 +169,15 @@ const PublicLayout = () => {
               onClick={() => setMobileMenuOpen(true)}
               sx={{
                 color: '#18181b',
-                border: '1px solid rgba(165,118,254,0.22)',
-                borderRadius: '16px',
-                width: 42,
-                height: 42,
-                bgcolor: 'rgba(255,255,255,0.74)',
+                border: 0,
+                borderRadius: '10px',
+                width: 24,
+                height: 24,
+                p: 0,
+                bgcolor: 'transparent',
               }}
             >
-              <MenuIcon sx={{ fontSize: 20 }} />
+              <MenuIcon sx={{ fontSize: 24 }} />
             </IconButton>
           </Box>
 
@@ -186,9 +189,9 @@ const PublicLayout = () => {
               justifySelf: 'start',
               cursor: 'pointer',
               '@media (max-width:920px)': {
-                justifyContent: 'center',
-                justifySelf: 'center',
-                width: '100%',
+                justifyContent: 'flex-start',
+                justifySelf: 'start',
+                order: 1,
               },
               '&:hover': { opacity: 0.9 },
             }}
@@ -198,7 +201,7 @@ const PublicLayout = () => {
               sx={{
                 '& img': { width: '122px !important', maxWidth: '122px' },
                 '@media (max-width:920px)': {
-                  '& img': { width: '104px !important', maxWidth: '104px' },
+                  '& img': { width: '99px !important', maxWidth: '99px' },
                 },
               }}
             >
@@ -254,9 +257,7 @@ const PublicLayout = () => {
             sx={{
               justifySelf: 'end',
               '@media (max-width:920px)': {
-                width: '76px',
-                display: 'flex',
-                justifyContent: 'flex-end',
+                display: 'none',
               },
             }}
           >
