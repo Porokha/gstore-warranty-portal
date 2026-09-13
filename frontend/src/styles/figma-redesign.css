@@ -1212,6 +1212,84 @@
   position: relative;
 }
 
+.zzv-public-search-page {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(130, 76, 255, 0.13), transparent 30%),
+    radial-gradient(circle at 88% 18%, rgba(233, 220, 255, 0.62), transparent 32%),
+    linear-gradient(180deg, #ffffff 0%, #fbf9ff 48%, #f3eeff 100%);
+}
+
+.zzv-public-search-page::before {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  content: "";
+  opacity: 0.28;
+  background-image:
+    linear-gradient(rgba(130, 76, 255, 0.075) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(130, 76, 255, 0.075) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(180deg, #000 0%, transparent 86%);
+}
+
+.zzv-public-search-page > .MuiContainer-root {
+  position: relative;
+  z-index: 1;
+}
+
+.zzv-public-search-head {
+  min-height: 56px;
+}
+
+.zzv-public-search-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.zzv-public-search-card::before {
+  position: absolute;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(130, 76, 255, 0.07), transparent 38%);
+}
+
+.zzv-public-search-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.zzv-public-search-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+}
+
+.zzv-public-search-form .MuiFormControl-root {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.zzv-public-search-form .MuiButton-root {
+  min-width: 172px;
+}
+
+.zzv-public-search-results {
+  padding-top: 28px;
+  border-top: 1px solid #ede7f7;
+}
+
+.zzv-public-search-results .MuiGrid-item {
+  padding-top: 18px !important;
+}
+
+.zzv-public-search-results .MuiChip-root {
+  border-radius: 999px;
+  font-family: var(--zzv-font-caps);
+}
+
 @media (max-width: 1100px) {
   .zzv-figma-hero-grid,
   .zzv-figma-status {
@@ -1767,5 +1845,32 @@
   .zzv-trade-device-panel,
   .zzv-trade-question-panel {
     padding: 22px !important;
+  }
+
+  .zzv-public-search-page {
+    padding-top: 24px !important;
+  }
+
+  .zzv-public-search-head {
+    align-items: flex-start !important;
+  }
+
+  .zzv-public-search-head h4 {
+    font-size: 26px;
+    line-height: 1.1;
+  }
+
+  .zzv-public-search-card {
+    border-radius: 20px !important;
+  }
+
+  .zzv-public-search-form {
+    grid-template-columns: 1fr;
+  }
+
+  .zzv-public-search-form .MuiButton-root {
+    width: 100%;
+    min-width: 0;
+    margin-top: 0;
   }
 }

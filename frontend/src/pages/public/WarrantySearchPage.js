@@ -260,22 +260,23 @@ const WarrantySearchPage = () => {
 
   return (
     <Box
+      className="zzv-public-search-page"
       sx={{
         minHeight: 'calc(100vh - 70px)',
-        background: 'linear-gradient(180deg, #fbf9ff 0%, #f3ecff 100%)',
-        pt: 4,
-        pb: 8,
+        pt: { xs: 3, md: 5 },
+        pb: { xs: 5, md: 9 },
       }}
     >
-      <Container maxWidth="md">
-        <Box display="flex" alignItems="center" gap={1} mb={3}>
+      <Container maxWidth="lg">
+        <Box className="zzv-public-search-head" display="flex" alignItems="center" gap={1} mb={3}>
           <IconButton
             onClick={() => navigate('/warranty-service')}
             aria-label="back"
             sx={{
               bgcolor: '#ffffff',
-              border: '1px solid #e3d7ff',
-              '&:hover': { bgcolor: '#f3ecff' },
+              border: '1px solid #e6def5',
+              borderRadius: '12px',
+              '&:hover': { bgcolor: '#f7f3ff' },
             }}
           >
             <ArrowBack />
@@ -286,9 +287,11 @@ const WarrantySearchPage = () => {
             sx={{
               cursor: 'pointer',
               textDecoration: 'none',
-              color: '#18181b',
+              color: '#18171d',
+              fontFamily: 'var(--zzv-font-caps)',
               fontWeight: 700,
-              '&:hover': { textDecoration: 'underline' },
+              letterSpacing: '-0.03em',
+              '&:hover': { color: '#824cff' },
             }}
           >
             {t('warrantySearch.title')}
@@ -296,13 +299,14 @@ const WarrantySearchPage = () => {
         </Box>
 
         <Paper
+          className="zzv-public-search-card"
           elevation={0}
           sx={{
-            p: 4,
-            borderRadius: 4,
-            boxShadow: '0 28px 90px rgba(63, 30, 120, 0.1)',
+            p: { xs: 2.25, md: 4 },
+            borderRadius: '24px',
+            boxShadow: '0 28px 90px rgba(63, 30, 120, 0.08)',
             bgcolor: '#ffffff',
-            border: '1px solid #e3d7ff',
+            border: '1px solid #e6def5',
           }}
         >
           <Box display="flex" alignItems="center" gap={2} mb={3}>
@@ -310,8 +314,8 @@ const WarrantySearchPage = () => {
               sx={{
                 width: 48,
                 height: 48,
-                borderRadius: 2,
-                bgcolor: '#a576ff',
+                borderRadius: '14px',
+                bgcolor: '#824cff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -319,12 +323,12 @@ const WarrantySearchPage = () => {
             >
               <WarrantyIcon sx={{ color: '#ffffff', fontSize: 28 }} />
             </Box>
-            <Typography variant="h5" sx={{ fontWeight: 700, color: '#18181b' }}>
+            <Typography variant="h5" sx={{ fontFamily: 'var(--zzv-font-caps)', fontWeight: 700, color: '#18171d' }}>
               {t('warrantySearch.findWarranty')}
             </Typography>
           </Box>
 
-          <form onSubmit={handleSearch}>
+          <Box component="form" className="zzv-public-search-form" onSubmit={handleSearch}>
             <TextField
               fullWidth
               label={t('warrantySearch.warrantyId')}
@@ -335,9 +339,10 @@ const WarrantySearchPage = () => {
               placeholder="e.g., WP-0001-1234"
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
+                  borderRadius: '14px',
+                  bgcolor: '#fbfaff',
                   '&:hover fieldset': {
-                    borderColor: '#a576ff',
+                    borderColor: '#824cff',
                   },
                 },
               }}
@@ -352,9 +357,10 @@ const WarrantySearchPage = () => {
               placeholder="e.g., +995 555 123 456"
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
+                  borderRadius: '14px',
+                  bgcolor: '#fbfaff',
                   '&:hover fieldset': {
-                    borderColor: '#a576ff',
+                    borderColor: '#824cff',
                   },
                 },
               }}
@@ -367,22 +373,22 @@ const WarrantySearchPage = () => {
               startIcon={<SearchIcon />}
               sx={{
                 mt: 3,
-                py: 1.5,
-                borderRadius: 2,
-                bgcolor: '#a576ff',
-                color: '#111111',
+                py: 1.65,
+                borderRadius: '14px',
+                bgcolor: '#824cff',
+                color: '#ffffff',
                 fontWeight: 600,
                 textTransform: 'none',
                 fontSize: '16px',
                 '&:hover': {
-                  bgcolor: '#8f5ef0',
+                  bgcolor: '#6f3ee8',
                   color: '#ffffff',
                 },
               }}
             >
               {loading ? t('warrantySearch.searching') : t('warrantySearch.search')}
             </Button>
-          </form>
+          </Box>
 
           {error && (
             <Alert severity="error" sx={{ mt: 3, borderRadius: 2 }}>
@@ -391,7 +397,7 @@ const WarrantySearchPage = () => {
           )}
 
           {result && (
-            <Box sx={{ mt: 4 }}>
+            <Box className="zzv-public-search-results" sx={{ mt: 4 }}>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
                 <Typography variant="h6" sx={{ fontWeight: 600, color: '#1e293b' }}>
                   {t('warrantySearch.warrantyDetails')}
