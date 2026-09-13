@@ -193,9 +193,14 @@ function LandingPage() {
           <h2>შეამოწმე შენი მოწყობილობის სტატუსი ერთ წუთში</h2>
           <p>გარანტიის კოდით ან სერვისის ნომრით — რეგისტრაცია არ სჭირდება.</p>
           <ul>
-            <li>გარანტიის ვადა და დაფარვა</li>
-            <li>სერვისის მიმდინარე სტატუსი</li>
-            <li>საჯარო შენიშვნები და ვადები</li>
+            <li>
+              <img src={asset('imgCheck.svg')} alt="" />
+              <span>ნახავ, რა ეტაპზეა შეკეთება</span>
+            </li>
+            <li>
+              <img src={asset('imgCheck.svg')} alt="" />
+              <span>გარანტიის ვადა და დაფარვა</span>
+            </li>
           </ul>
         </div>
         <div className="zzv-figma-status-widget">
@@ -203,9 +208,18 @@ function LandingPage() {
             <span>გარანტია</span>
             <span>სერვისი</span>
           </div>
-          <label>გარანტიის კოდი</label>
-          <div className="zzv-figma-input">WP-12852-1409</div>
-          <ButtonLink to="/warranty-service?tab=warranty">შემოწმება</ButtonLink>
+          <div className="zzv-figma-widget-field">
+            <label>გარანტიის კოდი</label>
+            <div className="zzv-figma-input">WRN-XXXX-XXXX</div>
+          </div>
+          <div className="zzv-figma-widget-field">
+            <label>შეიყვანე ნომერი</label>
+            <div className="zzv-figma-input">5XX XXX XXX</div>
+          </div>
+          <Link className="zzv-figma-widget-submit" to="/warranty-service?tab=warranty">
+            შემოწმება
+          </Link>
+          <small>კოდი SMS-ში მოგივიდა</small>
         </div>
       </section>
 
