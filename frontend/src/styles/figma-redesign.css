@@ -465,8 +465,7 @@
   width: 110px;
 }
 
-.zzv-figma-status,
-.zzv-figma-gstore {
+.zzv-figma-status {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 392px;
   gap: 34px;
@@ -500,8 +499,7 @@
   opacity: 0.6;
 }
 
-.zzv-figma-status h2,
-.zzv-figma-gstore h2 {
+.zzv-figma-status h2 {
   max-width: 527px;
   margin: 0;
   font-family: var(--zzv-font-caps);
@@ -510,8 +508,7 @@
   letter-spacing: -0.16px;
 }
 
-.zzv-figma-status p,
-.zzv-figma-gstore p {
+.zzv-figma-status p {
   max-width: 560px;
   color: rgba(255, 255, 255, 0.68);
   font-size: 14px;
@@ -626,103 +623,472 @@
   text-align: center;
 }
 
-.zzv-figma-shop-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
+.zzv-figma-shop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.zzv-figma-shop-head .zzv-figma-heading {
+  margin-bottom: 0;
+  font-size: 56px;
+  letter-spacing: -0.84px;
+}
+
+.zzv-figma-shop-all {
+  height: 50px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+  border-radius: 12px;
+  background: #1c1926;
+  color: #ffffff;
+  font-family: var(--zzv-font-caps);
+  font-size: 16px;
+  line-height: 1.55;
+  box-shadow: 0 10px 26px rgba(32, 32, 32, 0.12);
+}
+
+.zzv-figma-category-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
 .zzv-figma-shop-feature,
 .zzv-figma-part-card {
-  min-height: 112px;
+  height: 180px;
   border: 1px solid var(--zzv-border-subtle);
-  border-radius: 16px;
+  border-radius: 24px;
   background: var(--zzv-bg-page);
 }
 
 .zzv-figma-shop-feature {
-  grid-row: span 2;
+  width: 592px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  padding: 24px;
-  background: linear-gradient(135deg, #7c4df5, #a576fe);
+  justify-content: space-between;
+  padding: 32px;
+  background:
+    linear-gradient(48.432deg, #7c4df5 4.0265%, #ffffff 122.87%),
+    #7c4df5;
   color: #ffffff;
+  box-shadow: 0 8px 8px rgba(124, 77, 245, 0.2);
 }
 
 .zzv-figma-shop-feature strong {
   font-family: var(--zzv-font-caps);
-  font-size: 32px;
+  font-size: 56px;
+  line-height: 1.05;
+  letter-spacing: -0.84px;
+}
+
+.zzv-figma-shop-feature span {
+  font-family: var(--zzv-font-caps);
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+.zzv-figma-shop-feature small {
+  color: #e4dbfe;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .zzv-figma-part-card {
+  width: 288px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 18px;
+  padding: 24px;
   color: var(--zzv-text-primary);
+  overflow: hidden;
+}
+
+.zzv-figma-part-card div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .zzv-figma-part-card img {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
 }
 
-.zzv-figma-review {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 32px;
-  align-items: center;
-  margin-block: 10px 84px;
-  padding: 28px;
-  border: 1px solid var(--zzv-border-subtle);
-  border-radius: 16px;
-  background: #ffffff;
-}
-
-.zzv-figma-review h2 {
-  margin: 0 0 12px;
+.zzv-figma-part-card strong {
+  color: var(--zzv-purple-700);
   font-family: var(--zzv-font-caps);
+  font-size: 14px;
+  line-height: 1.5;
 }
 
-.zzv-figma-review p {
-  max-width: 780px;
-  margin: 0 0 12px;
-  color: var(--zzv-text-secondary);
+.zzv-figma-part-card span {
+  font-family: var(--zzv-font-caps);
+  font-size: 20px;
+  line-height: 1.3;
+}
+
+.zzv-figma-review-section {
+  padding: 84px 0;
+  overflow: hidden;
+}
+
+.zzv-figma-review-section h2 {
+  margin: 10px 0 30px;
+  font-family: var(--zzv-font-caps);
+  font-size: 40px;
+  line-height: 1.05;
+  letter-spacing: -0.4px;
+}
+
+.zzv-figma-review-card {
+  display: flex;
+  gap: 34px;
+  align-items: center;
+  padding: 36px;
+  border: 1px solid var(--zzv-border-subtle);
+  border-radius: 22px;
+  background: var(--zzv-bg-page);
+}
+
+.zzv-figma-review-quote {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.zzv-figma-stars {
+  display: flex;
+  gap: 2px;
+}
+
+.zzv-figma-stars img {
+  width: 14px;
+  height: 14px;
+}
+
+.zzv-figma-review-quote p {
+  min-width: 100%;
+  margin: 14px 0 20px;
+  color: var(--zzv-text-primary);
+  font-family: var(--zzv-font-caps);
+  font-size: 24px;
+  line-height: 1.3;
+  letter-spacing: -0.12px;
+}
+
+.zzv-figma-review-author {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.zzv-figma-review-author > span {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 99px;
+  background: #e4dbfe;
+  color: var(--zzv-purple-700);
+  font-family: var(--zzv-font-caps);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.zzv-figma-review-author div {
+  display: flex;
+  flex-direction: column;
+}
+
+.zzv-figma-review-author strong {
+  font-family: var(--zzv-font-caps);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.zzv-figma-review-author small {
+  color: var(--zzv-text-tertiary);
+  font-size: 12px;
   line-height: 1.55;
 }
 
-.zzv-figma-review strong {
-  color: var(--zzv-purple-500);
+.zzv-figma-review-score {
+  width: 200px;
+  flex: 0 0 200px;
+  padding-left: 32px;
+  border-left: 1px solid var(--zzv-border-default);
+  text-align: center;
+}
+
+.zzv-figma-review-score strong {
+  display: block;
+  color: var(--zzv-purple-700);
   font-family: var(--zzv-font-caps);
-  font-size: 32px;
+  font-size: 56px;
+  line-height: 1.05;
+  letter-spacing: -0.84px;
+}
+
+.zzv-figma-review-score span {
+  display: block;
+  color: var(--zzv-text-tertiary);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.zzv-figma-gstore-section {
+  padding: 84px 0;
 }
 
 .zzv-figma-gstore {
-  grid-template-columns: 1fr 480px;
-  margin-bottom: 84px;
+  position: relative;
+  min-height: 418px;
+  overflow: hidden;
+  display: flex;
+  gap: 34px;
+  align-items: flex-start;
+  padding: 38px;
+  border-radius: 24px;
+  background: var(--zzv-bg-inverse);
+  color: #ffffff;
 }
 
-.zzv-figma-gstore-panels {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
+.zzv-figma-gstore::before {
+  content: "";
+  position: absolute;
+  inset: -120px 46% -140px -140px;
+  opacity: 0.1;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.45) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.45) 1px, transparent 1px);
+  background-size: 48px 48px;
+  transform: rotate(90deg);
 }
 
-.zzv-figma-gstore-panels div {
-  min-height: 190px;
+.zzv-figma-gstore-copy {
+  position: relative;
+  z-index: 1;
+  width: 540px;
+  min-height: 342px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 24px;
-  background: rgba(124, 77, 245, 0.92);
+  justify-content: center;
 }
 
-.zzv-figma-gstore-panels img {
-  width: 34px;
+.zzv-figma-gstore h2 {
+  max-width: 527px;
+  margin: 0;
+  font-family: var(--zzv-font-caps);
+  font-size: 32px;
+  line-height: 1.15;
+  letter-spacing: -0.16px;
+}
+
+.zzv-figma-gstore p {
+  max-width: 519px;
+  margin: 12px 0 0;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.zzv-figma-gstore-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.zzv-figma-widget-stack {
+  position: absolute;
+  left: 677px;
+  top: 124px;
+  width: 485px;
+  height: 342px;
+  z-index: 1;
+}
+
+.zzv-figma-widget-card {
+  position: absolute;
+  width: 647px;
+  height: 294px;
+  overflow: hidden;
+  padding: 32px;
+  border: 1px solid var(--zzv-border-subtle);
+  border-radius: 24px;
+  background: var(--zzv-border-subtle);
+  color: #1c1926;
+}
+
+.zzv-figma-widget-card--warranty {
+  left: -72px;
+  top: 76px;
+  height: 274px;
+}
+
+.zzv-figma-widget-card--service {
+  left: 208px;
+  top: 57px;
+  box-shadow: -6px 4px 14.6px 9px rgba(0, 0, 0, 0.25);
+}
+
+.zzv-figma-widget-heading {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.zzv-figma-widget-heading h3 {
+  margin: 0;
+  font-family: var(--zzv-font-caps);
+  font-size: 24px;
+  line-height: 1.3;
+  letter-spacing: -0.12px;
+}
+
+.zzv-figma-widget-heading p {
+  width: 312px;
+  margin: 0;
+  color: var(--zzv-text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.zzv-figma-widget-detail {
+  position: absolute;
+  left: 31px;
+  top: 144px;
+  width: 534px;
+  display: flex;
+  flex-direction: column;
+  gap: 35px;
+  padding: 24px;
+  border-radius: 24px;
+  border: 1px solid rgba(240, 240, 240, 0.5);
+  box-shadow: 0 -2px 4.9px rgba(101, 101, 101, 0.04);
+}
+
+.zzv-figma-widget-detail--warranty {
+  background: var(--zzv-purple-500);
+}
+
+.zzv-figma-widget-detail--service {
+  top: 145px;
+  width: 504.5px;
+  gap: 32px;
+  background: var(--zzv-bg-inverse);
+}
+
+.zzv-figma-widget-record,
+.zzv-figma-widget-row,
+.zzv-figma-service-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.zzv-figma-widget-record-label {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.zzv-figma-widget-record-label > span {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #ffffff;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.zzv-figma-widget-record-label img {
+  width: 20px;
+  height: 20px;
+}
+
+.zzv-figma-widget-record-label div {
+  width: 155px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: #ffffff;
+}
+
+.zzv-figma-widget-record-label strong {
+  font-family: var(--zzv-font-caps);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.zzv-figma-widget-record-label small {
+  font-size: 12px;
+  line-height: 1.4;
+  opacity: 0.6;
+}
+
+.zzv-figma-widget-record b {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 15px;
+  background: #eefaf5;
+  color: #1c1926;
+  font-family: var(--zzv-font-caps);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.zzv-figma-widget-row {
+  color: #1c1926;
+  font-size: 12px;
+  line-height: 1.4;
+  letter-spacing: 0.096px;
+}
+
+.zzv-figma-widget-row span {
+  opacity: 0.6;
+}
+
+.zzv-figma-widget-row strong {
+  font-family: var(--zzv-font-caps);
+}
+
+.zzv-figma-service-row {
+  align-items: flex-start;
+  gap: 12px;
+  color: #ffffff;
+}
+
+.zzv-figma-service-row div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.zzv-figma-service-row strong {
+  font-family: var(--zzv-font-caps);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.zzv-figma-service-row span {
+  font-size: 12px;
+  line-height: 1.4;
+  opacity: 0.6;
+}
+
+.zzv-figma-widget-detail--service .zzv-figma-widget-row,
+.zzv-figma-widget-detail--service .zzv-figma-service-row {
+  color: #ffffff;
 }
 
 .zzv-figma-faq {
@@ -798,8 +1164,7 @@
 
 @media (max-width: 1100px) {
   .zzv-figma-hero-grid,
-  .zzv-figma-status,
-  .zzv-figma-gstore {
+  .zzv-figma-status {
     grid-template-columns: 1fr;
   }
 
@@ -815,6 +1180,38 @@
   .zzv-figma-wide-card {
     grid-column: span 2;
   }
+
+  .zzv-figma-shop-feature,
+  .zzv-figma-part-card {
+    width: calc(50% - 8px);
+  }
+
+  .zzv-figma-gstore {
+    min-height: 0;
+    flex-direction: column;
+  }
+
+  .zzv-figma-gstore-copy {
+    width: 100%;
+    min-height: 0;
+  }
+
+  .zzv-figma-widget-stack {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: 100%;
+    height: 360px;
+    margin-top: 12px;
+  }
+
+  .zzv-figma-widget-card--warranty {
+    left: 0;
+  }
+
+  .zzv-figma-widget-card--service {
+    left: min(280px, 30%);
+  }
 }
 
 @media (max-width: 920px) {
@@ -827,14 +1224,32 @@
     padding-block: 56px;
   }
 
-  .zzv-figma-steps,
-  .zzv-figma-shop-grid {
+  .zzv-figma-steps {
     grid-template-columns: 1fr 1fr;
   }
 
   .zzv-figma-section-head {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .zzv-figma-shop-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .zzv-figma-review-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .zzv-figma-review-score {
+    width: 100%;
+    flex-basis: auto;
+    padding: 24px 0 0;
+    border-top: 1px solid var(--zzv-border-default);
+    border-left: 0;
+    text-align: left;
   }
 }
 
@@ -861,8 +1276,6 @@
   .zzv-figma-selector-grid,
   .zzv-figma-steps,
   .zzv-figma-bento,
-  .zzv-figma-shop-grid,
-  .zzv-figma-gstore-panels,
   .zzv-figma-footer-bottom {
     grid-template-columns: 1fr;
   }
@@ -875,5 +1288,39 @@
   .zzv-figma-status,
   .zzv-figma-gstore {
     padding: 24px;
+  }
+
+  .zzv-figma-shop-feature,
+  .zzv-figma-part-card {
+    width: 100%;
+  }
+
+  .zzv-figma-shop-head .zzv-figma-heading {
+    font-size: 40px;
+  }
+
+  .zzv-figma-widget-stack {
+    height: auto;
+  }
+
+  .zzv-figma-widget-card,
+  .zzv-figma-widget-card--warranty,
+  .zzv-figma-widget-card--service {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: 100%;
+    height: auto;
+    margin-top: 16px;
+    box-shadow: none;
+  }
+
+  .zzv-figma-widget-detail,
+  .zzv-figma-widget-detail--service {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: 100%;
+    margin-top: 20px;
   }
 }

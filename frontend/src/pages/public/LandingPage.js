@@ -24,12 +24,12 @@ const steps = [
 ];
 
 const partIcons = [
-  ['ეკრანი', 'imgIconSmartphone.svg'],
-  ['ბატარეა', 'imgIconBattery.svg'],
-  ['კამერა', 'imgIconCamera.svg'],
-  ['დინამიკი', 'imgIconVolume2.svg'],
-  ['დაფა', 'imgIconCpu.svg'],
-  ['პორტი', 'imgIconPlug.svg'],
+  ['ეკრანი', 'imgIconSmartphone.svg', '840'],
+  ['ელემენტი', 'imgIconBattery.svg', '840'],
+  ['კამერა', 'imgIconCamera.svg', '840'],
+  ['დინამიკი', 'imgIconVolume2.svg', '840'],
+  ['დედაპლატა', 'imgIconCpu.svg', '620'],
+  ['დამტენი', 'imgIconPlug.svg', '620'],
 ];
 
 const faqItems = [
@@ -225,15 +225,24 @@ function LandingPage() {
 
       <section className="zzv-figma-section">
         <div className="zzv-figma-wrap">
-          <h2 className="zzv-figma-heading">მაღაზია</h2>
-          <div className="zzv-figma-shop-grid">
+          <div className="zzv-figma-shop-head">
+            <h2 className="zzv-figma-heading">მაღაზია</h2>
+            <Link className="zzv-figma-shop-all" to="/shop">
+              სრულად ნახვა
+            </Link>
+          </div>
+          <div className="zzv-figma-category-row">
             <div className="zzv-figma-shop-feature">
               <strong>2,700+</strong>
-              <span>ნაწილი მარაგში</span>
+              <span>ორიგინალი ნაწილი</span>
+              <small>ნაწილები უშუალოდ მწარმოებლებისგან</small>
             </div>
-            {partIcons.map(([label, icon]) => (
+            {partIcons.map(([label, icon, count]) => (
               <Link className="zzv-figma-part-card" key={label} to="/shop">
-                <img src={asset(icon)} alt="" />
+                <div>
+                  <img src={asset(icon)} alt="" />
+                  <strong>{count}</strong>
+                </div>
                 <span>{label}</span>
               </Link>
             ))}
@@ -241,34 +250,115 @@ function LandingPage() {
         </div>
       </section>
 
-      <section className="zzv-figma-review zzv-figma-wrap">
-        <div>
+      <section className="zzv-figma-review-section">
+        <div className="zzv-figma-wrap">
           <h2>რას ამბობენ</h2>
-          <p>ეკრანი შემიცვალეს ორ დღეში, გარანტიაც მომცეს. ძველი ტელეფონიც ჩავაბარე — თანხა იმავე დღეს ავიღე.</p>
-          <small>სერვისი და Trade-in · Google</small>
+          <article className="zzv-figma-review-card">
+            <div className="zzv-figma-review-quote">
+              <div className="zzv-figma-stars" aria-hidden="true">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <img key={index} src={asset('imgStateFilled.svg')} alt="" />
+                ))}
+              </div>
+              <p>ეკრანი შემიცვალეს ორ დღეში, გარანტიაც მომცეს. ძველი ტელეფონიც ჩავაბარე — თანხა იმავე დღეს ავიღე.</p>
+              <div className="zzv-figma-review-author">
+                <span>თე</span>
+                <div>
+                  <strong>თამარ ეგუტიძე</strong>
+                  <small>სერვისი და Trade-in · Google</small>
+                </div>
+              </div>
+            </div>
+            <div className="zzv-figma-review-score">
+              <strong>4.9</strong>
+              <span>218 შეფასება Google-ზე</span>
+            </div>
+          </article>
         </div>
-        <strong>4.9</strong>
       </section>
 
-      <section className="zzv-figma-gstore zzv-figma-wrap">
-        <div className="zzv-figma-gstore-copy">
-          <BrandPair />
-          <h2>Gstore-ში ნაყიდი ტექნიკა ჩვენ ვემსახურებით</h2>
-          <p>ყველა Gstore-ის მოწყობილობა ავტომატურად რეგისტრირდება — შეამოწმე ტელეფონის ნომრით.</p>
-          <ButtonLink to="/warranty-service" variant="dark">
-            ნახე Gstore
-          </ButtonLink>
-        </div>
-        <div className="zzv-figma-gstore-panels">
-          <div>
-            <img src={asset('imgLandingShieldCheck.svg')} alt="" />
-            <span>გარანტია</span>
-            <strong>აქტიური</strong>
-          </div>
-          <div>
-            <img src={asset('imgLandingWrench.svg')} alt="" />
-            <span>სერვისი</span>
-            <strong>მიღებულია</strong>
+      <section className="zzv-figma-gstore-section">
+        <div className="zzv-figma-wrap">
+          <div className="zzv-figma-gstore">
+            <div className="zzv-figma-gstore-copy">
+              <BrandPair />
+              <h2>Gstore-ში ნაყიდი ტექნიკა ჩვენ ვემსახურებით</h2>
+              <p>ყველა Gstore-ის მოწყობილობა ავტომატურად რეგისტრირდება — შეამოწმე ტელეფონის ნომრით.</p>
+              <div className="zzv-figma-gstore-actions">
+                <ButtonLink to="/warranty-service" variant="primary">
+                  შემოწმება
+                </ButtonLink>
+                <ButtonLink to="/warranty-service" variant="dark">
+                  ნახე Gstore
+                </ButtonLink>
+              </div>
+            </div>
+
+            <div className="zzv-figma-widget-stack" aria-hidden="true">
+              <div className="zzv-figma-widget-card zzv-figma-widget-card--warranty">
+                <div className="zzv-figma-widget-heading">
+                  <h3>გარანტიის შემოწმება</h3>
+                  <p>ნახე, აქტიურია თუ არა შენი გარანტია და როდის იწურება. Gstore-ში ნაყიდ ტექნიკასაც მოიცავს.</p>
+                </div>
+                <div className="zzv-figma-widget-detail zzv-figma-widget-detail--warranty">
+                  <div className="zzv-figma-widget-record">
+                    <div className="zzv-figma-widget-record-label">
+                      <span>
+                        <img src={asset('imgLandingShieldCheck.svg')} alt="" />
+                      </span>
+                      <div>
+                        <strong>გარანტია</strong>
+                        <small>WP-4809-5103</small>
+                      </div>
+                    </div>
+                    <b>აქტიური</b>
+                  </div>
+                  <div className="zzv-figma-widget-row">
+                    <span>შეძენის თარიღი</span>
+                    <strong>12/2/2024</strong>
+                  </div>
+                  <div className="zzv-figma-widget-row">
+                    <span>გარანტიის დაწყება</span>
+                    <strong>12/2/2024</strong>
+                  </div>
+                  <div className="zzv-figma-widget-row">
+                    <span>გარანტიის დასრულება</span>
+                    <strong>12/2/2026</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className="zzv-figma-widget-card zzv-figma-widget-card--service">
+                <div className="zzv-figma-widget-heading">
+                  <h3>სერვისის შემოწმება</h3>
+                  <p>თვალყური ადევნე შენს შეკეთებას — რა ეტაპზეა და როდის იქნება მზად.</p>
+                </div>
+                <div className="zzv-figma-widget-detail zzv-figma-widget-detail--service">
+                  <div className="zzv-figma-widget-record">
+                    <div className="zzv-figma-widget-record-label">
+                      <span>
+                        <img src={asset('imgLandingWrench.svg')} alt="" />
+                      </span>
+                      <div>
+                        <strong>სერვისის სტატუსი</strong>
+                        <small>Scn-000279</small>
+                      </div>
+                    </div>
+                    <b>მიმდინარეობს</b>
+                  </div>
+                  <div className="zzv-figma-service-row">
+                    <div>
+                      <strong>ეკრანის შეცვლა</strong>
+                      <span>მზად იქნება - ხვალ, 14:00</span>
+                    </div>
+                    <div>
+                      <strong>მიღებულია</strong>
+                      <span>19 ივლ · 11:20</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
