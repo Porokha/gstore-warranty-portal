@@ -1670,10 +1670,20 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
     const item = payload.item;
     const haystack = `${item.product_name || ''} ${item.category || ''} ${item.sku || ''} ${item.brand || ''}`.toLowerCase();
     const category = (item.category || '').toLowerCase();
+    const categoryIsPhone = /\b(phone|phones|smartphone|smartphones|mobile)\b/.test(category);
+    const categoryIsLaptop = /\b(laptop|laptops|notebook|notebooks|macbook|macbooks|ultrabook|ultrabooks)\b/.test(category);
     const categoryBlockerPattern =
       /\b(accessor(?:y|ies)|part|parts|battery|lcd|screen|display|camera|speaker|dock|port|connector|charger|cable|case|cover|protector|glass|film)\b/;
     const titleBlockerPattern =
       /\b(accessor(?:y|ies)|case|cover|charger|charging|cable|adapter|headphone|headphones|earphone|earphones|airpods|watch|band|strap|protector|glass|film|power\s*bank|keyboard|mouse|bag|pencil|stylus|lcd|screen|display|dock|port|connector)\b/;
+
+    if (categoryIsPhone) {
+      return 'Phone';
+    }
+
+    if (categoryIsLaptop) {
+      return 'Laptop';
+    }
 
     if (categoryBlockerPattern.test(category) || titleBlockerPattern.test(haystack)) {
       return null;
