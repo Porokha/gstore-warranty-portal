@@ -861,7 +861,7 @@ const CaseDetailPage = () => {
                         </Button>
                       </Box>
                     )}
-                    {canManageCases && payment.payment_status === 'pending' && (
+                    {canManageCases && payment.payment_status !== 'paid' && (
                       <Box display="flex" gap={1} flexWrap="wrap">
                         <Button
                           variant="contained"
@@ -874,16 +874,18 @@ const CaseDetailPage = () => {
                             ? t('common.saving')
                             : t('payment.markPaid')}
                         </Button>
-                        <Button
-                          variant="outlined"
-                          color="error"
-                          size="small"
-                          onClick={() => markPaymentFailedMutation.mutate(payment.id)}
-                          disabled={markPaymentPaidMutation.isLoading || markPaymentFailedMutation.isLoading}
-                        >
-                          {t('payment.markFailed')}
-                        </Button>
-                        {payment.offer_type === 'payable' && (() => {
+                        {payment.payment_status === 'pending' && (
+                          <Button
+                            variant="outlined"
+                            color="error"
+                            size="small"
+                            onClick={() => markPaymentFailedMutation.mutate(payment.id)}
+                            disabled={markPaymentPaidMutation.isLoading || markPaymentFailedMutation.isLoading}
+                          >
+                            {t('payment.markFailed')}
+                          </Button>
+                        )}
+                        {payment.payment_status === 'pending' && payment.offer_type === 'payable' && (() => {
                           const cooldownRemaining = getReminderCooldownRemaining(payment);
                           const reminderDisabled =
                             cooldownRemaining > 0 ||
