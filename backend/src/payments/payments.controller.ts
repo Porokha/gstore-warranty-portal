@@ -49,7 +49,8 @@ export class PaymentsController {
   }
 
   @Put(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.TECH_MANAGER, UserRole.SUPER_TECHNICIAN)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdatePaymentDto,
