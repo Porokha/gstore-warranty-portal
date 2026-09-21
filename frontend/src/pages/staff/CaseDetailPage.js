@@ -50,6 +50,8 @@ const CaseDetailPage = () => {
   const [internalNote, setInternalNote] = useState('');
   const [internalNoteError, setInternalNoteError] = useState('');
   const [paymentActionError, setPaymentActionError] = useState('');
+  const [editingPaymentId, setEditingPaymentId] = useState(null);
+  const [paymentEditAmount, setPaymentEditAmount] = useState('');
   const [partsWaitingError, setPartsWaitingError] = useState('');
   const [statusDraft, setStatusDraft] = useState(null);
   const closePath = `/staff/cases${location.search || ''}`;
@@ -198,6 +200,23 @@ const CaseDetailPage = () => {
     }
   );
 
+  const updatePaymentMutation = useMutation(
+    ({ paymentId, payload }) => paymentsService.update(paymentId, payload),
+    {
+      onSuccess: () => {
+        setPaymentActionError('');
+        setEditingPaymentId(null);
+        setPaymentEditAmount('');
+        queryClient.invalidateQueries(['case-payments', id]);
+        queryClient.invalidateQueries(['case', id]);
+        queryClient.invalidateQueries('dashboard');
+      },
+      onError: (error) => {
+        setPaymentActionError(error.response?.data?.message || 'Payment offer update failed');
+      },
+    }
+  );
+
   const handleAddInternalNote = () => {
     const trimmedNote = internalNote.trim();
     if (!trimmedNote) {
@@ -231,6 +250,32 @@ const CaseDetailPage = () => {
   const formatReminderCooldown = (milliseconds) => {
     const minutes = Math.ceil(milliseconds / (60 * 1000));
     return `${minutes} min`;
+  };
+
+  const startPaymentAmountEdit = (payment) => {
+    setPaymentActionError('');
+    setEditingPaymentId(payment.id);
+    setPaymentEditAmount(payment.offer_amount == null ? '' : String(payment.offer_amount));
+  };
+
+  const cancelPaymentAmountEdit = () => {
+    setEditingPaymentId(null);
+    setPaymentEditAmount('');
+  };
+
+  const savePaymentAmountEdit = (payment) => {
+    const amount = Number(paymentEditAmount);
+    if (!Number.isFinite(amount) || amount < 0) {
+      setPaymentActionError('Enter a valid offer amount');
+      return;
+    }
+
+    updatePaymentMutation.mutate({
+      paymentId: payment.id,
+      payload: {
+        offer_amount: amount,
+      },
+    });
   };
 
   const handleFieldChange = (field, value) => {
@@ -748,9 +793,39 @@ const CaseDetailPage = () => {
                                 ? t('result.returned')
                                 : t('result.replaceable')}
                         </Typography>
-                        <Typography variant="body2">
-                          <strong>{t('common.amount')}:</strong> {payment.offer_amount || 0} ₾
-                        </Typography>
+                        {editingPaymentId === payment.id ? (
+                          <Box display="flex" gap={1} alignItems="center" flexWrap="wrap" sx={{ mt: 0.5 }}>
+                            <TextField
+                              size="small"
+                              type="number"
+                              label={t('common.amount')}
+                              value={paymentEditAmount}
+                              onChange={(event) => setPaymentEditAmount(event.target.value)}
+                              inputProps={{ min: 0, step: '0.01' }}
+                              sx={{ width: 150 }}
+                            />
+                            <Button
+                              size="small"
+                              variant="contained"
+                              onClick={() => savePaymentAmountEdit(payment)}
+                              disabled={updatePaymentMutation.isLoading}
+                            >
+                              {updatePaymentMutation.isLoading ? t('common.saving') : t('common.save')}
+                            </Button>
+                            <Button
+                              size="small"
+                              variant="text"
+                              onClick={cancelPaymentAmountEdit}
+                              disabled={updatePaymentMutation.isLoading}
+                            >
+                              {t('common.cancel')}
+                            </Button>
+                          </Box>
+                        ) : (
+                          <Typography variant="body2">
+                            <strong>{t('common.amount')}:</strong> {payment.offer_amount || 0} ₾
+                          </Typography>
+                        )}
                         {payment.payment_method && (
                           <Typography variant="body2">
                             <strong>{t('payment.method')}:</strong> {payment.payment_method}
@@ -774,6 +849,18 @@ const CaseDetailPage = () => {
                         size="small"
                       />
                     </Box>
+                    {canManageCases && payment.payment_status !== 'paid' && editingPaymentId !== payment.id && (
+                      <Box display="flex" gap={1} flexWrap="wrap">
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={() => startPaymentAmountEdit(payment)}
+                          disabled={updatePaymentMutation.isLoading}
+                        >
+                          Edit amount
+                        </Button>
+                      </Box>
+                    )}
                     {canManageCases && payment.payment_status === 'pending' && (
                       <Box display="flex" gap={1} flexWrap="wrap">
                         <Button
