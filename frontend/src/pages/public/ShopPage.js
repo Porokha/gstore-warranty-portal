@@ -295,6 +295,9 @@ const ShopPage = () => {
   const [showSlowFilterLoader, setShowSlowFilterLoader] = useState(false);
   const [shopIntroOpen, setShopIntroOpen] = useState(false);
   const [cartViewOpen, setCartViewOpen] = useState(false);
+  const [desktopModelSearch, setDesktopModelSearch] = useState('');
+  const [showAllDesktopBrands, setShowAllDesktopBrands] = useState(false);
+  const [showAllDesktopModels, setShowAllDesktopModels] = useState(false);
   const rootRef = useRef(null);
   const gridScrollRef = useRef(null);
   const tabsRef = useRef(null);
@@ -1009,6 +1012,28 @@ const ShopPage = () => {
               return <button key={value} type="button" className={parts.includes(value) ? 'is-active' : ''} aria-pressed={parts.includes(value)} onClick={() => setParts([value])}><PartIcon aria-hidden="true" /><span>{t(labelKey)}</span></button>;
             })}
           </div>
+          <div className="zpos-figma-desktop-filters">
+            <div className="zpos-figma-filter-heading"><strong>{i18n.language === 'ka' ? 'ფილტრი' : 'Filters'}</strong><button type="button" onClick={resetFilters}>{i18n.language === 'ka' ? 'გასუფთავება' : 'Clear'}</button></div>
+            <div className="zpos-figma-filter-group">
+              <strong>{t('shop.filters.brandTitle')}</strong>
+              {(showAllDesktopBrands ? brandOptions : brandOptions.slice(0, 4)).map((brand) => <label key={brand}><input type="checkbox" checked={brands.includes(brand)} onChange={() => toggleBrand(brand)} /><span>{brand}</span></label>)}
+              {brandOptions.length > 4 && <button type="button" onClick={() => setShowAllDesktopBrands((current) => !current)}>{showAllDesktopBrands ? t('shop.filters.showLess') : t('shop.filters.showMore', { count: brandOptions.length - 4 })}</button>}
+            </div>
+            <div className="zpos-figma-filter-group">
+              <strong>{t('shop.filters.modelTitle')}</strong>
+              <input className="zpos-figma-model-search" type="search" value={desktopModelSearch} onChange={(event) => setDesktopModelSearch(event.target.value)} placeholder={t('shop.filters.searchOptions')} />
+              {(showAllDesktopModels ? modelOptions : modelOptions.slice(0, 4)).filter((model) => model.toLocaleLowerCase().includes(desktopModelSearch.toLocaleLowerCase())).map((model) => <label key={model}><input type="checkbox" checked={models.includes(model)} onChange={() => toggleModel(model)} /><span>{model}</span><small>{productFacets.models?.find((item) => item.value === model)?.count || ''}</small></label>)}
+              {modelOptions.length > 4 && <button type="button" onClick={() => setShowAllDesktopModels((current) => !current)}>{showAllDesktopModels ? t('shop.filters.showLess') : t('shop.filters.showMore', { count: modelOptions.length - 4 })}</button>}
+            </div>
+            <div className="zpos-figma-filter-group">
+              <strong>{t('shop.filters.sourceTitle')}</strong>
+              <div className="zpos-figma-filter-chips">{['oem', 'third-party'].map((value) => <button key={value} type="button" className={sources.includes(value) ? 'is-active' : ''} onClick={() => setSources((current) => current.includes(value) ? current.filter((source) => source !== value) : [...current, value])}>{t(labelForSource[value])}</button>)}</div>
+            </div>
+            <div className="zpos-figma-filter-group">
+              <strong>{t('shop.filters.priceTitle')}</strong>
+              <div className="zpos-figma-filter-price"><input aria-label={t('shop.filters.min')} type="number" min="0" placeholder="₾0" value={priceMin} onChange={(event) => setPriceMin(event.target.value)} /><span>—</span><input aria-label={t('shop.filters.max')} type="number" min="0" placeholder="₾900" value={priceMax} onChange={(event) => setPriceMax(event.target.value)} /></div>
+            </div>
+          </div>
           <div className="zpos-sidebar-head">
             <div>
               <p>{t('shop.filters.kicker')}</p>
@@ -1197,7 +1222,7 @@ const ShopPage = () => {
                 <input
                   id="zpos-search"
                   type="search"
-                  placeholder={t('shop.searchPlaceholder')}
+                  placeholder={i18n.language === 'ka' ? 'მოძებნე ნაწილი' : 'Search for a part'}
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                 />

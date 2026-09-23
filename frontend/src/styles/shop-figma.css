@@ -1,5 +1,5 @@
 body:has(.zpos-root--figma) {
-  background: #fff;
+  background: #fbfafe;
 }
 
 #zpos-root.zpos-root--figma {
@@ -27,24 +27,29 @@ body:has(.zpos-root--figma) {
 }
 
 #zpos-root.zpos-root--figma .zpos-sidebar {
-  padding: 0 16px 0 0;
-  border-right: 1px solid #e6e4ee;
-  background: #fff;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow-y: auto;
+  scrollbar-width: none;
 }
 
 #zpos-root.zpos-root--figma .zpos-figma-sidebar-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
-  margin-bottom: 22px;
+  margin-bottom: 16px;
+  padding: 4px;
+  border-radius: 12px;
+  background: #f6f4fb;
 }
 
 #zpos-root.zpos-root--figma .zpos-figma-sidebar-tabs button {
-  min-height: 42px;
+  min-height: 40px;
   padding: 4px;
-  border: 1px solid #e3e0ec;
+  border: 0;
   border-radius: 8px;
-  background: #fff;
+  background: transparent;
   color: #626574;
   font: inherit;
   font-size: 13px;
@@ -52,17 +57,21 @@ body:has(.zpos-root--figma) {
 }
 
 #zpos-root.zpos-root--figma .zpos-figma-sidebar-tabs button.is-active {
-  border-color: #7550ee;
-  background: #7550ee;
-  color: #fff;
+  background: #fff;
+  color: #14121c;
+  box-shadow: 0 1px 2px rgba(20, 18, 28, .04);
 }
 
 #zpos-root.zpos-root--figma .zpos-figma-category-rail {
   display: grid;
-  gap: 3px;
-  max-height: 320px;
-  margin-bottom: 22px;
-  overflow-y: auto;
+  gap: 2px;
+  max-height: none;
+  margin-bottom: 16px;
+  padding: 8px;
+  border: 1px solid #eae7f2;
+  border-radius: 12px;
+  background: #fff;
+  overflow: visible;
 }
 
 #zpos-root.zpos-root--figma .zpos-figma-category-rail button {
@@ -70,7 +79,7 @@ body:has(.zpos-root--figma) {
   align-items: center;
   gap: 11px;
   width: 100%;
-  min-height: 39px;
+  min-height: 36px;
   padding: 6px 10px;
   border: 0;
   border-radius: 8px;
@@ -88,9 +97,116 @@ body:has(.zpos-root--figma) {
 }
 
 #zpos-root.zpos-root--figma .zpos-figma-category-rail button.is-active {
-  background: #f0ebff;
-  color: #6f48e8;
+  background: #f1edff;
+  color: #5f32d4;
   font-weight: 700;
+}
+
+#zpos-root.zpos-root--figma .zpos-figma-desktop-filters {
+  padding: 16px;
+  border: 1px solid #eae7f2;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 12px;
+}
+
+#zpos-root.zpos-root--figma .zpos-figma-filter-heading,
+#zpos-root.zpos-root--figma .zpos-figma-filter-group {
+  padding-bottom: 14px;
+  border-bottom: 1px solid #eae7f2;
+}
+
+#zpos-root.zpos-root--figma .zpos-figma-filter-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#zpos-root.zpos-root--figma .zpos-figma-filter-heading strong {
+  font-size: 16px;
+}
+
+#zpos-root.zpos-root--figma .zpos-figma-desktop-filters button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #5f32d4;
+  font: inherit;
+  cursor: pointer;
+}
+
+#zpos-root.zpos-root--figma .zpos-figma-filter-group {
+  display: grid;
+  gap: 8px;
+  padding-top: 14px;
+}
+
+#zpos-root.zpos-root--figma .zpos-figma-filter-group > strong {
+  margin-bottom: 2px;
+  color: #14121c;
+  font-size: 12px;
+}
+
+#zpos-root.zpos-root--figma .zpos-figma-filter-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: #5b5670;
+  cursor: pointer;
+}
+
+#zpos-root.zpos-root--figma .zpos-figma-filter-group label span {
+  overflow: hidden;
+  flex: 1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+#zpos-root.zpos-root--figma .zpos-figma-filter-group label small {
+  color: #9c97ae;
+}
+
+#zpos-root.zpos-root--figma .zpos-figma-filter-group input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: #7c4df5;
+}
+
+#zpos-root.zpos-root--figma .zpos-figma-model-search,
+#zpos-root.zpos-root--figma .zpos-figma-filter-price input {
+  min-width: 0;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid #d6d2e2;
+  border-radius: 8px;
+  background: #fff;
+  color: #14121c;
+  font: inherit;
+}
+
+#zpos-root.zpos-root--figma .zpos-figma-filter-chips,
+#zpos-root.zpos-root--figma .zpos-figma-filter-price {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#zpos-root.zpos-root--figma .zpos-figma-filter-chips button {
+  padding: 6px 10px;
+  border: 1px solid #d6d2e2;
+  border-radius: 7px;
+  color: #14121c;
+}
+
+#zpos-root.zpos-root--figma .zpos-figma-filter-chips button.is-active {
+  border-color: #7c4df5;
+  background: #f1edff;
+}
+
+#zpos-root.zpos-root--figma .zpos-figma-filter-price input {
+  width: 50%;
 }
 
 #zpos-root.zpos-root--figma .zpos-sidebar-scroll > .zpos-filter-section:first-of-type {
@@ -98,7 +214,11 @@ body:has(.zpos-root--figma) {
 }
 
 #zpos-root.zpos-root--figma .zpos-sidebar-head {
-  margin-bottom: 12px;
+  display: none;
+}
+
+#zpos-root.zpos-root--figma .zpos-sidebar-scroll {
+  display: none;
 }
 
 #zpos-root.zpos-root--figma .zpos-main {
@@ -160,8 +280,10 @@ body:has(.zpos-root--figma) {
 
 #zpos-root.zpos-root--figma .zpos-card {
   min-width: 0;
+  gap: 12px;
+  padding: 12px;
   border-color: #e9e7f0;
-  border-radius: 10px;
+  border-radius: 12px;
   box-shadow: none;
 }
 
@@ -172,21 +294,22 @@ body:has(.zpos-root--figma) {
 }
 
 #zpos-root.zpos-root--figma .zpos-thumb {
-  height: 170px;
-  padding: 10px;
-  background: #f8f8fa;
+  height: 110px;
+  padding: 0;
+  border-radius: 8px;
+  background: #f6f4fb;
 }
 
 #zpos-root.zpos-root--figma .zpos-thumb img {
-  padding: 12%;
+  padding: 10%;
   border: 0;
   background: transparent;
 }
 
 #zpos-root.zpos-root--figma .zpos-card-body {
-  gap: 7px;
-  min-height: 116px;
-  padding: 10px 11px 12px;
+  gap: 4px;
+  min-height: 88px;
+  padding: 0;
 }
 
 #zpos-root.zpos-root--figma .zpos-card-body h3 {
@@ -194,9 +317,11 @@ body:has(.zpos-root--figma) {
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  min-height: 36px;
-  font-size: 13px;
-  line-height: 1.35;
+  min-height: 40px;
+  color: #14121c;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
 }
 
 #zpos-root.zpos-root--figma .zpos-card-body .zpos-meta,
@@ -207,25 +332,31 @@ body:has(.zpos-root--figma) {
 #zpos-root.zpos-root--figma .zpos-figma-card-source {
   overflow: hidden;
   margin: 0;
-  color: #858793;
-  font-size: 11px;
+  color: #9c97ae;
+  font-size: 12px;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
 #zpos-root.zpos-root--figma .zpos-price strong {
-  font-size: 16px;
+  color: #14121c;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+#zpos-root.zpos-root--figma .zpos-card-footer {
+  align-items: center;
 }
 
 #zpos-root.zpos-root--figma .zpos-add {
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   padding: 0;
   border: 0;
   border-radius: 6px;
-  background: #7550ee;
+  background: #7c4df5;
   color: #fff;
   box-shadow: none;
 }
@@ -333,6 +464,26 @@ body:has(.zpos-root--figma) {
   #zpos-root.zpos-root--figma.zpos-filters-open .zpos-sidebar,
   #zpos-root.zpos-root--figma.zpos-filters-closing .zpos-sidebar {
     display: flex;
+    padding: 16px;
+    background: #fff;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-figma-sidebar-tabs,
+  #zpos-root.zpos-root--figma .zpos-figma-category-rail,
+  #zpos-root.zpos-root--figma .zpos-figma-desktop-filters {
+    display: none;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-sidebar-head {
+    display: flex;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-sidebar-scroll {
+    display: block;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-sidebar-scroll > .zpos-filter-section:first-of-type {
+    display: block;
   }
 
   #zpos-root.zpos-root--figma .zpos-main {
@@ -354,6 +505,11 @@ body:has(.zpos-root--figma) {
   #zpos-root.zpos-root--figma .zpos-search {
     grid-column: 1;
     grid-row: 1;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-search input,
+  #zpos-root.zpos-root--figma .zpos-filter-toggle {
+    background: #f6f4fb;
   }
 
   #zpos-root.zpos-root--figma .zpos-filter-toggle {
@@ -382,7 +538,7 @@ body:has(.zpos-root--figma) {
     height: 48px;
     padding: 3px;
     border: 1px solid #ece8f7;
-    border-radius: 8px;
+    border-radius: 12px;
     background: #f7f5fc;
     box-shadow: none;
   }
@@ -396,15 +552,13 @@ body:has(.zpos-root--figma) {
   }
 
   #zpos-root.zpos-root--figma .zpos-tab.is-active {
-    color: #fff;
+    background: #fff;
+    color: #14121c;
+    box-shadow: 0 1px 2px rgba(20, 18, 28, .04);
   }
 
   #zpos-root.zpos-root--figma .zpos-tab-indicator {
-    top: 3px;
-    bottom: 3px;
-    left: 3px;
-    border-radius: 6px;
-    background: #7550ee;
+    display: none;
   }
 
   #zpos-root.zpos-root--figma .zpos-figma-categories {
@@ -465,7 +619,7 @@ body:has(.zpos-root--figma) {
   }
 
   #zpos-root.zpos-root--figma .zpos-figma-count {
-    margin-top: 16px;
+    margin-top: 32px;
   }
 
   #zpos-root.zpos-root--figma .zpos-grid-scroll {
@@ -480,17 +634,17 @@ body:has(.zpos-root--figma) {
   }
 
   #zpos-root.zpos-root--figma .zpos-thumb {
-    height: 140px;
+    height: 110px;
   }
 
   #zpos-root.zpos-root--figma .zpos-card-body {
-    min-height: 96px;
-    padding: 8px 9px 9px;
+    min-height: 88px;
+    padding: 0;
   }
 
   #zpos-root.zpos-root--figma .zpos-card-body h3 {
-    min-height: 34px;
-    font-size: 12px;
+    min-height: 40px;
+    font-size: 14px;
   }
 
   #zpos-root.zpos-root--figma .zpos-figma-cart-bar {
@@ -518,6 +672,6 @@ body:has(.zpos-root--figma) {
   }
 
   #zpos-root.zpos-root--figma .zpos-thumb {
-    height: 124px;
+    height: 100px;
   }
 }
