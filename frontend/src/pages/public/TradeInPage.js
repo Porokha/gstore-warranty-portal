@@ -18,6 +18,7 @@ import { useInfiniteQuery, useQuery } from 'react-query';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { tradeInService } from '../../services/tradeInService';
+import FigmaTradeInValuation from './TradeInValuation';
 
 const palette = {
   purple: '#824cff',
@@ -741,7 +742,7 @@ const TradeInValuation = ({ product, t, onProgressChange }) => {
 };
 
 const TradeInPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const initialSelectionApplied = useRef(false);
@@ -1025,7 +1026,7 @@ const TradeInPage = () => {
           </div>
         )}
 
-        {!loading && stage === 'valuation' && product && <TradeInValuation product={product} t={t} onProgressChange={setValuationStep} />}
+        {!loading && stage === 'valuation' && product && <FigmaTradeInValuation key={product.slug} product={product} t={t} language={i18n.language} onProgressChange={setValuationStep} />}
       </Box>
     </Box>
   );

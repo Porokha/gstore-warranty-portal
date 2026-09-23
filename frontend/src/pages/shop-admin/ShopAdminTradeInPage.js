@@ -68,6 +68,7 @@ const ShopAdminTradeInPage = () => {
   const [productCategory, setProductCategory] = useState('');
   const [productSubcategory, setProductSubcategory] = useState('');
   const [quoteStatus, setQuoteStatus] = useState('');
+  const [offerPolicy, setOfferPolicy] = useState({ bonus_percent: 0, bonus_fixed: 0 });
   const [editingProduct, setEditingProduct] = useState(null);
   const [productForm, setProductForm] = useState({
     name: '',
@@ -128,6 +129,18 @@ const ShopAdminTradeInPage = () => {
     tradeInService.getAdminCategories,
     { enabled: tab === 1 || tab === 2 },
   );
+  const policyQuery = useQuery(['trade-in-admin-offer-policy'], tradeInService.getAdminOfferPolicy, {
+    enabled: tab === 3,
+    onSuccess: (data) => setOfferPolicy(data),
+    retry: false,
+  });
+  const policyMutation = useMutation(tradeInService.updateAdminOfferPolicy, {
+    onSuccess: (data) => {
+      setOfferPolicy(data);
+      queryClient.invalidateQueries('trade-in-admin-offer-policy');
+      queryClient.invalidateQueries('trade-in-offer-policy');
+    },
+  });
 
   const quoteMutation = useMutation(
     ({ id, payload }) => tradeInService.updateAdminQuote(id, payload),
@@ -177,7 +190,7 @@ const ShopAdminTradeInPage = () => {
     { onSuccess: () => queryClient.invalidateQueries('trade-in-admin-categories') },
   );
 
-  const currentQuery = tab === 0 ? quotesQuery : tab === 1 ? productsQuery : categoriesQuery;
+  const currentQuery = tab === 0 ? quotesQuery : tab === 1 ? productsQuery : tab === 2 ? categoriesQuery : policyQuery;
   const openProductEditor = (product) => {
     setEditingProduct(product);
     setProductForm({
@@ -302,6 +315,7 @@ const ShopAdminTradeInPage = () => {
             <Tab label="Quotes" />
             <Tab label="Products" />
             <Tab label="Categories" />
+            <Tab label="Gstore bonus" />
           </Tabs>
         </Box>
 
@@ -364,7 +378,7 @@ const ShopAdminTradeInPage = () => {
             </>
           )}
           <Typography sx={{ ml: 'auto', color: '#667085', fontSize: 12 }}>
-            {tab === 0 ? quotesQuery.data?.total || 0 : tab === 1 ? productsQuery.data?.total || 0 : categoriesQuery.data?.length || 0} records
+            {tab === 0 ? `${quotesQuery.data?.total || 0} records` : tab === 1 ? `${productsQuery.data?.total || 0} records` : tab === 2 ? `${categoriesQuery.data?.length || 0} records` : 'Offer policy'}
           </Typography>
         </Box>
 
@@ -389,7 +403,14 @@ const ShopAdminTradeInPage = () => {
                         <Typography sx={{ fontSize: 12, color: '#667085' }}>{quote.customer_name}</Typography>
                       </Box>
                       <Typography sx={{ fontSize: 13 }}>{quote.customer_phone}</Typography>
-                      <Typography sx={{ fontSize: 14, fontWeight: 900 }}>₾{Number(quote.final_price).toFixed(0)}</Typography>
+                      <Box>
+                        <Typography sx={{ fontSize: 14, fontWeight: 900 }}>₾{Number(quote.final_price).toFixed(0)}</Typography>
+                        <Typography sx={{ fontSize: 11, color: '#667085' }}>
+                          {quote.pricing_path?.find((entry) => entry.label === 'fulfillment_method')?.answers?.[0]?.text === 'gstore'
+                            ? `Gstore credit: ₾${Math.round(Number(quote.final_price) + Number(quote.pricing_path.find((entry) => entry.label === 'fulfillment_method').answers[0].value || 0))}`
+                            : 'Cash'}
+                        </Typography>
+                      </Box>
                       <Typography sx={{ fontSize: 12, color: '#667085' }}>{new Date(quote.created_at).toLocaleDateString()}</Typography>
                       <Select
                         size="small"
@@ -492,6 +513,18 @@ const ShopAdminTradeInPage = () => {
                     </Box>
                   </Box>
                 ))}
+              </Box>
+            )}
+            {tab === 3 && (
+              <Box sx={{ display: 'grid', gap: 2, maxWidth: 600, p: 3 }}>
+                <Typography sx={{ fontWeight: 800, fontSize: 18 }}>Gstore trade-in credit</Typography>
+                <Typography sx={{ color: '#667085', fontSize: 13 }}>Credit = cash offer + percentage bonus + fixed bonus. Both bonuses are zero by default.</Typography>
+                {policyQuery.isError && <Alert severity="warning">Bonus settings are unavailable until the trade-in API update is deployed. No bonus is shown to customers.</Alert>}
+                <TextField type="number" label="Bonus percentage" value={offerPolicy.bonus_percent} onChange={(event) => setOfferPolicy((current) => ({ ...current, bonus_percent: event.target.value }))} inputProps={{ min: 0, max: 100, step: 0.1 }} disabled={policyQuery.isError} />
+                <TextField type="number" label="Fixed bonus (GEL)" value={offerPolicy.bonus_fixed} onChange={(event) => setOfferPolicy((current) => ({ ...current, bonus_fixed: event.target.value }))} inputProps={{ min: 0, max: 100000, step: 1 }} disabled={policyQuery.isError} />
+                {policyMutation.isError && <Alert severity="error">Could not save bonus settings.</Alert>}
+                {policyMutation.isSuccess && <Alert severity="success">Bonus settings saved.</Alert>}
+                <Button variant="contained" disabled={policyQuery.isError || policyMutation.isLoading || Number(offerPolicy.bonus_percent) < 0 || Number(offerPolicy.bonus_percent) > 100 || Number(offerPolicy.bonus_fixed) < 0 || Number(offerPolicy.bonus_fixed) > 100000} onClick={() => policyMutation.mutate({ bonus_percent: Number(offerPolicy.bonus_percent), bonus_fixed: Number(offerPolicy.bonus_fixed) })}>Save bonus</Button>
               </Box>
             )}
           </>

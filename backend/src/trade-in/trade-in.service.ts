@@ -5,6 +5,7 @@ import { CreateTradeInQuoteDto } from './dto/create-trade-in-quote.dto';
 import { UpdateTradeInCategoryDto } from './dto/update-trade-in-category.dto';
 import { UpdateTradeInProductDto } from './dto/update-trade-in-product.dto';
 import { UpdateTradeInQuoteDto } from './dto/update-trade-in-quote.dto';
+import { UpdateTradeInOfferPolicyDto } from './dto/update-trade-in-offer-policy.dto';
 import { TradeInCategory } from './entities/trade-in-category.entity';
 import { TradeInPricingTree } from './entities/trade-in-pricing-tree.entity';
 import { TradeInProduct } from './entities/trade-in-product.entity';
@@ -32,6 +33,23 @@ export class TradeInService {
       order: { sort_order: 'ASC', label: 'ASC' },
       select: ['slug', 'label', 'icon_svg', 'coming_soon'],
     });
+  }
+
+  async getOfferPolicy() {
+    const setting = await this.settingRepository.findOne({ where: { key: 'offer_policy' } });
+    const value = this.parseJsonObject(setting?.value);
+    return {
+      bonus_percent: Math.min(100, Math.max(0, Number(value.bonus_percent) || 0)),
+      bonus_fixed: Math.min(100000, Math.max(0, Number(value.bonus_fixed) || 0)),
+    };
+  }
+
+  async updateOfferPolicy(dto: UpdateTradeInOfferPolicyDto) {
+    await this.settingRepository.save(this.settingRepository.create({
+      key: 'offer_policy',
+      value: JSON.stringify(dto),
+    }));
+    return this.getOfferPolicy();
   }
 
   async listBrands(category: string) {
@@ -171,6 +189,7 @@ export class TradeInService {
 
     return {
       ...this.toPublicProduct(product),
+      offer_policy: await this.getOfferPolicy(),
       category2: product.category2,
       extraData: Buffer.from('{}').toString('base64'),
       answerMessages: Buffer.from(JSON.stringify(answerMessages)).toString('base64'),
@@ -187,11 +206,21 @@ export class TradeInService {
       throw new NotFoundException('Trade-in product not found.');
     }
 
+    const policy = await this.getOfferPolicy();
+    const pricingPath = Array.isArray(dto.pricing_path) ? dto.pricing_path.filter((step) => step?.label !== 'fulfillment_method') : [];
+    const requestedMethod = dto.pricing_path?.find((step) => step?.label === 'fulfillment_method')?.answers?.[0]?.text;
+    if (requestedMethod === 'cash' || requestedMethod === 'gstore') {
+      const bonus = requestedMethod === 'gstore'
+        ? Math.round(dto.final_price * policy.bonus_percent / 100 + policy.bonus_fixed)
+        : 0;
+      pricingPath.push({ question: 'Fulfillment', label: 'fulfillment_method', answers: [{ text: requestedMethod, value: bonus, attributes: [] }] });
+    }
+
     const quote = this.quoteRepository.create({
       quote_number: await this.nextQuoteNumber(),
       product_id: product.id,
       product_name: product.name,
-      pricing_path: dto.pricing_path || null,
+      pricing_path: pricingPath.length ? pricingPath : null,
       final_price: dto.final_price.toFixed(2),
       customer_name: dto.customer_name.trim(),
       customer_email: dto.customer_email?.trim() || null,

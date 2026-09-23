@@ -36,6 +36,16 @@ export const tradeInService = {
     return response.data;
   },
 
+  getAdminOfferPolicy: async () => {
+    const response = await api.get('/shop/admin/trade-in/offer-policy');
+    return response.data;
+  },
+
+  updateAdminOfferPolicy: async (payload) => {
+    const response = await api.patch('/shop/admin/trade-in/offer-policy', payload);
+    return response.data;
+  },
+
   updateAdminCategory: async (id, payload) => {
     const response = await api.patch(`/shop/admin/trade-in/categories/${id}`, payload);
     return response.data;
