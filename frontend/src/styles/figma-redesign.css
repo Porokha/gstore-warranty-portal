@@ -2445,3 +2445,19 @@ button.zzv-public-header-action { cursor: pointer; }
 .zzv-public-mobile-menu-controls button.is-active { background: #fff; color: #5f32d4; box-shadow: 0 1px 2px rgba(20,18,28,.04); }
 .zzv-public-mobile-menu-bottom { flex: 0 0 auto; padding: 16px 20px calc(20px + env(safe-area-inset-bottom)); border-top: 1px solid #eae7f2; }
 .zzv-public-mobile-menu-bottom button { width: 100%; height: 56px; border: 0; border-radius: 12px; background: #7c4df5; color: #fff; font-size: 14px; font-weight: 500; }
+
+@media (max-width: 640px) {
+  .zzv-figma-section--tight .zzv-figma-heading { margin-bottom: 40px; font-size: 24px; line-height: 1.3; }
+  .zzv-figma-bento { gap: 14px; }
+  .zzv-figma-trade-card { min-height: 200px; border-radius: 20px; }
+  .zzv-figma-mini-card, .zzv-figma-wide-card { min-height: 140px; border-radius: 20px; }
+  .zzv-figma-status { width: calc(100% - 30px); max-width: 361px; gap: 32px; margin-block: 32px; padding: 24px; }
+  .zzv-figma-status .zzv-figma-brand-pair { margin-bottom: 16px; }
+  .zzv-figma-status h2 { font-size: 20px; line-height: 1.3; }
+  .zzv-figma-status p { margin: 16px 0 0; opacity: 1; }
+  .zzv-figma-status ul { margin-top: 16px; }
+  .zzv-figma-status li { padding-block: 2px; }
+  .zzv-figma-status-widget { padding: 20px; border-radius: 16px; }
+  .zzv-figma-status-widget .zzv-figma-input { height: 48px; border-radius: 12px; }
+  .zzv-figma-status-widget .zzv-figma-widget-submit { height: 48px; font-size: 14px; }
+}
