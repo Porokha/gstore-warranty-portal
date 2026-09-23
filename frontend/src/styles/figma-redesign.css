@@ -376,6 +376,8 @@ button.zzv-public-header-action { cursor: pointer; }
   box-shadow: 0 24px 60px rgba(90, 46, 210, 0.16);
 }
 
+.zzv-figma-mobile-selector { display: none; }
+
 .zzv-figma-selector h2 {
   margin: 0 0 18px;
   font-family: var(--zzv-font-caps);
@@ -1487,6 +1489,7 @@ button.zzv-public-header-action { cursor: pointer; }
 .zzv-trade-model-option .zzv-trade-option-arrow { right: 12px; bottom: 14px; }
 .zzv-trade-empty { padding: 32px 0; color: var(--zzv-text-secondary); font-size: 16px; }
 .zzv-trade-load-more { display: grid; place-items: center; min-height: 64px; color: var(--zzv-purple-500); }
+.zzv-trade-mobile-offer-title { display: none; }
 
 .zzv-trade-flow { display: grid; grid-template-columns: minmax(280px, 440px) minmax(0, 1fr); align-items: start; gap: 32px; }
 .zzv-trade-summary, .zzv-trade-flow-panel { min-width: 0; padding: 32px; border: 1px solid var(--zzv-border-default); border-radius: 16px; background: #fff; }
@@ -2332,7 +2335,10 @@ button.zzv-public-header-action { cursor: pointer; }
   .zzv-trade-brand-option, .zzv-trade-model-option { min-height: 68px; padding: 12px 14px; }
   .zzv-trade-brand-count, .zzv-trade-model-price { font-size: 14px; }
   .zzv-trade-continue { position: fixed; z-index: 910; right: 16px; bottom: calc(12px + env(safe-area-inset-bottom)); left: 16px; width: auto; margin: 0; border-radius: 16px; box-shadow: 0 8px 24px rgba(255,255,255,.85); }
-  .zzv-trade-flow { display: flex; flex-direction: column; gap: 0; }
+  .zzv-trade-flow { display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+  .zzv-trade-model-price-prefix { display: none; }
+  .zzv-trade-mobile-offer-title { display: block; margin: 0 0 24px; font-size: 24px; line-height: 1.3; }
+  .zzv-trade-flow--offer .zzv-trade-flow-panel > h1 { display: none; }
   .zzv-trade-summary { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; grid-template-rows: auto auto; min-height: 78px; column-gap: 12px; margin-bottom: 24px; padding: 12px 16px; border: 1px solid var(--zzv-border-subtle); border-radius: 12px; background: #f9f7ff; text-align: left; }
   .zzv-trade-summary-image { grid-column: 1; grid-row: 1 / 3; width: 44px; height: 52px; margin: 0; border: 1px solid var(--zzv-border-default); border-radius: 8px; background: #fff; }
   .zzv-trade-summary-image img { max-width: 90%; max-height: 90%; }
@@ -2361,6 +2367,8 @@ button.zzv-public-header-action { cursor: pointer; }
   .zzv-trade-answer-icon { flex-basis: 40px; width: 40px; height: 40px; border-radius: 12px; background: #f6f4fb; }
   .zzv-trade-answer-icon img { max-width: 22px; max-height: 22px; }
   .zzv-trade-flow--condition .zzv-trade-answer.is-muted { margin-top: 24px; border-style: dashed; }
+  .zzv-trade-flow--accessories .zzv-trade-flow-hint { display: none; }
+  .zzv-trade-flow:not(.zzv-trade-flow--offer) .zzv-trade-flow-panel > .zzv-trade-text-button, .zzv-trade-contact > .zzv-trade-text-button { display: none; }
   .zzv-trade-flow-panel > .zzv-trade-primary, .zzv-trade-contact > .zzv-trade-primary { position: fixed; z-index: 910; right: 16px; bottom: calc(12px + env(safe-area-inset-bottom)); left: 16px; width: auto; min-height: 56px; margin: 0; border-radius: 16px; box-shadow: 0 8px 24px rgba(255,255,255,.85); }
   .zzv-trade-flow-panel > .zzv-trade-text-button { margin-bottom: 12px; }
   .zzv-trade-flow--offer .zzv-trade-flow-panel > .zzv-trade-primary { bottom: calc(80px + env(safe-area-inset-bottom)); }
@@ -2368,7 +2376,7 @@ button.zzv-public-header-action { cursor: pointer; }
   .zzv-trade-flow--offer .zzv-trade-flow-hint { margin-bottom: 124px; }
   .zzv-trade-cash-offer { padding: 8px 0 24px; border: 0; border-bottom: 1px solid var(--zzv-border-subtle); border-radius: 0; }
   .zzv-trade-cash-offer strong { font-size: 56px; }
-  .zzv-trade-gstore-offer { min-height: 200px; margin-bottom: 24px; border-radius: 16px; }
+  .zzv-trade-gstore-offer { min-height: 124px; margin-bottom: 24px; border-radius: 16px; }
   .zzv-trade-contact { display: flex; flex: 1; flex-direction: column; }
   .zzv-trade-contact-total { display: grid; gap: 0; margin: 8px 0 28px; padding: 0 12px; border: 1px solid var(--zzv-border-subtle); background: #fff; }
   .zzv-trade-contact-total > div { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; }
@@ -2393,4 +2401,24 @@ button.zzv-public-header-action { cursor: pointer; }
   .zzv-trade-answer-value { font-size: 14px; }
   .zzv-trade-success-details > div { flex-direction: row; gap: 12px; }
   .zzv-trade-success-details strong { text-align: right; }
+}
+
+@media (max-width: 640px) {
+  .zzv-figma-hero {
+    min-height: 475px;
+    padding: 48px 0 25px;
+    background: linear-gradient(62deg, #fff 22%, #f2eaff 60%, #c9a7ff 100%);
+  }
+  .zzv-figma-hero-grid { gap: 0; }
+  .zzv-figma-partner { min-height: 38px; padding: 7px 11px; gap: 12px; border-radius: 8px; background: #fbfafe; font-size: 12px; }
+  .zzv-figma-partner img { width: 60px; height: 22px; }
+  .zzv-figma-hero h1 { max-width: none; margin: 24px 0 22px; font-size: clamp(32px, 10.25vw, 40px); line-height: 1.05; letter-spacing: -.4px; white-space: nowrap; }
+  .zzv-figma-hero-copy > p { width: 100%; max-width: 362px; font-size: 16px; line-height: 1.55; }
+  .zzv-figma-hero .zzv-figma-actions, .zzv-figma-hero .zzv-figma-kpis, .zzv-figma-hero .zzv-figma-selector { display: none; }
+  .zzv-figma-mobile-selector { display: flex; flex-direction: column; gap: 12px; width: 100%; margin-top: 28px; padding: 16px; border-radius: 16px; background: #fff; box-shadow: 0 8px 24px rgba(20,18,28,.08); }
+  .zzv-figma-mobile-selector label { margin-bottom: -8px; color: var(--zzv-text-secondary); font-size: 14px; font-weight: 500; line-height: 1.4; }
+  .zzv-figma-mobile-selector select { width: 100%; height: 48px; padding: 0 16px; border: 1px solid var(--zzv-border-default); border-radius: 12px; background: #fff; color: var(--zzv-text-primary); font: 400 16px/1.4 var(--zzv-font); }
+  .zzv-figma-mobile-selector select:invalid { color: var(--zzv-text-tertiary); }
+  .zzv-figma-mobile-selector select:focus-visible, .zzv-figma-mobile-selector button:focus-visible { outline: 2px solid var(--zzv-purple-700); outline-offset: 2px; }
+  .zzv-figma-mobile-selector button { height: 48px; border: 0; border-radius: 12px; background: #7c4df5; color: #fff; font: 500 14px/1.4 var(--zzv-font); cursor: pointer; }
 }

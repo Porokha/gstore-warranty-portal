@@ -106,7 +106,13 @@ export default function TradeInValuation({ product, t, language, onProgressChang
     const storageAnswer = branchQuestions.find((item) => item.label === 'storage_size')?.answers?.find((item) => item.text === storage);
     return amount(answer) + amount(storageAnswer);
   };
-  const summaryPrice = isCondition && selectedIndexes.length ? conditionPreview(answers[selectedIndexes[0]]) : cashPrice || Number(detail.max_price) || 0;
+  const pendingStorageAnswer = storage && !steps.some((step) => step.question?.label === 'storage_size')
+    ? (tree[getPointer(steps.find((step) => step.question?.label === 'condition')?.answers?.[0]?.go_to)?.setIndex]?.questions || [])
+      .find((item) => item.label === 'storage_size')?.answers?.find((item) => item.text === storage)
+    : null;
+  const summaryPrice = isCondition && selectedIndexes.length
+    ? conditionPreview(answers[selectedIndexes[0]])
+    : cashPrice ? cashPrice + amount(pendingStorageAnswer) : Number(detail.max_price) || 0;
 
   useEffect(() => {
     if (!productQuery.isLoading && !storageOptions.length && phase === 'storage') setPhase('question');
@@ -282,7 +288,8 @@ export default function TradeInValuation({ product, t, language, onProgressChang
   );
 
   return (
-    <div className={`zzv-trade-flow zzv-trade-flow--${phase}${isCondition && phase === 'question' ? ' zzv-trade-flow--condition' : ''}`}>
+    <div className={`zzv-trade-flow zzv-trade-flow--${phase}${isCondition && phase === 'question' ? ' zzv-trade-flow--condition' : ''}${isAccessories && phase === 'question' ? ' zzv-trade-flow--accessories' : ''}`}>
+      {phase === 'offer' && <h1 className="zzv-trade-mobile-offer-title">{language === 'ka' ? 'შენი შეთავაზება' : 'Your offer'}</h1>}
       <aside className="zzv-trade-summary">
         <div className="zzv-trade-summary-image">{imageUrl(detail.image_src) && <img src={imageUrl(detail.image_src)} alt={detail.name} />}</div>
         <h2>{detail.name}</h2>
@@ -301,7 +308,7 @@ export default function TradeInValuation({ product, t, language, onProgressChang
         </>}
 
         {phase === 'question' && question && <>
-          <h1>{isCondition ? (language === 'ka' ? 'რა მდგომარეობაშია?' : 'What condition is it in?') : isAccessories ? (language === 'ka' ? 'რა მოყვება?' : 'What is included?') : t(`public.tradeIn.flow.${question.label}`, { defaultValue: question.text })}</h1>
+          <h1>{isCondition ? (language === 'ka' ? 'რა მდგომარეობაშია?' : 'What condition is it in?') : isAccessories ? (language === 'ka' ? 'რა მოყვება?' : 'What is included?') : language === 'ka' ? ({ carrier: 'რომელ ქსელზე მუშაობს?', carrier_lock: 'განბლოკილია მოწყობილობა?', fully_functional: 'სრულად მუშაობს მოწყობილობა?' })[question.label] || question.text : question.text}</h1>
           {isAccessories && <p className="zzv-trade-flow-hint">{language === 'ka' ? 'მონიშნე ყველაფერი, რაც მოყვება. შეგიძლია არცერთი არ მონიშნო.' : 'Select everything included, or continue without selecting any.'}</p>}
           {isCondition && <small className="zzv-trade-group-label">{language === 'ka' ? 'მდგომარეობა' : 'Condition'}</small>}
           <div className="zzv-trade-answer-list">

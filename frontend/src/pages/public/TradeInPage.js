@@ -197,7 +197,7 @@ const TradeModelOption = ({ item, selected, onClick, t }) => (
       <img src={imageUrl(item.image_src)} alt="" loading="lazy" />
     </span>
     <span className="zzv-trade-model-name">{item.name}</span>
-    <span className="zzv-trade-model-price">{t('public.tradeIn.upTo')} ₾{Math.round(item.max_price || 0).toLocaleString()}</span>
+    <span className="zzv-trade-model-price"><span className="zzv-trade-model-price-prefix">{t('public.tradeIn.upTo')} </span>₾{Math.round(item.max_price || 0).toLocaleString()}</span>
     <ArrowForwardRounded className="zzv-trade-option-arrow" aria-hidden="true" />
     <span className="zzv-trade-option-radio" aria-hidden="true" />
   </button>
@@ -751,6 +751,7 @@ const TradeInPage = () => {
   const [category, setCategory] = useState(null);
   const [brand, setBrand] = useState('');
   const [series, setSeries] = useState('');
+  const [modelSeries, setModelSeries] = useState([]);
   const [search, setSearch] = useState('');
   const [product, setProduct] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -823,6 +824,15 @@ const TradeInPage = () => {
   );
   const productPages = productsQuery.data?.pages || [];
   const listedProducts = productPages.flatMap((page) => page.items || []);
+  useEffect(() => {
+    if (stage !== 'products' || brand.toLowerCase() !== 'apple' || series || search || !listedProducts.length) return;
+    const generations = [...new Set(listedProducts.map((item) => item.name.match(/iPhone\s+(\d+|SE|XS|XR|X|Air)/i)?.[1]).filter(Boolean))];
+    generations.sort((a, b) => (Number(b) || -1) - (Number(a) || -1) || a.localeCompare(b));
+    setModelSeries(generations);
+  }, [stage, brand, series, search, listedProducts.length]);
+  const seriesOptions = brand.toLowerCase() === 'apple'
+    ? modelSeries
+    : (seriesQuery.data || []).map((item) => item.series).filter((item) => item.toLowerCase() !== brand.toLowerCase());
 
   useEffect(() => {
     if (stage !== 'products' || !productsQuery.hasNextPage || !loadMoreRef.current) return undefined;
@@ -836,6 +846,7 @@ const TradeInPage = () => {
     setCategory(selected);
     setBrand('');
     setSeries('');
+    setModelSeries([]);
     setSearch('');
     setStage(selected.coming_soon ? 'categories' : 'brands');
   };
@@ -850,6 +861,7 @@ const TradeInPage = () => {
   const chooseBrand = (selected) => {
     setBrand(selected);
     setSeries('');
+    setModelSeries([]);
     setSearch('');
     if (!window.matchMedia('(max-width: 920px)').matches) setStage('products');
   };
@@ -994,11 +1006,11 @@ const TradeInPage = () => {
               <SearchRounded aria-hidden="true" />
               <input value={search} onChange={(event) => { setSearch(event.target.value); setSelectedProduct(null); }} placeholder={t('public.tradeIn.searchModel')} aria-label={t('public.tradeIn.searchModel')} />
             </div>
-            {seriesQuery.data?.length > 0 && (
+            {seriesOptions.length > 0 && (
               <div className="zzv-trade-series" aria-label={t('public.tradeIn.chooseSeries')}>
                 <button type="button" className={!series ? 'is-selected' : ''} onClick={() => { setSeries(''); setSelectedProduct(null); }}>{t('public.tradeIn.allModels')}</button>
-                {seriesQuery.data.map((item) => (
-                  <button key={item.series} type="button" className={series === item.series ? 'is-selected' : ''} onClick={() => { setSeries(item.series); setSelectedProduct(null); }}>{item.series}</button>
+                {seriesOptions.map((item) => (
+                  <button key={item} type="button" className={series === item ? 'is-selected' : ''} onClick={() => { setSeries(item); setSelectedProduct(null); }}>{item}</button>
                 ))}
               </div>
             )}

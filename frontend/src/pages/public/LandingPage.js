@@ -80,6 +80,7 @@ function LandingPage() {
   const [lookupCode, setLookupCode] = useState('');
   const [lookupPhone, setLookupPhone] = useState('');
   const [heroBrand, setHeroBrand] = useState('Apple');
+  const [mobileHeroBrand, setMobileHeroBrand] = useState('');
   const [heroSearch, setHeroSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [heroProduct, setHeroProduct] = useState(null);
@@ -142,6 +143,17 @@ function LandingPage() {
               ))}
             </div>
           </div>
+
+          <aside className="zzv-figma-mobile-selector">
+            <label htmlFor="mobile-hero-brand">რომელი ბრენდია?</label>
+            <select id="mobile-hero-brand" value={mobileHeroBrand} onChange={(event) => setMobileHeroBrand(event.target.value)}>
+              <option value="">აირჩიე ბრენდი</option>
+              {(brandsQuery.data || []).map((item) => <option key={item.brand} value={item.brand}>{item.brand}</option>)}
+            </select>
+            <button type="button" onClick={() => navigate('/trade-in', { state: mobileHeroBrand ? { preselectedBrand: mobileHeroBrand } : undefined })}>
+              შეაფასე
+            </button>
+          </aside>
 
           <aside className="zzv-figma-selector">
             <h2>შეაფასე შენი მოწყობილობა</h2>
