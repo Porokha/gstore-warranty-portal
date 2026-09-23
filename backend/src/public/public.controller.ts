@@ -1,15 +1,17 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Get } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Get, Header, Query } from '@nestjs/common';
 import { PublicService } from './public.service';
 import { SearchWarrantyDto } from './dto/search-warranty.dto';
 import { SearchCaseDto } from './dto/search-case.dto';
 import { CreateArcadeScoreDto } from './dto/create-arcade-score.dto';
 import { SettingsService } from '../settings/settings.service';
+import { GoogleReviewsService } from './google-reviews.service';
 
 @Controller('public')
 export class PublicController {
   constructor(
     private publicService: PublicService,
     private settingsService: SettingsService,
+    private googleReviewsService: GoogleReviewsService,
   ) {}
 
   @Post('search/warranty')
@@ -43,5 +45,11 @@ export class PublicController {
     return {
       public_maintenance_mode: publicMaintenanceMode,
     };
+  }
+
+  @Get('reviews')
+  @Header('Cache-Control', 'no-store')
+  getReviews(@Query('lang') lang?: string) {
+    return this.googleReviewsService.getReviews(lang === 'en' ? 'en' : 'ka');
   }
 }
