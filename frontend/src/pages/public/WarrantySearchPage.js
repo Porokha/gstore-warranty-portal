@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Box, TextField, Button, Typography, Paper, Chip, Alert, Grid, IconButton, Link, Accordion, AccordionSummary, AccordionDetails, CircularProgress, Container, InputAdornment } from '@mui/material';
 import { ArrowBack, ExpandMore, Search as SearchIcon, VerifiedUser as WarrantyIcon, PictureAsPdf as PdfIcon, Print as PrintIcon } from '@mui/icons-material';
@@ -11,14 +11,32 @@ import jsPDF from 'jspdf';
 const WarrantySearchPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [warrantyId, setWarrantyId] = useState('');
-  const [phone, setPhone] = useState('');
+  const location = useLocation();
+  const [warrantyId, setWarrantyId] = useState(location.state?.warrantyId || '');
+  const [phone, setPhone] = useState(location.state?.phone || '');
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [expandedCases, setExpandedCases] = useState({});
   const [caseDetails, setCaseDetails] = useState({});
   const [loadingCases, setLoadingCases] = useState({});
+
+  useEffect(() => {
+    if (!location.state?.warrantyId || !location.state?.phone) return;
+    let active = true;
+    setLoading(true);
+    api.post('/public/search/warranty', {
+      warranty_id: location.state.warrantyId,
+      phone: location.state.phone,
+    }).then((response) => {
+      if (active) setResult(response.data);
+    }).catch((err) => {
+      if (active) setError(err.response?.data?.message || t('warrantySearch.notFound'));
+    }).finally(() => {
+      if (active) setLoading(false);
+    });
+    return () => { active = false; };
+  }, [location.state, t]);
 
   const handleSearch = async (e) => {
     e.preventDefault();

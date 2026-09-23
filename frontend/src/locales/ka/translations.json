@@ -356,6 +356,17 @@
     "price": "ფასი"
   },
   "public": {
+    "statusLookup": {
+      "title": "შეამოწმე სტატუსი",
+      "subtitle": "აირჩიე, რას ამოწმებ, და შეიყვანე კოდი",
+      "warranty": "გარანტია",
+      "case": "სერვისი",
+      "warrantyCode": "გარანტიის კოდი",
+      "caseCode": "სერვისის კოდი",
+      "codeHint": "კოდი SMS-ში მოგივიდა",
+      "phone": "შეიყვანე ნომერი",
+      "submit": "შემოწმება"
+    },
     "menuShop": "მაღაზია",
     "menuTradeIn": "Trade-in",
     "menuService": "სერვისი და გარანტია",

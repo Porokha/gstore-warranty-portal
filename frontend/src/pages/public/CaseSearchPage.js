@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Box, TextField, Button, Typography, Paper, Chip, Alert, Grid, Divider, IconButton, Link, Container, InputAdornment } from '@mui/material';
 import { ArrowBack, Search as SearchIcon, FolderOpen as CaseIcon } from '@mui/icons-material';
@@ -10,9 +10,10 @@ import ResultBar from '../../components/cases/ResultBar';
 const CaseSearchPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [caseNumber, setCaseNumber] = useState(searchParams.get('case_number') || '');
-  const [phone, setPhone] = useState(searchParams.get('phone') || '');
+  const [caseNumber, setCaseNumber] = useState(location.state?.caseNumber || searchParams.get('case_number') || '');
+  const [phone, setPhone] = useState(location.state?.phone || searchParams.get('phone') || '');
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -36,7 +37,7 @@ const CaseSearchPage = () => {
         phone,
       });
       setResult(response.data);
-      setSearchParams({ case_number: caseNumber, phone });
+      if (!location.state) setSearchParams({ case_number: caseNumber, phone });
     } catch (err) {
       setError(err.response?.data?.message || t('caseSearch.notFound'));
     } finally {

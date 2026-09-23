@@ -1,201 +1,85 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { Box, Button, Typography, Paper, Container, Tabs, Tab } from '@mui/material';
-import {
-  VerifiedUser as WarrantyIcon,
-  FolderOpen as CaseIcon,
-  Search as SearchIcon,
-} from '@mui/icons-material';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 const PublicHomePage = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedTab = searchParams.get('tab');
-  const [activeTab, setActiveTab] = useState(requestedTab === 'case' ? 1 : 0);
+  const [activeTab, setActiveTab] = useState(requestedTab === 'case' ? 'case' : 'warranty');
+  const [code, setCode] = useState('');
+  const [phone, setPhone] = useState('');
 
   useEffect(() => {
-    setActiveTab(requestedTab === 'case' ? 1 : 0);
+    setActiveTab(requestedTab === 'case' ? 'case' : 'warranty');
   }, [requestedTab]);
 
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
-    setSearchParams({ tab: newValue === 1 ? 'case' : 'warranty' }, { replace: true });
+  const selectTab = (tab) => {
+    setActiveTab(tab);
+    setCode('');
+    setSearchParams({ tab }, { replace: true });
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    if (!code.trim() || !phone.trim()) return;
+
+    navigate(activeTab === 'case' ? '/search/case' : '/search/warranty', {
+      state: activeTab === 'case'
+        ? { caseNumber: code.trim(), phone: phone.trim() }
+        : { warrantyId: code.trim(), phone: phone.trim() },
+    });
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: 'calc(100vh - 70px)',
-        background: 'linear-gradient(180deg, #fbf9ff 0%, #f3ecff 100%)',
-        pt: 6,
-        pb: 8,
-      }}
-    >
-      <Container maxWidth="md">
-        <Box sx={{ textAlign: 'center', mb: 6 }}>
-          <Typography variant="h5" sx={{ color: '#18181b', fontWeight: 700, fontSize: '18px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-            {t('public.checkWarrantyStatus')}
-          </Typography>
-        </Box>
+    <main className="zzv-status-search-page">
+      <div className="zzv-status-search-panel">
+        <h1>{t('public.statusLookup.title')}</h1>
+        <p>{t('public.statusLookup.subtitle')}</p>
 
-        <Paper
-          elevation={0}
-          sx={{
-            borderRadius: 4,
-            boxShadow: '0 28px 90px rgba(63, 30, 120, 0.1)',
-            bgcolor: '#ffffff',
-            overflow: 'hidden',
-            border: '1px solid #e3d7ff',
-          }}
-        >
-          <Tabs
-            value={activeTab}
-            onChange={handleTabChange}
-            sx={{
-              borderBottom: '1px solid #efe7ff',
-              '& .MuiTab-root': {
-                textTransform: 'none',
-                fontWeight: 700,
-                fontSize: '15px',
-                minHeight: 64,
-                '&.Mui-selected': {
-                  color: '#a576ff',
-                },
-              },
-              '& .MuiTabs-indicator': {
-                bgcolor: '#a576ff',
-                height: 3,
-              },
-            }}
-            variant="fullWidth"
-          >
-            <Tab
-              icon={<WarrantyIcon sx={{ fontSize: 24, mb: 0.5 }} />}
-              iconPosition="top"
-              label={t('public.searchWarranty')}
-              sx={{
-                '&.Mui-selected': {
-                  color: '#a576ff',
-                },
-              }}
+        <div className="zzv-status-search-tabs" role="tablist" aria-label={t('public.statusLookup.title')}>
+          {['warranty', 'case'].map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab}
+              className={activeTab === tab ? 'is-active' : ''}
+              onClick={() => selectTab(tab)}
+            >
+              {t(`public.statusLookup.${tab}`)}
+            </button>
+          ))}
+        </div>
+
+        <form className="zzv-status-search-form" onSubmit={handleSubmit}>
+          <label className="zzv-status-search-field">
+            <span>{t(activeTab === 'case' ? 'public.statusLookup.caseCode' : 'public.statusLookup.warrantyCode')}</span>
+            <input
+              value={code}
+              onChange={(event) => setCode(event.target.value)}
+              placeholder={activeTab === 'case' ? 'SCN-XXXXXX' : 'WRN-XXXX-XXXX'}
+              autoComplete="off"
+              required
             />
-            <Tab
-              icon={<CaseIcon sx={{ fontSize: 24, mb: 0.5 }} />}
-              iconPosition="top"
-              label={t('public.searchCase')}
-              sx={{
-                '&.Mui-selected': {
-                  color: '#18181b',
-                },
-              }}
+            {activeTab === 'warranty' && <small>{t('public.statusLookup.codeHint')}</small>}
+          </label>
+          <label className="zzv-status-search-field">
+            <span>{t('public.statusLookup.phone')}</span>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(event) => setPhone(event.target.value)}
+              placeholder="5XX XXX XXX"
+              autoComplete="tel"
+              required
             />
-          </Tabs>
-
-          <Box sx={{ p: 4 }}>
-            {activeTab === 0 && (
-              <Box>
-                <Box
-                  sx={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: 2,
-                    bgcolor: '#a576ff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    mb: 3,
-                    mx: 'auto',
-                  }}
-                >
-                  <WarrantyIcon sx={{ color: '#ffffff', fontSize: 32 }} />
-                </Box>
-                <Typography variant="h5" sx={{ fontWeight: 700, color: '#18181b', mb: 1, textAlign: 'center' }}>
-                  {t('public.searchWarranty')}
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#5b5568', mb: 3, textAlign: 'center' }}>
-                  {t('public.searchWarrantyDescription')}
-                </Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                  <Button
-                    component={Link}
-                    to="/search/warranty"
-                    variant="contained"
-                    startIcon={<SearchIcon />}
-                    sx={{
-                      py: 1.5,
-                      px: 3,
-                      borderRadius: 2,
-                      bgcolor: '#a576ff',
-                      color: '#111111',
-                      fontWeight: 600,
-                      textTransform: 'none',
-                      fontSize: '15px',
-                      '&:hover': {
-                        bgcolor: '#8f5ef0',
-                        color: '#ffffff',
-                      },
-                    }}
-                  >
-                    {t('public.searchWarranty')}
-                  </Button>
-                </Box>
-              </Box>
-            )}
-
-            {activeTab === 1 && (
-              <Box>
-                <Box
-                  sx={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: 2,
-                    bgcolor: '#18181b',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    mb: 3,
-                    mx: 'auto',
-                  }}
-                >
-                  <CaseIcon sx={{ color: '#ffffff', fontSize: 32 }} />
-                </Box>
-                <Typography variant="h5" sx={{ fontWeight: 700, color: '#18181b', mb: 1, textAlign: 'center' }}>
-                  {t('public.searchCase')}
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#5b5568', mb: 3, textAlign: 'center' }}>
-                  {t('public.searchCaseDescription')}
-                </Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                  <Button
-                    component={Link}
-                    to="/search/case"
-                    variant="contained"
-                    startIcon={<SearchIcon />}
-                    sx={{
-                      py: 1.5,
-                      px: 3,
-                      borderRadius: 2,
-                      bgcolor: '#18181b',
-                      color: '#ffffff',
-                      fontWeight: 600,
-                      textTransform: 'none',
-                      fontSize: '15px',
-                      '&:hover': {
-                        bgcolor: '#a576ff',
-                        color: '#ffffff',
-                      },
-                    }}
-                  >
-                    {t('public.searchCase')}
-                  </Button>
-                </Box>
-              </Box>
-            )}
-          </Box>
-        </Paper>
-      </Container>
-    </Box>
+          </label>
+          <button className="zzv-status-search-submit" type="submit">{t('public.statusLookup.submit')}</button>
+        </form>
+      </div>
+    </main>
   );
 };
 

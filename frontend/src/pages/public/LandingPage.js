@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowForwardRounded, ExpandMoreRounded } from '@mui/icons-material';
 
 const asset = (name) => `/figma-home/${name}`;
@@ -92,6 +92,21 @@ function StepCard({ step }) {
 }
 
 function LandingPage() {
+  const navigate = useNavigate();
+  const [lookupTab, setLookupTab] = useState('warranty');
+  const [lookupCode, setLookupCode] = useState('');
+  const [lookupPhone, setLookupPhone] = useState('');
+
+  const submitLookup = (event) => {
+    event.preventDefault();
+    if (!lookupCode.trim() || !lookupPhone.trim()) return;
+    navigate(lookupTab === 'case' ? '/search/case' : '/search/warranty', {
+      state: lookupTab === 'case'
+        ? { caseNumber: lookupCode.trim(), phone: lookupPhone.trim() }
+        : { warrantyId: lookupCode.trim(), phone: lookupPhone.trim() },
+    });
+  };
+
   return (
     <main className="zzv-figma-home">
       <section className="zzv-figma-hero">
@@ -203,24 +218,24 @@ function LandingPage() {
             </li>
           </ul>
         </div>
-        <div className="zzv-figma-status-widget">
-          <div className="zzv-figma-tabs">
-            <span>გარანტია</span>
-            <span>სერვისი</span>
+        <form className="zzv-figma-status-widget" onSubmit={submitLookup}>
+          <div className="zzv-figma-tabs" role="tablist" aria-label="სტატუსის ტიპი">
+            <button type="button" role="tab" aria-selected={lookupTab === 'warranty'} className={lookupTab === 'warranty' ? 'is-active' : ''} onClick={() => { setLookupTab('warranty'); setLookupCode(''); }}>გარანტია</button>
+            <button type="button" role="tab" aria-selected={lookupTab === 'case'} className={lookupTab === 'case' ? 'is-active' : ''} onClick={() => { setLookupTab('case'); setLookupCode(''); }}>სერვისი</button>
           </div>
           <div className="zzv-figma-widget-field">
-            <label>გარანტიის კოდი</label>
-            <div className="zzv-figma-input">WRN-XXXX-XXXX</div>
+            <label htmlFor="home-lookup-code">{lookupTab === 'case' ? 'სერვისის კოდი' : 'გარანტიის კოდი'}</label>
+            <input id="home-lookup-code" className="zzv-figma-input" value={lookupCode} onChange={(event) => setLookupCode(event.target.value)} placeholder={lookupTab === 'case' ? 'SCN-XXXXXX' : 'WRN-XXXX-XXXX'} required />
           </div>
           <div className="zzv-figma-widget-field">
-            <label>შეიყვანე ნომერი</label>
-            <div className="zzv-figma-input">5XX XXX XXX</div>
+            <label htmlFor="home-lookup-phone">შეიყვანე ნომერი</label>
+            <input id="home-lookup-phone" className="zzv-figma-input" type="tel" autoComplete="tel" value={lookupPhone} onChange={(event) => setLookupPhone(event.target.value)} placeholder="5XX XXX XXX" required />
           </div>
-          <Link className="zzv-figma-widget-submit" to="/warranty-service?tab=warranty">
+          <button className="zzv-figma-widget-submit" type="submit">
             შემოწმება
-          </Link>
+          </button>
           <small>კოდი SMS-ში მოგივიდა</small>
-        </div>
+        </form>
       </section>
 
       <section className="zzv-figma-section">

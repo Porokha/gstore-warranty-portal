@@ -356,6 +356,17 @@
     "price": "Price"
   },
   "public": {
+    "statusLookup": {
+      "title": "Check status",
+      "subtitle": "Choose what to check and enter your code",
+      "warranty": "Warranty",
+      "case": "Service",
+      "warrantyCode": "Warranty code",
+      "caseCode": "Service case code",
+      "codeHint": "This code was sent to you by SMS",
+      "phone": "Phone number",
+      "submit": "Check status"
+    },
     "menuShop": "Shop",
     "menuTradeIn": "Trade-in",
     "menuService": "Service & Warranty",
