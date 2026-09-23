@@ -273,8 +273,8 @@ const PublicLayout = () => {
               {[
                 { path: '/trade-in', icon: 'menu-repeat.svg', label: t('public.menuTradeIn'), detail: '2 წუთი' },
                 { path: '/shop', icon: 'menu-shop.svg', label: t('public.menuShop'), detail: '2,700+' },
-                { path: '/warranty-service?tab=case', icon: 'menu-service.svg', label: t('public.menuService'), detail: '1,200+' },
-                { path: '/warranty-service?tab=warranty', icon: 'menu-warranty.svg', label: t('public.menuWarranty'), detail: '12 თვე' },
+                { path: '/warranty-service?tab=case', icon: 'menu-service.svg', label: i18n.language === 'ka' ? 'შეკეთება' : 'Service', detail: '1,200+' },
+                { path: '/warranty-service?tab=warranty', icon: 'menu-warranty.svg', label: i18n.language === 'ka' ? 'გარანტია' : 'Warranty', detail: '12 თვე' },
               ].map((item) => (
                 <button key={item.path} type="button" onClick={() => { setMobileMenuOpen(false); navigate(item.path); }}>
                   <img src={`/figma-home/${item.icon}`} alt="" />
