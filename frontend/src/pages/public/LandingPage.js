@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AddRounded, RemoveRounded } from '@mui/icons-material';
+import { AddRounded, ExpandMoreRounded, RemoveRounded } from '@mui/icons-material';
 import { useQuery } from 'react-query';
 import { tradeInService } from '../../services/tradeInService';
 
@@ -59,6 +59,46 @@ function BrandPair() {
   );
 }
 
+function HeroDropdown({ label, value, options, placeholder, onChange, disabled = false, className = '' }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const closeOutside = (event) => {
+      if (!rootRef.current?.contains(event.target)) setOpen(false);
+    };
+    const closeEscape = (event) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('pointerdown', closeOutside);
+    document.addEventListener('keydown', closeEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside);
+      document.removeEventListener('keydown', closeEscape);
+    };
+  }, [open]);
+
+  return (
+    <div className={`zzv-figma-select-field zzv-figma-dropdown ${className}`} ref={rootRef}>
+      <span>{label}</span>
+      <button type="button" className={`zzv-figma-select${!value ? ' is-muted' : ''}`} aria-label={label} aria-expanded={open} aria-haspopup="listbox" disabled={disabled} onClick={() => setOpen(!open)}>
+        <span>{options.find((option) => option.value === value)?.label || placeholder}</span>
+        <ExpandMoreRounded aria-hidden="true" />
+      </button>
+      {open && (
+        <div className="zzv-figma-dropdown-list" role="listbox" aria-label={label}>
+          {options.map((option) => (
+            <button key={option.value} type="button" role="option" aria-selected={value === option.value} onClick={() => { onChange(option.value); setOpen(false); }}>
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StepCard({ step }) {
   return (
     <article className="zzv-figma-step">
@@ -79,26 +119,60 @@ function LandingPage() {
   const [lookupTab, setLookupTab] = useState('warranty');
   const [lookupCode, setLookupCode] = useState('');
   const [lookupPhone, setLookupPhone] = useState('');
-  const [heroBrand, setHeroBrand] = useState('Apple');
-  const [mobileHeroBrand, setMobileHeroBrand] = useState('');
+  const [heroBrand, setHeroBrand] = useState('');
   const [heroSearch, setHeroSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [heroProduct, setHeroProduct] = useState(null);
+  const [heroStorage, setHeroStorage] = useState('');
+  const [heroCondition, setHeroCondition] = useState('');
+  const [modelOpen, setModelOpen] = useState(false);
+  const modelRef = useRef(null);
   const [openFaq, setOpenFaq] = useState(null);
   const brandsQuery = useQuery(['trade-in-brands', 'phone'], () => tradeInService.getBrands('phone'));
   const modelsQuery = useQuery(
     ['home-trade-in-models', heroBrand, debouncedSearch],
-    () => tradeInService.getProducts({ category: 'phone', brand: heroBrand, q: debouncedSearch, page: 1, limit: 20 }),
-    { enabled: Boolean(heroBrand && debouncedSearch.length >= 2), keepPreviousData: true },
+    () => tradeInService.getProducts({ category: 'phone', brand: heroBrand, q: debouncedSearch || undefined, page: 1, limit: 50 }),
+    { enabled: Boolean(heroBrand && modelOpen) },
   );
+  const productDetailQuery = useQuery(
+    ['home-trade-in-product', heroProduct?.slug],
+    () => tradeInService.getProduct(heroProduct.slug),
+    { enabled: Boolean(heroProduct?.slug) },
+  );
+  const productTree = Array.isArray(productDetailQuery.data?.tree) ? productDetailQuery.data.tree : [];
+  const questions = productTree.flatMap((set) => set.questions || []);
+  const storageOptions = [...new Set(questions.filter((question) => question.label === 'storage_size')
+    .flatMap((question) => (question.answers || []).filter((answer) => String(answer.value_enabled ?? 1) !== '0').map((answer) => answer.text)))].map((value) => ({ value, label: value }));
+  const conditionLabels = { 'Brand New': 'ახალი, გაუხსნელი', Flawless: 'როგორც ახალი', 'Very Good': 'კარგი', Good: 'ნახმარი', Fair: 'დაზიანებული', Broken: 'გატეხილი' };
+  const conditionOptions = (questions.find((question) => question.label === 'condition')?.answers || [])
+    .filter((answer) => String(answer.value_enabled ?? 1) !== '0')
+    .map((answer) => ({ value: answer.text, label: conditionLabels[answer.text] || answer.text }));
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedSearch(heroSearch.trim()), 250);
     return () => window.clearTimeout(timer);
   }, [heroSearch]);
 
+  useEffect(() => {
+    if (!modelOpen) return undefined;
+    const closeOutside = (event) => {
+      if (!modelRef.current?.contains(event.target)) setModelOpen(false);
+    };
+    const closeEscape = (event) => {
+      if (event.key === 'Escape') setModelOpen(false);
+    };
+    document.addEventListener('pointerdown', closeOutside);
+    document.addEventListener('keydown', closeEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside);
+      document.removeEventListener('keydown', closeEscape);
+    };
+  }, [modelOpen]);
+
   const beginEstimate = () => navigate('/trade-in', {
-    state: heroProduct ? { preselectedProduct: heroProduct, preselectedBrand: heroBrand } : { preselectedBrand: heroBrand },
+    state: heroProduct
+      ? { preselectedProduct: heroProduct, preselectedBrand: heroBrand, preselectedStorage: heroStorage, preselectedCondition: heroCondition }
+      : { preselectedBrand: heroBrand },
   });
 
   const submitLookup = (event) => {
@@ -144,40 +218,23 @@ function LandingPage() {
             </div>
           </div>
 
-          <aside className="zzv-figma-mobile-selector">
-            <label htmlFor="mobile-hero-brand">რომელი ბრენდია?</label>
-            <select id="mobile-hero-brand" value={mobileHeroBrand} onChange={(event) => setMobileHeroBrand(event.target.value)}>
-              <option value="">აირჩიე ბრენდი</option>
-              {(brandsQuery.data || []).map((item) => <option key={item.brand} value={item.brand}>{item.brand}</option>)}
-            </select>
-            <button type="button" onClick={() => navigate('/trade-in', { state: mobileHeroBrand ? { preselectedBrand: mobileHeroBrand } : undefined })}>
-              შეაფასე
-            </button>
-          </aside>
-
           <aside className="zzv-figma-selector">
             <h2>შეაფასე შენი მოწყობილობა</h2>
             <div className="zzv-figma-selector-grid">
-              <label className="zzv-figma-select-field">
-                <span>ბრენდი</span>
-                <select className="zzv-figma-select" value={heroBrand} onChange={(event) => { setHeroBrand(event.target.value); setHeroSearch(''); setHeroProduct(null); }}>
-                  <option value="">აირჩიე ბრენდი</option>
-                  {(brandsQuery.data || []).map((item) => <option key={item.brand} value={item.brand}>{item.brand}</option>)}
-                </select>
-              </label>
-              <label className="zzv-figma-select-field zzv-figma-model-field">
-                <span>მოდელი</span>
-                <input className="zzv-figma-select" value={heroProduct ? heroProduct.name : heroSearch} disabled={!heroBrand} onChange={(event) => { setHeroSearch(event.target.value); setHeroProduct(null); }} placeholder="მოძებნე მოდელი" autoComplete="off" />
-                {heroBrand && !heroProduct && debouncedSearch.length >= 2 && (
+              <HeroDropdown label="ბრენდი" value={heroBrand} options={(brandsQuery.data || []).map((item) => ({ value: item.brand, label: item.brand }))} placeholder="აირჩიე ბრენდი" onChange={(value) => { setHeroBrand(value); setHeroSearch(''); setHeroProduct(null); setHeroStorage(''); setHeroCondition(''); }} />
+              <div className={`zzv-figma-select-field zzv-figma-model-field${!heroBrand ? ' is-mobile-pending' : ''}`} ref={modelRef}>
+                <label htmlFor="home-hero-model">მოდელი</label>
+                <input id="home-hero-model" className="zzv-figma-select" role="combobox" aria-autocomplete="list" aria-expanded={modelOpen} value={heroProduct ? heroProduct.name : heroSearch} disabled={!heroBrand} onFocus={() => { if (heroProduct) { setHeroProduct(null); setHeroSearch(''); setHeroStorage(''); setHeroCondition(''); } setModelOpen(true); }} onChange={(event) => { setHeroSearch(event.target.value); setHeroProduct(null); setHeroStorage(''); setHeroCondition(''); setModelOpen(true); }} placeholder="მოძებნე მოდელი" autoComplete="off" />
+                {heroBrand && modelOpen && (
                   <div className="zzv-figma-model-results" role="listbox" aria-label="მოდელები">
-                    {modelsQuery.isLoading ? <span>იტვირთება...</span> : (modelsQuery.data?.items || []).length ? (modelsQuery.data.items || []).map((item) => (
-                      <button key={item.id} type="button" role="option" aria-selected="false" onClick={() => { setHeroProduct(item); setHeroSearch(item.name); }}>{item.name}</button>
+                    {modelsQuery.isLoading || modelsQuery.isFetching ? <span>იტვირთება...</span> : (modelsQuery.data?.items || []).length ? (modelsQuery.data.items || []).map((item) => (
+                      <button key={item.id} type="button" role="option" aria-selected="false" onClick={() => { setHeroProduct(item); setHeroSearch(''); setModelOpen(false); }}>{item.name}</button>
                     )) : <span>მოდელი ვერ მოიძებნა</span>}
                   </div>
                 )}
-              </label>
-              <div className="zzv-figma-select-field"><span>მეხსიერება</span><button type="button" className="zzv-figma-select is-muted" onClick={beginEstimate}>შეფასებისას</button></div>
-              <div className="zzv-figma-select-field"><span>მდგომარეობა</span><button type="button" className="zzv-figma-select is-muted" onClick={beginEstimate}>შეფასებისას</button></div>
+              </div>
+              <HeroDropdown label="მეხსიერება" value={heroStorage} options={storageOptions} placeholder={productDetailQuery.isLoading ? 'იტვირთება...' : 'აირჩიე მეხსიერება'} disabled={!heroProduct || !storageOptions.length} className={!heroProduct ? 'is-mobile-pending' : ''} onChange={(value) => { setHeroStorage(value); setHeroCondition(''); }} />
+              <HeroDropdown label="მდგომარეობა" value={heroCondition} options={conditionOptions} placeholder={productDetailQuery.isLoading ? 'იტვირთება...' : 'აირჩიე მდგომარეობა'} disabled={!heroProduct || !conditionOptions.length || (storageOptions.length > 0 && !heroStorage)} className={!heroProduct || (storageOptions.length > 0 && !heroStorage) ? 'is-mobile-pending' : ''} onChange={setHeroCondition} />
             </div>
             <button className="zzv-figma-estimate" type="button" onClick={beginEstimate}>
               შეაფასე

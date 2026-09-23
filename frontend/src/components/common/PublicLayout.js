@@ -34,10 +34,6 @@ const PublicLayout = () => {
   ];
   const headerItems = [menuItems[0], menuItems[2], menuItems[1], menuItems[3]];
   const desktopSubmenus = {
-    '/warranty-service': [
-      { label: t('public.menuServiceCases'), path: '/warranty-service?tab=case' },
-      { label: t('public.menuWarranty'), path: '/warranty-service?tab=warranty' },
-    ],
     '/#about': [
       { label: t('public.menuAbout'), path: '/#about' },
       { label: t('public.menuReviews'), path: '/reviews' },
@@ -209,7 +205,7 @@ const PublicLayout = () => {
               onClick={() => i18n.changeLanguage(i18n.language === 'ka' ? 'en' : 'ka')}
               aria-label={i18n.language === 'ka' ? 'Switch to English' : 'ქართულზე გადართვა'}
             >
-              {i18n.language === 'ka' ? <img src="/figma-home/trade-nav-flag-ge.svg" alt="" /> : 'EN'}
+              <img src={i18n.language === 'ka' ? '/figma-home/trade-nav-flag-ge.svg' : '/figma-home/trade-nav-flag-uk.svg'} alt="" />
             </button>
           </div>
           <button type="button" className="zzv-public-header-menu" aria-label={t('common.menu')} onClick={() => setMobileMenuOpen(true)}>
@@ -291,8 +287,8 @@ const PublicLayout = () => {
             <div className="zzv-public-mobile-menu-controls">
               <span>{i18n.language === 'ka' ? 'ენა' : 'Language'}</span>
               <div role="group" aria-label={i18n.language === 'ka' ? 'ენა' : 'Language'}>
-                <button type="button" className={i18n.language === 'ka' ? 'is-active' : ''} aria-pressed={i18n.language === 'ka'} onClick={() => i18n.changeLanguage('ka')}>GE</button>
-                <button type="button" className={i18n.language === 'en' ? 'is-active' : ''} aria-pressed={i18n.language === 'en'} onClick={() => i18n.changeLanguage('en')}>EN</button>
+                <button type="button" className={i18n.language === 'ka' ? 'is-active' : ''} aria-label="ქართული" aria-pressed={i18n.language === 'ka'} onClick={() => i18n.changeLanguage('ka')}><img src="/figma-home/trade-nav-flag-ge.svg" alt="" /></button>
+                <button type="button" className={i18n.language === 'en' ? 'is-active' : ''} aria-label="English" aria-pressed={i18n.language === 'en'} onClick={() => i18n.changeLanguage('en')}><img src="/figma-home/trade-nav-flag-uk.svg" alt="" /></button>
               </div>
             </div>
           </div>

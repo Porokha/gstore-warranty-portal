@@ -1041,7 +1041,7 @@ const TradeInPage = () => {
           </div>
         )}
 
-        {!loading && stage === 'valuation' && product && <FigmaTradeInValuation key={product.slug} product={product} t={t} language={i18n.language} onProgressChange={setValuationStep} backActionRef={valuationBackRef} />}
+        {!loading && stage === 'valuation' && product && <FigmaTradeInValuation key={product.slug} product={product} t={t} language={i18n.language} initialStorage={location.state?.preselectedStorage} initialCondition={location.state?.preselectedCondition} onProgressChange={setValuationStep} backActionRef={valuationBackRef} />}
       </Box>
     </Box>
   );

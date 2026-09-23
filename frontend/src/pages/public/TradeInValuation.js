@@ -68,14 +68,14 @@ function SelectionRow({ selected, onClick, title, subtitle, value, badge, multip
   );
 }
 
-export default function TradeInValuation({ product, t, language, onProgressChange, backActionRef }) {
+export default function TradeInValuation({ product, t, language, initialStorage = '', initialCondition = '', onProgressChange, backActionRef }) {
   const productQuery = useQuery(['trade-in-product', product.slug], () => tradeInService.getProduct(product.slug));
   const detail = productQuery.data || product;
   const tree = Array.isArray(detail.tree) ? detail.tree : [];
   const storageQuestions = tree.flatMap((set) => set.questions || []).filter((question) => question.label === 'storage_size');
   const storageOptions = [...new Set(storageQuestions.flatMap((question) => (question.answers || []).filter(available).map((answer) => answer.text)))];
-  const [phase, setPhase] = useState('storage');
-  const [storage, setStorage] = useState('');
+  const [phase, setPhase] = useState(initialStorage ? 'question' : 'storage');
+  const [storage, setStorage] = useState(initialStorage);
   const [pointer, setPointer] = useState({ setIndex: 0, questionIndex: 0 });
   const [selectedIndexes, setSelectedIndexes] = useState([]);
   const [steps, setSteps] = useState([]);
@@ -113,6 +113,12 @@ export default function TradeInValuation({ product, t, language, onProgressChang
   const summaryPrice = isCondition && selectedIndexes.length
     ? conditionPreview(answers[selectedIndexes[0]])
     : cashPrice ? cashPrice + amount(pendingStorageAnswer) : Number(detail.max_price) || 0;
+
+  useEffect(() => {
+    if (question?.label !== 'condition' || !initialCondition) return;
+    const index = answers.findIndex((answer) => answer.text === initialCondition);
+    if (index >= 0) setSelectedIndexes((current) => current.length ? current : [index]);
+  }, [productQuery.data, question?.label, initialCondition]);
 
   useEffect(() => {
     if (!productQuery.isLoading && !storageOptions.length && phase === 'storage') setPhase('question');
