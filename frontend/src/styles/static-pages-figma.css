@@ -47,7 +47,8 @@
 .zzv-about-partner a { flex: 0 0 auto; padding: 14px 20px; border-radius: 12px; background: #fff; color: #14121c; text-decoration: none; font-size: 14px; font-weight: 600; }
 
 .zzv-contact-grid { display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 24px; }
-.zzv-contact-map { min-height: 596px; }
+.zzv-contact-map { min-height: 596px; display: flex; flex-direction: column; gap: 10px; text-decoration: none; font-weight: 600; }
+.zzv-contact-map:hover, .zzv-contact-map:focus-visible { border-color: #7550e8; color: #6944db; }
 .zzv-contact-info { display: grid; align-content: start; gap: 16px; }
 .zzv-contact-card, .zzv-contact-action { border: 1px solid var(--zzv-border-subtle, #eae7f2); border-radius: 12px; background: #fff; }
 .zzv-contact-card { display: grid; gap: 2px; padding: 16px; font-size: 14px; }
@@ -64,7 +65,8 @@
 .zzv-contact-action > svg:last-child { width: 20px; height: 20px; color: var(--zzv-text-tertiary, #9c97ae); }
 .zzv-contact-social { display: grid; gap: 8px; margin-top: 4px; color: var(--zzv-text-secondary, #5b5670); font-size: 12px; }
 .zzv-contact-social > div { display: flex; gap: 8px; }
-.zzv-contact-social > div > span { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; background: var(--zzv-bg-subtle, #f6f4fb); }
+.zzv-contact-social > div > a { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; background: var(--zzv-bg-subtle, #f6f4fb); }
+.zzv-contact-social > div > a:hover, .zzv-contact-social > div > a:focus-visible { outline: 2px solid #7550e8; outline-offset: 2px; }
 .zzv-contact-social img { width: 18px; height: 18px; object-fit: contain; }
 
 .zzv-reviews-head { display: flex; align-items: center; gap: 24px; margin-bottom: 32px; }
@@ -75,6 +77,8 @@
 .zzv-reviews-empty { display: grid; justify-items: center; align-content: center; min-height: 260px; padding: 32px; border: 1px solid var(--zzv-border-subtle, #eae7f2); border-radius: 24px; background: #fff; text-align: center; }
 .zzv-reviews-empty strong { font-size: 20px; }
 .zzv-reviews-empty p { max-width: 440px; color: var(--zzv-text-secondary, #5b5670); font-size: 14px; }
+.zzv-reviews-google-link { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; margin-top: 8px; padding: 8px 18px; border-radius: 8px; background: var(--zzv-purple-500, #7c4df5); color: #fff; font-size: 14px; font-weight: 600; text-decoration: none; }
+.zzv-reviews-google-link:hover, .zzv-reviews-google-link:focus-visible { background: var(--zzv-purple-700, #5a2ed2); }
 
 @media (max-width: 920px) {
   .zzv-static-page { min-height: calc(100vh - 72px); }

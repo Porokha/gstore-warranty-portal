@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AddRounded, ExpandMoreRounded, RemoveRounded } from '@mui/icons-material';
 import { useQuery } from 'react-query';
 import { tradeInService } from '../../services/tradeInService';
+import { socialLinks } from './publicLinks';
 
 const asset = (name) => `/figma-home/${name}`;
 
@@ -511,16 +512,14 @@ function LandingPage() {
           <div className="zzv-figma-footer-mobile-brand">
             <img src={asset('imgBrandMark.svg')} alt="ZEZVA" />
             <p>ტელეფონის გადაცვლა, შეკეთება და ორიგინალი ნაწილები — ერთ ადგილას.</p>
-            <div className="zzv-figma-footer-social" aria-hidden="true">
-              <span><img src={asset('figma-footer-facebook.svg')} alt="" /></span>
-              <span><img src={asset('figma-footer-instagram.svg')} alt="" /></span>
-              <span><img src={asset('figma-footer-tiktok.svg')} alt="" /></span>
+            <div className="zzv-figma-footer-social" aria-label="Social media">
+              {socialLinks.map(({ name, url, icon }) => <a key={name} href={url} target="_blank" rel="noopener noreferrer" aria-label={name}><img src={asset(icon)} alt="" /></a>)}
             </div>
           </div>
           <div className="zzv-figma-footer-mobile-links">
             <nav aria-label="სერვისები"><strong>სერვისები</strong><Link to="/trade-in">Trade-in</Link><Link to="/warranty-service?tab=case">შეკეთება</Link><span aria-disabled="true">მაღაზია · მალე</span><Link to="/warranty-service?tab=warranty">გარანტია</Link></nav>
             <nav aria-label="კომპანია"><strong>კომპანია</strong><Link to="/about">ჩვენ შესახებ</Link><Link to="/contact">კონტაქტი</Link><Link to="/reviews">შეფასებები</Link><a href="https://gstore.ge" target="_blank" rel="noreferrer">Gstore</a></nav>
-            <div className="zzv-figma-footer-mobile-contact"><strong>კონტაქტი</strong><span>ვაჟა-ფშაველას 76</span><a href="tel:+995322606060">+995 322 60 60 60</a><a href="mailto:hello@zezva.ge">hello@zezva.ge</a></div>
+            <div className="zzv-figma-footer-mobile-contact"><strong>კონტაქტი</strong><span>ცოტნე დადიანის ქ. 7 · ქარვასლა, III სართული, B308/1</span><a href="tel:+995322606060">+995 322 60 60 60</a><a href="mailto:hello@zezva.ge">hello@zezva.ge</a></div>
           </div>
           <div className="zzv-figma-footer-mobile-legal"><span>© 2026 ZEZVA</span><div><Link to="/terms">წესები</Link><Link to="/privacy">კონფიდენციალურობა</Link><button type="button" onClick={() => window.dispatchEvent(new Event('zezva:open-cookie-settings'))}>პარამეტრები</button></div></div>
         </div>

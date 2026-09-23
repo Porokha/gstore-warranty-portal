@@ -2541,7 +2541,8 @@ button.zzv-public-header-action { cursor: pointer; }
   .zzv-figma-footer-mobile-brand > img { display: block; width: 124px; height: 20px; object-fit: contain; }
   .zzv-figma-footer-mobile-brand p { margin: 16px 0; color: #9c97ae; font-size: 14px; line-height: 1.5; }
   .zzv-figma-footer-social { display: flex; gap: 4px; }
-  .zzv-figma-footer-social span { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 12px; background: #fff; }
+  .zzv-figma-footer-social a { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 12px; background: #fff; }
+  .zzv-figma-footer-social a:focus-visible { outline: 2px solid #7550e8; outline-offset: 2px; }
   .zzv-figma-footer-social img { display: block; width: 15px; height: 15px; object-fit: contain; }
   .zzv-figma-footer-mobile-links { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 32px; margin-top: 32px; }
   .zzv-figma-footer-mobile-links nav,
