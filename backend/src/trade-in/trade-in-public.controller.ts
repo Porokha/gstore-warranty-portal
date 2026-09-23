@@ -11,6 +11,11 @@ export class TradeInPublicController {
     return this.tradeInService.listPublicCategories();
   }
 
+  @Get('offer-policy')
+  getOfferPolicy() {
+    return this.tradeInService.getOfferPolicy();
+  }
+
   @Get('brands')
   listBrands(@Query('category') category: string) {
     return this.tradeInService.listBrands(category);

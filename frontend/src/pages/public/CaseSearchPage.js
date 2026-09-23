@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Box, TextField, Button, Typography, Paper, Chip, Alert, Grid, Divider, IconButton, Link, Container, InputAdornment } from '@mui/material';
 import { ArrowBack, Search as SearchIcon, FolderOpen as CaseIcon } from '@mui/icons-material';
 import api from '../../services/api';
 import StatusBar from '../../components/cases/StatusBar';
 import ResultBar from '../../components/cases/ResultBar';
+import CaseResultView from './CaseResultView';
 
 const CaseSearchPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [caseNumber, setCaseNumber] = useState(searchParams.get('case_number') || '');
-  const [phone, setPhone] = useState(searchParams.get('phone') || '');
-  const [result, setResult] = useState(null);
+  const [caseNumber, setCaseNumber] = useState(location.state?.caseNumber || searchParams.get('case_number') || '');
+  const [phone, setPhone] = useState(location.state?.phone || searchParams.get('phone') || '');
+  const [result, setResult] = useState(location.state?.result || null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -36,7 +38,7 @@ const CaseSearchPage = () => {
         phone,
       });
       setResult(response.data);
-      setSearchParams({ case_number: caseNumber, phone });
+      if (!location.state) setSearchParams({ case_number: caseNumber, phone });
     } catch (err) {
       setError(err.response?.data?.message || t('caseSearch.notFound'));
     } finally {
@@ -64,24 +66,29 @@ const CaseSearchPage = () => {
     return results[result] || result;
   };
 
+  if (result) {
+    return <CaseResultView serviceCase={result} onBack={() => navigate('/warranty-service?tab=case')} />;
+  }
+
   return (
     <Box
+      className="zzv-public-search-page"
       sx={{
         minHeight: 'calc(100vh - 70px)',
-        background: 'linear-gradient(180deg, #fbf9ff 0%, #f3ecff 100%)',
-        pt: 4,
-        pb: 8,
+        pt: { xs: 3, md: 5 },
+        pb: { xs: 5, md: 9 },
       }}
     >
-      <Container maxWidth="md">
-        <Box display="flex" alignItems="center" gap={1} mb={3}>
+      <Container maxWidth="lg">
+        <Box className="zzv-public-search-head" display="flex" alignItems="center" gap={1} mb={3}>
           <IconButton
             onClick={() => navigate('/warranty-service')}
             aria-label="back"
             sx={{
               bgcolor: '#ffffff',
-              border: '1px solid #e3d7ff',
-              '&:hover': { bgcolor: '#f3ecff' },
+              border: '1px solid #e6def5',
+              borderRadius: '12px',
+              '&:hover': { bgcolor: '#f7f3ff' },
             }}
           >
             <ArrowBack />
@@ -92,9 +99,11 @@ const CaseSearchPage = () => {
             sx={{
               cursor: 'pointer',
               textDecoration: 'none',
-              color: '#18181b',
+              color: '#18171d',
+              fontFamily: 'var(--zzv-font-caps)',
               fontWeight: 700,
-              '&:hover': { textDecoration: 'underline' },
+              letterSpacing: '-0.03em',
+              '&:hover': { color: '#824cff' },
             }}
           >
             {t('caseSearch.title')}
@@ -102,13 +111,14 @@ const CaseSearchPage = () => {
         </Box>
 
         <Paper
+          className="zzv-public-search-card"
           elevation={0}
           sx={{
-            p: 4,
-            borderRadius: 4,
-            boxShadow: '0 28px 90px rgba(63, 30, 120, 0.1)',
+            p: { xs: 2.25, md: 4 },
+            borderRadius: '24px',
+            boxShadow: '0 28px 90px rgba(63, 30, 120, 0.08)',
             bgcolor: '#ffffff',
-            border: '1px solid #e3d7ff',
+            border: '1px solid #e6def5',
           }}
         >
           <Box display="flex" alignItems="center" gap={2} mb={3}>
@@ -116,8 +126,8 @@ const CaseSearchPage = () => {
               sx={{
                 width: 48,
                 height: 48,
-                borderRadius: 2,
-                bgcolor: '#18181b',
+                borderRadius: '14px',
+                bgcolor: '#18171d',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -125,12 +135,12 @@ const CaseSearchPage = () => {
             >
               <CaseIcon sx={{ color: '#ffffff', fontSize: 28 }} />
             </Box>
-            <Typography variant="h5" sx={{ fontWeight: 700, color: '#18181b' }}>
+            <Typography variant="h5" sx={{ fontFamily: 'var(--zzv-font-caps)', fontWeight: 700, color: '#18171d' }}>
               {t('caseSearch.findCase')}
             </Typography>
           </Box>
 
-          <form onSubmit={handleSearch}>
+          <Box component="form" className="zzv-public-search-form" onSubmit={handleSearch}>
             <TextField
               fullWidth
               label={t('caseSearch.caseNumber')}
@@ -141,13 +151,13 @@ const CaseSearchPage = () => {
               placeholder="e.g., SCN-000001"
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  bgcolor: '#fbf9ff',
+                  borderRadius: '14px',
+                  bgcolor: '#fbfaff',
                   '& fieldset': {
-                    borderColor: '#e3d7ff',
+                    borderColor: '#e6def5',
                   },
                   '&:hover fieldset': {
-                    borderColor: '#a576ff',
+                    borderColor: '#824cff',
                   },
                 },
               }}
@@ -162,13 +172,13 @@ const CaseSearchPage = () => {
               placeholder="e.g., +995 555 123 456"
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  bgcolor: '#fbf9ff',
+                  borderRadius: '14px',
+                  bgcolor: '#fbfaff',
                   '& fieldset': {
-                    borderColor: '#e3d7ff',
+                    borderColor: '#e6def5',
                   },
                   '&:hover fieldset': {
-                    borderColor: '#a576ff',
+                    borderColor: '#824cff',
                   },
                 },
               }}
@@ -181,22 +191,22 @@ const CaseSearchPage = () => {
               startIcon={<SearchIcon />}
               sx={{
                 mt: 3,
-                py: 1.5,
-                borderRadius: 2,
-                bgcolor: '#a576ff',
-                color: '#111111',
+                py: 1.65,
+                borderRadius: '14px',
+                bgcolor: '#824cff',
+                color: '#ffffff',
                 fontWeight: 600,
                 textTransform: 'none',
                 fontSize: '16px',
                 '&:hover': {
-                  bgcolor: '#8f5ef0',
+                  bgcolor: '#6f3ee8',
                   color: '#ffffff',
                 },
               }}
             >
               {loading ? t('caseSearch.searching') : t('caseSearch.search')}
             </Button>
-          </form>
+          </Box>
 
           {error && (
             <Alert severity="error" sx={{ mt: 3, borderRadius: 2 }}>
@@ -205,7 +215,7 @@ const CaseSearchPage = () => {
           )}
 
           {result && (
-            <Box sx={{ mt: 4 }}>
+            <Box className="zzv-public-search-results" sx={{ mt: 4 }}>
               <Typography variant="h6" sx={{ fontWeight: 700, color: '#18181b', mb: 3 }}>
                 {t('caseSearch.caseDetails')}
               </Typography>

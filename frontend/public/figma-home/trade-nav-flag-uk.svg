@@ -1,0 +1,18 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24" height="17" viewBox="0 0 24 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Flag / UK">
+<g clip-path="url(#clip0_0_223)">
+<path d="M0 4C0 1.79086 1.79086 0 4 0H20C22.2091 0 24 1.79086 24 4V13C24 15.2091 22.2091 17 20 17H4C1.79086 17 0 15.2091 0 13V4Z" fill="#001B69"/>
+<path id="Vector" fill-rule="evenodd" clip-rule="evenodd" d="M2.55311 0H0V2.83333L21.433 17L24 17V14.1667L2.55311 0Z" fill="white"/>
+<path id="Vector_2" d="M0.851541 0L24 15.3402V17H23.1684L0 1.64397V0H0.851541Z" fill="#C9072A"/>
+<path id="Vector_3" fill-rule="evenodd" clip-rule="evenodd" d="M21.7144 1.44243e-05H24.0001V2.83335C24.0001 2.83335 9.15414 12.2718 2.28579 17H7.89762e-05V14.1667L21.7144 1.44243e-05Z" fill="white"/>
+<path id="Vector_4" d="M24 0H23.2249L0 15.3534V17H0.851541L24 1.65638V0Z" fill="#C9072A"/>
+<path id="Vector_5" fill-rule="evenodd" clip-rule="evenodd" d="M8.72809 0H15.2919V5.24373H24V11.7528H15.2919V17H8.72809V11.7528H0V5.24373H8.72809V0Z" fill="white"/>
+<path id="Vector_6" fill-rule="evenodd" clip-rule="evenodd" d="M10.1053 0H13.8947V6.53846H24V10.4615H13.8947V17H10.1053V10.4615H0V6.53846H10.1053V0Z" fill="#C9072A"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_0_223">
+<path d="M0 4C0 1.79086 1.79086 0 4 0H20C22.2091 0 24 1.79086 24 4V13C24 15.2091 22.2091 17 20 17H4C1.79086 17 0 15.2091 0 13V4Z" fill="white"/>
+</clipPath>
+</defs>
+</svg>

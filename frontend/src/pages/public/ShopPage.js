@@ -4,14 +4,17 @@ import { useTranslation } from 'react-i18next';
 import {
   BatteryChargingFullOutlined,
   BoltOutlined,
+  BuildOutlined,
   CameraAltOutlined,
   CategoryOutlined,
   CropPortraitOutlined,
   DeveloperBoardOutlined,
+  DeleteOutline,
   SensorsOutlined,
   VolumeUpOutlined,
 } from '@mui/icons-material';
 import '../../styles/shop.css';
+import '../../styles/shop-figma.css';
 import gstoreLogo from '../../assets/gstore-logo.svg';
 import { shopService } from '../../services/shopService';
 
@@ -25,6 +28,8 @@ const partOptions = [
   ['speaker', 'shop.partLabels.speaker'],
   ['charging', 'shop.partLabels.charging'],
 ];
+
+const SHOP_PAGE_SIZE = 24;
 
 const popularBrandNames = ['apple', 'samsung', 'google', 'sony', 'lenovo', 'microsoft'];
 
@@ -263,11 +268,11 @@ const ProductSkeletonCards = ({ count = 12, prefix = 'skeleton' }) =>
   ));
 
 const ShopPage = () => {
-  const { t } = useTranslation();
-  const [tab, setTab] = useState('all');
+  const { t, i18n } = useTranslation();
+  const [tab, setTab] = useState('smartphones');
   const [brands, setBrands] = useState([]);
   const [models, setModels] = useState([]);
-  const [parts, setParts] = useState([]);
+  const [parts, setParts] = useState(['board']);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [priceMin, setPriceMin] = useState('');
@@ -275,6 +280,7 @@ const ShopPage = () => {
   const [sources, setSources] = useState(['oem', 'third-party']);
   const [cart, setCart] = useState([]);
   const [modalProduct, setModalProduct] = useState(null);
+  const [modalWithService, setModalWithService] = useState(false);
   const [modalState, setModalState] = useState('closed');
   const [gridProducts, setGridProducts] = useState([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -292,7 +298,11 @@ const ShopPage = () => {
   const [pullRefresh, setPullRefresh] = useState({ active: false, ready: false, distance: 0 });
   const [productPage, setProductPage] = useState(1);
   const [showSlowFilterLoader, setShowSlowFilterLoader] = useState(false);
-  const [shopIntroOpen, setShopIntroOpen] = useState(true);
+  const [shopIntroOpen, setShopIntroOpen] = useState(false);
+  const [cartViewOpen, setCartViewOpen] = useState(false);
+  const [desktopModelSearch, setDesktopModelSearch] = useState('');
+  const [showAllDesktopBrands, setShowAllDesktopBrands] = useState(false);
+  const [showAllDesktopModels, setShowAllDesktopModels] = useState(false);
   const rootRef = useRef(null);
   const gridScrollRef = useRef(null);
   const tabsRef = useRef(null);
@@ -313,7 +323,7 @@ const ShopPage = () => {
   const publicProductParams = useMemo(
     () => ({
       page: productPage,
-      limit: 80,
+      limit: SHOP_PAGE_SIZE,
       device: tab === 'all' ? undefined : tab,
       brand: brands.length > 0 ? brands.join(',') : undefined,
       model: models.length > 0 ? models.join(',') : undefined,
@@ -424,8 +434,7 @@ const ShopPage = () => {
     const handleResize = () => {
       document.documentElement.style.setProperty('--zpos-app-height', `${window.innerHeight}px`);
 
-      const shouldUseCompactCart =
-        window.innerWidth <= COMPACT_CART_WIDTH && window.innerHeight <= COMPACT_CART_HEIGHT;
+      const shouldUseCompactCart = false;
 
       setCompactCart((current) => {
         if (current !== shouldUseCompactCart) {
@@ -570,17 +579,27 @@ const ShopPage = () => {
   const visibleProducts = products;
 
   const brandOptions = useMemo(
-    () =>
-      Array.from(
+    () => {
+      const options = Array.from(
         new Set([...(productFacets.brands || []).map((item) => item.value).filter(Boolean), ...brands]),
-      ),
+      );
+      const priority = ['apple', 'samsung', 'asus'];
+      return options.sort((a, b) => {
+        const aRank = priority.indexOf(a.toLocaleLowerCase());
+        const bRank = priority.indexOf(b.toLocaleLowerCase());
+        return (aRank < 0 ? priority.length : aRank) - (bRank < 0 ? priority.length : bRank) || a.localeCompare(b);
+      });
+    },
     [brands, productFacets.brands],
   );
   const modelOptions = useMemo(
-    () =>
-      Array.from(
+    () => {
+      const options = Array.from(
         new Set([...(productFacets.models || []).map((item) => item.value).filter(Boolean), ...models]),
-      ),
+      );
+      const counts = new Map((productFacets.models || []).map((item) => [item.value, item.count || 0]));
+      return options.sort((a, b) => (counts.get(b) || 0) - (counts.get(a) || 0) || a.localeCompare(b));
+    },
     [models, productFacets.models],
   );
   const dynamicPartOptions = useMemo(() => {
@@ -638,12 +657,11 @@ const ShopPage = () => {
     }
 
     const handleScroll = () => {
-      if (!hasMoreProducts || isProductsFetching || loadingNextPageRef.current) {
+      if (!hasMoreProducts || isProductsFetching || loadingNextPageRef.current || gridProducts.length === 0) {
         return;
       }
 
-      const remaining =
-        scrollNode.scrollHeight - scrollNode.scrollTop - scrollNode.clientHeight;
+      const remaining = scrollNode.scrollHeight - scrollNode.scrollTop - scrollNode.clientHeight;
 
       if (remaining < 520) {
         loadingNextPageRef.current = true;
@@ -652,12 +670,14 @@ const ShopPage = () => {
     };
 
     scrollNode.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
+    if (scrollNode.scrollHeight <= scrollNode.clientHeight + 520) {
+      handleScroll();
+    }
 
     return () => {
       scrollNode.removeEventListener('scroll', handleScroll);
     };
-  }, [hasMoreProducts, isProductsFetching]);
+  }, [gridProducts.length, hasMoreProducts, isProductsFetching]);
 
   useEffect(() => {
     setProductPage(1);
@@ -718,10 +738,10 @@ const ShopPage = () => {
   };
 
   const resetFilters = () => {
-    setTab('all');
+    setTab('smartphones');
     setBrands([]);
     setModels([]);
-    setParts([]);
+    setParts(['board']);
     setSearch('');
     setPriceMin('');
     setPriceMax('');
@@ -775,6 +795,9 @@ const ShopPage = () => {
           qty: 1,
           price: activePrice,
           basePrice,
+          servicePrice: getServicePrice(product),
+          canProductOnly: canBuyProductOnly(product),
+          canService: canBuyWithService(product),
           image_url: product.image_url,
           subtitle: `${t(labelForDevice[product.device_category])} • ${t(labelForPart[product.part_category])}`,
         },
@@ -784,9 +807,33 @@ const ShopPage = () => {
     closeModal();
   };
 
+  const toggleCartService = (item) => {
+    const nextMode = item.mode === 'service' ? 'product' : 'service';
+    if (nextMode === 'service' ? !item.canService : !item.canProductOnly) {
+      return;
+    }
+
+    setCart((current) => {
+      const nextId = `${item.productId}:${nextMode}`;
+      const existing = current.find((entry) => entry.id === nextId);
+      if (existing) {
+        return current.filter((entry) => entry.id !== item.id).map((entry) =>
+          entry.id === nextId ? { ...entry, qty: entry.qty + item.qty } : entry,
+        );
+      }
+      return current.map((entry) => entry.id === item.id ? {
+        ...entry,
+        id: nextId,
+        mode: nextMode,
+        price: nextMode === 'service' ? entry.servicePrice : entry.basePrice,
+      } : entry);
+    });
+  };
+
   function openModal(product) {
     window.clearTimeout(modalCloseTimerRef.current);
     setModalProduct(product);
+    setModalWithService(!canBuyProductOnly(product) && canBuyWithService(product));
     setModalState('closing');
     window.requestAnimationFrame(() => {
       setModalState('open');
@@ -947,7 +994,7 @@ const ShopPage = () => {
     <div
       id="zpos-root"
       ref={rootRef}
-      className={`zpos-root ${filtersOpen ? 'zpos-filters-open' : ''} ${filtersClosing ? 'zpos-filters-closing' : ''} ${compactCart ? 'zpos-compact-cart-mode' : ''}`}
+      className={`zpos-root zpos-root--figma ${filtersOpen ? 'zpos-filters-open' : ''} ${filtersClosing ? 'zpos-filters-closing' : ''} ${compactCart ? 'zpos-compact-cart-mode' : ''} ${cartViewOpen ? 'zpos-cart-view-open' : ''}`}
       aria-label={t('shop.ariaLabel')}
     >
       <button
@@ -999,6 +1046,37 @@ const ShopPage = () => {
         ) : (
           <>
         <aside className="zpos-sidebar" aria-label={t('shop.aria.filters')}>
+          <div className="zpos-figma-sidebar-tabs" role="tablist" aria-label={t('shop.tabs.ariaLabel')}>
+            {['smartphones', 'laptops'].map((value) => <button key={value} type="button" role="tab" aria-selected={tab === value} className={tab === value ? 'is-active' : ''} onClick={() => setTab(value)}>{t(labelForDevice[value])}</button>)}
+          </div>
+          <div className="zpos-figma-category-rail" aria-label={t('shop.filters.partTypeTitle')}>
+            {partOptions.filter(([value]) => value !== 'all').map(([value, labelKey]) => {
+              const PartIcon = iconForPart[value] || CategoryOutlined;
+              return <button key={value} type="button" className={parts.includes(value) ? 'is-active' : ''} aria-pressed={parts.includes(value)} onClick={() => setParts([value])}><PartIcon aria-hidden="true" /><span>{t(labelKey)}</span></button>;
+            })}
+          </div>
+          <div className="zpos-figma-desktop-filters">
+            <div className="zpos-figma-filter-heading"><strong>{i18n.language === 'ka' ? 'ფილტრი' : 'Filters'}</strong><button type="button" onClick={resetFilters}>{i18n.language === 'ka' ? 'გასუფთავება' : 'Clear'}</button></div>
+            <div className="zpos-figma-filter-group">
+              <strong>{t('shop.filters.brandTitle')}</strong>
+              {(showAllDesktopBrands ? brandOptions : brandOptions.slice(0, 4)).map((brand) => <label key={brand}><input type="checkbox" checked={brands.includes(brand)} onChange={() => toggleBrand(brand)} /><span>{brand}</span></label>)}
+              {brandOptions.length > 4 && <button type="button" onClick={() => setShowAllDesktopBrands((current) => !current)}>{showAllDesktopBrands ? t('shop.filters.showLess') : t('shop.filters.showMore', { count: brandOptions.length - 4 })}</button>}
+            </div>
+            <div className="zpos-figma-filter-group">
+              <strong>{t('shop.filters.modelTitle')}</strong>
+              <input className="zpos-figma-model-search" type="search" value={desktopModelSearch} onChange={(event) => setDesktopModelSearch(event.target.value)} placeholder={t('shop.filters.searchOptions')} />
+              {(showAllDesktopModels ? modelOptions : modelOptions.slice(0, 4)).filter((model) => model.toLocaleLowerCase().includes(desktopModelSearch.toLocaleLowerCase())).map((model) => <label key={model}><input type="checkbox" checked={models.includes(model)} onChange={() => toggleModel(model)} /><span>{model}</span><small>{productFacets.models?.find((item) => item.value === model)?.count || ''}</small></label>)}
+              {modelOptions.length > 4 && <button type="button" onClick={() => setShowAllDesktopModels((current) => !current)}>{showAllDesktopModels ? t('shop.filters.showLess') : t('shop.filters.showMore', { count: modelOptions.length - 4 })}</button>}
+            </div>
+            <div className="zpos-figma-filter-group">
+              <strong>{t('shop.filters.sourceTitle')}</strong>
+              <div className="zpos-figma-filter-chips">{['oem', 'third-party'].map((value) => <button key={value} type="button" className={sources.includes(value) ? 'is-active' : ''} onClick={() => setSources((current) => current.includes(value) ? current.filter((source) => source !== value) : [...current, value])}>{t(labelForSource[value])}</button>)}</div>
+            </div>
+            <div className="zpos-figma-filter-group">
+              <strong>{t('shop.filters.priceTitle')}</strong>
+              <div className="zpos-figma-filter-price"><input aria-label={t('shop.filters.min')} type="number" min="0" placeholder="₾0" value={priceMin} onChange={(event) => setPriceMin(event.target.value)} /><span>—</span><input aria-label={t('shop.filters.max')} type="number" min="0" placeholder="₾900" value={priceMax} onChange={(event) => setPriceMax(event.target.value)} /></div>
+            </div>
+          </div>
           <div className="zpos-sidebar-head">
             <div>
               <p>{t('shop.filters.kicker')}</p>
@@ -1162,14 +1240,14 @@ const ShopPage = () => {
               </button>
 
               <div className="zpos-tabs" role="tablist" aria-label={t('shop.tabs.ariaLabel')} ref={tabsRef}>
-                {['all', 'smartphones', 'laptops'].map((value) => (
+                {['smartphones', 'laptops'].map((value) => (
                   <button
                     key={value}
                     type="button"
                     className={`zpos-tab ${tab === value ? 'is-active' : ''}`}
                     onClick={() => setTab(value)}
                   >
-                    <span>{value === 'all' ? t('common.all') : t(labelForDevice[value])}</span>
+                    <span>{t(labelForDevice[value])}</span>
                   </button>
                 ))}
                 <span
@@ -1187,7 +1265,7 @@ const ShopPage = () => {
                 <input
                   id="zpos-search"
                   type="search"
-                  placeholder={t('shop.searchPlaceholder')}
+                  placeholder={i18n.language === 'ka' ? 'მოძებნე ნაწილი' : 'Search for a part'}
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                 />
@@ -1201,9 +1279,16 @@ const ShopPage = () => {
                 <span>{t('shop.visible')}</span>
               </div>
             </div>
+            <div className="zpos-figma-categories" aria-label={t('shop.filters.partTypeTitle')}>
+              {partOptions.filter(([value]) => value !== 'all').map(([value, labelKey]) => {
+                const PartIcon = iconForPart[value] || CategoryOutlined;
+                return <button key={value} type="button" className={parts.includes(value) ? 'is-active' : ''} aria-pressed={parts.includes(value)} onClick={() => setParts([value])}><span><PartIcon aria-hidden="true" /></span><small>{t(labelKey)}</small></button>;
+              })}
+            </div>
+            <p className="zpos-figma-count">{isInitialProductsLoading ? '...' : productsTotal} {i18n.language === 'ka' ? 'ნაწილი' : 'parts'} · {parts.length === 1 ? t(partOptions.find(([value]) => value === parts[0])?.[1] || parts[0]) : t('common.all')}</p>
           </div>
 
-          <div className="zpos-grid-scroll" ref={gridScrollRef}>
+          <div className="zpos-grid-scroll" ref={gridScrollRef} tabIndex={0} aria-label={i18n.language === 'ka' ? 'პროდუქტების სია' : 'Product list'}>
             <div
               className={`zpos-pull-indicator ${pullRefresh.active ? 'is-active' : ''} ${pullRefresh.ready ? 'is-ready' : ''}`}
               style={{ '--zpos-pull-distance': `${pullRefresh.distance}px` }}
@@ -1269,6 +1354,7 @@ const ShopPage = () => {
                           .join(' • ')}
                       </p>
                       <h3>{product.title}</h3>
+                      <p className="zpos-figma-card-source">{t(labelForSource[product.inventory_source] || product.inventory_source)} · {product.brand || t(labelForDevice[product.device_category] || product.device_category)}</p>
                       <p className="zpos-issue">{product.issue_label}</p>
                       <div className="zpos-card-footer">
                         <div className="zpos-price">
@@ -1309,13 +1395,14 @@ const ShopPage = () => {
         </main>
 
         <aside
-          className={`zpos-cart ${compactCart ? 'zpos-cart--compact' : ''} ${compactCart && cartExpanded ? 'is-expanded' : ''}`}
+          className={`zpos-cart ${compactCart ? 'zpos-cart--compact' : ''} ${compactCart && cartExpanded ? 'is-expanded' : ''} ${cartViewOpen ? 'is-figma-open' : ''}`}
           aria-label={t('shop.aria.cart')}
         >
+          <button type="button" className="zpos-figma-cart-close" onClick={() => setCartViewOpen(false)} aria-label={t('common.close')}><span className="zpos-figma-cart-close-desktop">×</span><span className="zpos-figma-cart-close-mobile">‹</span></button>
           <div className="zpos-cart-head">
             <div className="zpos-cart-head-main">
               <p>{t('shop.cart.kicker')}</p>
-              <h2>{t('shop.cart.title')}</h2>
+              <h2>{i18n.language === 'ka' ? 'კალათა' : 'Cart'}</h2>
             </div>
             {compactCart ? (
               <div className="zpos-cart-head-side">
@@ -1353,29 +1440,18 @@ const ShopPage = () => {
                 key={item.id}
                 className={`zpos-cart-item ${removingCartIds.includes(item.id) ? 'is-removing' : ''}`}
               >
-                <div className={`zpos-cart-item-thumb ${loadedImages[`cart:${item.id}`] ? 'is-loaded' : ''}`}>
-                  {!loadedImages[`cart:${item.id}`] && (
-                    <div className="zpos-skeleton zpos-image-skeleton" />
-                  )}
-                  <img
-                    src={item.image_url}
-                    alt={t('shop.imageAlt.thumbnail', { title: item.title })}
-                    loading="lazy"
-                    onLoad={() => handleImageReady(`cart:${item.id}`)}
-                    onError={() => handleImageReady(`cart:${item.id}`)}
-                  />
-                </div>
-                <div className="zpos-cart-item-main">
-                  <p className="zpos-cart-mode">
-                    {item.mode === 'service'
-                      ? t('shop.choiceLabels.withService')
-                      : t('shop.choiceLabels.productOnly')}
-                  </p>
-                  <h3 title={item.title}>{item.title}</h3>
-                  <p className="zpos-cart-item-sub">{item.subtitle}</p>
+                <div className="zpos-cart-line-main">
+                  <div className={`zpos-cart-item-thumb ${loadedImages[`cart:${item.id}`] ? 'is-loaded' : ''}`}>
+                    {!loadedImages[`cart:${item.id}`] && <div className="zpos-skeleton zpos-image-skeleton" />}
+                    <img src={item.image_url} alt={t('shop.imageAlt.thumbnail', { title: item.title })} loading="lazy" onLoad={() => handleImageReady(`cart:${item.id}`)} onError={() => handleImageReady(`cart:${item.id}`)} />
+                  </div>
+                  <div className="zpos-cart-item-main">
+                    <h3 title={item.title}>{item.title}</h3>
+                    <p className="zpos-cart-item-sub">{item.subtitle}</p>
+                  </div>
+                  <button type="button" className="zpos-cart-remove" onClick={() => updateCart(item.id, 'remove')} aria-label={t('common.delete')}><DeleteOutline aria-hidden="true" /></button>
                 </div>
                 <div className="zpos-cart-item-footer">
-                  <div className="zpos-cart-item-price">{formatMoney(item.price)}</div>
                   <div className="zpos-cart-item-actions">
                     <div className="zpos-qty">
                       <button type="button" onClick={() => updateCart(item.id, 'decrease')}>
@@ -1386,15 +1462,10 @@ const ShopPage = () => {
                         +
                       </button>
                     </div>
-                    <button
-                      type="button"
-                      className="zpos-cart-remove"
-                      onClick={() => updateCart(item.id, 'remove')}
-                    >
-                      ×
-                    </button>
                   </div>
+                  <div className="zpos-cart-item-price">{formatMoney(item.price)}</div>
                 </div>
+                {item.canService && <label className="zpos-cart-service-row"><BuildOutlined aria-hidden="true" /><span>{i18n.language === 'ka' ? 'დაყენების სერვისი' : 'Installation service'} · +{formatMoney(Math.max(0, (item.servicePrice || 0) - item.basePrice))}</span><input type="checkbox" checked={item.mode === 'service'} disabled={!item.canProductOnly} onChange={() => toggleCartService(item)} /></label>}
               </div>
             ))}
           </div>
@@ -1415,16 +1486,19 @@ const ShopPage = () => {
             <button
               className="zpos-checkout"
               type="button"
-              onClick={openOrderModal}
+              onClick={() => { setCartViewOpen(false); openOrderModal(); }}
               disabled={cart.length === 0}
             >
               {t('shop.summary.checkoutDisabled')}
             </button>
           </div>
         </aside>
+        {cartViewOpen && <button type="button" className="zpos-figma-cart-backdrop" aria-label={t('common.close')} onClick={() => setCartViewOpen(false)} />}
           </>
         )}
       </div>
+
+      {!shopIntroOpen && cartSummary.count > 0 && <div className="zpos-figma-cart-bar"><div><small>{i18n.language === 'ka' ? 'კალათა' : 'Cart'} · {cartSummary.count} {i18n.language === 'ka' ? 'ნივთი' : 'items'}</small><strong>{formatMoney(cartSummary.total)}</strong></div><button type="button" onClick={() => setCartViewOpen(true)}>{i18n.language === 'ka' ? 'ნახვა' : 'View'}</button></div>}
 
       {modalProduct && (
         <div
@@ -1436,7 +1510,11 @@ const ShopPage = () => {
             }
           }}
         >
-          <div className="zpos-modal" role="dialog" aria-modal="true" aria-labelledby="zpos-modal-title">
+          <div className="zpos-modal zpos-modal--figma-product" role="dialog" aria-modal="true" aria-labelledby="zpos-modal-title">
+            <div className="zpos-product-mobile-bar">
+              <button type="button" onClick={closeModal} aria-label={t('common.back')}>‹</button>
+              <strong>{i18n.language === 'ka' ? 'ნაწილი' : 'Part'}</strong>
+            </div>
             <button
               type="button"
               className="zpos-modal-close"
@@ -1465,51 +1543,32 @@ const ShopPage = () => {
             </div>
 
             <div className="zpos-modal-content">
-              <p id="zpos-modal-kicker" className="zpos-modal-kicker">
-                {[modalProduct.brand, t(labelForDevice[modalProduct.device_category]), t(labelForPart[modalProduct.part_category]), t(labelForSource[modalProduct.inventory_source])]
-                  .filter(Boolean)
-                  .join(' • ')}
-              </p>
               <h2 id="zpos-modal-title">{modalProduct.title}</h2>
+              <div className="zpos-product-badges">
+                <span>{t(labelForSource[modalProduct.inventory_source] || modalProduct.inventory_source)}</span>
+                {modalProduct.quality_line && modalProduct.quality_line !== 'N/A' && <span>{modalProduct.quality_line}</span>}
+                {modalProduct.stock_quantity > 0 && <span>{i18n.language === 'ka' ? 'მარაგშია' : 'In stock'}</span>}
+              </div>
 
-              <div className="zpos-modal-prices">
-                <button
-                  type="button"
-                  className={`zpos-choice is-primary ${canBuyProductOnly(modalProduct) ? '' : 'is-disabled'}`}
-                  onClick={() => addToCart(modalProduct, 'product')}
-                  disabled={!canBuyProductOnly(modalProduct)}
-                >
-                  <span className="zpos-choice-label">{t('shop.choiceLabels.productOnly')}</span>
-                  <strong>
-                    {canBuyProductOnly(modalProduct)
-                      ? formatMoney(getProductOnlyPrice(modalProduct))
-                      : t('shop.availability.productOnlyWithService')}
-                  </strong>
-                  <small>
-                    {canBuyProductOnly(modalProduct)
-                      ? t('shop.choiceDescriptions.productOnly')
-                      : t('shop.choiceDescriptions.productOnlyUnavailable')}
-                  </small>
-                </button>
+              <div className="zpos-product-details">
+                <div><span>{i18n.language === 'ka' ? 'თავსებადობა' : 'Compatibility'}</span><strong>{modalProduct.device_model || modalProduct.title}</strong></div>
+                <div><span>{i18n.language === 'ka' ? 'გარანტია' : 'Warranty'}</span><strong>{modalProduct.warranty_line || (i18n.language === 'ka' ? '1 წელი' : '1 year')}</strong></div>
+                <div><span>{i18n.language === 'ka' ? 'წარმომავლობა' : 'Source'}</span><strong>{t(labelForSource[modalProduct.inventory_source] || modalProduct.inventory_source)}</strong></div>
+                <div><span>{i18n.language === 'ka' ? 'ტიპი' : 'Type'}</span><strong>{modalProduct.quality_line && modalProduct.quality_line !== 'N/A' ? modalProduct.quality_line : t(labelForPart[modalProduct.part_category] || modalProduct.part_category)}</strong></div>
+              </div>
 
-                <button
-                  type="button"
-                  className={`zpos-choice ${canBuyWithService(modalProduct) ? '' : 'is-disabled'}`}
-                  onClick={() => addToCart(modalProduct, 'service')}
-                  disabled={!canBuyWithService(modalProduct)}
-                >
-                  <span className="zpos-choice-label">{t('shop.choiceLabels.withService')}</span>
-                  <strong>
-                    {canBuyWithService(modalProduct)
-                      ? formatMoney(getServicePrice(modalProduct))
-                      : t('shop.availability.serviceUnavailable')}
-                  </strong>
-                  <small>
-                    {canBuyWithService(modalProduct)
-                      ? t('shop.choiceDescriptions.withService')
-                      : t('shop.choiceDescriptions.serviceUnavailable')}
-                  </small>
-                </button>
+              {canBuyWithService(modalProduct) && (
+                <label className="zpos-product-service">
+                  <span className="zpos-product-service-icon"><BuildOutlined aria-hidden="true" /></span>
+                  <span className="zpos-product-service-copy"><strong>{i18n.language === 'ka' ? 'სერვისიც გჭირდება?' : 'Need installation service?'}</strong><small>{i18n.language === 'ka' ? 'შეაკეთეთ ადგილზე' : 'Repair with our team'}</small></span>
+                  <span className="zpos-product-service-price">+{formatMoney(Math.max(0, (getServicePrice(modalProduct) || 0) - (getProductOnlyPrice(modalProduct) || 0)))}</span>
+                  <input type="checkbox" checked={modalWithService} disabled={!canBuyProductOnly(modalProduct)} onChange={(event) => setModalWithService(event.target.checked)} />
+                </label>
+              )}
+
+              <div className="zpos-product-bottom">
+                <div><small>{i18n.language === 'ka' ? 'სულ' : 'Total'}</small><strong>{formatMoney(modalWithService ? getServicePrice(modalProduct) : getProductOnlyPrice(modalProduct))}</strong></div>
+                <button type="button" onClick={() => addToCart(modalProduct, modalWithService ? 'service' : 'product')} disabled={!(modalWithService ? canBuyWithService(modalProduct) : canBuyProductOnly(modalProduct))}>{i18n.language === 'ka' ? 'კალათაში' : 'Add to cart'}</button>
               </div>
             </div>
           </div>

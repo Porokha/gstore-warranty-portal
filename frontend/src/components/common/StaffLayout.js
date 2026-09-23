@@ -254,7 +254,20 @@ const StaffLayout = () => {
   };
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#fbf9ff' }}>
+    <Box
+      className="zzv-staff-shell"
+      sx={{
+        display: 'flex',
+        minHeight: '100vh',
+        bgcolor: '#fbf9ff',
+        '& .MuiPaper-root': {
+          borderRadius: '20px',
+        },
+        '& .MuiButton-root, & .MuiChip-root, & .MuiOutlinedInput-root, & .MuiAlert-root': {
+          borderRadius: '14px',
+        },
+      }}
+    >
       <Drawer
         variant="permanent"
         sx={{
@@ -263,16 +276,17 @@ const StaffLayout = () => {
           '& .MuiDrawer-paper': {
             width: drawerWidth,
             boxSizing: 'border-box',
-            bgcolor: '#0f0f12',
-            color: '#f5f3ff',
-            borderRight: '1px solid rgba(165, 118, 255, 0.2)',
+            bgcolor: '#18171d',
+            color: '#f7f3ff',
+            borderRight: '1px solid rgba(130, 76, 255, 0.28)',
+            boxShadow: '14px 0 44px rgba(24, 23, 29, 0.16)',
             transition: 'width 0.2s ease',
           },
         }}
       >
         <Toolbar
           sx={{
-            bgcolor: '#0f0f12',
+            bgcolor: '#18171d',
             minHeight: '80px !important',
             display: 'flex',
             alignItems: 'center',
@@ -333,14 +347,14 @@ const StaffLayout = () => {
                       justifyContent: isCollapsed ? 'center' : 'flex-start',
                       px: isCollapsed ? 1.5 : 2,
                       '&.Mui-selected': {
-                      bgcolor: 'rgba(165, 118, 255, 0.18)',
+                      bgcolor: 'rgba(130, 76, 255, 0.24)',
                       color: '#ffffff',
                       '&:hover': {
-                          bgcolor: 'rgba(165, 118, 255, 0.28)',
+                          bgcolor: 'rgba(130, 76, 255, 0.34)',
                         },
                       },
                       '&:hover': {
-                        bgcolor: 'rgba(255,255,255,0.06)',
+                        bgcolor: 'rgba(255,255,255,0.08)',
                       },
                     }}
                   >
@@ -349,7 +363,7 @@ const StaffLayout = () => {
                         mr: isCollapsed ? 0 : 2,
                         display: 'flex',
                         alignItems: 'center',
-                        color: isActive ? '#ffffff' : '#c8b6ff',
+                        color: isActive ? '#ffffff' : '#d8cbff',
                       }}
                     >
                       {item.icon}
@@ -391,14 +405,14 @@ const StaffLayout = () => {
                           justifyContent: isCollapsed ? 'center' : 'flex-start',
                           px: isCollapsed ? 1.5 : 2,
                           '&.Mui-selected': {
-                            bgcolor: 'rgba(165, 118, 255, 0.18)',
+                            bgcolor: 'rgba(130, 76, 255, 0.24)',
                             color: '#ffffff',
                             '&:hover': {
-                              bgcolor: 'rgba(165, 118, 255, 0.28)',
+                              bgcolor: 'rgba(130, 76, 255, 0.34)',
                             },
                           },
                           '&:hover': {
-                            bgcolor: 'rgba(255,255,255,0.06)',
+                            bgcolor: 'rgba(255,255,255,0.08)',
                           },
                         }}
                       >
@@ -407,7 +421,7 @@ const StaffLayout = () => {
                             mr: isCollapsed ? 0 : 2,
                             display: 'flex',
                             alignItems: 'center',
-                            color: isActive ? '#ffffff' : '#c8b6ff',
+                            color: isActive ? '#ffffff' : '#d8cbff',
                           }}
                         >
                           {item.icon}
@@ -437,8 +451,8 @@ const StaffLayout = () => {
         <Box
           sx={{
             p: 2,
-            borderTop: '1px solid #d1d5db',
-            bgcolor: '#d1d5db',
+            borderTop: '1px solid rgba(130, 76, 255, 0.22)',
+            bgcolor: 'rgba(255,255,255,0.08)',
           }}
         >
           <Box
@@ -453,6 +467,7 @@ const StaffLayout = () => {
               onClick={(e) => setUserMenuAnchor(e.currentTarget)}
               sx={{
                 bgcolor: '#1f2937',
+                border: '1px solid rgba(255,255,255,0.18)',
                 width: 40,
                 height: 40,
                 fontSize: '14px',
@@ -469,7 +484,7 @@ const StaffLayout = () => {
                     variant="body2"
                     sx={{
                       fontWeight: 600,
-                      color: '#1f2937',
+                      color: '#ffffff',
                       fontSize: '13px',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -481,7 +496,7 @@ const StaffLayout = () => {
                   <Typography
                     variant="caption"
                     sx={{
-                      color: '#4b5563',
+                      color: '#d8cbff',
                       fontSize: '11px',
                       textTransform: 'capitalize',
                     }}
@@ -491,7 +506,7 @@ const StaffLayout = () => {
                 </Box>
                 <IconButton
                   size="small"
-                  sx={{ color: '#4b5563' }}
+                  sx={{ color: '#d8cbff' }}
                   onClick={(e) => setUserMenuAnchor(e.currentTarget)}
                 >
                   <ExpandMoreIcon />
@@ -520,9 +535,10 @@ const StaffLayout = () => {
           position="sticky"
           elevation={0}
           sx={{
-            bgcolor: '#ffffff',
-            color: '#1e293b',
-            borderBottom: '1px solid #e2e8f0',
+            bgcolor: 'rgba(255,255,255,0.92)',
+            color: '#18171d',
+            borderBottom: '1px solid #e6def5',
+            backdropFilter: 'blur(18px)',
             zIndex: (theme) => theme.zIndex.drawer + 1,
           }}
         >
@@ -545,7 +561,7 @@ const StaffLayout = () => {
             >
               {receivesManagerNotifications && (
                 <IconButton
-                  sx={{ color: '#64748b', flexShrink: 0 }}
+                  sx={{ color: '#70687e', flexShrink: 0 }}
                   onClick={handleNotificationsOpen}
                   aria-label={t('notifications.title')}
                 >
@@ -558,7 +574,7 @@ const StaffLayout = () => {
                   </Badge>
                 </IconButton>
               )}
-              <IconButton sx={{ color: '#64748b', flexShrink: 0 }}>
+              <IconButton sx={{ color: '#70687e', flexShrink: 0 }}>
                 <PersonIcon />
               </IconButton>
               <Button
@@ -568,14 +584,14 @@ const StaffLayout = () => {
                 sx={{
                   minWidth: 'auto',
                   px: 1.5,
-                  borderColor: '#e2e8f0',
-                  color: '#64748b',
+                  borderColor: '#e6def5',
+                  color: '#70687e',
                   textTransform: 'none',
                   flexShrink: 0,
                   whiteSpace: 'nowrap',
                   '&:hover': {
-                    borderColor: '#cbd5e1',
-                    bgcolor: '#f8fafc',
+                    borderColor: '#824cff',
+                    bgcolor: '#f7f3ff',
                   },
                 }}
               >
@@ -649,7 +665,9 @@ const StaffLayout = () => {
           component="main"
           sx={{
             flexGrow: 1,
-            bgcolor: '#f5f7fa',
+            bgcolor: '#fbf9ff',
+            background:
+              'radial-gradient(circle at 8% 0%, rgba(130,76,255,0.11), transparent 28%), linear-gradient(180deg, #ffffff 0%, #fbf9ff 48%, #f3eeff 100%)',
             p: 3,
             overflowY: 'auto',
             overflowX: 'hidden',
@@ -668,7 +686,7 @@ const StaffLayout = () => {
         disableEscapeKeyDown={mustChangePassword}
         maxWidth="xs"
         fullWidth
-        PaperProps={{ sx: { borderRadius: 3 } }}
+        PaperProps={{ sx: { borderRadius: '24px' } }}
       >
         <DialogTitle>
           {mustChangePassword

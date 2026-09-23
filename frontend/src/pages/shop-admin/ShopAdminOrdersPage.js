@@ -205,10 +205,10 @@ const ShopAdminOrdersPage = () => {
     ));
 
   return (
-    <Grid container spacing={3}>
+    <Grid className="zzv-admin-page zzv-admin-page--shop-orders" container spacing={3}>
       <Grid item xs={12}>
-        <Paper elevation={0} sx={{ borderRadius: 4, border: '1px solid #dce4f0', overflow: 'hidden' }}>
-          <Box sx={{ p: 3, borderBottom: '1px solid #e6edf7', background: 'linear-gradient(180deg, #fbfcff 0%, #f6f8fc 100%)' }}>
+        <Paper className="zzv-admin-table-card zzv-shop-orders-panel" elevation={0} sx={{ borderRadius: 4, border: '1px solid #dce4f0', overflow: 'hidden' }}>
+          <Box className="zzv-admin-filter-card" sx={{ p: 3, borderBottom: '1px solid #e6edf7', background: 'linear-gradient(180deg, #fbfcff 0%, #f6f8fc 100%)' }}>
             <Stack
               direction={{ xs: 'column', md: 'row' }}
               spacing={2}

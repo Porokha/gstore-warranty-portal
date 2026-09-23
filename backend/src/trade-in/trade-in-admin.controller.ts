@@ -7,6 +7,7 @@ import { UpdateTradeInCategoryDto } from './dto/update-trade-in-category.dto';
 import { UpdateTradeInPricingDto } from './dto/update-trade-in-pricing.dto';
 import { UpdateTradeInProductDto } from './dto/update-trade-in-product.dto';
 import { UpdateTradeInQuoteDto } from './dto/update-trade-in-quote.dto';
+import { UpdateTradeInOfferPolicyDto } from './dto/update-trade-in-offer-policy.dto';
 import { TradeInQuoteStatus } from './entities/trade-in-quote.entity';
 import { TradeInService } from './trade-in.service';
 
@@ -15,6 +16,16 @@ import { TradeInService } from './trade-in.service';
 @Roles(UserRole.ADMIN)
 export class TradeInAdminController {
   constructor(private readonly tradeInService: TradeInService) {}
+
+  @Get('offer-policy')
+  getOfferPolicy() {
+    return this.tradeInService.getOfferPolicy();
+  }
+
+  @Patch('offer-policy')
+  updateOfferPolicy(@Body() dto: UpdateTradeInOfferPolicyDto) {
+    return this.tradeInService.updateOfferPolicy(dto);
+  }
 
   @Get('categories')
   listCategories() {

@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Box,
   Button,
   CircularProgress,
-  InputAdornment,
   Modal,
   Skeleton,
   TextField,
@@ -14,19 +13,22 @@ import {
   ArrowBackRounded,
   ArrowForwardRounded,
   SearchRounded,
+  SmartphoneOutlined,
 } from '@mui/icons-material';
-import { useQuery } from 'react-query';
+import { useInfiniteQuery, useQuery } from 'react-query';
 import { useTranslation } from 'react-i18next';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { tradeInService } from '../../services/tradeInService';
+import FigmaTradeInValuation from './TradeInValuation';
 
 const palette = {
-  purple: '#7c4dff',
-  purpleDark: '#4f2ab8',
-  lavender: '#eee8ff',
+  purple: '#824cff',
+  purpleDark: '#452386',
+  lavender: '#f0e9ff',
   ink: '#18171d',
   muted: '#6e687a',
   border: '#e4ddf2',
-  canvas: '#f7f4fc',
+  canvas: '#fbf9ff',
 };
 
 const imageUrl = (value) => {
@@ -100,7 +102,7 @@ const SelectionCard = ({ title, subtitle, image, icon, onClick, disabled }) => (
       minHeight: 170,
       p: 2.25,
       border: `1px solid ${palette.border}`,
-      borderRadius: '12px',
+      borderRadius: '18px',
       bgcolor: '#fff',
       color: palette.ink,
       textAlign: 'left',
@@ -114,7 +116,7 @@ const SelectionCard = ({ title, subtitle, image, icon, onClick, disabled }) => (
         : {
             transform: 'translateY(-3px)',
             borderColor: '#bca8f7',
-            boxShadow: '0 16px 34px rgba(81, 45, 156, 0.10)',
+            boxShadow: '0 18px 42px rgba(81, 45, 156, 0.10)',
           },
     }}
   >
@@ -128,6 +130,7 @@ const SelectionCard = ({ title, subtitle, image, icon, onClick, disabled }) => (
       />
     ) : (
       <Box
+        className="zzv-trade-content-wrap"
         sx={{
           width: 54,
           height: 54,
@@ -148,7 +151,61 @@ const SelectionCard = ({ title, subtitle, image, icon, onClick, disabled }) => (
   </Box>
 );
 
-const TradeInValuation = ({ product, t }) => {
+const brandMarks = {
+  apple: '/figma-home/trade-brand-apple.svg',
+  samsung: '/trade-in/media/brands/samsung.jpg',
+  asus: '/figma-home/trade-brand-asus.svg',
+  motorola: '/figma-home/trade-brand-motorola.svg',
+  sony: '/figma-home/trade-brand-sony.svg',
+};
+const featuredBrandOrder = ['apple', 'samsung', 'asus', 'motorola', 'sony'];
+const brandFamilyLabels = {
+  apple: 'iPhone',
+  samsung: 'Galaxy',
+  asus: 'Zenfone',
+  motorola: 'Edge',
+  sony: 'Xperia',
+};
+
+const TradeBrandOption = ({ item, selected, onClick, t }) => (
+  <button
+    type="button"
+    className={`zzv-trade-brand-option${selected ? ' is-selected' : ''}`}
+    onClick={onClick}
+    aria-pressed={selected}
+  >
+    <span className={`zzv-trade-brand-logo${item.brand.toLowerCase() === 'samsung' ? ' zzv-trade-brand-logo--samsung' : ''}`}>
+      <img src={brandMarks[item.brand.toLowerCase()] || imageUrl(item.image_src)} alt="" />
+    </span>
+    <span className="zzv-trade-brand-name">{item.brand}</span>
+    {brandFamilyLabels[item.brand.toLowerCase()] && (
+      <span className="zzv-trade-brand-family">{brandFamilyLabels[item.brand.toLowerCase()]}</span>
+    )}
+    <span className="zzv-trade-brand-count">{item.product_count} {t('public.tradeIn.models')}</span>
+    <ArrowForwardRounded className="zzv-trade-option-arrow" aria-hidden="true" />
+    <span className="zzv-trade-option-radio" aria-hidden="true" />
+  </button>
+);
+
+const TradeModelOption = ({ item, selected, onClick, t }) => (
+  <button
+    type="button"
+    className={`zzv-trade-model-option${selected ? ' is-selected' : ''}`}
+    onClick={onClick}
+    aria-pressed={selected}
+  >
+    <span className="zzv-trade-model-image">
+      <img src={imageUrl(item.image_src)} alt="" loading="lazy" />
+      <SmartphoneOutlined className="zzv-trade-model-mobile-icon" aria-hidden="true" />
+    </span>
+    <span className="zzv-trade-model-name">{item.name}</span>
+    <span className="zzv-trade-model-price"><span className="zzv-trade-model-price-prefix">{t('public.tradeIn.upTo')} </span>₾{Math.round(item.max_price || 0).toLocaleString()}</span>
+    <ArrowForwardRounded className="zzv-trade-option-arrow" aria-hidden="true" />
+    <span className="zzv-trade-option-radio" aria-hidden="true" />
+  </button>
+);
+
+const TradeInValuation = ({ product, t, onProgressChange }) => {
   const [pointer, setPointer] = useState({ setIndex: 0, questionIndex: 0 });
   const [selectedIndexes, setSelectedIndexes] = useState([]);
   const [steps, setSteps] = useState([]);
@@ -192,6 +249,10 @@ const TradeInValuation = ({ product, t }) => {
   const currentMessage = getAnswerMessage(answerMessages, selectedAnswers[0]);
   const isMulti = Number(activeQuestion?.type || 0) > 0;
   const finalPrice = Math.max(0, Math.round(price));
+
+  useEffect(() => {
+    onProgressChange(mode === 'question' ? Math.min(5, 3 + steps.length) : 5);
+  }, [mode, steps.length, onProgressChange]);
 
   useEffect(() => {
     if (mode !== 'final') {
@@ -341,20 +402,27 @@ const TradeInValuation = ({ product, t }) => {
 
   return (
     <Box
+      className="zzv-trade-valuation"
       sx={{
         display: 'grid',
         gridTemplateColumns: { xs: '1fr', md: '0.85fr 1.15fr' },
-        gap: { xs: 1.5, md: 2 },
+        gap: 0,
         alignItems: 'stretch',
+        overflow: 'hidden',
+        border: `1px solid ${palette.border}`,
+        borderRadius: { xs: '20px', md: '28px' },
+        bgcolor: '#fff',
+        boxShadow: '0 26px 80px rgba(73, 43, 130, .08)',
       }}
     >
       <Box
+        className="zzv-trade-device-panel"
         sx={{
           minHeight: { xs: 'auto', md: 620 },
           p: { xs: 2, md: 4 },
-          border: `1px solid ${palette.border}`,
-          borderRadius: '16px',
-          bgcolor: 'rgba(255,255,255,.76)',
+          border: 0,
+          borderRadius: 0,
+          bgcolor: '#f8f8f9',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -423,13 +491,14 @@ const TradeInValuation = ({ product, t }) => {
       </Box>
 
       <Box
+        className="zzv-trade-question-panel"
         sx={{
           minHeight: { xs: 'auto', md: 620 },
           p: { xs: 2, md: 4 },
-          border: `1px solid ${palette.border}`,
-          borderRadius: '16px',
+          border: 0,
+          borderRadius: 0,
           bgcolor: '#fff',
-          boxShadow: '0 20px 70px rgba(85, 52, 160, .07)',
+          boxShadow: 'none',
         }}
       >
         {mode === 'question' && activeQuestion && (
@@ -509,7 +578,7 @@ const TradeInValuation = ({ product, t }) => {
                 disableElevation
                 disabled={!steps.length}
                 onClick={goPreviousQuestion}
-                sx={{ py: 1.4, borderRadius: '10px', bgcolor: '#f1eff7', color: palette.ink }}
+                sx={{ py: 1.4, borderRadius: '12px', bgcolor: '#f1eff7', color: palette.ink }}
               >
                 {t('public.tradeIn.previous')}
               </Button>
@@ -517,7 +586,7 @@ const TradeInValuation = ({ product, t }) => {
                 variant="contained"
                 disableElevation
                 onClick={goNextQuestion}
-                sx={{ py: 1.4, borderRadius: '10px', bgcolor: palette.purple }}
+                sx={{ py: 1.4, borderRadius: '12px', bgcolor: palette.purple }}
               >
                 {t('public.tradeIn.next')}
               </Button>
@@ -564,7 +633,7 @@ const TradeInValuation = ({ product, t }) => {
                   disableElevation
                   disabled={mode === 'no-offer'}
                   onClick={() => setQuoteOpen(true)}
-                  sx={{ minWidth: 170, py: 1.5, borderRadius: '999px', bgcolor: palette.purple }}
+                  sx={{ minWidth: 170, py: 1.5, borderRadius: '12px', bgcolor: palette.purple }}
                 >
                   {t('public.tradeIn.getThisOffer')}
                 </Button>
@@ -572,7 +641,7 @@ const TradeInValuation = ({ product, t }) => {
                   variant="contained"
                   disableElevation
                   onClick={goPreviousQuestion}
-                  sx={{ minWidth: 170, py: 1.5, borderRadius: '999px', bgcolor: '#f1eff7', color: palette.ink }}
+                  sx={{ minWidth: 170, py: 1.5, borderRadius: '12px', bgcolor: '#f1eff7', color: palette.ink }}
                 >
                   {t('public.tradeIn.changeAnswers')}
                 </Button>
@@ -611,7 +680,7 @@ const TradeInValuation = ({ product, t }) => {
             maxHeight: 'calc(100vh - 28px)',
             overflow: 'auto',
             p: { xs: 2.4, md: 3.5 },
-            borderRadius: '18px',
+            borderRadius: '24px',
             bgcolor: '#fff',
             boxShadow: '0 28px 90px rgba(22, 17, 40, .28)',
             outline: 'none',
@@ -676,55 +745,154 @@ const TradeInValuation = ({ product, t }) => {
 };
 
 const TradeInPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const initialSelectionApplied = useRef(false);
   const [stage, setStage] = useState('categories');
   const [category, setCategory] = useState(null);
   const [brand, setBrand] = useState('');
   const [series, setSeries] = useState('');
+  const [modelSeries, setModelSeries] = useState([]);
   const [search, setSearch] = useState('');
   const [product, setProduct] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [valuationStep, setValuationStep] = useState(3);
+  const valuationBackRef = useRef(null);
+  const loadMoreRef = useRef(null);
+  const seriesRef = useRef(null);
 
   const categoriesQuery = useQuery(['trade-in-categories'], tradeInService.getCategories);
+  useEffect(() => {
+    const available = (categoriesQuery.data || []).filter((item) => !item.coming_soon);
+    if (!initialSelectionApplied.current && available.length) {
+      initialSelectionApplied.current = true;
+      const { preselectedBrand, preselectedProduct } = location.state || {};
+      const phoneCategory = available.find((item) => item.slug === 'phone');
+      if (phoneCategory && (preselectedBrand || preselectedProduct)) {
+        setCategory(phoneCategory);
+        setBrand(preselectedBrand || '');
+        if (preselectedProduct?.slug) {
+          setProduct(preselectedProduct);
+          setStage('valuation');
+        } else {
+          setStage(preselectedBrand ? 'products' : 'brands');
+        }
+        return;
+      }
+    }
+    if (stage === 'categories' && !category && available.length === 1) {
+      setCategory(available[0]);
+      setStage('brands');
+    }
+  }, [categoriesQuery.data, category, stage, location.state]);
   const brandsQuery = useQuery(
     ['trade-in-brands', category?.slug],
     () => tradeInService.getBrands(category.slug),
     { enabled: Boolean(category?.slug && stage === 'brands') },
   );
+  const orderedBrands = [...(brandsQuery.data || [])].sort((a, b) => {
+    const aIndex = featuredBrandOrder.indexOf(a.brand.toLowerCase());
+    const bIndex = featuredBrandOrder.indexOf(b.brand.toLowerCase());
+    if (aIndex === -1 && bIndex === -1) return 0;
+    if (aIndex === -1) return 1;
+    if (bIndex === -1) return -1;
+    return aIndex - bIndex;
+  });
+  useEffect(() => {
+    if (stage === 'brands' && category?.slug === 'phone' && !brand && orderedBrands.some((item) => item.brand.toLowerCase() === 'apple')) {
+      setBrand(orderedBrands.find((item) => item.brand.toLowerCase() === 'apple').brand);
+    }
+  }, [stage, category?.slug, brand, brandsQuery.data]);
   const seriesQuery = useQuery(
     ['trade-in-series', category?.slug, brand],
     () => tradeInService.getSeries(category.slug, brand),
-    { enabled: Boolean(category?.slug && brand && stage === 'series') },
+    { enabled: Boolean(category?.slug && brand && stage === 'products') },
   );
-  const productsQuery = useQuery(
+  const productsQuery = useInfiniteQuery(
     ['trade-in-products', category?.slug, brand, series, search],
-    () =>
+    ({ pageParam = 1 }) =>
       tradeInService.getProducts({
         category: category?.slug,
         brand: brand || undefined,
         series: series || undefined,
         q: search || undefined,
-        limit: 60,
+        page: pageParam,
+        limit: 40,
       }),
-    { enabled: stage === 'products', keepPreviousData: true },
+    {
+      enabled: stage === 'products',
+      getNextPageParam: (lastPage) => lastPage.page < lastPage.total_pages ? lastPage.page + 1 : undefined,
+    },
   );
+  const productPages = productsQuery.data?.pages || [];
+  const listedProducts = productPages.flatMap((page) => page.items || []);
+  useEffect(() => {
+    if (stage !== 'products' || brand.toLowerCase() !== 'apple' || series || search || !listedProducts.length) return;
+    const generations = [...new Set(listedProducts.map((item) => item.name.match(/iPhone\s+(\d+|SE|XS|XR|X|Air)/i)?.[1]).filter(Boolean))];
+    generations.sort((a, b) => (Number(b) || -1) - (Number(a) || -1) || a.localeCompare(b));
+    setModelSeries(generations);
+  }, [stage, brand, series, search, listedProducts.length]);
+  const seriesOptions = brand.toLowerCase() === 'apple'
+    ? modelSeries
+    : (seriesQuery.data || []).map((item) => item.series).filter((item) => item.toLowerCase() !== brand.toLowerCase());
+
+  useEffect(() => {
+    if (stage !== 'products' || !series || !window.matchMedia('(max-width: 920px)').matches) return;
+    const scroller = seriesRef.current;
+    const selected = scroller?.querySelector('.is-selected');
+    if (!selected) return;
+    const left = scroller.scrollLeft + selected.getBoundingClientRect().left - scroller.getBoundingClientRect().left - 100;
+    scroller.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
+  }, [stage, series, seriesOptions.length]);
+
+  useEffect(() => {
+    if (stage !== 'products' || !productsQuery.hasNextPage || !loadMoreRef.current) return undefined;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !productsQuery.isFetchingNextPage) productsQuery.fetchNextPage();
+    }, { rootMargin: '300px' });
+    observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [stage, productsQuery.hasNextPage, productsQuery.isFetchingNextPage, productsQuery.fetchNextPage, listedProducts.length]);
   const resetAfterCategory = (selected) => {
     setCategory(selected);
     setBrand('');
     setSeries('');
+    setModelSeries([]);
     setSearch('');
     setStage(selected.coming_soon ? 'categories' : 'brands');
   };
 
   const chooseProduct = (selected) => {
     setProduct(selected);
+    setSelectedProduct(null);
+    setValuationStep(3);
     setStage('valuation');
   };
 
+  const chooseBrand = (selected) => {
+    setBrand(selected);
+    setSeries('');
+    setModelSeries([]);
+    setSearch('');
+    if (!window.matchMedia('(max-width: 920px)').matches) setStage('products');
+  };
+
   const goBack = () => {
-    if (stage === 'brands') setStage('categories');
-    if (stage === 'series') setStage('brands');
-    if (stage === 'products') setStage(series ? 'series' : 'brands');
-    if (stage === 'valuation') setStage('products');
+    if (stage === 'brands') {
+      if ((categoriesQuery.data || []).filter((item) => !item.coming_soon).length === 1) navigate('/');
+      else setStage('categories');
+    }
+    if (stage === 'products') {
+      setSeries('');
+      setSelectedProduct(null);
+      setStage('brands');
+    }
+    if (stage === 'valuation') {
+      if (valuationBackRef.current?.()) return;
+      setSelectedProduct(product);
+      setStage('products');
+    }
   };
 
   const titleByStage = {
@@ -737,13 +905,16 @@ const TradeInPage = () => {
 
   const loading =
     categoriesQuery.isLoading ||
-    brandsQuery.isLoading ||
-    seriesQuery.isLoading ||
-    productsQuery.isLoading;
+    (stage === 'brands' && brandsQuery.isLoading);
+
+  const wizardStep = stage === 'brands' ? 1 : stage === 'products' ? 2 : stage === 'valuation' ? valuationStep : 0;
+  const showWizard = stage === 'brands' || stage === 'products' || stage === 'valuation';
+  const showProgress = Number.isInteger(wizardStep) && wizardStep > 0;
 
   return (
-    <Box sx={{ minHeight: 'calc(100vh - 60px)', bgcolor: palette.canvas, color: palette.ink }}>
-      <Box
+    <Box className={`zzv-trade-page${showWizard ? ' zzv-trade-page--wizard' : ''}`} sx={{ minHeight: 'calc(100vh - 60px)', bgcolor: palette.canvas, color: palette.ink }}>
+      {!showWizard && <Box
+        className="zzv-trade-hero"
         sx={{
           px: { xs: 2, md: 5 },
           py: { xs: 4, md: 6 },
@@ -763,17 +934,30 @@ const TradeInPage = () => {
             {t('public.tradeIn.subtitle')}
           </Typography>
         </Box>
-      </Box>
+      </Box>}
+
+      {(showProgress || wizardStep === 'contact') && (
+        <div className="zzv-trade-progress-wrap">
+          <div className="zzv-trade-progress-inner">
+            <button type="button" className="zzv-trade-back" onClick={goBack} aria-label={t('public.tradeIn.back')}>
+              <ArrowBackRounded fontSize="small" />
+            </button>
+            <div className="zzv-trade-progress">
+              {showProgress ? <><span>{t('public.tradeIn.step', { current: wizardStep, total: 5 })}</span><div className="zzv-trade-progress-track"><span style={{ width: `${wizardStep * 20}%` }} /></div></> : <strong>{i18n.language === 'ka' ? 'საკონტაქტო' : 'Contact'}</strong>}
+            </div>
+          </div>
+        </div>
+      )}
 
       <Box
         sx={{
-          maxWidth: stage === 'valuation' ? 1360 : 1180,
+          maxWidth: stage === 'valuation' ? 1360 : 1200,
           mx: 'auto',
-          px: { xs: stage === 'valuation' ? 1.25 : 2, md: stage === 'valuation' ? 4 : 5 },
-          py: { xs: stage === 'valuation' ? 1.5 : 3, md: stage === 'valuation' ? 3 : 5 },
+          px: { xs: stage === 'valuation' ? 1.25 : 2.5, md: stage === 'valuation' ? 4 : 0 },
+          py: { xs: stage === 'valuation' ? 1.5 : 3, md: stage === 'valuation' ? 3 : 4 },
         }}
       >
-        {stage !== 'categories' && (
+        {stage !== 'categories' && !showWizard && (
           <Button
             onClick={goBack}
             startIcon={<ArrowBackRounded />}
@@ -781,23 +965,6 @@ const TradeInPage = () => {
           >
             {t('public.tradeIn.back')}
           </Button>
-        )}
-
-        {stage === 'products' && (
-          <TextField
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder={t('public.tradeIn.search')}
-            fullWidth
-            sx={{ mb: 2.5, maxWidth: 560, '& .MuiOutlinedInput-root': { borderRadius: '10px', bgcolor: '#fff' } }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchRounded />
-                </InputAdornment>
-              ),
-            }}
-          />
         )}
 
         {loading && (
@@ -824,64 +991,69 @@ const TradeInPage = () => {
         )}
 
         {!loading && stage === 'brands' && (
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(190px,1fr))', gap: 1.5 }}>
-            {(brandsQuery.data || []).map((item) => (
-              <SelectionCard
+          <div className="zzv-trade-step">
+            <h1>{t('public.tradeIn.brandQuestion')}</h1>
+            <div className="zzv-trade-brand-grid">
+              {orderedBrands.map((item) => (
+                <TradeBrandOption
                 key={item.brand}
-                title={item.brand}
-                subtitle={`${item.product_count} ${t('public.tradeIn.models')}`}
-                image={imageUrl(item.image_src)}
-                onClick={() => {
-                  setBrand(item.brand);
-                  setStage('series');
-                }}
-              />
-            ))}
-          </Box>
-        )}
-
-        {!loading && stage === 'series' && (
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(190px,1fr))', gap: 1.5 }}>
-            <SelectionCard
-              title={t('public.tradeIn.allModels')}
-              subtitle={brand}
-              onClick={() => setStage('products')}
-            />
-            {(seriesQuery.data || []).map((item) => (
-              <SelectionCard
-                key={item.series}
-                title={item.series}
-                subtitle={`${item.product_count} ${t('public.tradeIn.models')}`}
-                image={imageUrl(item.image_src)}
-                onClick={() => {
-                  setSeries(item.series);
-                  setStage('products');
-                }}
-              />
-            ))}
-          </Box>
-        )}
-
-        {!loading && stage === 'products' && (
-          <>
-            <Typography sx={{ mb: 2, color: palette.muted, fontSize: 13 }}>
-              {productsQuery.data?.total || 0} {t('public.tradeIn.devicesFound')}
-            </Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(210px,1fr))', gap: 1.5 }}>
-              {(productsQuery.data?.items || []).map((item) => (
-                <SelectionCard
-                  key={item.id}
-                  title={item.name}
-                  subtitle={`${t('public.tradeIn.upTo')} ₾${Math.round(item.max_price || 0)}`}
-                  image={imageUrl(item.image_src)}
-                  onClick={() => chooseProduct(item)}
+                  item={item}
+                  selected={brand === item.brand}
+                  onClick={() => chooseBrand(item.brand)}
+                  t={t}
                 />
               ))}
-            </Box>
-          </>
+            </div>
+            <button type="button" className="zzv-trade-continue" disabled={!brand} onClick={() => setStage('products')}>
+              {t('public.tradeIn.continue')}
+            </button>
+          </div>
         )}
 
-        {!loading && stage === 'valuation' && product && <TradeInValuation product={product} t={t} />}
+        {stage === 'products' && (
+          <div className="zzv-trade-step">
+            <h1>{t('public.tradeIn.modelQuestion')}</h1>
+            <p className="zzv-trade-step-context">{brand}</p>
+            <div className="zzv-trade-search">
+              <SearchRounded aria-hidden="true" />
+              <input value={search} onChange={(event) => { setSearch(event.target.value); setSelectedProduct(null); }} placeholder={t('public.tradeIn.searchModel')} aria-label={t('public.tradeIn.searchModel')} />
+            </div>
+            {seriesOptions.length > 0 && (
+              <div ref={seriesRef} className="zzv-trade-series" aria-label={t('public.tradeIn.chooseSeries')}>
+                <button type="button" className={!series ? 'is-selected' : ''} onClick={() => { setSeries(''); setSelectedProduct(null); }}>{t('public.tradeIn.allModels')}</button>
+                {seriesOptions.map((item) => (
+                  <button key={item} type="button" className={series === item ? 'is-selected' : ''} onClick={() => { setSeries(item); setSelectedProduct(null); }}>{item}</button>
+                ))}
+              </div>
+            )}
+            <p className="zzv-trade-result-count">
+              {productsQuery.isLoading ? t('public.tradeIn.loadingMore') : `${productPages[0]?.total || 0} ${t('public.tradeIn.models')}`}
+            </p>
+            <div className="zzv-trade-model-grid">
+              {productsQuery.isLoading ? Array.from({ length: 4 }).map((_, index) => (
+                <Skeleton key={index} className="zzv-trade-model-skeleton" variant="rounded" height={220} sx={{ borderRadius: '16px' }} />
+              )) : listedProducts.map((item) => (
+                <TradeModelOption
+                  key={item.id}
+                  item={item}
+                  selected={selectedProduct?.id === item.id}
+                  onClick={() => {
+                    if (window.matchMedia('(max-width: 920px)').matches) setSelectedProduct(item);
+                    else chooseProduct(item);
+                  }}
+                  t={t}
+                />
+              ))}
+            </div>
+            {!productsQuery.isLoading && !listedProducts.length && <p className="zzv-trade-empty">{t('public.tradeIn.noModels')}</p>}
+            {!productsQuery.isLoading && productsQuery.hasNextPage && <div ref={loadMoreRef} className="zzv-trade-load-more" aria-label={t('public.tradeIn.loadingMore')}><CircularProgress size={22} /></div>}
+            <button type="button" className="zzv-trade-continue" disabled={!selectedProduct} onClick={() => chooseProduct(selectedProduct)}>
+              {t('public.tradeIn.continue')}
+            </button>
+          </div>
+        )}
+
+        {!loading && stage === 'valuation' && product && <FigmaTradeInValuation key={product.slug} product={product} t={t} language={i18n.language} initialStorage={location.state?.preselectedStorage} initialCondition={location.state?.preselectedCondition} onProgressChange={setValuationStep} backActionRef={valuationBackRef} />}
       </Box>
     </Box>
   );

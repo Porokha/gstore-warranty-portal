@@ -5,6 +5,24 @@
 }
 
 @font-face {
+  font-family: 'Google Sans';
+  src: url('./assets/fonts/google-sans-georgian.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  unicode-range: U+0589, U+10A0-10FF, U+1C90-1CBA, U+1CBD-1CBF, U+205A, U+2D00-2D2F, U+2E31;
+}
+
+@font-face {
+  font-family: 'Google Sans';
+  src: url('./assets/fonts/google-sans-latin.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
   font-family: 'BPG Banner Quadrosquare';
   src:
     url('./assets/fonts/bpg-banner-quadrosquare-webfont.woff2') format('woff2'),
@@ -33,8 +51,8 @@
   --brand-surface: #f7f3ff;
   --brand-surface-strong: #efe7ff;
   --brand-border: #e3d7ff;
-  --font-platform: 'BPG Banner Quadrosquare', sans-serif;
-  --font-platform-caps: 'BPG Banner Quadrosquare Caps', sans-serif;
+  --font-platform: 'Google Sans', sans-serif;
+  --font-platform-caps: 'Google Sans', sans-serif;
 }
 
 body {
@@ -49,4 +67,246 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+.zzv-admin-page {
+  --zzv-admin-ink: #18171d;
+  --zzv-admin-muted: #70687e;
+  --zzv-admin-border: #e6def5;
+  --zzv-admin-purple: #824cff;
+  --zzv-admin-purple-soft: #f2ecff;
+  width: 100%;
+}
+
+.zzv-admin-page-head {
+  position: relative;
+  padding: 18px 0 4px;
+}
+
+.zzv-admin-page-head h4,
+.zzv-admin-page h4,
+.zzv-admin-page h5,
+.zzv-admin-page h6 {
+  font-family: var(--font-platform-caps);
+  letter-spacing: -0.03em;
+  color: var(--zzv-admin-ink);
+}
+
+.zzv-admin-page-head h4 {
+  font-size: clamp(28px, 3vw, 42px);
+  line-height: 1.05;
+}
+
+.zzv-admin-page .MuiPaper-root {
+  border: 1px solid var(--zzv-admin-border);
+  box-shadow: 0 22px 70px rgba(63, 30, 120, 0.07);
+}
+
+.zzv-admin-filter-card {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(130, 76, 255, 0.065), transparent 42%),
+    #ffffff;
+}
+
+.zzv-admin-filter-card .MuiBox-root {
+  align-items: center;
+}
+
+.zzv-admin-page .MuiOutlinedInput-root {
+  background: #fbfaff;
+}
+
+.zzv-admin-page .MuiOutlinedInput-notchedOutline {
+  border-color: var(--zzv-admin-border);
+}
+
+.zzv-admin-page .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline,
+.zzv-admin-page .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: var(--zzv-admin-purple);
+}
+
+.zzv-admin-page .MuiButton-contained {
+  background: var(--zzv-admin-purple);
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(130, 76, 255, 0.22);
+}
+
+.zzv-admin-page .MuiButton-contained:hover {
+  background: #6f3ee8;
+  box-shadow: 0 14px 30px rgba(130, 76, 255, 0.28);
+}
+
+.zzv-admin-page .MuiButton-outlined {
+  border-color: var(--zzv-admin-border);
+  color: #4d455e;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.zzv-admin-page .MuiButton-outlined:hover {
+  border-color: var(--zzv-admin-purple);
+  background: var(--zzv-admin-purple-soft);
+}
+
+.zzv-admin-table-card {
+  overflow: hidden;
+  border: 1px solid var(--zzv-admin-border);
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 22px 70px rgba(63, 30, 120, 0.07);
+}
+
+.zzv-admin-table-card .MuiPaper-root {
+  border: 0;
+  border-radius: 0 !important;
+  box-shadow: none;
+}
+
+.zzv-admin-page .MuiTableHead-root .MuiTableCell-root {
+  background: #fbfaff;
+  color: #4d455e;
+  font-family: var(--font-platform-caps);
+  font-size: 12px;
+}
+
+.zzv-admin-page .MuiTableBody-root .MuiTableRow-root:hover {
+  background: #fbfaff;
+}
+
+.zzv-admin-page .MuiTabs-root {
+  border-bottom: 1px solid var(--zzv-admin-border);
+}
+
+.zzv-admin-page .MuiTab-root {
+  color: var(--zzv-admin-muted);
+  font-family: var(--font-platform-caps);
+}
+
+.zzv-admin-page .MuiTab-root.Mui-selected {
+  color: var(--zzv-admin-purple);
+}
+
+.zzv-admin-page .MuiTabs-indicator {
+  background: var(--zzv-admin-purple);
+}
+
+.zzv-admin-page--dashboard > .MuiGrid-root .MuiPaper-root,
+.zzv-admin-page--dashboard > .MuiGrid-root .MuiCard-root {
+  border: 1px solid var(--zzv-admin-border);
+  border-radius: 20px;
+  box-shadow: 0 22px 70px rgba(63, 30, 120, 0.07);
+}
+
+.zzv-admin-page--shop-products,
+.zzv-admin-page--shop-orders,
+.zzv-admin-page--shop-tradein {
+  padding-bottom: 20px;
+}
+
+.zzv-shop-products-panel,
+.zzv-shop-orders-panel,
+.zzv-shop-tradein-panel {
+  border-color: var(--zzv-admin-border) !important;
+  border-radius: 20px !important;
+}
+
+.zzv-shop-products-panel > .zzv-admin-filter-card,
+.zzv-shop-orders-panel > .zzv-admin-filter-card,
+.zzv-shop-tradein-panel > .zzv-admin-filter-card {
+  border-bottom-color: var(--zzv-admin-border) !important;
+}
+
+.zzv-shop-products-panel .MuiTypography-root,
+.zzv-shop-orders-panel .MuiTypography-root,
+.zzv-shop-tradein-panel .MuiTypography-root {
+  letter-spacing: -0.015em;
+}
+
+.zzv-shop-products-panel .MuiChip-root,
+.zzv-shop-orders-panel .MuiChip-root,
+.zzv-shop-tradein-panel .MuiChip-root {
+  border-radius: 10px !important;
+  font-family: var(--font-platform-caps);
+}
+
+.zzv-shop-products-panel .MuiTable-root,
+.zzv-shop-tradein-panel [style*="grid-template-columns"] {
+  background: #ffffff;
+}
+
+.zzv-shop-products-panel .MuiTableCell-root {
+  border-bottom-color: #eee7fa;
+}
+
+.zzv-shop-products-panel .MuiTableBody-root .MuiTableRow-root {
+  transition: background 160ms ease;
+}
+
+.zzv-shop-products-panel .MuiTableBody-root .MuiTableRow-root.Mui-selected,
+.zzv-shop-products-panel .MuiTableBody-root .MuiTableRow-root.Mui-selected:hover {
+  background: #fbf7ff;
+}
+
+.zzv-shop-products-toolbar,
+.zzv-shop-tradein-toolbar {
+  background:
+    linear-gradient(135deg, rgba(130, 76, 255, 0.05), transparent 44%),
+    #fffefd !important;
+  border-color: var(--zzv-admin-border) !important;
+}
+
+.zzv-shop-orders-panel [class*="MuiGrid-item"] > .MuiBox-root {
+  scrollbar-width: thin;
+  scrollbar-color: #d7c7f6 transparent;
+}
+
+.zzv-shop-orders-panel .MuiPaper-root {
+  border-color: var(--zzv-admin-border) !important;
+}
+
+.zzv-shop-orders-panel .MuiPaper-root:hover {
+  border-color: #cdbdf5 !important;
+}
+
+.zzv-shop-tradein-panel > .MuiBox-root:not(.zzv-admin-filter-card):not(.zzv-shop-tradein-toolbar) {
+  background: #ffffff;
+}
+
+.zzv-shop-tradein-panel .MuiSelect-select,
+.zzv-shop-products-panel .MuiSelect-select,
+.zzv-shop-orders-panel .MuiSelect-select {
+  font-family: var(--font-platform);
+}
+
+.zzv-shop-tradein-panel .MuiSwitch-switchBase.Mui-checked,
+.zzv-shop-products-panel .MuiSwitch-switchBase.Mui-checked {
+  color: var(--zzv-admin-purple);
+}
+
+.zzv-shop-tradein-panel .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track,
+.zzv-shop-products-panel .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track {
+  background-color: var(--zzv-admin-purple);
+}
+
+.zzv-admin-page--shop-tradein .zzv-admin-page-head h1 {
+  font-family: var(--font-platform-caps);
+  letter-spacing: -0.03em;
+}
+
+@media (max-width: 720px) {
+  .zzv-admin-page-head {
+    padding-top: 10px;
+  }
+
+  .zzv-admin-page-head > .MuiBox-root,
+  .zzv-admin-page-head {
+    align-items: flex-start !important;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .zzv-admin-page-head h4 {
+    font-size: 30px;
+  }
 }

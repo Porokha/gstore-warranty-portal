@@ -216,9 +216,9 @@ const DashboardPage = () => {
   };
 
   return (
-    <Box>
+    <Box className="zzv-admin-page zzv-admin-page--dashboard">
       {/* Welcome Section */}
-      <Box mb={4}>
+      <Box className="zzv-admin-page-head" mb={4}>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Box>
             <Typography variant="h4" sx={{ fontWeight: 700, color: brand.ink, mb: 1 }}>

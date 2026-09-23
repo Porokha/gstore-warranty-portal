@@ -33,10 +33,12 @@ const LandingPage = lazy(() => import('./pages/public/LandingPage'));
 const PublicHomePage = lazy(() => import('./pages/public/PublicHomePage'));
 const WarrantySearchPage = lazy(() => import('./pages/public/WarrantySearchPage'));
 const CaseSearchPage = lazy(() => import('./pages/public/CaseSearchPage'));
-const ShopPage = lazy(() => import('./pages/public/ShopPage'));
+const ShopComingSoonPage = lazy(() => import('./pages/public/ShopComingSoonPage'));
 const TermsPage = lazy(() => import('./pages/public/TermsPage'));
 const PrivacyPage = lazy(() => import('./pages/public/PrivacyPage'));
 const ReviewsPage = lazy(() => import('./pages/public/ReviewsPage'));
+const AboutPage = lazy(() => import('./pages/public/AboutPage'));
+const ContactPage = lazy(() => import('./pages/public/ContactPage'));
 const TradeInPage = lazy(() => import('./pages/public/TradeInPage'));
 const MaintenancePage = lazy(() => import('./pages/public/MaintenancePage'));
 const ShopAdminLayout = lazy(() => import('./components/common/ShopAdminLayout'));
@@ -76,7 +78,7 @@ const theme = createTheme({
     borderRadius: 16,
   },
   typography: {
-    fontFamily: '"BPG Banner Quadrosquare", sans-serif',
+    fontFamily: '"Google Sans", sans-serif',
     h4: {
       fontWeight: 700,
       letterSpacing: '-0.02em',
@@ -91,7 +93,7 @@ const theme = createTheme({
     button: {
       textTransform: 'none',
       fontWeight: 700,
-      fontFamily: '"BPG Banner Quadrosquare Caps", sans-serif',
+      fontFamily: '"Google Sans", sans-serif',
     },
   },
   components: {
@@ -146,18 +148,22 @@ function AppRoutes() {
                 <Route path="/terms" element={<Navigate to="/maintenance" replace />} />
                 <Route path="/privacy" element={<Navigate to="/maintenance" replace />} />
                 <Route path="/reviews" element={<Navigate to="/maintenance" replace />} />
+                <Route path="/about" element={<Navigate to="/maintenance" replace />} />
+                <Route path="/contact" element={<Navigate to="/maintenance" replace />} />
                 <Route path="/search/warranty" element={<Navigate to="/maintenance" replace />} />
                 <Route path="/search/case" element={<Navigate to="/maintenance" replace />} />
               </>
             ) : (
               <Route path="/" element={<PublicLayout />}>
                 <Route index element={<LandingPage />} />
-                <Route path="shop" element={<ShopPage />} />
+                <Route path="shop" element={<ShopComingSoonPage />} />
                 <Route path="warranty-service" element={<PublicHomePage />} />
                 <Route path="trade-in" element={<TradeInPage />} />
                 <Route path="terms" element={<TermsPage />} />
                 <Route path="privacy" element={<PrivacyPage />} />
                 <Route path="reviews" element={<ReviewsPage />} />
+                <Route path="about" element={<AboutPage />} />
+                <Route path="contact" element={<ContactPage />} />
                 <Route path="search/warranty" element={<WarrantySearchPage />} />
                 <Route path="search/case" element={<CaseSearchPage />} />
               </Route>
@@ -166,12 +172,14 @@ function AppRoutes() {
             <Route path="/preview" element={<PrivateRoute />}>
               <Route element={<PublicLayout />}>
                 <Route index element={<LandingPage />} />
-                <Route path="shop" element={<ShopPage />} />
+                <Route path="shop" element={<ShopComingSoonPage />} />
                 <Route path="warranty-service" element={<PublicHomePage />} />
                 <Route path="trade-in" element={<TradeInPage />} />
                 <Route path="terms" element={<TermsPage />} />
                 <Route path="privacy" element={<PrivacyPage />} />
                 <Route path="reviews" element={<ReviewsPage />} />
+                <Route path="about" element={<AboutPage />} />
+                <Route path="contact" element={<ContactPage />} />
                 <Route path="search/warranty" element={<WarrantySearchPage />} />
                 <Route path="search/case" element={<CaseSearchPage />} />
               </Route>
