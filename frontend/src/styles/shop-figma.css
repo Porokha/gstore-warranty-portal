@@ -1,4 +1,4 @@
-body.zpos-fullscreen:has(.zpos-root--figma) {
+body:has(.zpos-root--figma) {
   background: #fff;
 }
 
@@ -237,6 +237,7 @@ body.zpos-fullscreen:has(.zpos-root--figma) {
   z-index: 1102;
   width: min(480px, 100%);
   height: calc(100dvh - 72px);
+  max-height: none;
   padding: 24px;
   border-left: 1px solid #e7e1f3;
   background: #fff;
