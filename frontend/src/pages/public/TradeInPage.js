@@ -156,6 +156,13 @@ const brandMarks = {
   sony: '/figma-home/trade-brand-sony.svg',
 };
 const featuredBrandOrder = ['apple', 'samsung', 'asus', 'motorola', 'sony'];
+const brandFamilyLabels = {
+  apple: 'iPhone',
+  samsung: 'Galaxy',
+  asus: 'Zenfone',
+  motorola: 'Edge',
+  sony: 'Xperia',
+};
 
 const TradeBrandOption = ({ item, selected, onClick, t }) => (
   <button
@@ -168,6 +175,9 @@ const TradeBrandOption = ({ item, selected, onClick, t }) => (
       <img src={brandMarks[item.brand.toLowerCase()] || imageUrl(item.image_src)} alt="" />
     </span>
     <span className="zzv-trade-brand-name">{item.brand}</span>
+    {brandFamilyLabels[item.brand.toLowerCase()] && (
+      <span className="zzv-trade-brand-family">{brandFamilyLabels[item.brand.toLowerCase()]}</span>
+    )}
     <span className="zzv-trade-brand-count">{item.product_count} {t('public.tradeIn.models')}</span>
     <ArrowForwardRounded className="zzv-trade-option-arrow" aria-hidden="true" />
     <span className="zzv-trade-option-radio" aria-hidden="true" />

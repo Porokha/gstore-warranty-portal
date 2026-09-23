@@ -1236,6 +1236,7 @@
 .zzv-trade-brand-logo { display: flex; align-items: center; justify-content: center; width: 100%; height: 64px; margin-bottom: 20px; }
 .zzv-trade-brand-logo img { display: block; width: auto; max-width: 160px; height: auto; max-height: 56px; object-fit: contain; }
 .zzv-trade-brand-name { font-size: 18px; font-weight: 700; line-height: 1.3; color: var(--zzv-text-secondary); }
+.zzv-trade-brand-family { display: none; }
 .zzv-trade-brand-option.is-selected .zzv-trade-brand-name { color: var(--zzv-purple-700); }
 .zzv-trade-brand-count { margin-top: 2px; padding-right: 24px; color: var(--zzv-text-tertiary); font-size: 14px; line-height: 1.5; }
 .zzv-trade-option-arrow { position: absolute; right: 16px; bottom: 20px; color: var(--zzv-purple-500); font-size: 20px !important; }
@@ -1273,6 +1274,7 @@
   .zzv-trade-model-image img { max-width: 36px; max-height: 36px; }
   .zzv-trade-brand-name,
   .zzv-trade-model-name { grid-column: 2; grid-row: 1; min-height: 0; font-size: 16px; }
+  .zzv-trade-brand-family { display: block; grid-column: 2; grid-row: 2; color: var(--zzv-text-secondary); font-size: 14px; }
   .zzv-trade-brand-count,
   .zzv-trade-model-price { grid-column: 3; grid-row: 1 / 3; margin: 0; padding: 0; color: var(--zzv-text-primary); font-size: 14px; font-weight: 600; white-space: nowrap; }
   .zzv-trade-brand-option .zzv-trade-brand-count { grid-column: 3; }
