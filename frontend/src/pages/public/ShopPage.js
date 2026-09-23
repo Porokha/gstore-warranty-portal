@@ -27,6 +27,8 @@ const partOptions = [
   ['charging', 'shop.partLabels.charging'],
 ];
 
+const SHOP_PAGE_SIZE = 24;
+
 const popularBrandNames = ['apple', 'samsung', 'google', 'sony', 'lenovo', 'microsoft'];
 
 const deviceTitles = {
@@ -318,7 +320,7 @@ const ShopPage = () => {
   const publicProductParams = useMemo(
     () => ({
       page: productPage,
-      limit: 80,
+      limit: SHOP_PAGE_SIZE,
       device: tab === 'all' ? undefined : tab,
       brand: brands.length > 0 ? brands.join(',') : undefined,
       model: models.length > 0 ? models.join(',') : undefined,
@@ -647,7 +649,7 @@ const ShopPage = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      if (!hasMoreProducts || isProductsFetching || loadingNextPageRef.current) {
+      if (!hasMoreProducts || isProductsFetching || loadingNextPageRef.current || gridProducts.length === 0) {
         return;
       }
 
@@ -665,7 +667,7 @@ const ShopPage = () => {
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [hasMoreProducts, isProductsFetching]);
+  }, [gridProducts.length, hasMoreProducts, isProductsFetching]);
 
   useEffect(() => {
     setProductPage(1);
