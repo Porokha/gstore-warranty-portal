@@ -2422,3 +2422,26 @@ button.zzv-public-header-action { cursor: pointer; }
   .zzv-figma-mobile-selector select:focus-visible, .zzv-figma-mobile-selector button:focus-visible { outline: 2px solid var(--zzv-purple-700); outline-offset: 2px; }
   .zzv-figma-mobile-selector button { height: 48px; border: 0; border-radius: 12px; background: #7c4df5; color: #fff; font: 500 14px/1.4 var(--zzv-font); cursor: pointer; }
 }
+
+.zzv-public-mobile-drawer.MuiDrawer-paper { width: 100vw; max-width: none; height: 100dvh; overflow: hidden; background: #fff; }
+.zzv-public-mobile-menu { display: flex; flex-direction: column; height: 100%; color: #14121c; font-family: var(--zzv-font); }
+.zzv-public-mobile-menu button { cursor: pointer; font: inherit; }
+.zzv-public-mobile-menu-head { display: flex; align-items: center; justify-content: space-between; height: 72px; flex: 0 0 72px; padding: 0 20px; border-bottom: 1px solid #eae7f2; }
+.zzv-public-mobile-menu-head > img { width: 99px; height: 20px; object-fit: contain; }
+.zzv-public-mobile-menu-head button { display: grid; place-items: center; width: 36px; height: 36px; padding: 6px; border: 0; background: transparent; }
+.zzv-public-mobile-menu-head button img { width: 24px; height: 24px; }
+.zzv-public-mobile-menu-body { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 24px 20px; }
+.zzv-public-mobile-menu-tiles { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6px; padding-bottom: 24px; border-bottom: 1px solid #eae7f2; }
+.zzv-public-mobile-menu-tiles button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 99px; padding: 12px; border: 1px solid #eae7f2; border-radius: 12px; background: #f9f8ff; text-align: left; }
+.zzv-public-mobile-menu-tiles button:first-child { background: #f1edff; }
+.zzv-public-mobile-menu-tiles button img { width: 24px; height: 24px; margin-bottom: 7px; }
+.zzv-public-mobile-menu-tiles button strong { font-size: 14px; font-weight: 600; line-height: 1.4; }
+.zzv-public-mobile-menu-tiles button small { color: #5b5670; font-size: 12px; line-height: 1.4; }
+.zzv-public-mobile-menu-links { display: flex; flex-direction: column; gap: 0; padding: 8px 0 16px; border-bottom: 1px solid #eae7f2; }
+.zzv-public-mobile-menu-links button, .zzv-public-mobile-menu-links a { display: flex; align-items: center; height: 50px; padding: 0; border: 0; background: transparent; color: #14121c; font-size: 16px; text-align: left; text-decoration: none; }
+.zzv-public-mobile-menu-controls { display: flex; align-items: center; justify-content: space-between; padding-top: 32px; color: #5b5670; font-size: 14px; }
+.zzv-public-mobile-menu-controls > div { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: #f6f4fb; }
+.zzv-public-mobile-menu-controls button { min-width: 46px; height: 32px; border: 0; border-radius: 8px; background: transparent; color: #5b5670; font-size: 12px; }
+.zzv-public-mobile-menu-controls button.is-active { background: #fff; color: #5f32d4; box-shadow: 0 1px 2px rgba(20,18,28,.04); }
+.zzv-public-mobile-menu-bottom { flex: 0 0 auto; padding: 16px 20px calc(20px + env(safe-area-inset-bottom)); border-top: 1px solid #eae7f2; }
+.zzv-public-mobile-menu-bottom button { width: 100%; height: 56px; border: 0; border-radius: 12px; background: #7c4df5; color: #fff; font-size: 14px; font-weight: 500; }
