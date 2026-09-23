@@ -413,6 +413,10 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   cursor: pointer;
 }
 
+#zpos-root.zpos-root--figma .zpos-figma-cart-close-mobile {
+  display: none;
+}
+
 #zpos-root.zpos-root--figma .zpos-cart-head {
   min-height: 56px;
   margin: 0 0 14px;
@@ -447,8 +451,11 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
 
 #zpos-root.zpos-root--figma .zpos-cart-item {
   display: flex;
+  flex: 0 0 auto;
   flex-direction: column;
   gap: 12px;
+  width: 100%;
+  min-width: 0;
   padding: 12px;
   border: 1px solid #e7e4ed;
   border-radius: 12px;
@@ -890,6 +897,16 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
     border-radius: 50%;
     background: #fff;
     font-size: 21px;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-figma-cart-close-desktop {
+    display: none;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-figma-cart-close-mobile {
+    display: block;
+    line-height: 1;
+    transform: translateY(-2px);
   }
 
   #zpos-root.zpos-root--figma .zpos-cart-head {

@@ -1398,11 +1398,11 @@ const ShopPage = () => {
           className={`zpos-cart ${compactCart ? 'zpos-cart--compact' : ''} ${compactCart && cartExpanded ? 'is-expanded' : ''} ${cartViewOpen ? 'is-figma-open' : ''}`}
           aria-label={t('shop.aria.cart')}
         >
-          <button type="button" className="zpos-figma-cart-close" onClick={() => setCartViewOpen(false)} aria-label={t('common.close')}>×</button>
+          <button type="button" className="zpos-figma-cart-close" onClick={() => setCartViewOpen(false)} aria-label={t('common.close')}><span className="zpos-figma-cart-close-desktop">×</span><span className="zpos-figma-cart-close-mobile">‹</span></button>
           <div className="zpos-cart-head">
             <div className="zpos-cart-head-main">
               <p>{t('shop.cart.kicker')}</p>
-              <h2>{t('shop.cart.title')}</h2>
+              <h2>{i18n.language === 'ka' ? 'კალათა' : 'Cart'}</h2>
             </div>
             {compactCart ? (
               <div className="zpos-cart-head-side">
