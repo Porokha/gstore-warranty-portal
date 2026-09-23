@@ -154,7 +154,7 @@ function LandingPage() {
         </div>
       </section>
 
-      <section className="zzv-figma-section zzv-figma-section--tight">
+      <section id="about" className="zzv-figma-section zzv-figma-section--tight">
         <div className="zzv-figma-wrap">
           <h2 className="zzv-figma-heading">ჩვენი სერვისები</h2>
           <div className="zzv-figma-bento">

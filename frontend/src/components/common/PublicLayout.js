@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Box, AppBar, Toolbar, Button, Drawer, IconButton } from '@mui/material';
-import { Menu as MenuIcon, ChatBubbleRounded as ChatBubbleRoundedIcon } from '@mui/icons-material';
+import { Box, Button, Drawer, IconButton } from '@mui/material';
+import { ChatBubbleRounded as ChatBubbleRoundedIcon } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import ZevaLogo from './ZevaLogo';
-import CookieConsentBanner from './CookieConsentBanner';
+import CookieConsentBanner, { readCookieConsent } from './CookieConsentBanner';
 import LanguageSwitcher from './LanguageSwitcher';
 
 const CLARITY_PROJECT_ID = 'wf9ncn570j';
@@ -15,25 +15,39 @@ const PublicLayout = () => {
   const location = useLocation();
   const { i18n, t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [cookieConsent, setCookieConsent] = useState(readCookieConsent);
+
+  useEffect(() => {
+    const updateConsent = (event) => setCookieConsent(event.detail);
+    window.addEventListener('zezva:cookie-consent', updateConsent);
+    return () => window.removeEventListener('zezva:cookie-consent', updateConsent);
+  }, []);
 
   const menuItems = [
+    { label: t('public.menuTradeIn'), path: '/trade-in' },
     { label: t('public.menuShop'), path: '/shop' },
     { label: t('public.menuService'), path: '/warranty-service' },
+    { label: t('public.menuAbout'), path: '/#about' },
     { label: t('public.menuTerms'), path: '/terms' },
     { label: t('public.menuPrivacy'), path: '/privacy' },
     { label: t('public.menuReviews'), path: '/reviews' },
   ];
+  const headerItems = [menuItems[0], menuItems[2], menuItems[1], menuItems[3]];
 
   const trustItems = [t('shop.banner.trust.0'), t('shop.banner.trust.1'), t('shop.banner.trust.2')];
 
   useEffect(() => {
     setMobileMenuOpen(false);
-  }, [location.pathname]);
+    if (location.hash) {
+      window.requestAnimationFrame(() => document.getElementById(location.hash.slice(1))?.scrollIntoView());
+    }
+  }, [location.pathname, location.hash]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof document === 'undefined') {
       return undefined;
     }
+    if (!cookieConsent.analytics) return undefined;
 
     if (window.clarity || document.getElementById('clarity-script')) {
       return undefined;
@@ -58,7 +72,7 @@ const PublicLayout = () => {
     })(window, document, 'clarity', 'script', CLARITY_PROJECT_ID);
 
     return undefined;
-  }, []);
+  }, [cookieConsent.analytics]);
 
   const openRespondChat = () => {
     if (typeof window === 'undefined') {
@@ -89,6 +103,7 @@ const PublicLayout = () => {
     if (typeof window === 'undefined' || typeof document === 'undefined') {
       return undefined;
     }
+    if (!cookieConsent.analytics && !cookieConsent.marketing) return undefined;
 
     if (window.google_tag_manager || document.getElementById('gtm-script')) {
       return undefined;
@@ -111,10 +126,10 @@ const PublicLayout = () => {
     })(window, document, 'script', 'dataLayer', GTM_CONTAINER_ID);
 
     return undefined;
-  }, []);
+  }, [cookieConsent.analytics, cookieConsent.marketing]);
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <Box className="zzv-public-layout" sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <noscript>
         <iframe
           src={`https://www.googletagmanager.com/ns.html?id=${GTM_CONTAINER_ID}`}
@@ -125,146 +140,44 @@ const PublicLayout = () => {
         />
       </noscript>
 
-      <AppBar
-        position="sticky"
-        sx={{
-          bgcolor: 'rgba(255,255,255,0.86)',
-          backdropFilter: 'blur(18px)',
-          borderBottom: '1px solid rgba(165,118,254,0.16)',
-          boxShadow: 'none',
-          zIndex: 1000,
-        }}
-      >
-        <Toolbar
-          sx={{
-            minHeight: '72px !important',
-            width: 'min(100%, 1440px)',
-            mx: 'auto',
-            px: { xs: 1.5, sm: 2, md: 4 },
-            gap: 2,
-            display: 'grid',
-            gridTemplateColumns: '1fr auto 1fr',
-            alignItems: 'center',
-            '@media (max-width:920px)': {
-              minHeight: '72px !important',
-              px: '16px',
-              gap: 1,
-              gridTemplateColumns: '1fr auto',
-            },
-          }}
-        >
-          <Box
-            sx={{
-              display: 'none',
-              justifySelf: 'start',
-              '@media (max-width:920px)': {
-                display: 'inline-flex',
-                justifySelf: 'end',
-                order: 2,
-              },
-            }}
-          >
-            <IconButton
-              aria-label={t('common.menu')}
-              onClick={() => setMobileMenuOpen(true)}
-              sx={{
-                color: '#18181b',
-                border: 0,
-                borderRadius: '10px',
-                width: 24,
-                height: 24,
-                p: 0,
-                bgcolor: 'transparent',
-              }}
+      <Box component="header" className="zzv-public-header">
+        <div className="zzv-public-header-inner">
+          <button type="button" className="zzv-public-header-logo" onClick={() => navigate('/')} aria-label="ZEZVA">
+            <picture>
+              <source media="(max-width: 920px)" srcSet="/figma-home/trade-nav-logo-mobile.svg" />
+              <img src="/figma-home/trade-nav-logo.svg" alt="ZEZVA" />
+            </picture>
+          </button>
+          <nav className="zzv-public-header-nav" aria-label={t('common.menu')}>
+            {headerItems.map((item) => (
+              <button
+                key={item.path}
+                type="button"
+                className={location.pathname === item.path ? 'is-active' : ''}
+                onClick={() => navigate(item.path)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
+          <div className="zzv-public-header-actions">
+            <span className="zzv-public-header-action" title={i18n.language === 'ka' ? 'ღია თემა' : 'Light theme'}>
+              <img src="/figma-home/trade-nav-sun.svg" alt="" />
+            </span>
+            <button
+              type="button"
+              className="zzv-public-header-action"
+              onClick={() => i18n.changeLanguage(i18n.language === 'ka' ? 'en' : 'ka')}
+              aria-label={i18n.language === 'ka' ? 'Switch to English' : 'ქართულზე გადართვა'}
             >
-              <MenuIcon sx={{ fontSize: 24 }} />
-            </IconButton>
-          </Box>
-
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-start',
-              justifySelf: 'start',
-              cursor: 'pointer',
-              '@media (max-width:920px)': {
-                justifyContent: 'flex-start',
-                justifySelf: 'start',
-                order: 1,
-              },
-              '&:hover': { opacity: 0.9 },
-            }}
-            onClick={() => navigate('/')}
-          >
-            <Box
-              sx={{
-                '& img': { width: '122px !important', maxWidth: '122px' },
-                '@media (max-width:920px)': {
-                  '& img': { width: '99px !important', maxWidth: '99px' },
-                },
-              }}
-            >
-              <ZevaLogo size="large" variant="default" />
-            </Box>
-          </Box>
-
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              gap: { xs: 1, md: 2.5 },
-              justifySelf: 'center',
-              '@media (max-width:920px)': {
-                display: 'none',
-              },
-            }}
-          >
-            {menuItems.map((item) => {
-              const isActive =
-                item.path === '/'
-                  ? location.pathname === '/'
-                  : location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
-
-              return (
-                <Button
-                  key={item.path}
-                  onClick={() => navigate(item.path)}
-                  sx={{
-                    color: isActive ? '#18181b' : '#5b5568',
-                    textTransform: 'none',
-                    fontWeight: isActive ? 800 : 700,
-                    fontSize: { xs: '13px', md: '13px' },
-                    letterSpacing: '0.03em',
-                    minWidth: 'auto',
-                    px: 1.25,
-                    borderRadius: 999,
-                    fontFamily: 'var(--font-platform-caps)',
-                    '&:hover': {
-                      bgcolor: '#f3ecff',
-                      color: '#18181b',
-                    },
-                  }}
-                >
-                  {item.label}
-                </Button>
-              );
-            })}
-          </Box>
-
-          <Box
-            sx={{
-              justifySelf: 'end',
-              '@media (max-width:920px)': {
-                display: 'none',
-              },
-            }}
-          >
-            <LanguageSwitcher compact />
-          </Box>
-        </Toolbar>
-      </AppBar>
+              {i18n.language === 'ka' ? <img src="/figma-home/trade-nav-flag-ge.svg" alt="" /> : 'EN'}
+            </button>
+          </div>
+          <button type="button" className="zzv-public-header-menu" aria-label={t('common.menu')} onClick={() => setMobileMenuOpen(true)}>
+            <img src="/figma-home/trade-nav-menu.svg" alt="" />
+          </button>
+        </div>
+      </Box>
 
       <Box sx={{ flex: 1, bgcolor: '#fbf9ff' }}>
         <Outlet />

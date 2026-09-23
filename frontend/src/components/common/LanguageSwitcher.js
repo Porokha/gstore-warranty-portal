@@ -45,7 +45,7 @@ const LanguageSwitcher = ({ compact = false }) => {
               fontWeight: 700,
               letterSpacing: '0.04em',
               textTransform: 'uppercase',
-              fontFamily: '"BPG Banner Quadrosquare Caps", sans-serif',
+              fontFamily: 'var(--font-platform)',
               color: active ? '#5b7cff' : '#636e72',
               background: active ? '#ffffff' : 'transparent',
               boxShadow: active ? '0 2px 8px rgba(17, 24, 39, 0.08)' : 'none',

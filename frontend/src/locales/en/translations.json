@@ -356,8 +356,10 @@
     "price": "Price"
   },
   "public": {
-    "menuShop": "SHOP",
-    "menuService": "WARRANTY | SERVICE",
+    "menuShop": "Shop",
+    "menuTradeIn": "Trade-in",
+    "menuService": "Service & Warranty",
+    "menuAbout": "About us",
     "menuTerms": "TERMS",
     "menuPrivacy": "PRIVACY",
     "menuReviews": "REVIEWS",
@@ -449,8 +451,21 @@
     "cookieConsent": {
       "message": "By continuing to use the site, you agree to the use of cookies and local storage features.",
       "linkLabel": "Privacy Policy",
-      "accept": "Accept",
-      "close": "Close"
+      "title": "We use cookies",
+      "description": "We use cookies to improve your experience and understand how our website is used. You can choose which cookies to allow.",
+      "settings": "Cookie settings",
+      "necessaryOnly": "Necessary only",
+      "accept": "Accept all",
+      "close": "Close",
+      "settingsTitle": "Cookie settings",
+      "settingsIntro": "Choose which cookies ZEZVA may use. Necessary cookies are always active so the website can work.",
+      "necessaryTitle": "Necessary cookies",
+      "necessaryDescription": "Required for the website to function and remember your choices.",
+      "analyticsTitle": "Analytics cookies",
+      "analyticsDescription": "Help us understand how visitors use the website.",
+      "marketingTitle": "Marketing cookies",
+      "marketingDescription": "Help us measure and improve relevant advertising.",
+      "save": "Save choices"
     },
     "privacy": {
       "eyebrow": "Privacy",
