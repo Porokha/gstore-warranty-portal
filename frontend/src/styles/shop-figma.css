@@ -929,7 +929,11 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   }
 
   #zpos-root.zpos-root--figma .zpos-cart-items {
+    flex-direction: column;
     gap: 10px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    align-items: stretch;
   }
 
   #zpos-root.zpos-root--figma .zpos-summary {
