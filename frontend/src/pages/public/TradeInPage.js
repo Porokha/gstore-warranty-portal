@@ -152,7 +152,7 @@ const SelectionCard = ({ title, subtitle, image, icon, onClick, disabled }) => (
 
 const brandMarks = {
   apple: '/figma-home/trade-brand-apple.svg',
-  samsung: '/figma-home/trade-brand-samsung.svg',
+  samsung: '/trade-in/media/brands/samsung.jpg',
   asus: '/figma-home/trade-brand-asus.svg',
   motorola: '/figma-home/trade-brand-motorola.svg',
   sony: '/figma-home/trade-brand-sony.svg',
@@ -173,7 +173,7 @@ const TradeBrandOption = ({ item, selected, onClick, t }) => (
     onClick={onClick}
     aria-pressed={selected}
   >
-    <span className="zzv-trade-brand-logo">
+    <span className={`zzv-trade-brand-logo${item.brand.toLowerCase() === 'samsung' ? ' zzv-trade-brand-logo--samsung' : ''}`}>
       <img src={brandMarks[item.brand.toLowerCase()] || imageUrl(item.image_src)} alt="" />
     </span>
     <span className="zzv-trade-brand-name">{item.brand}</span>
