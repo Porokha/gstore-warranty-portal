@@ -4,10 +4,12 @@ import { useTranslation } from 'react-i18next';
 import {
   BatteryChargingFullOutlined,
   BoltOutlined,
+  BuildOutlined,
   CameraAltOutlined,
   CategoryOutlined,
   CropPortraitOutlined,
   DeveloperBoardOutlined,
+  DeleteOutline,
   SensorsOutlined,
   VolumeUpOutlined,
 } from '@mui/icons-material';
@@ -278,6 +280,7 @@ const ShopPage = () => {
   const [sources, setSources] = useState(['oem', 'third-party']);
   const [cart, setCart] = useState([]);
   const [modalProduct, setModalProduct] = useState(null);
+  const [modalWithService, setModalWithService] = useState(false);
   const [modalState, setModalState] = useState('closed');
   const [gridProducts, setGridProducts] = useState([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -485,7 +488,7 @@ const ShopPage = () => {
         return;
       }
 
-      shouldTrack = window.scrollY <= 0;
+      shouldTrack = scrollNode.scrollTop <= 0;
       if (!shouldTrack) {
         return;
       }
@@ -648,12 +651,17 @@ const ShopPage = () => {
   }, [isProductsFetching]);
 
   useEffect(() => {
+    const scrollNode = gridScrollRef.current;
+    if (!scrollNode) {
+      return undefined;
+    }
+
     const handleScroll = () => {
       if (!hasMoreProducts || isProductsFetching || loadingNextPageRef.current || gridProducts.length === 0) {
         return;
       }
 
-      const remaining = document.documentElement.scrollHeight - window.scrollY - window.innerHeight;
+      const remaining = scrollNode.scrollHeight - scrollNode.scrollTop - scrollNode.clientHeight;
 
       if (remaining < 520) {
         loadingNextPageRef.current = true;
@@ -661,13 +669,13 @@ const ShopPage = () => {
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    if (document.documentElement.scrollHeight <= window.innerHeight + 520) {
+    scrollNode.addEventListener('scroll', handleScroll, { passive: true });
+    if (scrollNode.scrollHeight <= scrollNode.clientHeight + 520) {
       handleScroll();
     }
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      scrollNode.removeEventListener('scroll', handleScroll);
     };
   }, [gridProducts.length, hasMoreProducts, isProductsFetching]);
 
@@ -675,7 +683,9 @@ const ShopPage = () => {
     setProductPage(1);
     setGridProducts([]);
     loadingNextPageRef.current = false;
-    window.scrollTo({ top: 0, behavior: 'auto' });
+    if (gridScrollRef.current) {
+      gridScrollRef.current.scrollTop = 0;
+    }
   }, [brands, models, parts, priceMax, priceMin, search, sources, tab]);
 
   const handleImageReady = (key) => {
@@ -785,6 +795,9 @@ const ShopPage = () => {
           qty: 1,
           price: activePrice,
           basePrice,
+          servicePrice: getServicePrice(product),
+          canProductOnly: canBuyProductOnly(product),
+          canService: canBuyWithService(product),
           image_url: product.image_url,
           subtitle: `${t(labelForDevice[product.device_category])} • ${t(labelForPart[product.part_category])}`,
         },
@@ -794,9 +807,33 @@ const ShopPage = () => {
     closeModal();
   };
 
+  const toggleCartService = (item) => {
+    const nextMode = item.mode === 'service' ? 'product' : 'service';
+    if (nextMode === 'service' ? !item.canService : !item.canProductOnly) {
+      return;
+    }
+
+    setCart((current) => {
+      const nextId = `${item.productId}:${nextMode}`;
+      const existing = current.find((entry) => entry.id === nextId);
+      if (existing) {
+        return current.filter((entry) => entry.id !== item.id).map((entry) =>
+          entry.id === nextId ? { ...entry, qty: entry.qty + item.qty } : entry,
+        );
+      }
+      return current.map((entry) => entry.id === item.id ? {
+        ...entry,
+        id: nextId,
+        mode: nextMode,
+        price: nextMode === 'service' ? entry.servicePrice : entry.basePrice,
+      } : entry);
+    });
+  };
+
   function openModal(product) {
     window.clearTimeout(modalCloseTimerRef.current);
     setModalProduct(product);
+    setModalWithService(!canBuyProductOnly(product) && canBuyWithService(product));
     setModalState('closing');
     window.requestAnimationFrame(() => {
       setModalState('open');
@@ -1251,7 +1288,7 @@ const ShopPage = () => {
             <p className="zpos-figma-count">{isInitialProductsLoading ? '...' : productsTotal} {i18n.language === 'ka' ? 'ნაწილი' : 'parts'} · {parts.length === 1 ? t(partOptions.find(([value]) => value === parts[0])?.[1] || parts[0]) : t('common.all')}</p>
           </div>
 
-          <div className="zpos-grid-scroll" ref={gridScrollRef}>
+          <div className="zpos-grid-scroll" ref={gridScrollRef} tabIndex={0} aria-label={i18n.language === 'ka' ? 'პროდუქტების სია' : 'Product list'}>
             <div
               className={`zpos-pull-indicator ${pullRefresh.active ? 'is-active' : ''} ${pullRefresh.ready ? 'is-ready' : ''}`}
               style={{ '--zpos-pull-distance': `${pullRefresh.distance}px` }}
@@ -1403,29 +1440,18 @@ const ShopPage = () => {
                 key={item.id}
                 className={`zpos-cart-item ${removingCartIds.includes(item.id) ? 'is-removing' : ''}`}
               >
-                <div className={`zpos-cart-item-thumb ${loadedImages[`cart:${item.id}`] ? 'is-loaded' : ''}`}>
-                  {!loadedImages[`cart:${item.id}`] && (
-                    <div className="zpos-skeleton zpos-image-skeleton" />
-                  )}
-                  <img
-                    src={item.image_url}
-                    alt={t('shop.imageAlt.thumbnail', { title: item.title })}
-                    loading="lazy"
-                    onLoad={() => handleImageReady(`cart:${item.id}`)}
-                    onError={() => handleImageReady(`cart:${item.id}`)}
-                  />
-                </div>
-                <div className="zpos-cart-item-main">
-                  <p className="zpos-cart-mode">
-                    {item.mode === 'service'
-                      ? t('shop.choiceLabels.withService')
-                      : t('shop.choiceLabels.productOnly')}
-                  </p>
-                  <h3 title={item.title}>{item.title}</h3>
-                  <p className="zpos-cart-item-sub">{item.subtitle}</p>
+                <div className="zpos-cart-line-main">
+                  <div className={`zpos-cart-item-thumb ${loadedImages[`cart:${item.id}`] ? 'is-loaded' : ''}`}>
+                    {!loadedImages[`cart:${item.id}`] && <div className="zpos-skeleton zpos-image-skeleton" />}
+                    <img src={item.image_url} alt={t('shop.imageAlt.thumbnail', { title: item.title })} loading="lazy" onLoad={() => handleImageReady(`cart:${item.id}`)} onError={() => handleImageReady(`cart:${item.id}`)} />
+                  </div>
+                  <div className="zpos-cart-item-main">
+                    <h3 title={item.title}>{item.title}</h3>
+                    <p className="zpos-cart-item-sub">{item.subtitle}</p>
+                  </div>
+                  <button type="button" className="zpos-cart-remove" onClick={() => updateCart(item.id, 'remove')} aria-label={t('common.delete')}><DeleteOutline aria-hidden="true" /></button>
                 </div>
                 <div className="zpos-cart-item-footer">
-                  <div className="zpos-cart-item-price">{formatMoney(item.price)}</div>
                   <div className="zpos-cart-item-actions">
                     <div className="zpos-qty">
                       <button type="button" onClick={() => updateCart(item.id, 'decrease')}>
@@ -1436,15 +1462,10 @@ const ShopPage = () => {
                         +
                       </button>
                     </div>
-                    <button
-                      type="button"
-                      className="zpos-cart-remove"
-                      onClick={() => updateCart(item.id, 'remove')}
-                    >
-                      ×
-                    </button>
                   </div>
+                  <div className="zpos-cart-item-price">{formatMoney(item.price)}</div>
                 </div>
+                {item.canService && <label className="zpos-cart-service-row"><BuildOutlined aria-hidden="true" /><span>{i18n.language === 'ka' ? 'დაყენების სერვისი' : 'Installation service'} · +{formatMoney(Math.max(0, (item.servicePrice || 0) - item.basePrice))}</span><input type="checkbox" checked={item.mode === 'service'} disabled={!item.canProductOnly} onChange={() => toggleCartService(item)} /></label>}
               </div>
             ))}
           </div>
@@ -1489,7 +1510,11 @@ const ShopPage = () => {
             }
           }}
         >
-          <div className="zpos-modal" role="dialog" aria-modal="true" aria-labelledby="zpos-modal-title">
+          <div className="zpos-modal zpos-modal--figma-product" role="dialog" aria-modal="true" aria-labelledby="zpos-modal-title">
+            <div className="zpos-product-mobile-bar">
+              <button type="button" onClick={closeModal} aria-label={t('common.back')}>‹</button>
+              <strong>{i18n.language === 'ka' ? 'ნაწილი' : 'Part'}</strong>
+            </div>
             <button
               type="button"
               className="zpos-modal-close"
@@ -1518,51 +1543,32 @@ const ShopPage = () => {
             </div>
 
             <div className="zpos-modal-content">
-              <p id="zpos-modal-kicker" className="zpos-modal-kicker">
-                {[modalProduct.brand, t(labelForDevice[modalProduct.device_category]), t(labelForPart[modalProduct.part_category]), t(labelForSource[modalProduct.inventory_source])]
-                  .filter(Boolean)
-                  .join(' • ')}
-              </p>
               <h2 id="zpos-modal-title">{modalProduct.title}</h2>
+              <div className="zpos-product-badges">
+                <span>{t(labelForSource[modalProduct.inventory_source] || modalProduct.inventory_source)}</span>
+                {modalProduct.quality_line && modalProduct.quality_line !== 'N/A' && <span>{modalProduct.quality_line}</span>}
+                {modalProduct.stock_quantity > 0 && <span>{i18n.language === 'ka' ? 'მარაგშია' : 'In stock'}</span>}
+              </div>
 
-              <div className="zpos-modal-prices">
-                <button
-                  type="button"
-                  className={`zpos-choice is-primary ${canBuyProductOnly(modalProduct) ? '' : 'is-disabled'}`}
-                  onClick={() => addToCart(modalProduct, 'product')}
-                  disabled={!canBuyProductOnly(modalProduct)}
-                >
-                  <span className="zpos-choice-label">{t('shop.choiceLabels.productOnly')}</span>
-                  <strong>
-                    {canBuyProductOnly(modalProduct)
-                      ? formatMoney(getProductOnlyPrice(modalProduct))
-                      : t('shop.availability.productOnlyWithService')}
-                  </strong>
-                  <small>
-                    {canBuyProductOnly(modalProduct)
-                      ? t('shop.choiceDescriptions.productOnly')
-                      : t('shop.choiceDescriptions.productOnlyUnavailable')}
-                  </small>
-                </button>
+              <div className="zpos-product-details">
+                <div><span>{i18n.language === 'ka' ? 'თავსებადობა' : 'Compatibility'}</span><strong>{modalProduct.device_model || modalProduct.title}</strong></div>
+                <div><span>{i18n.language === 'ka' ? 'გარანტია' : 'Warranty'}</span><strong>{modalProduct.warranty_line || (i18n.language === 'ka' ? '1 წელი' : '1 year')}</strong></div>
+                <div><span>{i18n.language === 'ka' ? 'წარმომავლობა' : 'Source'}</span><strong>{t(labelForSource[modalProduct.inventory_source] || modalProduct.inventory_source)}</strong></div>
+                <div><span>{i18n.language === 'ka' ? 'ტიპი' : 'Type'}</span><strong>{modalProduct.quality_line && modalProduct.quality_line !== 'N/A' ? modalProduct.quality_line : t(labelForPart[modalProduct.part_category] || modalProduct.part_category)}</strong></div>
+              </div>
 
-                <button
-                  type="button"
-                  className={`zpos-choice ${canBuyWithService(modalProduct) ? '' : 'is-disabled'}`}
-                  onClick={() => addToCart(modalProduct, 'service')}
-                  disabled={!canBuyWithService(modalProduct)}
-                >
-                  <span className="zpos-choice-label">{t('shop.choiceLabels.withService')}</span>
-                  <strong>
-                    {canBuyWithService(modalProduct)
-                      ? formatMoney(getServicePrice(modalProduct))
-                      : t('shop.availability.serviceUnavailable')}
-                  </strong>
-                  <small>
-                    {canBuyWithService(modalProduct)
-                      ? t('shop.choiceDescriptions.withService')
-                      : t('shop.choiceDescriptions.serviceUnavailable')}
-                  </small>
-                </button>
+              {canBuyWithService(modalProduct) && (
+                <label className="zpos-product-service">
+                  <span className="zpos-product-service-icon"><BuildOutlined aria-hidden="true" /></span>
+                  <span className="zpos-product-service-copy"><strong>{i18n.language === 'ka' ? 'სერვისიც გჭირდება?' : 'Need installation service?'}</strong><small>{i18n.language === 'ka' ? 'შეაკეთეთ ადგილზე' : 'Repair with our team'}</small></span>
+                  <span className="zpos-product-service-price">+{formatMoney(Math.max(0, (getServicePrice(modalProduct) || 0) - (getProductOnlyPrice(modalProduct) || 0)))}</span>
+                  <input type="checkbox" checked={modalWithService} disabled={!canBuyProductOnly(modalProduct)} onChange={(event) => setModalWithService(event.target.checked)} />
+                </label>
+              )}
+
+              <div className="zpos-product-bottom">
+                <div><small>{i18n.language === 'ka' ? 'სულ' : 'Total'}</small><strong>{formatMoney(modalWithService ? getServicePrice(modalProduct) : getProductOnlyPrice(modalProduct))}</strong></div>
+                <button type="button" onClick={() => addToCart(modalProduct, modalWithService ? 'service' : 'product')} disabled={!(modalWithService ? canBuyWithService(modalProduct) : canBuyProductOnly(modalProduct))}>{i18n.language === 'ka' ? 'კალათაში' : 'Add to cart'}</button>
               </div>
             </div>
           </div>
