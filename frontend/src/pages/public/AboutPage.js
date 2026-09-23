@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { CurrencyExchangeOutlined, BuildOutlined, ShoppingBagOutlined, VerifiedUserOutlined, ImageOutlined } from '@mui/icons-material';
+import { CurrencyExchangeOutlined, BuildOutlined, ShoppingBagOutlined, VerifiedUserOutlined } from '@mui/icons-material';
 import StaticPageFrame from './components/StaticPageFrame';
 
 const AboutPage = () => {
@@ -23,7 +23,7 @@ const AboutPage = () => {
 
   return <StaticPageFrame title={ka ? 'ჩვენ შესახებ' : 'About us'}>
     <div className="zzv-about-intro">
-      <div className="zzv-about-image"><ImageOutlined aria-hidden="true" /></div>
+      <div className="zzv-about-image"><img src="/figma-home/zezva-service-team.jpeg" alt={ka ? 'ZEZVA Service-ის გუნდი მოწყობილობების შეკეთებისას' : 'The Zezva Service team repairing devices'} /></div>
       <div className="zzv-about-info">
         <h2>{ka ? 'ტექნიკა, რომელსაც მეორე სიცოცხლე აქვს' : 'Technology with a second life'}</h2>
         <p>{ka ? '2019 წლიდან ვყიდულობთ, ვარემონტებთ და ვყიდით მოწყობილობებს. ერთი ფასი, ერთი გარანტია, ერთი პასუხისმგებელი.' : 'Since 2019, we have bought, repaired, and sold devices. One price, one warranty, one responsible team.'}</p>

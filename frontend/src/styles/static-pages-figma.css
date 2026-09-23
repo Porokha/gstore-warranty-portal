@@ -20,8 +20,8 @@
 .zzv-policy-item > p.is-pending { color: var(--zzv-text-tertiary, #9c97ae); font-style: italic; }
 
 .zzv-about-intro { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-.zzv-about-image, .zzv-contact-map { display: grid; place-items: center; min-height: 233px; border: 1px solid var(--zzv-border-subtle, #eae7f2); border-radius: 12px; background: var(--zzv-bg-subtle, #f6f4fb); color: var(--zzv-text-tertiary, #9c97ae); }
-.zzv-about-image svg, .zzv-contact-map svg { width: 32px; height: 32px; }
+.zzv-about-image, .zzv-contact-map { min-height: 233px; overflow: hidden; border: 1px solid var(--zzv-border-subtle, #eae7f2); border-radius: 12px; background: var(--zzv-bg-subtle, #f6f4fb); }
+.zzv-about-image img { display: block; width: 100%; height: 100%; min-height: 233px; object-fit: cover; object-position: center; }
 .zzv-about-info { display: grid; align-content: start; gap: 12px; }
 .zzv-about-info h2 { margin: 0; font-size: 24px; line-height: 1.3; font-weight: 600; }
 .zzv-about-info > p { margin: 0 0 20px; color: var(--zzv-text-secondary, #5b5670); font-size: 16px; line-height: 1.55; }
@@ -47,8 +47,10 @@
 .zzv-about-partner a { flex: 0 0 auto; padding: 14px 20px; border-radius: 12px; background: #fff; color: #14121c; text-decoration: none; font-size: 14px; font-weight: 600; }
 
 .zzv-contact-grid { display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 24px; }
-.zzv-contact-map { min-height: 596px; display: flex; flex-direction: column; gap: 10px; text-decoration: none; font-weight: 600; }
-.zzv-contact-map:hover, .zzv-contact-map:focus-visible { border-color: #7550e8; color: #6944db; }
+.zzv-contact-map { position: relative; min-height: 596px; }
+.zzv-contact-map iframe { display: block; width: 100%; height: 100%; min-height: 596px; border: 0; }
+.zzv-contact-map > a { position: absolute; right: 16px; bottom: 16px; z-index: 1; padding: 10px 14px; border-radius: 8px; background: #fff; color: var(--zzv-purple-700, #5a2ed2); box-shadow: 0 3px 16px #16112a24; font-size: 12px; font-weight: 600; text-decoration: none; }
+.zzv-contact-map > a:hover, .zzv-contact-map > a:focus-visible { background: #f1edff; }
 .zzv-contact-info { display: grid; align-content: start; gap: 16px; }
 .zzv-contact-card, .zzv-contact-action { border: 1px solid var(--zzv-border-subtle, #eae7f2); border-radius: 12px; background: #fff; }
 .zzv-contact-card { display: grid; gap: 2px; padding: 16px; font-size: 14px; }
@@ -107,13 +109,13 @@
   .zzv-static-content > h1 { display: none; }
   .zzv-static-updated { margin-bottom: 16px; }
   .zzv-about-intro, .zzv-contact-grid { grid-template-columns: 1fr; gap: 8px; }
-  .zzv-about-image { min-height: 197px; }
+  .zzv-about-image, .zzv-about-image img { min-height: 197px; }
   .zzv-about-info { margin-top: 8px; }
   .zzv-about-stats { margin-top: 16px; }
   .zzv-about-services { margin-top: 40px; }
   .zzv-about-service-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   .zzv-about-partner { align-items: stretch; flex-direction: column; margin-top: 40px; padding: 24px; }
-  .zzv-contact-map { min-height: 175px; }
+  .zzv-contact-map, .zzv-contact-map iframe { min-height: 280px; }
   .zzv-contact-info { gap: 12px; }
   .zzv-reviews-head { display: grid; gap: 16px; }
   .zzv-reviews-list { grid-template-columns: 1fr; }
