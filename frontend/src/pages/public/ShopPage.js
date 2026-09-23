@@ -574,17 +574,27 @@ const ShopPage = () => {
   const visibleProducts = products;
 
   const brandOptions = useMemo(
-    () =>
-      Array.from(
+    () => {
+      const options = Array.from(
         new Set([...(productFacets.brands || []).map((item) => item.value).filter(Boolean), ...brands]),
-      ),
+      );
+      const priority = ['apple', 'samsung', 'asus'];
+      return options.sort((a, b) => {
+        const aRank = priority.indexOf(a.toLocaleLowerCase());
+        const bRank = priority.indexOf(b.toLocaleLowerCase());
+        return (aRank < 0 ? priority.length : aRank) - (bRank < 0 ? priority.length : bRank) || a.localeCompare(b);
+      });
+    },
     [brands, productFacets.brands],
   );
   const modelOptions = useMemo(
-    () =>
-      Array.from(
+    () => {
+      const options = Array.from(
         new Set([...(productFacets.models || []).map((item) => item.value).filter(Boolean), ...models]),
-      ),
+      );
+      const counts = new Map((productFacets.models || []).map((item) => [item.value, item.count || 0]));
+      return options.sort((a, b) => (counts.get(b) || 0) - (counts.get(a) || 0) || a.localeCompare(b));
+    },
     [models, productFacets.models],
   );
   const dynamicPartOptions = useMemo(() => {
@@ -636,18 +646,12 @@ const ShopPage = () => {
   }, [isProductsFetching]);
 
   useEffect(() => {
-    const scrollNode = gridScrollRef.current;
-    if (!scrollNode) {
-      return undefined;
-    }
-
     const handleScroll = () => {
       if (!hasMoreProducts || isProductsFetching || loadingNextPageRef.current) {
         return;
       }
 
-      const remaining =
-        scrollNode.scrollHeight - scrollNode.scrollTop - scrollNode.clientHeight;
+      const remaining = document.documentElement.scrollHeight - window.scrollY - window.innerHeight;
 
       if (remaining < 520) {
         loadingNextPageRef.current = true;
@@ -655,11 +659,11 @@ const ShopPage = () => {
       }
     };
 
-    scrollNode.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
 
     return () => {
-      scrollNode.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scroll', handleScroll);
     };
   }, [hasMoreProducts, isProductsFetching]);
 
@@ -667,9 +671,7 @@ const ShopPage = () => {
     setProductPage(1);
     setGridProducts([]);
     loadingNextPageRef.current = false;
-    if (gridScrollRef.current) {
-      gridScrollRef.current.scrollTop = 0;
-    }
+    window.scrollTo({ top: 0, behavior: 'auto' });
   }, [brands, models, parts, priceMax, priceMin, search, sources, tab]);
 
   const handleImageReady = (key) => {

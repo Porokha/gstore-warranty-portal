@@ -4,10 +4,12 @@ body:has(.zpos-root--figma) {
 
 #zpos-root.zpos-root--figma {
   width: min(1200px, calc(100% - 48px));
-  height: calc(100dvh - 72px);
+  height: auto;
+  min-height: calc(100dvh - 72px);
   max-height: none;
-  padding: 24px 0 86px;
+  padding: 32px 0 86px;
   color: #252633;
+  overflow: visible;
 }
 
 #zpos-root.zpos-root--figma .zpos-shop-banner {
@@ -24,13 +26,15 @@ body:has(.zpos-root--figma) {
   border: 0;
   border-radius: 0;
   box-shadow: none;
+  background: transparent;
 }
 
 #zpos-root.zpos-root--figma .zpos-sidebar {
   padding: 0;
   border: 0;
   background: transparent;
-  overflow-y: auto;
+  height: auto;
+  overflow: visible;
   scrollbar-width: none;
 }
 
@@ -223,6 +227,7 @@ body:has(.zpos-root--figma) {
 
 #zpos-root.zpos-root--figma .zpos-main {
   padding: 0;
+  overflow: visible;
 }
 
 #zpos-root.zpos-root--figma .zpos-main-sticky {
@@ -270,6 +275,7 @@ body:has(.zpos-root--figma) {
   margin: 0;
   padding: 0 6px 0 0;
   scrollbar-gutter: auto;
+  overflow: visible;
 }
 
 #zpos-root.zpos-root--figma .zpos-grid {
@@ -448,13 +454,14 @@ body:has(.zpos-root--figma) {
 @media (max-width: 920px) {
   #zpos-root.zpos-root--figma {
     width: 100%;
-    height: calc(100dvh - 72px);
-    padding: 22px 20px 0;
+    height: auto;
+    min-height: calc(100dvh - 72px);
+    padding: 24px 20px 80px;
   }
 
   #zpos-root.zpos-root--figma .zpos-shell {
     display: block;
-    overflow: hidden;
+    overflow: visible;
   }
 
   #zpos-root.zpos-root--figma .zpos-sidebar {
@@ -466,6 +473,8 @@ body:has(.zpos-root--figma) {
     display: flex;
     padding: 16px;
     background: #fff;
+    height: 100dvh;
+    overflow: hidden;
   }
 
   #zpos-root.zpos-root--figma .zpos-figma-sidebar-tabs,
@@ -487,7 +496,7 @@ body:has(.zpos-root--figma) {
   }
 
   #zpos-root.zpos-root--figma .zpos-main {
-    height: 100%;
+    height: auto;
     padding: 0;
   }
 
@@ -623,7 +632,7 @@ body:has(.zpos-root--figma) {
   }
 
   #zpos-root.zpos-root--figma .zpos-grid-scroll {
-    overflow-y: auto;
+    overflow: visible;
     padding-right: 0;
   }
 
