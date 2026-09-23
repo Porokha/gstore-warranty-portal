@@ -62,6 +62,10 @@
 .zzv-contact-action strong { font-size: 14px; font-weight: 600; }
 .zzv-contact-action small { color: var(--zzv-text-tertiary, #9c97ae); font-size: 12px; }
 .zzv-contact-action > svg:last-child { width: 20px; height: 20px; color: var(--zzv-text-tertiary, #9c97ae); }
+.zzv-contact-social { display: grid; gap: 8px; margin-top: 4px; color: var(--zzv-text-secondary, #5b5670); font-size: 12px; }
+.zzv-contact-social > div { display: flex; gap: 8px; }
+.zzv-contact-social > div > span { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; background: var(--zzv-bg-subtle, #f6f4fb); }
+.zzv-contact-social img { width: 18px; height: 18px; object-fit: contain; }
 
 .zzv-reviews-head { display: flex; align-items: center; gap: 24px; margin-bottom: 32px; }
 .zzv-reviews-head p { flex: 1; margin: 0; color: var(--zzv-text-secondary, #5b5670); font-size: 12px; }
