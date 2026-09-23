@@ -82,7 +82,7 @@ rsync -az -e "ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no" \
 REMOTE_DEPLOY_CMD=$(cat <<EOF
 set -euo pipefail
 cd "$REMOTE_PATH"
-docker compose -p gstore-warranty-staging -f docker-compose.staging.yml up -d
+docker compose -p gstore-warranty-staging -f docker-compose.staging.yml up -d --force-recreate frontend-staging
 docker compose -p gstore-warranty-staging -f docker-compose.staging.yml ps
 EOF
 )

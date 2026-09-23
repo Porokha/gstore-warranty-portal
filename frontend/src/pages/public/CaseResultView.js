@@ -18,6 +18,9 @@ const CaseResultView = ({ serviceCase, onBack }) => {
   const productName = serviceCase.product_title || '—';
   const shortName = productName.split(/\b(?:128GB|256GB|512GB|1TB|Unlocked|Graphite)\b/i)[0].trim() || productName;
   const latestUpdate = serviceCase.status_history?.find((entry) => entry.note_public);
+  const resultLabel = serviceCase.result_type
+    ? t(`result.${serviceCase.result_type}`, { defaultValue: serviceCase.result_type })
+    : stages[stage - 1];
   const rows = [
     [ka ? 'პროდუქტი' : 'Product', productName],
     [ka ? 'გახსნილი' : 'Opened', formatDate(serviceCase.opened_at)],
@@ -44,14 +47,12 @@ const CaseResultView = ({ serviceCase, onBack }) => {
 
           <div className="zzv-warranty-result-content">
             <section className="zzv-case-stage" aria-label={ka ? 'შეკეთების სტატუსი' : 'Service status'}>
-              <div className="zzv-case-stage-top"><span>{ka ? 'ეტაპი' : 'Stage'}</span><span>{stage} / 4</span></div>
+              <div className="zzv-case-stage-top"><span>{stages[stage - 1]}</span><span>{stage} / 4</span></div>
               <div className="zzv-case-stage-track" aria-hidden="true">{stages.map((name, index) => <span key={name} className={index < stage ? 'is-filled' : ''} />)}</div>
               <div className="zzv-case-stage-description">
                 <small>{ka ? 'შედეგი' : 'Result'}</small>
-                <strong>{stage === 4
-                  ? (serviceCase.result_type ? t(`result.${serviceCase.result_type}`) : (ka ? 'დასრულებული' : 'Completed'))
-                  : (ka ? 'დასრულებისას' : 'After completion')}</strong>
-                <span>{latestUpdate?.note_public || (ka ? 'მოწყობილობა მიღებულია' : 'Device received')}</span>
+                <strong>{resultLabel}</strong>
+                {latestUpdate?.note_public && <span>{latestUpdate.note_public}</span>}
               </div>
             </section>
 
