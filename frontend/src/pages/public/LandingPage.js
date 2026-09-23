@@ -127,7 +127,7 @@ function LandingPage() {
   const [heroCondition, setHeroCondition] = useState('');
   const [modelOpen, setModelOpen] = useState(false);
   const modelRef = useRef(null);
-  const [openFaq, setOpenFaq] = useState(0);
+  const [openFaq, setOpenFaq] = useState(() => (typeof window !== 'undefined' && window.matchMedia('(max-width: 640px)').matches ? 0 : null));
   const brandsQuery = useQuery(['trade-in-brands', 'phone'], () => tradeInService.getBrands('phone'));
   const modelsQuery = useQuery(
     ['home-trade-in-models', heroBrand, debouncedSearch],
@@ -510,10 +510,10 @@ function LandingPage() {
           <div className="zzv-figma-footer-mobile-brand">
             <img src={asset('imgBrandMark.svg')} alt="ZEZVA" />
             <p>ტელეფონის გადაცვლა, შეკეთება და ორიგინალი ნაწილები — ერთ ადგილას.</p>
-            <div className="zzv-figma-footer-social" aria-label="Social media">
-              <span><img src={asset('figma-footer-facebook.svg')} alt="Facebook" /></span>
-              <span><img src={asset('figma-footer-instagram.svg')} alt="Instagram" /></span>
-              <span><img src={asset('figma-footer-tiktok.svg')} alt="TikTok" /></span>
+            <div className="zzv-figma-footer-social" aria-hidden="true">
+              <span><img src={asset('figma-footer-facebook.svg')} alt="" /></span>
+              <span><img src={asset('figma-footer-instagram.svg')} alt="" /></span>
+              <span><img src={asset('figma-footer-tiktok.svg')} alt="" /></span>
             </div>
           </div>
           <div className="zzv-figma-footer-mobile-links">
