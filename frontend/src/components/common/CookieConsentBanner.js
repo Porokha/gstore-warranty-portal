@@ -33,6 +33,15 @@ const CookieConsentBanner = () => {
     }
   }, []);
 
+  useEffect(() => {
+    const openSettings = () => {
+      setChoices(readCookieConsent());
+      setSettingsOpen(true);
+    };
+    window.addEventListener('zezva:open-cookie-settings', openSettings);
+    return () => window.removeEventListener('zezva:open-cookie-settings', openSettings);
+  }, []);
+
   const persist = (next) => {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
@@ -44,11 +53,9 @@ const CookieConsentBanner = () => {
     setVisible(false);
   };
 
-  if (!visible) return null;
-
   return (
     <>
-      <aside className="zzv-cookie-bar" aria-label={t('public.cookieConsent.title')}>
+      {visible && <aside className="zzv-cookie-bar" aria-label={t('public.cookieConsent.title')}>
         <div className="zzv-cookie-bar-inner">
           <div className="zzv-cookie-copy">
             <strong>{t('public.cookieConsent.title')}</strong>
@@ -60,7 +67,7 @@ const CookieConsentBanner = () => {
             <button type="button" className="zzv-cookie-primary" onClick={() => persist({ analytics: true, marketing: true })}>{t('public.cookieConsent.accept')}</button>
           </div>
         </div>
-      </aside>
+      </aside>}
 
       <Dialog open={settingsOpen} onClose={() => setSettingsOpen(false)} maxWidth="sm" fullWidth PaperProps={{ className: 'zzv-cookie-dialog' }}>
         <div className="zzv-cookie-dialog-head">

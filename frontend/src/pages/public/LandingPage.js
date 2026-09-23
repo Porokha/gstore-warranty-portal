@@ -28,7 +28,7 @@ const partIcons = [
 ];
 
 const faqItems = [
-  ['გატეხილ ტელეფონს იბარებთ?', 'დიახ, გატეხილ ტელეფონსაც ვიბარებთ. შეარჩიე მოწყობილობა და მისი რეალური მდგომარეობა ონლაინ შეფასებისას.'],
+  ['გატეხილ ტელეფონს იბარებთ?', 'დიახ, გატეხილ ტელეფონსაც ვიბარებთ.'],
   ['რამდენ ხანში მივიღებ თანხას?', 'ონლაინ შეფასების შემდეგ ჩვენი გუნდი დაგიკავშირდება. საბოლოო თანხასა და მიღების დროს მოწყობილობის შემოწმების შემდეგ დაგიდასტურებთ.'],
   ['ონლაინ ფასი საბოლოოა?', 'ონლაინ ფასი წინასწარი შეთავაზებაა. საბოლოო ფასი მოწყობილობის რეალური მდგომარეობის შემოწმების შემდეგ დასტურდება.'],
   ['რა დოკუმენტი მჭირდება?', 'მოწყობილობის ჩაბარებისას დაგჭირდება პირადობის დამადასტურებელი დოკუმენტი. დამატებით დეტალებს ჩვენი გუნდი დაგიდასტურებს.'],
@@ -53,7 +53,7 @@ function BrandPair() {
   return (
     <div className="zzv-figma-brand-pair" aria-hidden="true">
       <img src={asset('imgZezvaBrandColor.svg')} alt="" />
-      <span />
+      <span>×</span>
       <img src={asset('imgGstoreBrandColor.svg')} alt="" />
     </div>
   );
@@ -127,7 +127,7 @@ function LandingPage() {
   const [heroCondition, setHeroCondition] = useState('');
   const [modelOpen, setModelOpen] = useState(false);
   const modelRef = useRef(null);
-  const [openFaq, setOpenFaq] = useState(null);
+  const [openFaq, setOpenFaq] = useState(0);
   const brandsQuery = useQuery(['trade-in-brands', 'phone'], () => tradeInService.getBrands('phone'));
   const modelsQuery = useQuery(
     ['home-trade-in-models', heroBrand, debouncedSearch],
@@ -392,9 +392,9 @@ function LandingPage() {
                 <ButtonLink to="/warranty-service" variant="primary">
                   შემოწმება
                 </ButtonLink>
-                <ButtonLink to="/warranty-service" variant="dark">
+                <a className="zzv-figma-btn zzv-figma-btn--dark" href="https://gstore.ge" target="_blank" rel="noreferrer">
                   ნახე Gstore
-                </ButtonLink>
+                </a>
               </div>
             </div>
 
@@ -485,7 +485,7 @@ function LandingPage() {
       </section>
 
       <footer className="zzv-figma-footer">
-        <div className="zzv-figma-wrap">
+        <div className="zzv-figma-wrap zzv-figma-footer-desktop">
           <div className="zzv-figma-footer-cta">
             <span>2 წუთი და გაიგებ, რა ღირს შენი ტელეფონი</span>
             <ButtonLink to="/trade-in">დაიწყე შეფასება</ButtonLink>
@@ -501,6 +501,27 @@ function LandingPage() {
             </nav>
             <span>© 2026 ZEZVA</span>
           </div>
+        </div>
+        <div className="zzv-figma-footer-mobile">
+          <div className="zzv-figma-footer-mobile-cta">
+            <div><strong>ჯერ არ შეგიფასებია?</strong><span>2 წუთი და გაიგებ, რა ღირს შენი ტელეფონი</span></div>
+            <ButtonLink to="/trade-in">შეაფასე უფასოდ</ButtonLink>
+          </div>
+          <div className="zzv-figma-footer-mobile-brand">
+            <img src={asset('imgBrandMark.svg')} alt="ZEZVA" />
+            <p>ტელეფონის გადაცვლა, შეკეთება და ორიგინალი ნაწილები — ერთ ადგილას.</p>
+            <div className="zzv-figma-footer-social" aria-label="Social media">
+              <span><img src={asset('figma-footer-facebook.svg')} alt="Facebook" /></span>
+              <span><img src={asset('figma-footer-instagram.svg')} alt="Instagram" /></span>
+              <span><img src={asset('figma-footer-tiktok.svg')} alt="TikTok" /></span>
+            </div>
+          </div>
+          <div className="zzv-figma-footer-mobile-links">
+            <nav aria-label="სერვისები"><strong>სერვისები</strong><Link to="/trade-in">Trade-in</Link><Link to="/warranty-service?tab=case">შეკეთება</Link><Link to="/shop">მაღაზია</Link><Link to="/warranty-service?tab=warranty">გარანტია</Link></nav>
+            <nav aria-label="კომპანია"><strong>კომპანია</strong><a href="#about">ჩვენ შესახებ</a><a href="mailto:hello@zezva.ge">კონტაქტი</a><a href="https://gstore.ge" target="_blank" rel="noreferrer">Gstore</a></nav>
+            <div className="zzv-figma-footer-mobile-contact"><strong>კონტაქტი</strong><span>ვაჟა-ფშაველას 76</span><a href="tel:+995322606060">+995 322 60 60 60</a><a href="mailto:hello@zezva.ge">hello@zezva.ge</a></div>
+          </div>
+          <div className="zzv-figma-footer-mobile-legal"><span>© 2026 ZEZVA</span><div><Link to="/terms">წესები</Link><Link to="/privacy">კონფიდენციალურობა</Link><button type="button" onClick={() => window.dispatchEvent(new Event('zezva:open-cookie-settings'))}>პარამეტრები</button></div></div>
         </div>
       </footer>
     </main>
