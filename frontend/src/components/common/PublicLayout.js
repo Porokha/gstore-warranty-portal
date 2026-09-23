@@ -219,6 +219,7 @@ const PublicLayout = () => {
       </Box>
 
       <Box
+        className="zzv-public-chat-opener"
         sx={{
           position: 'fixed',
           right: 24,
