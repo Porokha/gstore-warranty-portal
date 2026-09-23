@@ -662,7 +662,9 @@ const ShopPage = () => {
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
+    if (document.documentElement.scrollHeight <= window.innerHeight + 520) {
+      handleScroll();
+    }
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
