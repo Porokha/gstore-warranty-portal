@@ -12,6 +12,7 @@ import {
   VolumeUpOutlined,
 } from '@mui/icons-material';
 import '../../styles/shop.css';
+import '../../styles/shop-figma.css';
 import gstoreLogo from '../../assets/gstore-logo.svg';
 import { shopService } from '../../services/shopService';
 
@@ -263,11 +264,11 @@ const ProductSkeletonCards = ({ count = 12, prefix = 'skeleton' }) =>
   ));
 
 const ShopPage = () => {
-  const { t } = useTranslation();
-  const [tab, setTab] = useState('all');
+  const { t, i18n } = useTranslation();
+  const [tab, setTab] = useState('smartphones');
   const [brands, setBrands] = useState([]);
   const [models, setModels] = useState([]);
-  const [parts, setParts] = useState([]);
+  const [parts, setParts] = useState(['board']);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [priceMin, setPriceMin] = useState('');
@@ -292,7 +293,8 @@ const ShopPage = () => {
   const [pullRefresh, setPullRefresh] = useState({ active: false, ready: false, distance: 0 });
   const [productPage, setProductPage] = useState(1);
   const [showSlowFilterLoader, setShowSlowFilterLoader] = useState(false);
-  const [shopIntroOpen, setShopIntroOpen] = useState(true);
+  const [shopIntroOpen, setShopIntroOpen] = useState(false);
+  const [cartViewOpen, setCartViewOpen] = useState(false);
   const rootRef = useRef(null);
   const gridScrollRef = useRef(null);
   const tabsRef = useRef(null);
@@ -424,8 +426,7 @@ const ShopPage = () => {
     const handleResize = () => {
       document.documentElement.style.setProperty('--zpos-app-height', `${window.innerHeight}px`);
 
-      const shouldUseCompactCart =
-        window.innerWidth <= COMPACT_CART_WIDTH && window.innerHeight <= COMPACT_CART_HEIGHT;
+      const shouldUseCompactCart = false;
 
       setCompactCart((current) => {
         if (current !== shouldUseCompactCart) {
@@ -718,10 +719,10 @@ const ShopPage = () => {
   };
 
   const resetFilters = () => {
-    setTab('all');
+    setTab('smartphones');
     setBrands([]);
     setModels([]);
-    setParts([]);
+    setParts(['board']);
     setSearch('');
     setPriceMin('');
     setPriceMax('');
@@ -947,7 +948,7 @@ const ShopPage = () => {
     <div
       id="zpos-root"
       ref={rootRef}
-      className={`zpos-root ${filtersOpen ? 'zpos-filters-open' : ''} ${filtersClosing ? 'zpos-filters-closing' : ''} ${compactCart ? 'zpos-compact-cart-mode' : ''}`}
+      className={`zpos-root zpos-root--figma ${filtersOpen ? 'zpos-filters-open' : ''} ${filtersClosing ? 'zpos-filters-closing' : ''} ${compactCart ? 'zpos-compact-cart-mode' : ''} ${cartViewOpen ? 'zpos-cart-view-open' : ''}`}
       aria-label={t('shop.ariaLabel')}
     >
       <button
@@ -999,6 +1000,15 @@ const ShopPage = () => {
         ) : (
           <>
         <aside className="zpos-sidebar" aria-label={t('shop.aria.filters')}>
+          <div className="zpos-figma-sidebar-tabs" role="tablist" aria-label={t('shop.tabs.ariaLabel')}>
+            {['smartphones', 'laptops'].map((value) => <button key={value} type="button" role="tab" aria-selected={tab === value} className={tab === value ? 'is-active' : ''} onClick={() => setTab(value)}>{t(labelForDevice[value])}</button>)}
+          </div>
+          <div className="zpos-figma-category-rail" aria-label={t('shop.filters.partTypeTitle')}>
+            {partOptions.filter(([value]) => value !== 'all').map(([value, labelKey]) => {
+              const PartIcon = iconForPart[value] || CategoryOutlined;
+              return <button key={value} type="button" className={parts.includes(value) ? 'is-active' : ''} aria-pressed={parts.includes(value)} onClick={() => setParts([value])}><PartIcon aria-hidden="true" /><span>{t(labelKey)}</span></button>;
+            })}
+          </div>
           <div className="zpos-sidebar-head">
             <div>
               <p>{t('shop.filters.kicker')}</p>
@@ -1162,14 +1172,14 @@ const ShopPage = () => {
               </button>
 
               <div className="zpos-tabs" role="tablist" aria-label={t('shop.tabs.ariaLabel')} ref={tabsRef}>
-                {['all', 'smartphones', 'laptops'].map((value) => (
+                {['smartphones', 'laptops'].map((value) => (
                   <button
                     key={value}
                     type="button"
                     className={`zpos-tab ${tab === value ? 'is-active' : ''}`}
                     onClick={() => setTab(value)}
                   >
-                    <span>{value === 'all' ? t('common.all') : t(labelForDevice[value])}</span>
+                    <span>{t(labelForDevice[value])}</span>
                   </button>
                 ))}
                 <span
@@ -1201,6 +1211,13 @@ const ShopPage = () => {
                 <span>{t('shop.visible')}</span>
               </div>
             </div>
+            <div className="zpos-figma-categories" aria-label={t('shop.filters.partTypeTitle')}>
+              {partOptions.filter(([value]) => value !== 'all').map(([value, labelKey]) => {
+                const PartIcon = iconForPart[value] || CategoryOutlined;
+                return <button key={value} type="button" className={parts.includes(value) ? 'is-active' : ''} aria-pressed={parts.includes(value)} onClick={() => setParts([value])}><span><PartIcon aria-hidden="true" /></span><small>{t(labelKey)}</small></button>;
+              })}
+            </div>
+            <p className="zpos-figma-count">{isInitialProductsLoading ? '...' : productsTotal} {i18n.language === 'ka' ? 'ნაწილი' : 'parts'} · {parts.length === 1 ? t(partOptions.find(([value]) => value === parts[0])?.[1] || parts[0]) : t('common.all')}</p>
           </div>
 
           <div className="zpos-grid-scroll" ref={gridScrollRef}>
@@ -1269,6 +1286,7 @@ const ShopPage = () => {
                           .join(' • ')}
                       </p>
                       <h3>{product.title}</h3>
+                      <p className="zpos-figma-card-source">{t(labelForSource[product.inventory_source] || product.inventory_source)} · {product.brand || t(labelForDevice[product.device_category] || product.device_category)}</p>
                       <p className="zpos-issue">{product.issue_label}</p>
                       <div className="zpos-card-footer">
                         <div className="zpos-price">
@@ -1309,9 +1327,10 @@ const ShopPage = () => {
         </main>
 
         <aside
-          className={`zpos-cart ${compactCart ? 'zpos-cart--compact' : ''} ${compactCart && cartExpanded ? 'is-expanded' : ''}`}
+          className={`zpos-cart ${compactCart ? 'zpos-cart--compact' : ''} ${compactCart && cartExpanded ? 'is-expanded' : ''} ${cartViewOpen ? 'is-figma-open' : ''}`}
           aria-label={t('shop.aria.cart')}
         >
+          <button type="button" className="zpos-figma-cart-close" onClick={() => setCartViewOpen(false)} aria-label={t('common.close')}>×</button>
           <div className="zpos-cart-head">
             <div className="zpos-cart-head-main">
               <p>{t('shop.cart.kicker')}</p>
@@ -1415,16 +1434,19 @@ const ShopPage = () => {
             <button
               className="zpos-checkout"
               type="button"
-              onClick={openOrderModal}
+              onClick={() => { setCartViewOpen(false); openOrderModal(); }}
               disabled={cart.length === 0}
             >
               {t('shop.summary.checkoutDisabled')}
             </button>
           </div>
         </aside>
+        {cartViewOpen && <button type="button" className="zpos-figma-cart-backdrop" aria-label={t('common.close')} onClick={() => setCartViewOpen(false)} />}
           </>
         )}
       </div>
+
+      {!shopIntroOpen && cartSummary.count > 0 && <div className="zpos-figma-cart-bar"><div><small>{i18n.language === 'ka' ? 'კალათა' : 'Cart'} · {cartSummary.count} {i18n.language === 'ka' ? 'ნივთი' : 'items'}</small><strong>{formatMoney(cartSummary.total)}</strong></div><button type="button" onClick={() => setCartViewOpen(true)}>{i18n.language === 'ka' ? 'ნახვა' : 'View'}</button></div>}
 
       {modalProduct && (
         <div

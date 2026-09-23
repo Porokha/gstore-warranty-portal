@@ -1844,6 +1844,10 @@ button.zzv-public-header-action { cursor: pointer; }
 }
 
 @media (max-width: 640px) {
+  .zzv-figma-section-head > .zzv-figma-btn {
+    display: none;
+  }
+
   .zzv-figma-wrap {
     width: min(100% - 28px, 1200px);
   }
