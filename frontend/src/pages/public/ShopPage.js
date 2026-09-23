@@ -485,7 +485,7 @@ const ShopPage = () => {
         return;
       }
 
-      shouldTrack = scrollNode.scrollTop <= 0;
+      shouldTrack = window.scrollY <= 0;
       if (!shouldTrack) {
         return;
       }

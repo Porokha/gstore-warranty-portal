@@ -1,5 +1,7 @@
-body:has(.zpos-root--figma) {
+body.zpos-fullscreen:has(.zpos-root--figma) {
   background: #fbfafe;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 #zpos-root.zpos-root--figma {
