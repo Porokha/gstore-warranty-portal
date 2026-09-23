@@ -1,5 +1,6 @@
 import { BadGatewayException, Injectable } from '@nestjs/common';
 import axios from 'axios';
+import { Agent } from 'https';
 
 interface PlacesReview {
   name?: string;
@@ -20,6 +21,8 @@ interface PlaceDetails {
 
 @Injectable()
 export class GoogleReviewsService {
+  private readonly ipv4Agent = new Agent({ family: 4 });
+
   async getReviews(language: 'ka' | 'en') {
     const apiKey = process.env.GOOGLE_PLACES_API_KEY;
     const placeId = process.env.GOOGLE_PLACES_PLACE_ID;
@@ -34,6 +37,7 @@ export class GoogleReviewsService {
             'X-Goog-FieldMask': 'rating,userRatingCount,googleMapsUri,reviews,attributions',
           },
           params: { languageCode: language },
+          httpsAgent: this.ipv4Agent,
           timeout: 6000,
         },
       );

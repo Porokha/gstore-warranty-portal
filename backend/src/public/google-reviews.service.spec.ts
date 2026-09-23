@@ -48,6 +48,7 @@ describe('GoogleReviewsService', () => {
           'X-Goog-FieldMask': 'rating,userRatingCount,googleMapsUri,reviews,attributions',
         },
         params: { languageCode: 'en' },
+        httpsAgent: expect.objectContaining({ options: expect.objectContaining({ family: 4 }) }),
       }),
     );
     expect(result).toMatchObject({ configured: true, rating: 4.8, total: 42, reviews: [{ text: 'Helpful', author: { name: 'Customer' } }] });
