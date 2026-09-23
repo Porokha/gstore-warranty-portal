@@ -1,0 +1,98 @@
+.zzv-shop-soon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: calc(100dvh - 72px);
+  padding: 64px 24px 80px;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 42%, #eee7ff 0, #f8f5ff 34%, #fbfafe 70%);
+  color: var(--zzv-text-primary, #14121c);
+  text-align: center;
+}
+
+.zzv-shop-soon-art {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: min(72vw, 720px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -55%);
+  pointer-events: none;
+}
+
+.zzv-shop-soon-orbit {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(124, 77, 245, .12);
+  border-radius: 50%;
+}
+
+.zzv-shop-soon-orbit--two {
+  inset: 18%;
+  border-color: rgba(124, 77, 245, .19);
+}
+
+.zzv-shop-soon-mark {
+  color: rgba(124, 77, 245, .055);
+  font: 700 clamp(220px, 33vw, 460px)/1 var(--zzv-font-caps, sans-serif);
+}
+
+.zzv-shop-soon-copy {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 720px);
+}
+
+.zzv-shop-soon-eyebrow {
+  display: inline-block;
+  margin-bottom: 24px;
+  padding: 8px 14px;
+  border: 1px solid rgba(124, 77, 245, .22);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .8);
+  color: var(--zzv-purple-700, #5a2ed2);
+  font: 600 12px/1.4 var(--zzv-font-caps, sans-serif);
+  letter-spacing: .08em;
+}
+
+.zzv-shop-soon h1 {
+  margin: 0;
+  font: 700 clamp(34px, 5vw, 64px)/1.13 var(--zzv-font-caps, sans-serif);
+  letter-spacing: -.035em;
+}
+
+.zzv-shop-soon p {
+  max-width: 520px;
+  margin: 22px auto 0;
+  color: var(--zzv-text-secondary, #5b5670);
+  font: 400 clamp(15px, 1.4vw, 18px)/1.6 var(--zzv-font, sans-serif);
+}
+
+.zzv-shop-soon-foot {
+  position: absolute;
+  bottom: 28px;
+  color: var(--zzv-text-tertiary, #9c97ae);
+  font: 500 11px var(--zzv-font-caps, sans-serif);
+  letter-spacing: .08em;
+}
+
+@media (max-width: 600px) {
+  .zzv-shop-soon {
+    min-height: calc(100dvh - 72px);
+    padding: 48px 24px 80px;
+  }
+
+  .zzv-shop-soon-art {
+    width: 115vw;
+  }
+
+  .zzv-shop-soon-eyebrow {
+    margin-bottom: 18px;
+  }
+
+  .zzv-shop-soon p {
+    margin-top: 16px;
+  }
+}

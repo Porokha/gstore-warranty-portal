@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Box, TextField, Button, Typography, Paper, Chip, Alert, Grid, IconButton, Link, Accordion, AccordionSummary, AccordionDetails, CircularProgress, Container, InputAdornment } from '@mui/material';
 import { ArrowBack, ExpandMore, Search as SearchIcon, VerifiedUser as WarrantyIcon, PictureAsPdf as PdfIcon, Print as PrintIcon } from '@mui/icons-material';
@@ -7,6 +7,7 @@ import api from '../../services/api';
 import StatusBar from '../../components/cases/StatusBar';
 import ResultBar from '../../components/cases/ResultBar';
 import jsPDF from 'jspdf';
+import WarrantyResultView from './WarrantyResultView';
 
 const WarrantySearchPage = () => {
   const { t } = useTranslation();
@@ -14,7 +15,7 @@ const WarrantySearchPage = () => {
   const location = useLocation();
   const [warrantyId, setWarrantyId] = useState(location.state?.warrantyId || '');
   const [phone, setPhone] = useState(location.state?.phone || '');
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState(location.state?.result || null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [expandedCases, setExpandedCases] = useState({});
@@ -22,7 +23,7 @@ const WarrantySearchPage = () => {
   const [loadingCases, setLoadingCases] = useState({});
 
   useEffect(() => {
-    if (!location.state?.warrantyId || !location.state?.phone) return;
+    if (!location.state?.warrantyId || !location.state?.phone || location.state?.result) return;
     let active = true;
     setLoading(true);
     api.post('/public/search/warranty', {
@@ -275,6 +276,22 @@ const WarrantySearchPage = () => {
   const handlePrint = () => {
     window.print();
   };
+
+  if (!location.state?.warrantyId || !location.state?.phone) {
+    return <Navigate to="/warranty-service?tab=warranty" replace />;
+  }
+
+  if (result) {
+    return (
+      <WarrantyResultView
+        warranty={result}
+        onBack={() => navigate('/warranty-service?tab=warranty')}
+        onDownload={generatePDF}
+        onPrint={handlePrint}
+        onOpenCase={(caseNumber) => navigate('/search/case', { state: { caseNumber, phone } })}
+      />
+    );
+  }
 
   return (
     <Box

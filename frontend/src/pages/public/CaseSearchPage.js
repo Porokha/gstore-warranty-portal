@@ -6,6 +6,7 @@ import { ArrowBack, Search as SearchIcon, FolderOpen as CaseIcon } from '@mui/ic
 import api from '../../services/api';
 import StatusBar from '../../components/cases/StatusBar';
 import ResultBar from '../../components/cases/ResultBar';
+import CaseResultView from './CaseResultView';
 
 const CaseSearchPage = () => {
   const { t } = useTranslation();
@@ -14,7 +15,7 @@ const CaseSearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [caseNumber, setCaseNumber] = useState(location.state?.caseNumber || searchParams.get('case_number') || '');
   const [phone, setPhone] = useState(location.state?.phone || searchParams.get('phone') || '');
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState(location.state?.result || null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -64,6 +65,10 @@ const CaseSearchPage = () => {
     };
     return results[result] || result;
   };
+
+  if (result) {
+    return <CaseResultView serviceCase={result} onBack={() => navigate('/warranty-service?tab=case')} />;
+  }
 
   return (
     <Box

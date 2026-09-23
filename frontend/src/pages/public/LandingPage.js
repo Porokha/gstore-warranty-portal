@@ -269,12 +269,12 @@ function LandingPage() {
               <small>მაქსიმალური შეფასება</small>
               <img src={asset('imgImage350.png')} alt="" />
             </Link>
-            <Link className="zzv-figma-mini-card" to="/shop">
+            <div className="zzv-figma-mini-card zzv-figma-shop-disabled" aria-disabled="true">
               <span>მაღაზია</span>
-              <strong>2,700+</strong>
-              <small>ნაწილი მარაგში</small>
+              <strong>მალე</strong>
+              <small>მაღაზია მზადდება</small>
               <img src={asset('imgShop1.png')} alt="" />
-            </Link>
+            </div>
             <Link className="zzv-figma-mini-card" to="/warranty-service?tab=warranty">
               <span>გარანტია</span>
               <strong>12 თვე</strong>
@@ -331,24 +331,22 @@ function LandingPage() {
         <div className="zzv-figma-wrap">
           <div className="zzv-figma-shop-head">
             <h2 className="zzv-figma-heading">მაღაზია</h2>
-            <Link className="zzv-figma-shop-all" to="/shop">
-              სრულად ნახვა
-            </Link>
+            <span className="zzv-figma-shop-all zzv-figma-shop-disabled" aria-disabled="true">მალე</span>
           </div>
           <div className="zzv-figma-category-row">
             <div className="zzv-figma-shop-feature">
-              <strong>2,700+</strong>
-              <span>ორიგინალი ნაწილი</span>
-              <small>ნაწილები უშუალოდ მწარმოებლებისგან</small>
+              <strong>მალე</strong>
+              <span>მაღაზია მზადდება</span>
+              <small>ნაწილები მალე ხელმისაწვდომი იქნება</small>
             </div>
             {partIcons.map(([label, icon, count]) => (
-              <Link className="zzv-figma-part-card" key={label} to="/shop">
+              <div className="zzv-figma-part-card zzv-figma-shop-disabled" key={label} aria-disabled="true">
                 <div>
                   <img src={asset(icon)} alt="" />
                   <strong>{count}</strong>
                 </div>
                 <span>{label}</span>
-              </Link>
+              </div>
             ))}
           </div>
         </div>
@@ -494,9 +492,7 @@ function LandingPage() {
             <img src={asset('imgBrandMark.svg')} alt="ZEZVA" />
             <nav>
               {footerLinks.map(([label, to]) => (
-                <Link key={label} to={to}>
-                  {label}
-                </Link>
+                to === '/shop' ? <span key={label} aria-disabled="true">{label} · მალე</span> : <Link key={label} to={to}>{label}</Link>
               ))}
             </nav>
             <span>© 2026 ZEZVA</span>
@@ -517,7 +513,7 @@ function LandingPage() {
             </div>
           </div>
           <div className="zzv-figma-footer-mobile-links">
-            <nav aria-label="სერვისები"><strong>სერვისები</strong><Link to="/trade-in">Trade-in</Link><Link to="/warranty-service?tab=case">შეკეთება</Link><Link to="/shop">მაღაზია</Link><Link to="/warranty-service?tab=warranty">გარანტია</Link></nav>
+            <nav aria-label="სერვისები"><strong>სერვისები</strong><Link to="/trade-in">Trade-in</Link><Link to="/warranty-service?tab=case">შეკეთება</Link><span aria-disabled="true">მაღაზია · მალე</span><Link to="/warranty-service?tab=warranty">გარანტია</Link></nav>
             <nav aria-label="კომპანია"><strong>კომპანია</strong><a href="#about">ჩვენ შესახებ</a><a href="mailto:hello@zezva.ge">კონტაქტი</a><a href="https://gstore.ge" target="_blank" rel="noreferrer">Gstore</a></nav>
             <div className="zzv-figma-footer-mobile-contact"><strong>კონტაქტი</strong><span>ვაჟა-ფშაველას 76</span><a href="tel:+995322606060">+995 322 60 60 60</a><a href="mailto:hello@zezva.ge">hello@zezva.ge</a></div>
           </div>

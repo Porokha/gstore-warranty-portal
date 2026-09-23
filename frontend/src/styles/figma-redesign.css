@@ -75,6 +75,9 @@
 .zzv-public-header-dropdown button:hover { border-bottom-color: transparent; background: var(--zzv-bg-subtle); color: var(--zzv-purple-700); }
 .zzv-public-header-nav button:hover,
 .zzv-public-header-nav button.is-active { color: var(--zzv-text-primary); border-bottom-color: var(--zzv-purple-500); }
+.zzv-public-header-nav button:disabled { color: var(--zzv-text-tertiary); cursor: default; border-bottom-color: transparent; }
+.zzv-public-mobile-menu-tiles button:disabled { opacity: .55; cursor: default; }
+.zzv-figma-shop-disabled { cursor: default !important; }
 .zzv-public-header-actions { display: flex; justify-self: end; gap: 12px; }
 .zzv-public-header-action {
   display: grid;
@@ -114,6 +117,16 @@ button.zzv-public-header-action { cursor: pointer; }
 .zzv-status-search-field small { color: var(--zzv-text-tertiary); font-size: 14px; font-weight: 400; line-height: 1.5; }
 .zzv-status-search-submit { height: 56px; margin-top: 8px; border: 0; border-radius: 16px; background: var(--zzv-purple-500); color: #fff; font: 500 16px var(--zzv-font); cursor: pointer; }
 .zzv-status-search-submit:hover { background: var(--zzv-purple-700); }
+.zzv-status-search-submit:disabled { opacity: .65; cursor: wait; }
+.zzv-status-search-error { display: grid; gap: 4px; padding: 12px; border: 1px solid var(--zzv-border-subtle); border-radius: 12px; background: var(--zzv-bg-subtle); font-size: 14px; }
+.zzv-status-search-error strong { font-weight: 600; color: var(--zzv-text-primary); }
+.zzv-status-search-error span { color: var(--zzv-text-secondary); }
+.zzv-status-search-call { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 12px; border: 1px solid var(--zzv-border-subtle); border-radius: 12px; background: #fff; color: var(--zzv-text-primary); text-decoration: none; }
+.zzv-status-search-call > span:first-child { color: var(--zzv-purple-500); font-size: 22px; }
+.zzv-status-search-call > span:nth-child(2) { display: grid; flex: 1; gap: 2px; }
+.zzv-status-search-call strong { font-size: 14px; font-weight: 600; }
+.zzv-status-search-call small { color: var(--zzv-text-tertiary); font-size: 12px; }
+.zzv-status-search-call > span:last-child { color: var(--zzv-text-tertiary); font-size: 24px; }
 @media (max-width: 920px) {
   .zzv-status-search-page { padding: 28px 20px 72px; }
   .zzv-status-search-panel > p { margin-bottom: 28px; }
