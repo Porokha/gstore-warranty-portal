@@ -68,7 +68,7 @@ function SelectionRow({ selected, onClick, title, subtitle, value, badge, multip
   );
 }
 
-export default function TradeInValuation({ product, t, language, onProgressChange }) {
+export default function TradeInValuation({ product, t, language, onProgressChange, backActionRef }) {
   const productQuery = useQuery(['trade-in-product', product.slug], () => tradeInService.getProduct(product.slug));
   const detail = productQuery.data || product;
   const tree = Array.isArray(detail.tree) ? detail.tree : [];
@@ -101,13 +101,19 @@ export default function TradeInValuation({ product, t, language, onProgressChang
   const gstorePrice = cashPrice + gstoreBonus;
   const chosenPrice = method === 'gstore' ? gstorePrice : cashPrice;
   const noExactPrice = manualAssessment;
+  const conditionPreview = (answer) => {
+    const branchQuestions = tree[getPointer(answer?.go_to)?.setIndex]?.questions || [];
+    const storageAnswer = branchQuestions.find((item) => item.label === 'storage_size')?.answers?.find((item) => item.text === storage);
+    return amount(answer) + amount(storageAnswer);
+  };
+  const summaryPrice = isCondition && selectedIndexes.length ? conditionPreview(answers[selectedIndexes[0]]) : cashPrice || Number(detail.max_price) || 0;
 
   useEffect(() => {
     if (!productQuery.isLoading && !storageOptions.length && phase === 'storage') setPhase('question');
   }, [productQuery.isLoading, storageOptions.length, phase]);
 
   useEffect(() => {
-    const step = phase === 'storage' ? 3 : phase === 'question' && isCondition ? 4 : phase === 'question' ? 5 : phase === 'faults' ? 4 : phase === 'success' ? null : 5;
+    const step = phase === 'storage' ? 3 : phase === 'question' && isCondition ? 4 : phase === 'question' ? 5 : phase === 'faults' ? 4 : phase === 'range' ? 5 : phase === 'contact' ? 'contact' : null;
     onProgressChange(step);
   }, [phase, isCondition, onProgressChange]);
 
@@ -211,6 +217,16 @@ export default function TradeInValuation({ product, t, language, onProgressChang
     setPhase('question');
   };
 
+  useEffect(() => {
+    if (!backActionRef) return undefined;
+    backActionRef.current = () => {
+      if (phase === 'storage') return false;
+      previous();
+      return true;
+    };
+    return () => { backActionRef.current = null; };
+  });
+
   const submit = async (event) => {
     event.preventDefault();
     const name = form.customer_name.trim();
@@ -266,13 +282,13 @@ export default function TradeInValuation({ product, t, language, onProgressChang
   );
 
   return (
-    <div className="zzv-trade-flow">
+    <div className={`zzv-trade-flow zzv-trade-flow--${phase}${isCondition && phase === 'question' ? ' zzv-trade-flow--condition' : ''}`}>
       <aside className="zzv-trade-summary">
         <div className="zzv-trade-summary-image">{imageUrl(detail.image_src) && <img src={imageUrl(detail.image_src)} alt={detail.name} />}</div>
         <h2>{detail.name}</h2>
         <p>{detail.brand}</p>
         {storage && <span className="zzv-trade-summary-badge">{storage}</span>}
-        {steps.length > 0 && !noExactPrice && <div className="zzv-trade-summary-price"><span>{language === 'ka' ? 'მიმდინარე შეფასება' : 'Current estimate'}</span><strong>{money(cashPrice)}</strong></div>}
+        {!noExactPrice && <div className="zzv-trade-summary-price"><span>{language === 'ka' ? 'მიმდინარე შეფასება' : 'Current estimate'}</span><strong>{money(summaryPrice)}</strong></div>}
       </aside>
       <section className="zzv-trade-flow-panel">
         {phase === 'storage' && <>
@@ -292,7 +308,7 @@ export default function TradeInValuation({ product, t, language, onProgressChang
             {answers.map((answer, index) => {
               const grade = isCondition ? gradeNames[answer.text.toLowerCase()] : null;
               const accessoryIcon = isAccessories ? (/box/i.test(answer.text) ? '/figma-home/trade-accessory-box.svg' : /cable|adapter/i.test(answer.text) ? '/figma-home/imgIconPlug.svg' : '/figma-home/imgIconSmartphone.svg') : null;
-              return <SelectionRow key={`${answer.text}-${index}`} selected={selectedIndexes.includes(index)} onClick={() => setSelectedIndexes((current) => isMulti ? current.includes(index) ? current.filter((item) => item !== index) : [...current, index] : [index])} title={grade ? (language === 'ka' ? grade.ka : grade.en) : language === 'ka' ? answerNames[answer.text] || answer.text : answer.text} subtitle={grade ? (language === 'ka' ? grade.detailKa : grade.detailEn) : null} badge={grade?.grade} icon={accessoryIcon} multiple={isMulti} value={isCondition ? money(amount(answer)) : amount(answer) ? `${amount(answer) > 0 ? '+' : '-'}${money(Math.abs(amount(answer)))}` : null} />;
+              return <SelectionRow key={`${answer.text}-${index}`} selected={selectedIndexes.includes(index)} onClick={() => setSelectedIndexes((current) => isMulti ? current.includes(index) ? current.filter((item) => item !== index) : [...current, index] : [index])} title={grade ? (language === 'ka' ? grade.ka : grade.en) : language === 'ka' ? answerNames[answer.text] || answer.text : answer.text} subtitle={grade ? (language === 'ka' ? grade.detailKa : grade.detailEn) : null} badge={grade?.grade} icon={accessoryIcon} multiple={isMulti} value={isCondition ? money(conditionPreview(answer)) : amount(answer) ? `${amount(answer) > 0 ? '+' : '-'}${money(Math.abs(amount(answer)))}` : null} />;
             })}
             {isCondition && <SelectionRow selected={false} onClick={() => { setFaults([]); setManualAssessment(true); setPhase('faults'); }} title={language === 'ka' ? 'არ ვიცი — ჩვენ შევაფასებთ' : 'Not sure — we will assess it'} subtitle={language === 'ka' ? 'ფასის დიაპაზონს მიიღებ' : 'Get an estimated price range'} muted />}
           </div>
@@ -341,7 +357,7 @@ export default function TradeInValuation({ product, t, language, onProgressChang
         {phase === 'contact' && <form className="zzv-trade-contact" onSubmit={submit}>
           <h1>{language === 'ka' ? 'დაგვიტოვე ნომერი' : 'Leave your number'}</h1>
           <p className="zzv-trade-flow-hint">{language === 'ka' ? 'კონსულტანტი დაგირეკავს და ერთად შევათანხმებთ დროსა და ფილიალს.' : 'A consultant will call you to arrange a time and location.'}</p>
-          <div className="zzv-trade-contact-total"><span>{language === 'ka' ? 'შეთავაზება' : 'Offer'}</span><strong>{noExactPrice ? (language === 'ka' ? 'შემოწმების შემდეგ' : 'After inspection') : money(chosenPrice)}</strong></div>
+          <div className="zzv-trade-contact-total"><div><span>{language === 'ka' ? 'მოწყობილობა' : 'Device'}</span><strong>{detail.name}{storage ? ` · ${storage}` : ''}</strong></div><div><span>{language === 'ka' ? 'შეთავაზება' : 'Offer'}</span><strong>{noExactPrice ? (language === 'ka' ? 'შემოწმების შემდეგ' : 'After inspection') : money(chosenPrice)}</strong></div></div>
           <div className="zzv-trade-contact-fields"><label>{t('public.tradeIn.fullName')}<input value={form.customer_name} onChange={(event) => setForm((current) => ({ ...current, customer_name: event.target.value }))} placeholder={language === 'ka' ? 'სახელი გვარი' : 'Full name'} autoComplete="name" required /></label><label>{t('public.tradeIn.phone')}<input value={form.customer_phone} onChange={(event) => setForm((current) => ({ ...current, customer_phone: event.target.value }))} placeholder="5XX XXX XXX" autoComplete="tel" type="tel" required /></label></div>
           {error && <p className="zzv-trade-error" role="alert">{error}</p>}
           <button className="zzv-trade-primary" type="submit" disabled={saving}>{saving ? (language === 'ka' ? 'იგზავნება...' : 'Sending...') : (language === 'ka' ? 'გაგზავნა' : 'Send request')}</button>

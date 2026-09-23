@@ -129,6 +129,7 @@ const SelectionCard = ({ title, subtitle, image, icon, onClick, disabled }) => (
       />
     ) : (
       <Box
+        className="zzv-trade-content-wrap"
         sx={{
           width: 54,
           height: 54,
@@ -754,6 +755,7 @@ const TradeInPage = () => {
   const [product, setProduct] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [valuationStep, setValuationStep] = useState(3);
+  const valuationBackRef = useRef(null);
   const loadMoreRef = useRef(null);
 
   const categoriesQuery = useQuery(['trade-in-categories'], tradeInService.getCategories);
@@ -863,6 +865,7 @@ const TradeInPage = () => {
       setStage('brands');
     }
     if (stage === 'valuation') {
+      if (valuationBackRef.current?.()) return;
       setSelectedProduct(product);
       setStage('products');
     }
@@ -881,7 +884,8 @@ const TradeInPage = () => {
     (stage === 'brands' && brandsQuery.isLoading);
 
   const wizardStep = stage === 'brands' ? 1 : stage === 'products' ? 2 : stage === 'valuation' ? valuationStep : 0;
-  const showWizard = wizardStep > 0;
+  const showWizard = stage === 'brands' || stage === 'products' || stage === 'valuation';
+  const showProgress = Number.isInteger(wizardStep) && wizardStep > 0;
 
   return (
     <Box className={`zzv-trade-page${showWizard ? ' zzv-trade-page--wizard' : ''}`} sx={{ minHeight: 'calc(100vh - 60px)', bgcolor: palette.canvas, color: palette.ink }}>
@@ -908,15 +912,14 @@ const TradeInPage = () => {
         </Box>
       </Box>}
 
-      {showWizard && (
+      {(showProgress || wizardStep === 'contact') && (
         <div className="zzv-trade-progress-wrap">
           <div className="zzv-trade-progress-inner">
             <button type="button" className="zzv-trade-back" onClick={goBack} aria-label={t('public.tradeIn.back')}>
               <ArrowBackRounded fontSize="small" />
             </button>
             <div className="zzv-trade-progress">
-              <span>{t('public.tradeIn.step', { current: wizardStep, total: 5 })}</span>
-              <div className="zzv-trade-progress-track"><span style={{ width: `${wizardStep * 20}%` }} /></div>
+              {showProgress ? <><span>{t('public.tradeIn.step', { current: wizardStep, total: 5 })}</span><div className="zzv-trade-progress-track"><span style={{ width: `${wizardStep * 20}%` }} /></div></> : <strong>{i18n.language === 'ka' ? 'საკონტაქტო' : 'Contact'}</strong>}
             </div>
           </div>
         </div>
@@ -1026,7 +1029,7 @@ const TradeInPage = () => {
           </div>
         )}
 
-        {!loading && stage === 'valuation' && product && <FigmaTradeInValuation key={product.slug} product={product} t={t} language={i18n.language} onProgressChange={setValuationStep} />}
+        {!loading && stage === 'valuation' && product && <FigmaTradeInValuation key={product.slug} product={product} t={t} language={i18n.language} onProgressChange={setValuationStep} backActionRef={valuationBackRef} />}
       </Box>
     </Box>
   );
