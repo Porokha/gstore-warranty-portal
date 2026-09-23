@@ -13,6 +13,7 @@ import {
   ArrowBackRounded,
   ArrowForwardRounded,
   SearchRounded,
+  SmartphoneOutlined,
 } from '@mui/icons-material';
 import { useInfiniteQuery, useQuery } from 'react-query';
 import { useTranslation } from 'react-i18next';
@@ -195,6 +196,7 @@ const TradeModelOption = ({ item, selected, onClick, t }) => (
   >
     <span className="zzv-trade-model-image">
       <img src={imageUrl(item.image_src)} alt="" loading="lazy" />
+      <SmartphoneOutlined className="zzv-trade-model-mobile-icon" aria-hidden="true" />
     </span>
     <span className="zzv-trade-model-name">{item.name}</span>
     <span className="zzv-trade-model-price"><span className="zzv-trade-model-price-prefix">{t('public.tradeIn.upTo')} </span>₾{Math.round(item.max_price || 0).toLocaleString()}</span>
@@ -758,6 +760,7 @@ const TradeInPage = () => {
   const [valuationStep, setValuationStep] = useState(3);
   const valuationBackRef = useRef(null);
   const loadMoreRef = useRef(null);
+  const seriesRef = useRef(null);
 
   const categoriesQuery = useQuery(['trade-in-categories'], tradeInService.getCategories);
   useEffect(() => {
@@ -833,6 +836,15 @@ const TradeInPage = () => {
   const seriesOptions = brand.toLowerCase() === 'apple'
     ? modelSeries
     : (seriesQuery.data || []).map((item) => item.series).filter((item) => item.toLowerCase() !== brand.toLowerCase());
+
+  useEffect(() => {
+    if (stage !== 'products' || !series || !window.matchMedia('(max-width: 920px)').matches) return;
+    const scroller = seriesRef.current;
+    const selected = scroller?.querySelector('.is-selected');
+    if (!selected) return;
+    const left = scroller.scrollLeft + selected.getBoundingClientRect().left - scroller.getBoundingClientRect().left - 100;
+    scroller.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
+  }, [stage, series, seriesOptions.length]);
 
   useEffect(() => {
     if (stage !== 'products' || !productsQuery.hasNextPage || !loadMoreRef.current) return undefined;
@@ -1007,7 +1019,7 @@ const TradeInPage = () => {
               <input value={search} onChange={(event) => { setSearch(event.target.value); setSelectedProduct(null); }} placeholder={t('public.tradeIn.searchModel')} aria-label={t('public.tradeIn.searchModel')} />
             </div>
             {seriesOptions.length > 0 && (
-              <div className="zzv-trade-series" aria-label={t('public.tradeIn.chooseSeries')}>
+              <div ref={seriesRef} className="zzv-trade-series" aria-label={t('public.tradeIn.chooseSeries')}>
                 <button type="button" className={!series ? 'is-selected' : ''} onClick={() => { setSeries(''); setSelectedProduct(null); }}>{t('public.tradeIn.allModels')}</button>
                 {seriesOptions.map((item) => (
                   <button key={item} type="button" className={series === item ? 'is-selected' : ''} onClick={() => { setSeries(item); setSelectedProduct(null); }}>{item}</button>
@@ -1019,7 +1031,7 @@ const TradeInPage = () => {
             </p>
             <div className="zzv-trade-model-grid">
               {productsQuery.isLoading ? Array.from({ length: 4 }).map((_, index) => (
-                <Skeleton key={index} variant="rounded" height={220} sx={{ borderRadius: '16px' }} />
+                <Skeleton key={index} className="zzv-trade-model-skeleton" variant="rounded" height={220} sx={{ borderRadius: '16px' }} />
               )) : listedProducts.map((item) => (
                 <TradeModelOption
                   key={item.id}
