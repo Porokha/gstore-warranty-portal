@@ -16,7 +16,7 @@ import {
 } from '@mui/icons-material';
 import { useInfiniteQuery, useQuery } from 'react-query';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { tradeInService } from '../../services/tradeInService';
 
 const palette = {
@@ -201,7 +201,7 @@ const TradeModelOption = ({ item, selected, onClick, t }) => (
   </button>
 );
 
-const TradeInValuation = ({ product, t }) => {
+const TradeInValuation = ({ product, t, onProgressChange }) => {
   const [pointer, setPointer] = useState({ setIndex: 0, questionIndex: 0 });
   const [selectedIndexes, setSelectedIndexes] = useState([]);
   const [steps, setSteps] = useState([]);
@@ -245,6 +245,10 @@ const TradeInValuation = ({ product, t }) => {
   const currentMessage = getAnswerMessage(answerMessages, selectedAnswers[0]);
   const isMulti = Number(activeQuestion?.type || 0) > 0;
   const finalPrice = Math.max(0, Math.round(price));
+
+  useEffect(() => {
+    onProgressChange(mode === 'question' ? Math.min(5, 3 + steps.length) : 5);
+  }, [mode, steps.length, onProgressChange]);
 
   useEffect(() => {
     if (mode !== 'final') {
@@ -739,6 +743,8 @@ const TradeInValuation = ({ product, t }) => {
 const TradeInPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
+  const initialSelectionApplied = useRef(false);
   const [stage, setStage] = useState('categories');
   const [category, setCategory] = useState(null);
   const [brand, setBrand] = useState('');
@@ -746,16 +752,33 @@ const TradeInPage = () => {
   const [search, setSearch] = useState('');
   const [product, setProduct] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [valuationStep, setValuationStep] = useState(3);
   const loadMoreRef = useRef(null);
 
   const categoriesQuery = useQuery(['trade-in-categories'], tradeInService.getCategories);
   useEffect(() => {
     const available = (categoriesQuery.data || []).filter((item) => !item.coming_soon);
+    if (!initialSelectionApplied.current && available.length) {
+      initialSelectionApplied.current = true;
+      const { preselectedBrand, preselectedProduct } = location.state || {};
+      const phoneCategory = available.find((item) => item.slug === 'phone');
+      if (phoneCategory && (preselectedBrand || preselectedProduct)) {
+        setCategory(phoneCategory);
+        setBrand(preselectedBrand || '');
+        if (preselectedProduct?.slug) {
+          setProduct(preselectedProduct);
+          setStage('valuation');
+        } else {
+          setStage(preselectedBrand ? 'products' : 'brands');
+        }
+        return;
+      }
+    }
     if (stage === 'categories' && !category && available.length === 1) {
       setCategory(available[0]);
       setStage('brands');
     }
-  }, [categoriesQuery.data, category, stage]);
+  }, [categoriesQuery.data, category, stage, location.state]);
   const brandsQuery = useQuery(
     ['trade-in-brands', category?.slug],
     () => tradeInService.getBrands(category.slug),
@@ -817,6 +840,7 @@ const TradeInPage = () => {
   const chooseProduct = (selected) => {
     setProduct(selected);
     setSelectedProduct(null);
+    setValuationStep(3);
     setStage('valuation');
   };
 
@@ -855,7 +879,7 @@ const TradeInPage = () => {
     categoriesQuery.isLoading ||
     (stage === 'brands' && brandsQuery.isLoading);
 
-  const wizardStep = stage === 'brands' ? 1 : stage === 'products' ? 2 : stage === 'valuation' ? 3 : 0;
+  const wizardStep = stage === 'brands' ? 1 : stage === 'products' ? 2 : stage === 'valuation' ? valuationStep : 0;
   const showWizard = wizardStep > 0;
 
   return (
@@ -1001,7 +1025,7 @@ const TradeInPage = () => {
           </div>
         )}
 
-        {!loading && stage === 'valuation' && product && <TradeInValuation product={product} t={t} />}
+        {!loading && stage === 'valuation' && product && <TradeInValuation product={product} t={t} onProgressChange={setValuationStep} />}
       </Box>
     </Box>
   );

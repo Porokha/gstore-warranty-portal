@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Box, Button, Drawer, IconButton } from '@mui/material';
-import { ChatBubbleRounded as ChatBubbleRoundedIcon } from '@mui/icons-material';
+import { ChatBubbleRounded as ChatBubbleRoundedIcon, ExpandMoreRounded } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import ZevaLogo from './ZevaLogo';
 import CookieConsentBanner, { readCookieConsent } from './CookieConsentBanner';
@@ -15,6 +15,8 @@ const PublicLayout = () => {
   const location = useLocation();
   const { i18n, t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [desktopMenu, setDesktopMenu] = useState(null);
+  const desktopNavRef = useRef(null);
   const [cookieConsent, setCookieConsent] = useState(readCookieConsent);
 
   useEffect(() => {
@@ -33,15 +35,44 @@ const PublicLayout = () => {
     { label: t('public.menuReviews'), path: '/reviews' },
   ];
   const headerItems = [menuItems[0], menuItems[2], menuItems[1], menuItems[3]];
+  const desktopSubmenus = {
+    '/warranty-service': [
+      { label: t('public.menuServiceCases'), path: '/warranty-service?tab=case' },
+      { label: t('public.menuWarranty'), path: '/warranty-service?tab=warranty' },
+    ],
+    '/#about': [
+      { label: t('public.menuAbout'), path: '/#about' },
+      { label: t('public.menuReviews'), path: '/reviews' },
+      { label: t('public.menuTerms'), path: '/terms' },
+      { label: t('public.menuPrivacy'), path: '/privacy' },
+    ],
+  };
 
   const trustItems = [t('shop.banner.trust.0'), t('shop.banner.trust.1'), t('shop.banner.trust.2')];
 
   useEffect(() => {
     setMobileMenuOpen(false);
+    setDesktopMenu(null);
     if (location.hash) {
       window.requestAnimationFrame(() => document.getElementById(location.hash.slice(1))?.scrollIntoView());
     }
   }, [location.pathname, location.hash]);
+
+  useEffect(() => {
+    if (!desktopMenu) return undefined;
+    const closeOutside = (event) => {
+      if (!desktopNavRef.current?.contains(event.target)) setDesktopMenu(null);
+    };
+    const closeEscape = (event) => {
+      if (event.key === 'Escape') setDesktopMenu(null);
+    };
+    document.addEventListener('pointerdown', closeOutside);
+    document.addEventListener('keydown', closeEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside);
+      document.removeEventListener('keydown', closeEscape);
+    };
+  }, [desktopMenu]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof document === 'undefined') {
@@ -148,16 +179,28 @@ const PublicLayout = () => {
               <img src="/figma-home/trade-nav-logo.svg" alt="ZEZVA" />
             </picture>
           </button>
-          <nav className="zzv-public-header-nav" aria-label={t('common.menu')}>
+          <nav ref={desktopNavRef} className="zzv-public-header-nav" aria-label={t('common.menu')}>
             {headerItems.map((item) => (
-              <button
-                key={item.path}
-                type="button"
-                className={location.pathname === item.path ? 'is-active' : ''}
-                onClick={() => navigate(item.path)}
-              >
-                {item.label}
-              </button>
+              <div className="zzv-public-header-nav-item" key={item.path}>
+                <button
+                  type="button"
+                  className={location.pathname === item.path || desktopMenu === item.path ? 'is-active' : ''}
+                  aria-expanded={desktopSubmenus[item.path] ? desktopMenu === item.path : undefined}
+                  onClick={() => desktopSubmenus[item.path] ? setDesktopMenu(desktopMenu === item.path ? null : item.path) : navigate(item.path)}
+                >
+                  {item.label}
+                  {desktopSubmenus[item.path] && <ExpandMoreRounded className="zzv-public-nav-chevron" aria-hidden="true" />}
+                </button>
+                {desktopMenu === item.path && desktopSubmenus[item.path] && (
+                  <div className="zzv-public-header-dropdown">
+                    {desktopSubmenus[item.path].map((subitem) => (
+                      <button key={subitem.path} type="button" onClick={() => { setDesktopMenu(null); navigate(subitem.path); }}>
+                        {subitem.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </nav>
           <div className="zzv-public-header-actions">

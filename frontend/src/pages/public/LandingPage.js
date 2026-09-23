@@ -1,15 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowForwardRounded, ExpandMoreRounded } from '@mui/icons-material';
+import { AddRounded, RemoveRounded } from '@mui/icons-material';
+import { useQuery } from 'react-query';
+import { tradeInService } from '../../services/tradeInService';
 
 const asset = (name) => `/figma-home/${name}`;
-
-const selectFields = [
-  ['ბრენდი', 'Apple', true],
-  ['მოდელი', 'აირჩიე მოდელი', false],
-  ['მეხსიერება', '64GB', true],
-  ['მდგომარეობა', 'როგორც ახალი', false],
-];
 
 const kpis = [
   ['2,700+', 'ნაწილი'],
@@ -33,10 +28,10 @@ const partIcons = [
 ];
 
 const faqItems = [
-  'გატეხილ ტელეფონს იბარებთ?',
-  'რამდენ ხანში მივიღებ თანხას?',
-  'შემიძლია Trade-in Gstore-ში?',
-  'გარანტია როგორ მოწმდება?',
+  ['გატეხილ ტელეფონს იბარებთ?', 'დიახ, გატეხილ ტელეფონსაც ვიბარებთ. შეარჩიე მოწყობილობა და მისი რეალური მდგომარეობა ონლაინ შეფასებისას.'],
+  ['რამდენ ხანში მივიღებ თანხას?', 'ონლაინ შეფასების შემდეგ ჩვენი გუნდი დაგიკავშირდება. საბოლოო თანხასა და მიღების დროს მოწყობილობის შემოწმების შემდეგ დაგიდასტურებთ.'],
+  ['ონლაინ ფასი საბოლოოა?', 'ონლაინ ფასი წინასწარი შეთავაზებაა. საბოლოო ფასი მოწყობილობის რეალური მდგომარეობის შემოწმების შემდეგ დასტურდება.'],
+  ['რა დოკუმენტი მჭირდება?', 'მოწყობილობის ჩაბარებისას დაგჭირდება პირადობის დამადასტურებელი დოკუმენტი. დამატებით დეტალებს ჩვენი გუნდი დაგიდასტურებს.'],
 ];
 
 const footerLinks = [
@@ -51,18 +46,6 @@ function ButtonLink({ to, variant = 'primary', children }) {
     <Link className={`zzv-figma-btn zzv-figma-btn--${variant}`} to={to}>
       {children}
     </Link>
-  );
-}
-
-function SelectField({ label, value, active }) {
-  return (
-    <div className="zzv-figma-select-field">
-      <span>{label}</span>
-      <div className={`zzv-figma-select ${active ? '' : 'is-muted'}`}>
-        <strong>{value}</strong>
-        <ExpandMoreRounded />
-      </div>
-    </div>
   );
 }
 
@@ -96,6 +79,26 @@ function LandingPage() {
   const [lookupTab, setLookupTab] = useState('warranty');
   const [lookupCode, setLookupCode] = useState('');
   const [lookupPhone, setLookupPhone] = useState('');
+  const [heroBrand, setHeroBrand] = useState('Apple');
+  const [heroSearch, setHeroSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [heroProduct, setHeroProduct] = useState(null);
+  const [openFaq, setOpenFaq] = useState(null);
+  const brandsQuery = useQuery(['trade-in-brands', 'phone'], () => tradeInService.getBrands('phone'));
+  const modelsQuery = useQuery(
+    ['home-trade-in-models', heroBrand, debouncedSearch],
+    () => tradeInService.getProducts({ category: 'phone', brand: heroBrand, q: debouncedSearch, page: 1, limit: 20 }),
+    { enabled: Boolean(heroBrand && debouncedSearch.length >= 2), keepPreviousData: true },
+  );
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedSearch(heroSearch.trim()), 250);
+    return () => window.clearTimeout(timer);
+  }, [heroSearch]);
+
+  const beginEstimate = () => navigate('/trade-in', {
+    state: heroProduct ? { preselectedProduct: heroProduct, preselectedBrand: heroBrand } : { preselectedBrand: heroBrand },
+  });
 
   const submitLookup = (event) => {
     event.preventDefault();
@@ -143,13 +146,30 @@ function LandingPage() {
           <aside className="zzv-figma-selector">
             <h2>შეაფასე შენი მოწყობილობა</h2>
             <div className="zzv-figma-selector-grid">
-              {selectFields.map(([label, value, active]) => (
-                <SelectField key={label} label={label} value={value} active={active} />
-              ))}
+              <label className="zzv-figma-select-field">
+                <span>ბრენდი</span>
+                <select className="zzv-figma-select" value={heroBrand} onChange={(event) => { setHeroBrand(event.target.value); setHeroSearch(''); setHeroProduct(null); }}>
+                  <option value="">აირჩიე ბრენდი</option>
+                  {(brandsQuery.data || []).map((item) => <option key={item.brand} value={item.brand}>{item.brand}</option>)}
+                </select>
+              </label>
+              <label className="zzv-figma-select-field zzv-figma-model-field">
+                <span>მოდელი</span>
+                <input className="zzv-figma-select" value={heroProduct ? heroProduct.name : heroSearch} disabled={!heroBrand} onChange={(event) => { setHeroSearch(event.target.value); setHeroProduct(null); }} placeholder="მოძებნე მოდელი" autoComplete="off" />
+                {heroBrand && !heroProduct && debouncedSearch.length >= 2 && (
+                  <div className="zzv-figma-model-results" role="listbox" aria-label="მოდელები">
+                    {modelsQuery.isLoading ? <span>იტვირთება...</span> : (modelsQuery.data?.items || []).length ? (modelsQuery.data.items || []).map((item) => (
+                      <button key={item.id} type="button" role="option" aria-selected="false" onClick={() => { setHeroProduct(item); setHeroSearch(item.name); }}>{item.name}</button>
+                    )) : <span>მოდელი ვერ მოიძებნა</span>}
+                  </div>
+                )}
+              </label>
+              <div className="zzv-figma-select-field"><span>მეხსიერება</span><button type="button" className="zzv-figma-select is-muted" onClick={beginEstimate}>შეფასებისას</button></div>
+              <div className="zzv-figma-select-field"><span>მდგომარეობა</span><button type="button" className="zzv-figma-select is-muted" onClick={beginEstimate}>შეფასებისას</button></div>
             </div>
-            <Link className="zzv-figma-estimate" to="/trade-in">
+            <button className="zzv-figma-estimate" type="button" onClick={beginEstimate}>
               შეაფასე
-            </Link>
+            </button>
             <small>შეფასება სრულიად უფასოა</small>
           </aside>
         </div>
@@ -382,11 +402,14 @@ function LandingPage() {
         <div className="zzv-figma-wrap">
           <h2>ხშირი კითხვები</h2>
           <div>
-            {faqItems.map((item) => (
-              <button key={item} type="button">
-                <span>{item}</span>
-                <ArrowForwardRounded />
-              </button>
+            {faqItems.map(([question, answer], index) => (
+              <div className={`zzv-figma-faq-row${openFaq === index ? ' is-open' : ''}`} key={question}>
+                <button type="button" aria-expanded={openFaq === index} aria-controls={`home-faq-answer-${index}`} onClick={() => setOpenFaq(openFaq === index ? null : index)}>
+                  <span>{question}</span>
+                  {openFaq === index ? <RemoveRounded aria-hidden="true" /> : <AddRounded aria-hidden="true" />}
+                </button>
+                {openFaq === index && <p id={`home-faq-answer-${index}`}>{answer}</p>}
+              </div>
             ))}
           </div>
         </div>
