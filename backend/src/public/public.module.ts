@@ -7,6 +7,7 @@ import { ServiceCase } from '../cases/entities/service-case.entity';
 import { CaseStatusHistory } from '../cases/entities/case-status-history.entity';
 import { ArcadeScore } from './entities/arcade-score.entity';
 import { SettingsModule } from '../settings/settings.module';
+import { GoogleReviewsService } from './google-reviews.service';
 
 @Module({
   imports: [
@@ -14,6 +15,6 @@ import { SettingsModule } from '../settings/settings.module';
     SettingsModule,
   ],
   controllers: [PublicController],
-  providers: [PublicService],
+  providers: [PublicService, GoogleReviewsService],
 })
 export class PublicModule {}
