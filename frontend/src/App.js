@@ -37,6 +37,8 @@ const ShopComingSoonPage = lazy(() => import('./pages/public/ShopComingSoonPage'
 const TermsPage = lazy(() => import('./pages/public/TermsPage'));
 const PrivacyPage = lazy(() => import('./pages/public/PrivacyPage'));
 const ReviewsPage = lazy(() => import('./pages/public/ReviewsPage'));
+const AboutPage = lazy(() => import('./pages/public/AboutPage'));
+const ContactPage = lazy(() => import('./pages/public/ContactPage'));
 const TradeInPage = lazy(() => import('./pages/public/TradeInPage'));
 const MaintenancePage = lazy(() => import('./pages/public/MaintenancePage'));
 const ShopAdminLayout = lazy(() => import('./components/common/ShopAdminLayout'));
@@ -146,6 +148,8 @@ function AppRoutes() {
                 <Route path="/terms" element={<Navigate to="/maintenance" replace />} />
                 <Route path="/privacy" element={<Navigate to="/maintenance" replace />} />
                 <Route path="/reviews" element={<Navigate to="/maintenance" replace />} />
+                <Route path="/about" element={<Navigate to="/maintenance" replace />} />
+                <Route path="/contact" element={<Navigate to="/maintenance" replace />} />
                 <Route path="/search/warranty" element={<Navigate to="/maintenance" replace />} />
                 <Route path="/search/case" element={<Navigate to="/maintenance" replace />} />
               </>
@@ -158,6 +162,8 @@ function AppRoutes() {
                 <Route path="terms" element={<TermsPage />} />
                 <Route path="privacy" element={<PrivacyPage />} />
                 <Route path="reviews" element={<ReviewsPage />} />
+                <Route path="about" element={<AboutPage />} />
+                <Route path="contact" element={<ContactPage />} />
                 <Route path="search/warranty" element={<WarrantySearchPage />} />
                 <Route path="search/case" element={<CaseSearchPage />} />
               </Route>
@@ -172,6 +178,8 @@ function AppRoutes() {
                 <Route path="terms" element={<TermsPage />} />
                 <Route path="privacy" element={<PrivacyPage />} />
                 <Route path="reviews" element={<ReviewsPage />} />
+                <Route path="about" element={<AboutPage />} />
+                <Route path="contact" element={<ContactPage />} />
                 <Route path="search/warranty" element={<WarrantySearchPage />} />
                 <Route path="search/case" element={<CaseSearchPage />} />
               </Route>

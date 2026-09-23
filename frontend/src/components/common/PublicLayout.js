@@ -27,15 +27,16 @@ const PublicLayout = () => {
     { label: t('public.menuTradeIn'), path: '/trade-in' },
     { label: t('public.menuShop'), path: '/shop', disabled: true },
     { label: t('public.menuService'), path: '/warranty-service' },
-    { label: t('public.menuAbout'), path: '/#about' },
+    { label: t('public.menuAbout'), path: '/about' },
     { label: t('public.menuTerms'), path: '/terms' },
     { label: t('public.menuPrivacy'), path: '/privacy' },
     { label: t('public.menuReviews'), path: '/reviews' },
   ];
   const headerItems = [menuItems[0], menuItems[2], menuItems[1], menuItems[3]];
   const desktopSubmenus = {
-    '/#about': [
-      { label: t('public.menuAbout'), path: '/#about' },
+    '/about': [
+      { label: t('public.menuAbout'), path: '/about' },
+      { label: i18n.language === 'ka' ? 'კონტაქტი' : 'Contact', path: '/contact' },
       { label: t('public.menuReviews'), path: '/reviews' },
       { label: t('public.menuTerms'), path: '/terms' },
       { label: t('public.menuPrivacy'), path: '/privacy' },
@@ -283,8 +284,11 @@ const PublicLayout = () => {
               ))}
             </nav>
             <nav className="zzv-public-mobile-menu-links" aria-label={i18n.language === 'ka' ? 'დამატებითი' : 'More'}>
-              <button type="button" onClick={() => { setMobileMenuOpen(false); navigate('/#about'); }}>{t('public.menuAbout')}</button>
-              <button type="button" onClick={openRespondChat}>{i18n.language === 'ka' ? 'კონტაქტი' : 'Contact'}</button>
+              <button type="button" onClick={() => { setMobileMenuOpen(false); navigate('/about'); }}>{t('public.menuAbout')}</button>
+              <button type="button" onClick={() => { setMobileMenuOpen(false); navigate('/contact'); }}>{i18n.language === 'ka' ? 'კონტაქტი' : 'Contact'}</button>
+              <button type="button" onClick={() => { setMobileMenuOpen(false); navigate('/reviews'); }}>{t('public.menuReviews')}</button>
+              <button type="button" onClick={() => { setMobileMenuOpen(false); navigate('/terms'); }}>{t('public.menuTerms')}</button>
+              <button type="button" onClick={() => { setMobileMenuOpen(false); navigate('/privacy'); }}>{t('public.menuPrivacy')}</button>
               <a href="https://gstore.ge" target="_blank" rel="noreferrer">Gstore ↗</a>
             </nav>
             <div className="zzv-public-mobile-menu-controls">
