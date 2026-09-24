@@ -1,10 +1,11 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { UserRole } from '../users/entities/user.entity';
 import { UpdateTradeInCategoryDto } from './dto/update-trade-in-category.dto';
 import { UpdateTradeInPricingDto } from './dto/update-trade-in-pricing.dto';
+import { ImportTradeInPricingDto, ReplaceTradeInPricingDto } from './dto/import-trade-in-pricing.dto';
 import { UpdateTradeInProductDto } from './dto/update-trade-in-product.dto';
 import { UpdateTradeInQuoteDto } from './dto/update-trade-in-quote.dto';
 import { UpdateTradeInOfferPolicyDto } from './dto/update-trade-in-offer-policy.dto';
@@ -62,6 +63,21 @@ export class TradeInAdminController {
   @Get('products/subcategories')
   listProductSubcategories(@Query('category') category?: string) {
     return this.tradeInService.listAdminProductSubcategories(category);
+  }
+
+  @Get('pricing/export')
+  exportPricingRules() {
+    return this.tradeInService.exportPricingRules();
+  }
+
+  @Post('pricing/import')
+  importPricingRules(@Body() dto: ImportTradeInPricingDto) {
+    return this.tradeInService.importPricingRules(dto.products);
+  }
+
+  @Post('pricing/replace')
+  replacePricingRules(@Body() dto: ReplaceTradeInPricingDto) {
+    return this.tradeInService.replacePricingRules(dto.product_ids, dto.tree_json);
   }
 
   @Get('products/:id')

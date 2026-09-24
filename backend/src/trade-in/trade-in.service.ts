@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateTradeInQuoteDto } from './dto/create-trade-in-quote.dto';
@@ -11,6 +11,7 @@ import { TradeInPricingTree } from './entities/trade-in-pricing-tree.entity';
 import { TradeInProduct } from './entities/trade-in-product.entity';
 import { TradeInQuote, TradeInQuoteStatus } from './entities/trade-in-quote.entity';
 import { TradeInSetting } from './entities/trade-in-setting.entity';
+import { validatePricingTree } from './pricing-tree.validation';
 
 const PRODUCT_CATEGORY_MATCH = '(LOWER(product.category) = LOWER(:category) OR LOWER(product.category2) = LOWER(:category))';
 
@@ -366,6 +367,7 @@ export class TradeInService {
     if (!product) {
       throw new NotFoundException('Trade-in product not found.');
     }
+    validatePricingTree(treeJson);
     const maxPrice = this.maxPriceFromTree(treeJson);
     let pricing = await this.pricingRepository.findOne({ where: { product_id: id } });
     if (!pricing) {
@@ -379,6 +381,72 @@ export class TradeInService {
       pricing.max_price = maxPrice.toFixed(2);
     }
     return this.pricingRepository.save(pricing);
+  }
+
+  async exportPricingRules() {
+    const products = await this.productRepository.find({
+      relations: ['pricing_tree'],
+      order: { id: 'ASC' },
+    });
+    return {
+      format: 'zezva-trade-in-pricing',
+      version: 1,
+      exported_at: new Date().toISOString(),
+      products: products.filter((product) => product.pricing_tree).map((product) => ({
+        id: product.id,
+        slug: product.slug,
+        name: product.name,
+        tree_json: product.pricing_tree.tree_json,
+      })),
+    };
+  }
+
+  async importPricingRules(products: Array<{ id: number; slug: string; tree_json: any[] }>) {
+    if (!Array.isArray(products) || products.length === 0 || products.length > 10) {
+      throw new BadRequestException('Import between 1 and 10 products per batch.');
+    }
+    const ids = products.map((entry) => Number(entry?.id));
+    if (ids.some((id) => !Number.isInteger(id) || id < 1) || new Set(ids).size !== ids.length) {
+      throw new BadRequestException('Product IDs must be unique positive integers.');
+    }
+    products.forEach((entry) => validatePricingTree(entry.tree_json));
+
+    return this.productRepository.manager.transaction(async (manager) => {
+      const saved: number[] = [];
+      for (const entry of products) {
+        const product = await manager.findOne(TradeInProduct, { where: { id: entry.id } });
+        if (!product || product.slug !== entry.slug) {
+          throw new BadRequestException(`Product ${entry.id} does not match its exported slug.`);
+        }
+        let pricing = await manager.findOne(TradeInPricingTree, { where: { product_id: product.id } });
+        if (!pricing) pricing = manager.create(TradeInPricingTree, { product_id: product.id });
+        pricing.tree_json = entry.tree_json;
+        pricing.max_price = this.maxPriceFromTree(entry.tree_json).toFixed(2);
+        await manager.save(pricing);
+        saved.push(product.id);
+      }
+      return { updated: saved.length, product_ids: saved };
+    });
+  }
+
+  async replacePricingRules(ids: number[], treeJson: any[]) {
+    if (!Array.isArray(ids) || ids.length === 0 || ids.length > 100 || new Set(ids).size !== ids.length
+      || ids.some((id) => !Number.isInteger(id) || id < 1)) {
+      throw new BadRequestException('Select between 1 and 100 unique products.');
+    }
+    validatePricingTree(treeJson);
+    return this.productRepository.manager.transaction(async (manager) => {
+      const products = await manager.findByIds(TradeInProduct, ids);
+      if (products.length !== ids.length) throw new BadRequestException('One or more selected products do not exist.');
+      for (const product of products) {
+        let pricing = await manager.findOne(TradeInPricingTree, { where: { product_id: product.id } });
+        if (!pricing) pricing = manager.create(TradeInPricingTree, { product_id: product.id });
+        pricing.tree_json = treeJson;
+        pricing.max_price = this.maxPriceFromTree(treeJson).toFixed(2);
+        await manager.save(pricing);
+      }
+      return { updated: products.length };
+    });
   }
 
   async listQuotes(status?: TradeInQuoteStatus, page = 1, limit = 50) {
@@ -607,11 +675,12 @@ export class TradeInService {
       return maxPrice;
     }
     const firstSection = treeJson[0];
-    const firstQuestion = firstSection?.questions?.[0];
+    const firstQuestion = firstSection?.questions?.find((question: any) => question?.enabled !== false);
     if (!Array.isArray(firstQuestion?.answers)) {
       return maxPrice;
     }
     firstQuestion.answers.forEach((answer) => {
+      if (answer?.value_enabled === 0 || answer?.value_enabled === false || answer?.value_enabled === '0') return;
       const value = Number(answer?.value || 0);
       if (Number.isFinite(value) && value > maxPrice) {
         maxPrice = value;
