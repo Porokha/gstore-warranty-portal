@@ -136,7 +136,7 @@ export default function TradeInValuation({ product, t, language, initialStorage 
   }, [productQuery.isLoading, storageOptions.length, phase]);
 
   useEffect(() => {
-    const step = phase === 'storage' ? 3 : phase === 'question' && isCondition ? 4 : phase === 'question' ? 5 : phase === 'faults' ? 4 : phase === 'range' ? 5 : phase === 'contact' ? 'contact' : null;
+    const step = phase === 'storage' ? 3 : phase === 'question' && isCondition ? 4 : phase === 'question' ? 5 : phase === 'faults' ? 4 : phase === 'range' || phase === 'offer' || phase === 'manual-offer' ? 5 : phase === 'contact' ? 'contact' : null;
     onProgressChange(step);
   }, [phase, isCondition, onProgressChange]);
 
