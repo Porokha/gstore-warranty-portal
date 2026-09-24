@@ -170,9 +170,10 @@ const brandFamilyLabels = {
 const TradeBrandOption = ({ item, selected, onClick, t }) => (
   <button
     type="button"
-    className={`zzv-trade-brand-option${selected ? ' is-selected' : ''}`}
+    className={`zzv-trade-brand-option${selected ? ' is-selected' : ''}${item.coming_soon ? ' is-coming-soon' : ''}`}
     onClick={onClick}
     aria-pressed={selected}
+    disabled={item.coming_soon}
   >
     <span className={`zzv-trade-brand-logo${item.brand.toLowerCase() === 'samsung' ? ' zzv-trade-brand-logo--samsung' : ''}`}>
       <img src={brandMarks[item.brand.toLowerCase()] || imageUrl(item.image_src)} alt="" />
@@ -181,7 +182,7 @@ const TradeBrandOption = ({ item, selected, onClick, t }) => (
     {brandFamilyLabels[item.brand.toLowerCase()] && (
       <span className="zzv-trade-brand-family">{brandFamilyLabels[item.brand.toLowerCase()]}</span>
     )}
-    <span className="zzv-trade-brand-count">{item.product_count} {t('public.tradeIn.models')}</span>
+    <span className="zzv-trade-brand-count">{item.coming_soon ? t('public.tradeIn.comingSoon') : `${item.product_count} ${t('public.tradeIn.models')}`}</span>
     <ArrowForwardRounded className="zzv-trade-option-arrow" aria-hidden="true" />
     <span className="zzv-trade-option-radio" aria-hidden="true" />
   </button>
@@ -800,8 +801,8 @@ const TradeInPage = () => {
     return aIndex - bIndex;
   });
   useEffect(() => {
-    if (stage === 'brands' && category?.slug === 'phone' && !brand && orderedBrands.some((item) => item.brand.toLowerCase() === 'apple')) {
-      setBrand(orderedBrands.find((item) => item.brand.toLowerCase() === 'apple').brand);
+    if (stage === 'brands' && category?.slug === 'phone' && !brand && orderedBrands.some((item) => item.brand.toLowerCase() === 'apple' && !item.coming_soon)) {
+      setBrand(orderedBrands.find((item) => item.brand.toLowerCase() === 'apple' && !item.coming_soon).brand);
     }
   }, [stage, category?.slug, brand, brandsQuery.data]);
   const seriesQuery = useQuery(
@@ -871,6 +872,7 @@ const TradeInPage = () => {
   };
 
   const chooseBrand = (selected) => {
+    if (orderedBrands.find((item) => item.brand === selected)?.coming_soon) return;
     setBrand(selected);
     setSeries('');
     setModelSeries([]);

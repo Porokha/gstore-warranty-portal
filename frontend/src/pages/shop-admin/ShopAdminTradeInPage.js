@@ -5,6 +5,7 @@ import {
   Button,
   Checkbox,
   Chip,
+  Collapse,
   Dialog,
   DialogActions,
   DialogContent,
@@ -28,6 +29,7 @@ import {
   DeleteOutlineRounded,
   DownloadRounded,
   EditRounded,
+  ExpandMoreRounded,
   PriceChangeRounded,
   RefreshRounded,
   SearchRounded,
@@ -86,6 +88,7 @@ const ShopAdminTradeInPage = () => {
   const [search, setSearch] = useState('');
   const [productCategory, setProductCategory] = useState('');
   const [productSubcategory, setProductSubcategory] = useState('');
+  const [expandedBrandCategory, setExpandedBrandCategory] = useState('');
   const [productPage, setProductPage] = useState(1);
   const [selectedProductIds, setSelectedProductIds] = useState([]);
   const [pricingImport, setPricingImport] = useState(null);
@@ -158,6 +161,9 @@ const ShopAdminTradeInPage = () => {
     tradeInService.getAdminCategories,
     { enabled: tab === 1 || tab === 2 },
   );
+  const brandsQuery = useQuery(['trade-in-admin-brands'], tradeInService.getAdminBrands, {
+    enabled: tab === 2,
+  });
   const policyQuery = useQuery(['trade-in-admin-offer-policy'], tradeInService.getAdminOfferPolicy, {
     enabled: tab === 3,
     onSuccess: (data) => setOfferPolicy(data),
@@ -218,6 +224,12 @@ const ShopAdminTradeInPage = () => {
     ({ id, payload }) => tradeInService.updateAdminCategory(id, payload),
     { onSuccess: () => queryClient.invalidateQueries('trade-in-admin-categories') },
   );
+  const brandAvailabilityMutation = useMutation(tradeInService.updateAdminBrandAvailability, {
+    onSuccess: () => {
+      queryClient.invalidateQueries('trade-in-admin-brands');
+      queryClient.invalidateQueries('trade-in-brands');
+    },
+  });
 
   const currentQuery = tab === 0 ? quotesQuery : tab === 1 ? productsQuery : tab === 2 ? categoriesQuery : policyQuery;
   const pageProducts = productsQuery.data?.items || [];
@@ -687,27 +699,48 @@ const ShopAdminTradeInPage = () => {
 
             {tab === 2 && (
               <Box>
+                {brandAvailabilityMutation.isError && <Alert severity="error">Could not update brand availability.</Alert>}
                 {(categoriesQuery.data || []).map((category) => (
-                  <Box key={category.id} sx={{ display: 'grid', gridTemplateColumns: '1fr 140px 140px 130px', gap: 2, alignItems: 'center', px: 2, py: 1.3, borderTop: '1px solid #edf0f5' }}>
-                    <Box>
-                      <Typography sx={{ fontWeight: 800, fontSize: 14 }}>{category.label}</Typography>
-                      <Typography sx={{ color: '#667085', fontSize: 11 }}>{category.slug}</Typography>
+                  <Box key={category.id} sx={{ borderTop: '1px solid #edf0f5' }}>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: '1fr 140px 140px 130px' }, gap: 2, alignItems: 'center', px: 2, py: 1.3 }}>
+                      <Box>
+                        <Typography sx={{ fontWeight: 800, fontSize: 14 }}>{category.label}</Typography>
+                        <Typography sx={{ color: '#667085', fontSize: 11 }}>{category.slug}</Typography>
+                        <Button size="small" endIcon={<ExpandMoreRounded sx={{ transform: expandedBrandCategory === category.slug ? 'rotate(180deg)' : 'none' }} />} onClick={() => setExpandedBrandCategory((current) => current === category.slug ? '' : category.slug)}>
+                          Brand subcategories
+                        </Button>
+                      </Box>
+                      <Chip size="small" label={`Order ${category.sort_order}`} />
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Switch
+                          checked={Boolean(category.coming_soon)}
+                          onChange={(event) => categoryMutation.mutate({ id: category.id, payload: { coming_soon: event.target.checked } })}
+                        />
+                        <Typography sx={{ fontSize: 12 }}>Coming soon</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Switch
+                          checked={Boolean(category.enabled)}
+                          onChange={(event) => categoryMutation.mutate({ id: category.id, payload: { enabled: event.target.checked } })}
+                        />
+                        <Typography sx={{ fontSize: 12 }}>Enabled</Typography>
+                      </Box>
                     </Box>
-                    <Chip size="small" label={`Order ${category.sort_order}`} />
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Switch
-                        checked={Boolean(category.coming_soon)}
-                        onChange={(event) => categoryMutation.mutate({ id: category.id, payload: { coming_soon: event.target.checked } })}
-                      />
-                      <Typography sx={{ fontSize: 12 }}>Coming soon</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Switch
-                        checked={Boolean(category.enabled)}
-                        onChange={(event) => categoryMutation.mutate({ id: category.id, payload: { enabled: event.target.checked } })}
-                      />
-                      <Typography sx={{ fontSize: 12 }}>Enabled</Typography>
-                    </Box>
+                    <Collapse in={expandedBrandCategory === category.slug} unmountOnExit>
+                      <Box sx={{ px: 2, pb: 2, bgcolor: '#fafbff' }}>
+                        {brandsQuery.isLoading && <Skeleton height={48} />}
+                        {brandsQuery.isError && <Alert severity="error">Brand subcategories could not be loaded.</Alert>}
+                        {!brandsQuery.isLoading && !(brandsQuery.data || []).find((group) => group.category === category.slug)?.brands?.length && <Typography sx={{ py: 1, fontSize: 12, color: '#667085' }}>No active products in this category.</Typography>}
+                        {((brandsQuery.data || []).find((group) => group.category === category.slug)?.brands || []).map((item) => (
+                          <Box key={item.brand} sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 1, borderBottom: '1px solid #edf0f5' }}>
+                            <Typography sx={{ flex: 1, fontWeight: 700, fontSize: 13 }}>{item.brand}</Typography>
+                            <Typography sx={{ color: '#667085', fontSize: 12 }}>{item.product_count} products</Typography>
+                            <Typography sx={{ fontSize: 12 }}>Coming soon</Typography>
+                            <Switch size="small" checked={Boolean(item.coming_soon)} disabled={brandAvailabilityMutation.isLoading} onChange={(event) => brandAvailabilityMutation.mutate({ category: category.slug, brand: item.brand, coming_soon: event.target.checked })} inputProps={{ 'aria-label': `${item.brand} coming soon` }} />
+                          </Box>
+                        ))}
+                      </Box>
+                    </Collapse>
                   </Box>
                 ))}
               </Box>

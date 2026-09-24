@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { CreateTradeInQuoteDto } from './dto/create-trade-in-quote.dto';
 import { UpdateTradeInCategoryDto } from './dto/update-trade-in-category.dto';
+import { UpdateTradeInBrandDto } from './dto/update-trade-in-brand.dto';
 import { UpdateTradeInProductDto } from './dto/update-trade-in-product.dto';
 import { UpdateTradeInQuoteDto } from './dto/update-trade-in-quote.dto';
 import { UpdateTradeInOfferPolicyDto } from './dto/update-trade-in-offer-policy.dto';
@@ -68,14 +69,18 @@ export class TradeInService {
       .addOrderBy('product.brand', 'ASC')
       .getRawMany();
 
+    const availability = await this.getBrandAvailability();
+    const categoryFlags = availability[this.availabilityKey(category)] || {};
     return rows.map((row) => ({
       brand: row.brand,
       product_count: Number(row.product_count),
       image_src: this.getBrandImage(row.brand, category),
+      coming_soon: Boolean(categoryFlags[this.availabilityKey(row.brand)]),
     }));
   }
 
   async listSeries(category: string, brand: string) {
+    if (await this.isBrandComingSoon(category, brand)) return [];
     const result = await this.productRepository
       .createQueryBuilder('product')
       .leftJoin('product.pricing_tree', 'pricing')
@@ -129,6 +134,9 @@ export class TradeInService {
   }) {
     const page = Math.max(1, Number(params.page || 1));
     const limit = Math.min(100, Math.max(1, Number(params.limit || 30)));
+    if (params.category && params.brand && await this.isBrandComingSoon(params.category, params.brand)) {
+      return { items: [], total: 0, page, limit, total_pages: 0 };
+    }
     const query = this.productRepository
       .createQueryBuilder('product')
       .leftJoin('product.pricing_tree', 'pricing')
@@ -182,6 +190,9 @@ export class TradeInService {
     if (!product) {
       throw new NotFoundException('Trade-in product not found.');
     }
+    if (await this.isProductBrandComingSoon(product)) {
+      throw new NotFoundException('Trade-in brand is coming soon.');
+    }
 
     const conditionSetting = await this.settingRepository.findOne({
       where: { key: 'condition_descriptions' },
@@ -210,6 +221,9 @@ export class TradeInService {
     });
     if (!product) {
       throw new NotFoundException('Trade-in product not found.');
+    }
+    if (await this.isProductBrandComingSoon(product)) {
+      throw new NotFoundException('Trade-in brand is coming soon.');
     }
 
     const policy = await this.getOfferPolicy();
@@ -244,6 +258,35 @@ export class TradeInService {
 
   listAdminCategories() {
     return this.categoryRepository.find({ order: { sort_order: 'ASC', label: 'ASC' } });
+  }
+
+  async listAdminBrands() {
+    const categories = await this.listAdminCategories();
+    return Promise.all(categories.map(async (category) => ({
+      category: category.slug,
+      brands: await this.listBrands(category.slug),
+    })));
+  }
+
+  async updateBrandAvailability(dto: UpdateTradeInBrandDto) {
+    const category = await this.categoryRepository.findOne({ where: { slug: dto.category.trim().toLowerCase() } });
+    if (!category) throw new NotFoundException('Trade-in category not found.');
+    const brand = dto.brand.trim();
+    const key = this.availabilityKey(category.slug);
+    const brandKey = this.availabilityKey(brand);
+    const availability = await this.settingRepository.manager.transaction(async (manager) => {
+      await manager.query("INSERT IGNORE INTO trade_in_settings (setting_key, setting_value) VALUES ('brand_coming_soon', '{}')");
+      const setting = await manager.findOne(TradeInSetting, {
+        where: { key: 'brand_coming_soon' },
+        lock: { mode: 'pessimistic_write' },
+      });
+      const next = this.parseBrandAvailability(setting?.value);
+      next[key] = { ...(next[key] || {}), [brandKey]: dto.coming_soon };
+      setting.value = JSON.stringify(next);
+      await manager.save(setting);
+      return next;
+    });
+    return { category: category.slug, brand, coming_soon: Boolean(availability[key][brandKey]) };
   }
 
   async updateCategory(id: number, dto: UpdateTradeInCategoryDto) {
@@ -566,6 +609,43 @@ export class TradeInService {
 
   private equals(left?: string | null, right?: string | null) {
     return String(left || '').trim().toLowerCase() === String(right || '').trim().toLowerCase();
+  }
+
+  private availabilityKey(value?: string | null) {
+    return String(value || '').trim().toLowerCase();
+  }
+
+  private parseBrandAvailability(value?: string | null): Record<string, Record<string, boolean>> {
+    if (!value) return {};
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
+  private async getBrandAvailability() {
+    const setting = await this.settingRepository.findOne({ where: { key: 'brand_coming_soon' } });
+    return this.parseBrandAvailability(setting?.value);
+  }
+
+  private async isBrandComingSoon(category: string, brand: string) {
+    const availability = await this.getBrandAvailability();
+    return Boolean(availability[this.availabilityKey(category)]?.[this.availabilityKey(brand)]);
+  }
+
+  private async isProductBrandComingSoon(product: TradeInProduct) {
+    if (!product.brand) return false;
+    const availability = await this.getBrandAvailability();
+    const brand = this.availabilityKey(product.brand);
+    const slugPrefix = this.availabilityKey(product.slug?.split('/')[0]);
+    return Object.entries(availability).some(([category, brands]) =>
+      brands?.[brand] && (
+        this.equals(product.category, category)
+        || this.equals(product.category2, category)
+        || slugPrefix.endsWith(`-${category}`)
+      ));
   }
 
   private productMatchesBrand(name: string, brand: string) {

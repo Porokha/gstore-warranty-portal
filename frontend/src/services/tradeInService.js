@@ -36,6 +36,16 @@ export const tradeInService = {
     return response.data;
   },
 
+  getAdminBrands: async () => {
+    const response = await api.get('/shop/admin/trade-in/brands');
+    return response.data;
+  },
+
+  updateAdminBrandAvailability: async (payload) => {
+    const response = await api.patch('/shop/admin/trade-in/brands/availability', payload);
+    return response.data;
+  },
+
   getAdminOfferPolicy: async () => {
     const response = await api.get('/shop/admin/trade-in/offer-policy');
     return response.data;
