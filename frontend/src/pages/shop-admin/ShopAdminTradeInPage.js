@@ -225,6 +225,7 @@ const ShopAdminTradeInPage = () => {
   const allPageSelected = pageProductIds.length > 0 && pageProductIds.every((id) => selectedProductIds.includes(id));
 
   const exportAllPricing = async () => {
+    if (selectedProductIds.length) return;
     setPricingTransferBusy(true);
     setPricingTransferError('');
     try {
@@ -232,6 +233,20 @@ const ShopAdminTradeInPage = () => {
       downloadJson('zezva-trade-in-pricing.json', data);
     } catch (error) {
       setPricingTransferError(error.response?.data?.message || 'Pricing export failed.');
+    } finally {
+      setPricingTransferBusy(false);
+    }
+  };
+
+  const exportSelectedPricing = async () => {
+    if (!selectedProductIds.length) return;
+    setPricingTransferBusy(true);
+    setPricingTransferError('');
+    try {
+      const data = await tradeInService.getAdminSelectedPricingExport(selectedProductIds);
+      downloadJson(`zezva-trade-in-pricing-selected-${selectedProductIds.length}.json`, data);
+    } catch (error) {
+      setPricingTransferError(error.response?.data?.message || 'Selected pricing export failed.');
     } finally {
       setPricingTransferBusy(false);
     }
@@ -543,7 +558,8 @@ const ShopAdminTradeInPage = () => {
 
         {tab === 1 && (
           <Box sx={{ px: 2, py: 1, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, borderBottom: '1px solid #e5eaf2' }}>
-            <Button size="small" startIcon={<DownloadRounded />} onClick={exportAllPricing} disabled={pricingTransferBusy}>Export all pricing JSON</Button>
+            <Button size="small" startIcon={<DownloadRounded />} onClick={exportAllPricing} disabled={pricingTransferBusy || selectedProductIds.length > 0}>Export all pricing JSON</Button>
+            <Button size="small" startIcon={<DownloadRounded />} onClick={exportSelectedPricing} disabled={pricingTransferBusy || selectedProductIds.length === 0}>Export selected ({selectedProductIds.length})</Button>
             <Button size="small" component="label" startIcon={<UploadFileRounded />} disabled={pricingTransferBusy}>
               Import pricing JSON
               <input hidden type="file" accept="application/json,.json" onChange={(event) => { readPricingImport(event.target.files?.[0]); event.target.value = ''; }} />

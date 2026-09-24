@@ -85,6 +85,13 @@ export const tradeInService = {
     return response.data;
   },
 
+  getAdminSelectedPricingExport: async (productIds) => {
+    const response = await api.post('/shop/admin/trade-in/pricing/export-selected', {
+      product_ids: productIds,
+    });
+    return response.data;
+  },
+
   importAdminPricing: async (products) => {
     const response = await api.post('/shop/admin/trade-in/pricing/import', { products });
     return response.data;

@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { CreateTradeInQuoteDto } from './dto/create-trade-in-quote.dto';
 import { UpdateTradeInCategoryDto } from './dto/update-trade-in-category.dto';
 import { UpdateTradeInProductDto } from './dto/update-trade-in-product.dto';
@@ -383,11 +383,21 @@ export class TradeInService {
     return this.pricingRepository.save(pricing);
   }
 
-  async exportPricingRules() {
+  async exportPricingRules(productIds?: number[]) {
+    if (productIds && (productIds.length === 0 || new Set(productIds).size !== productIds.length)) {
+      throw new BadRequestException('Select unique products to export.');
+    }
     const products = await this.productRepository.find({
+      where: productIds ? { id: In(productIds) } : undefined,
       relations: ['pricing_tree'],
       order: { id: 'ASC' },
     });
+    if (productIds && products.length !== productIds.length) {
+      throw new BadRequestException('One or more selected products no longer exist.');
+    }
+    if (productIds && products.some((product) => !product.pricing_tree)) {
+      throw new BadRequestException('One or more selected products have no pricing rules to export.');
+    }
     return {
       format: 'zezva-trade-in-pricing',
       version: 1,

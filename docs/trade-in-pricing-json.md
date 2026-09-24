@@ -1,6 +1,6 @@
 # Trade-in pricing JSON
 
-In Shop Admin > Trade-in > Products, **Export all pricing JSON** downloads every product's rules. The pricing editor also exports one product. Both files use the same format:
+In Shop Admin > Trade-in > Products, **Export all pricing JSON** downloads every product's rules when no products are selected. Select rows across pages to enable **Export selected** and disable Export all. The pricing editor also exports one product. All three exports use the same format:
 
 ```json
 {
