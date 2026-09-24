@@ -5,7 +5,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { UserRole } from '../users/entities/user.entity';
 import { UpdateTradeInCategoryDto } from './dto/update-trade-in-category.dto';
 import { UpdateTradeInPricingDto } from './dto/update-trade-in-pricing.dto';
-import { ImportTradeInPricingDto, ReplaceTradeInPricingDto } from './dto/import-trade-in-pricing.dto';
+import { ExportSelectedTradeInPricingDto, ImportTradeInPricingDto, ReplaceTradeInPricingDto } from './dto/import-trade-in-pricing.dto';
 import { UpdateTradeInProductDto } from './dto/update-trade-in-product.dto';
 import { UpdateTradeInQuoteDto } from './dto/update-trade-in-quote.dto';
 import { UpdateTradeInOfferPolicyDto } from './dto/update-trade-in-offer-policy.dto';
@@ -68,6 +68,11 @@ export class TradeInAdminController {
   @Get('pricing/export')
   exportPricingRules() {
     return this.tradeInService.exportPricingRules();
+  }
+
+  @Post('pricing/export-selected')
+  exportSelectedPricingRules(@Body() dto: ExportSelectedTradeInPricingDto) {
+    return this.tradeInService.exportPricingRules(dto.product_ids);
   }
 
   @Post('pricing/import')

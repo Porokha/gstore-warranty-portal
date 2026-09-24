@@ -1,4 +1,13 @@
-import { ArrayMaxSize, IsArray } from 'class-validator';
+import { ArrayMaxSize, ArrayNotEmpty, IsArray, IsInt, Min } from 'class-validator';
+
+export class ExportSelectedTradeInPricingDto {
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayMaxSize(2000)
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  product_ids: number[];
+}
 
 export class ImportTradeInPricingDto {
   @IsArray()
