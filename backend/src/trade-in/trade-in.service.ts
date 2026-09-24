@@ -12,6 +12,8 @@ import { TradeInProduct } from './entities/trade-in-product.entity';
 import { TradeInQuote, TradeInQuoteStatus } from './entities/trade-in-quote.entity';
 import { TradeInSetting } from './entities/trade-in-setting.entity';
 
+const PRODUCT_CATEGORY_MATCH = '(LOWER(product.category) = LOWER(:category) OR LOWER(product.category2) = LOWER(:category))';
+
 @Injectable()
 export class TradeInService {
   constructor(
@@ -58,7 +60,7 @@ export class TradeInService {
       .select('product.brand', 'brand')
       .addSelect('COUNT(product.id)', 'product_count')
       .where('product.enabled = :enabled', { enabled: true })
-      .andWhere('LOWER(product.category) = LOWER(:category)', { category })
+      .andWhere(PRODUCT_CATEGORY_MATCH, { category })
       .andWhere("product.brand IS NOT NULL AND product.brand <> ''")
       .groupBy('product.brand')
       .orderBy('product_count', 'DESC')
@@ -78,7 +80,7 @@ export class TradeInService {
       .leftJoin('product.pricing_tree', 'pricing')
       .addSelect('pricing.max_price', 'pricing_max_price')
       .where('product.enabled = :enabled', { enabled: true })
-      .andWhere('LOWER(product.category) = LOWER(:category)', { category })
+      .andWhere(PRODUCT_CATEGORY_MATCH, { category })
       .andWhere('LOWER(product.brand) = LOWER(:brand)', { brand })
       .orderBy('pricing.max_price', 'DESC')
       .addOrderBy('product.name', 'ASC')
@@ -91,7 +93,10 @@ export class TradeInService {
     }>();
 
     result.entities.forEach((product, index) => {
-      const series = product.category2?.trim() || this.inferSeries(product.name, brand);
+      const secondaryCategory = product.category2?.trim();
+      const series = secondaryCategory && !this.equals(secondaryCategory, category)
+        ? secondaryCategory
+        : this.inferSeries(product.name, brand);
       if (series) {
         const current = groups.get(series) || {
           product_count: 0,
@@ -130,7 +135,7 @@ export class TradeInService {
       .where('product.enabled = :enabled', { enabled: true });
 
     if (params.category) {
-      query.andWhere('LOWER(product.category) = LOWER(:category)', {
+      query.andWhere(PRODUCT_CATEGORY_MATCH, {
         category: params.category,
       });
     }
@@ -270,7 +275,7 @@ export class TradeInService {
       });
     }
     if (params.category) {
-      query.andWhere('LOWER(product.category) = LOWER(:category)', {
+      query.andWhere(PRODUCT_CATEGORY_MATCH, {
         category: params.category,
       });
     }
@@ -310,7 +315,7 @@ export class TradeInService {
       .andWhere("TRIM(product.category2) <> ''");
 
     if (category) {
-      query.andWhere('LOWER(product.category) = LOWER(:category)', { category });
+      query.andWhere(PRODUCT_CATEGORY_MATCH, { category });
     }
 
     const rows = await query
