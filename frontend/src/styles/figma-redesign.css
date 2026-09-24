@@ -1559,7 +1559,7 @@ button.zzv-public-header-action { cursor: pointer; }
 .zzv-trade-error { margin: 0 0 16px; color: #bd3030; font-size: 14px; }
 .zzv-trade-flow-loading { padding: 64px 20px; color: var(--zzv-text-secondary); text-align: center; }
 .zzv-trade-cash-offer { display: grid; gap: 8px; width: 100%; margin-bottom: 24px; padding: 18px 20px 26px; border: 1px solid transparent; border-bottom-color: var(--zzv-border-default); border-radius: 10px; background: #fff; color: var(--zzv-text-primary); font: inherit; text-align: center; cursor: pointer; }
-.zzv-trade-cash-offer.is-selected { border-color: var(--zzv-purple-500); }
+.zzv-trade-cash-offer.is-selected { border-color: transparent; border-bottom-color: var(--zzv-border-default); }
 .zzv-trade-cash-offer span, .zzv-trade-cash-offer small { color: var(--zzv-text-secondary); }
 .zzv-trade-cash-offer strong { color: var(--zzv-purple-700); font-size: clamp(38px, 5vw, 58px); line-height: 1; }
 .zzv-trade-flow--offer .zzv-trade-summary-price { display: none; }
