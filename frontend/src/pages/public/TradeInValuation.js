@@ -74,8 +74,9 @@ function SelectionRow({ selected, onClick, title, subtitle, value, badge, multip
   );
 }
 
-export default function TradeInValuation({ product, t, language, initialStorage = '', initialCondition = '', onProgressChange, backActionRef }) {
+export default function TradeInValuation({ product, t, language, initialStorage = '', initialCondition = '', onProgressChange, backActionRef, onRestart }) {
   const productQuery = useQuery(['trade-in-product', product.slug], () => tradeInService.getProduct(product.slug));
+  const gstoreProductsQuery = useQuery('trade-in-gstore-products', tradeInService.getGstoreProducts);
   const detail = productQuery.data || product;
   const tree = Array.isArray(detail.tree) ? detail.tree : [];
   const storageQuestions = tree.filter((set) => set.enabled !== false).flatMap((set) => set.questions || []).filter((question) => question.enabled !== false && question.label === 'storage_size');
@@ -88,6 +89,7 @@ export default function TradeInValuation({ product, t, language, initialStorage 
   const [price, setPrice] = useState(0);
   const [faults, setFaults] = useState([]);
   const [method, setMethod] = useState('cash');
+  const [selectedGstoreProductId, setSelectedGstoreProductId] = useState(null);
   const [form, setForm] = useState({ customer_name: '', customer_phone: '' });
   const [error, setError] = useState('');
   const [quote, setQuote] = useState(null);
@@ -103,9 +105,12 @@ export default function TradeInValuation({ product, t, language, initialStorage 
   const cashPrice = Math.max(0, Math.round(price));
   const bonusPercent = Math.max(0, Number(detail.offer_policy?.bonus_percent) || 0);
   const bonusFixed = Math.max(0, Number(detail.offer_policy?.bonus_fixed) || 0);
-  const gstoreBonus = Math.round(cashPrice * bonusPercent / 100 + bonusFixed);
+  const gstoreProducts = gstoreProductsQuery.data || [];
+  const selectedGstoreProduct = gstoreProducts.find((item) => item.id === selectedGstoreProductId);
+  const gstoreBonus = Math.round(cashPrice * (selectedGstoreProduct?.bonus_percent ?? bonusPercent) / 100 + (selectedGstoreProduct?.bonus_fixed ?? bonusFixed));
   const gstorePrice = cashPrice + gstoreBonus;
   const chosenPrice = method === 'gstore' ? gstorePrice : cashPrice;
+  const remainingPrice = selectedGstoreProduct ? Math.max(0, Number(selectedGstoreProduct.price_gel) - gstorePrice) : 0;
   const noExactPrice = manualAssessment;
   const conditionPreview = (answer) => {
     const branchQuestions = (tree[getPointer(answer?.go_to)?.setIndex]?.questions || []).filter((item) => item.enabled !== false);
@@ -236,6 +241,20 @@ export default function TradeInValuation({ product, t, language, initialStorage 
     setPhase('question');
   };
 
+  const restart = () => {
+    setPhase(initialStorage ? 'question' : 'storage');
+    setStorage(initialStorage);
+    setPointer({ setIndex: 0, questionIndex: 0 });
+    setSelectedIndexes([]);
+    setSteps([]);
+    setPrice(0);
+    setFaults([]);
+    setMethod('cash');
+    setSelectedGstoreProductId(null);
+    setManualAssessment(false);
+    setError('');
+  };
+
   useEffect(() => {
     if (!backActionRef) return undefined;
     backActionRef.current = () => {
@@ -266,6 +285,7 @@ export default function TradeInValuation({ product, t, language, initialStorage 
       const result = await tradeInService.createQuote({
         product_slug: detail.slug,
         final_price: noExactPrice ? 0 : cashPrice,
+        gstore_product_id: method === 'gstore' ? selectedGstoreProduct?.id : undefined,
         customer_name: name,
         customer_phone: phone,
         pricing_path: pricingPath,
@@ -289,8 +309,10 @@ export default function TradeInValuation({ product, t, language, initialStorage 
       <p>{language === 'ka' ? 'დაგირეკავთ სამუშაო საათებში და ერთად შევათანხმებთ დროსა და ფილიალს.' : 'We will call during business hours to arrange a time and location.'}</p>
       <div className="zzv-trade-success-details">
         <div><span>{language === 'ka' ? 'მოწყობილობა' : 'Device'}</span><strong>{detail.name}</strong></div>
-        <div><span>{language === 'ka' ? 'შეთავაზება' : 'Offer'}</span><strong>{noExactPrice ? (language === 'ka' ? 'შემოწმების შემდეგ' : 'After inspection') : money(chosenPrice)}</strong></div>
+        <div><span>{language === 'ka' ? 'შეთავაზება' : 'Offer'}</span><strong>{noExactPrice ? (language === 'ka' ? 'შემოწმების შემდეგ' : 'After inspection') : money(quote?.offer_credit ?? chosenPrice)}</strong></div>
         <div><span>{language === 'ka' ? 'მიღების ფორმა' : 'Preferred option'}</span><strong>{method === 'gstore' ? 'Gstore Trade-in' : (language === 'ka' ? 'თანხა ხელზე' : 'Cash')}</strong></div>
+        {selectedGstoreProduct && <div><span>{language === 'ka' ? 'არჩეული პროდუქტი' : 'Selected product'}</span><strong>{selectedGstoreProduct.name}</strong></div>}
+        {selectedGstoreProduct && <div><span>{language === 'ka' ? 'დამატებით გადასახდელი' : 'Remaining to pay'}</span><strong>{money(quote?.remaining_price ?? remainingPrice)}</strong></div>}
         <div><span>{language === 'ka' ? 'სახელი და გვარი' : 'Name'}</span><strong>{form.customer_name}</strong></div>
         <div><span>{language === 'ka' ? 'ტელეფონი' : 'Phone'}</span><strong>{form.customer_phone}</strong></div>
         {quote?.quote_number && <div><span>{language === 'ka' ? 'მოთხოვნის №' : 'Request no.'}</span><strong>{quote.quote_number}</strong></div>}
@@ -362,22 +384,19 @@ export default function TradeInValuation({ product, t, language, initialStorage 
 
         {phase === 'offer' && <>
           <h1>{language === 'ka' ? 'შენი შეთავაზება' : 'Your offer'}</h1>
-          <button type="button" aria-pressed={method === 'cash'} className={`zzv-trade-cash-offer${method === 'cash' ? ' is-selected' : ''}`} onClick={() => setMethod('cash')}><span>{language === 'ka' ? 'მიიღებ ხელზე' : 'Cash in hand'}</span><strong>{money(displayPrice)}</strong><small>{language === 'ka' ? 'ფილიალში, შემოწმების შემდეგ' : 'After inspection in store'}</small></button>
-          <button type="button" aria-pressed={method === 'gstore'} className={`zzv-trade-gstore-offer${method === 'gstore' ? ' is-selected' : ''}`} onClick={() => setMethod('gstore')}>
-            <img src="/figma-home/imgGstoreBrandColor.svg" alt="Gstore" />
-            <span>{language === 'ka' ? 'ან ახალ ტექნიკაში' : 'Credit toward a new device'}</span>
-            <strong>{money(gstorePrice)}</strong>
-            {gstoreBonus > 0 && <small>+{money(gstoreBonus)}</small>}
-          </button>
-          <p className="zzv-trade-flow-hint">{language === 'ka' ? 'შეთავაზება წინასწარია. Gstore-ის პროდუქტის არჩევას კონსულტანტთან ერთად შეძლებ.' : 'Estimate only. A consultant will help you choose a Gstore product.'}</p>
-          <button className="zzv-trade-primary" type="button" onClick={() => setPhase('contact')}>{t('public.tradeIn.getThisOffer')}</button>
-          <button className="zzv-trade-text-button" type="button" onClick={previous}>{t('public.tradeIn.changeAnswers')}</button>
+          <button type="button" aria-pressed={method === 'cash'} className={`zzv-trade-cash-offer${method === 'cash' ? ' is-selected' : ''}`} onClick={() => { setMethod('cash'); setSelectedGstoreProductId(null); }}><span>{language === 'ka' ? 'მიიღებ ხელზე' : 'Cash in hand'}</span><strong>{money(displayPrice)}</strong><small>{language === 'ka' ? 'ფილიალში, შემოწმების შემდეგ' : 'After inspection in store'}</small></button>
+          <div className={`zzv-trade-gstore-offer${method === 'gstore' ? ' is-selected' : ''}`}>
+            <div className="zzv-trade-gstore-head"><img src="/figma-home/imgGstoreBrandColor.svg" alt="Gstore" /><span>{language === 'ka' ? 'ან ახალ ტექნიკაში' : 'Or toward a new device'}</span><div className="zzv-trade-gstore-credit"><strong>{money(gstorePrice)}</strong>{gstoreBonus > 0 && <small>+{money(gstoreBonus)}</small>}</div></div>
+            {gstoreProductsQuery.isLoading ? <p className="zzv-trade-gstore-loading">{language === 'ka' ? 'პროდუქტები იტვირთება...' : 'Loading products...'}</p> : gstoreProducts.length ? <div className="zzv-trade-gstore-products">{gstoreProducts.map((item) => <button type="button" key={item.id} aria-pressed={selectedGstoreProductId === item.id} className={`zzv-trade-gstore-product${selectedGstoreProductId === item.id ? ' is-selected' : ''}`} onClick={() => { setMethod('gstore'); setSelectedGstoreProductId(item.id); }}><span className="zzv-trade-gstore-product-image"><img src={item.image_url} alt="" /></span><strong>{item.name}</strong>{item.subtitle && <small>{item.subtitle}</small>}<span className="zzv-trade-gstore-product-price">{money(item.price_gel)}</span></button>)}</div> : gstoreProductsQuery.isError ? <p className="zzv-trade-gstore-loading">{language === 'ka' ? 'პროდუქტები დროებით მიუწვდომელია' : 'Products are temporarily unavailable'}</p> : <button type="button" className="zzv-trade-gstore-generic" onClick={() => setMethod('gstore')}>{language === 'ka' ? 'Gstore კრედიტის არჩევა' : 'Choose Gstore credit'}</button>}
+            {selectedGstoreProduct && <p className="zzv-trade-gstore-remaining">{language === 'ka' ? 'პროდუქტის ფასი' : 'Product price'} {money(selectedGstoreProduct.price_gel)} · {language === 'ka' ? 'დამატებით გადასახდელი' : 'Remaining to pay'} <strong>{money(remainingPrice)}</strong></p>}
+          </div>
+          <div className="zzv-trade-offer-actions"><button className="zzv-trade-primary" type="button" onClick={() => setPhase('contact')}>{t('public.tradeIn.getThisOffer')}</button><button className="zzv-trade-secondary" type="button" onClick={onRestart || restart}>{language === 'ka' ? 'დაიწყე თავიდან' : 'Start over'}</button></div>
         </>}
 
         {phase === 'contact' && <form className="zzv-trade-contact" onSubmit={submit}>
           <h1>{language === 'ka' ? 'დაგვიტოვე ნომერი' : 'Leave your number'}</h1>
           <p className="zzv-trade-flow-hint">{language === 'ka' ? 'კონსულტანტი დაგირეკავს და ერთად შევათანხმებთ დროსა და ფილიალს.' : 'A consultant will call you to arrange a time and location.'}</p>
-          <div className="zzv-trade-contact-total"><div><span>{language === 'ka' ? 'მოწყობილობა' : 'Device'}</span><strong>{detail.name}{storage ? ` · ${storage}` : ''}</strong></div><div><span>{language === 'ka' ? 'შეთავაზება' : 'Offer'}</span><strong>{noExactPrice ? (language === 'ka' ? 'შემოწმების შემდეგ' : 'After inspection') : money(chosenPrice)}</strong></div></div>
+          <div className="zzv-trade-contact-total"><div><span>{language === 'ka' ? 'მოწყობილობა' : 'Device'}</span><strong>{detail.name}{storage ? ` · ${storage}` : ''}</strong></div><div><span>{language === 'ka' ? 'შეთავაზება' : 'Offer'}</span><strong>{noExactPrice ? (language === 'ka' ? 'შემოწმების შემდეგ' : 'After inspection') : money(chosenPrice)}</strong></div>{selectedGstoreProduct && <div><span>{selectedGstoreProduct.name}</span><strong>{language === 'ka' ? 'დამატებით' : 'Remaining'} {money(remainingPrice)}</strong></div>}</div>
           <div className="zzv-trade-contact-fields"><label>{t('public.tradeIn.fullName')}<input value={form.customer_name} onChange={(event) => setForm((current) => ({ ...current, customer_name: event.target.value }))} placeholder={language === 'ka' ? 'სახელი გვარი' : 'Full name'} autoComplete="name" required /></label><label>{t('public.tradeIn.phone')}<input value={form.customer_phone} onChange={(event) => setForm((current) => ({ ...current, customer_phone: event.target.value }))} placeholder="5XX XXX XXX" autoComplete="tel" type="tel" required /></label></div>
           {error && <p className="zzv-trade-error" role="alert">{error}</p>}
           <button className="zzv-trade-primary" type="submit" disabled={saving}>{saving ? (language === 'ka' ? 'იგზავნება...' : 'Sending...') : (language === 'ka' ? 'გაგზავნა' : 'Send request')}</button>

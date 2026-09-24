@@ -1,7 +1,9 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
+import { randomUUID } from 'crypto';
 import { CreateTradeInQuoteDto } from './dto/create-trade-in-quote.dto';
+import { GstoreOfferProductDto } from './dto/gstore-offer-product.dto';
 import { UpdateTradeInCategoryDto } from './dto/update-trade-in-category.dto';
 import { UpdateTradeInBrandDto } from './dto/update-trade-in-brand.dto';
 import { UpdateTradeInProductDto } from './dto/update-trade-in-product.dto';
@@ -15,6 +17,8 @@ import { TradeInSetting } from './entities/trade-in-setting.entity';
 import { validatePricingTree } from './pricing-tree.validation';
 
 const PRODUCT_CATEGORY_MATCH = '(LOWER(product.category) = LOWER(:category) OR LOWER(product.category2) = LOWER(:category))';
+
+type GstoreOfferProduct = GstoreOfferProductDto & { id: string };
 
 @Injectable()
 export class TradeInService {
@@ -54,6 +58,61 @@ export class TradeInService {
       value: JSON.stringify(dto),
     }));
     return this.getOfferPolicy();
+  }
+
+  async listGstoreProducts(includeDisabled = false): Promise<GstoreOfferProduct[]> {
+    const setting = await this.settingRepository.findOne({ where: { key: 'gstore_offer_products' } });
+    const products = this.parseGstoreProducts(setting?.value);
+    return includeDisabled ? products : products.filter((product) => product.enabled);
+  }
+
+  async saveGstoreProduct(dto: GstoreOfferProductDto, id?: string) {
+    const name = dto.name.trim();
+    const imageUrl = dto.image_url.trim();
+    if (!name || !imageUrl.startsWith('/uploads/shop/products/')) {
+      throw new BadRequestException('A name and uploaded product image are required.');
+    }
+    return this.settingRepository.manager.transaction(async (manager) => {
+      await manager.query("INSERT IGNORE INTO trade_in_settings (setting_key, setting_value) VALUES ('gstore_offer_products', '[]')");
+      const setting = await manager.findOne(TradeInSetting, {
+        where: { key: 'gstore_offer_products' },
+        lock: { mode: 'pessimistic_write' },
+      });
+      const products = this.parseGstoreProducts(setting.value);
+      const index = id ? products.findIndex((product) => product.id === id) : -1;
+      if (id && index < 0) throw new NotFoundException('Gstore offer product not found.');
+      const product: GstoreOfferProduct = {
+        id: id || randomUUID(),
+        name,
+        subtitle: dto.subtitle?.trim() || '',
+        image_url: imageUrl,
+        price_gel: dto.price_gel,
+        bonus_percent: dto.bonus_percent ?? null,
+        bonus_fixed: dto.bonus_fixed ?? null,
+        enabled: dto.enabled,
+      };
+      if (index < 0) products.push(product);
+      else products[index] = product;
+      setting.value = JSON.stringify(products);
+      await manager.save(setting);
+      return product;
+    });
+  }
+
+  async deleteGstoreProduct(id: string) {
+    return this.settingRepository.manager.transaction(async (manager) => {
+      const setting = await manager.findOne(TradeInSetting, {
+        where: { key: 'gstore_offer_products' },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!setting) throw new NotFoundException('Gstore offer product not found.');
+      const products = this.parseGstoreProducts(setting.value);
+      const remaining = products.filter((product) => product.id !== id);
+      if (remaining.length === products.length) throw new NotFoundException('Gstore offer product not found.');
+      setting.value = JSON.stringify(remaining);
+      await manager.save(setting);
+      return { deleted: true };
+    });
   }
 
   async listBrands(category: string) {
@@ -227,13 +286,36 @@ export class TradeInService {
     }
 
     const policy = await this.getOfferPolicy();
-    const pricingPath = Array.isArray(dto.pricing_path) ? dto.pricing_path.filter((step) => step?.label !== 'fulfillment_method') : [];
+    const pricingPath = Array.isArray(dto.pricing_path)
+      ? dto.pricing_path.filter((step) => !['fulfillment_method', 'gstore_product'].includes(step?.label))
+      : [];
     const requestedMethod = dto.pricing_path?.find((step) => step?.label === 'fulfillment_method')?.answers?.[0]?.text;
+    const selectedGstoreProduct = dto.gstore_product_id
+      ? (await this.listGstoreProducts()).find((item) => item.id === dto.gstore_product_id)
+      : null;
+    if (dto.gstore_product_id && (requestedMethod !== 'gstore' || !selectedGstoreProduct)) {
+      throw new BadRequestException('Selected Gstore product is unavailable.');
+    }
+    if (requestedMethod === 'gstore' && !selectedGstoreProduct && (await this.listGstoreProducts()).length) {
+      throw new BadRequestException('Select a Gstore product for this offer.');
+    }
+    let bonus = 0;
     if (requestedMethod === 'cash' || requestedMethod === 'gstore') {
-      const bonus = requestedMethod === 'gstore'
-        ? Math.round(dto.final_price * policy.bonus_percent / 100 + policy.bonus_fixed)
+      bonus = requestedMethod === 'gstore'
+        ? Math.round(dto.final_price * (selectedGstoreProduct?.bonus_percent ?? policy.bonus_percent) / 100 + (selectedGstoreProduct?.bonus_fixed ?? policy.bonus_fixed))
         : 0;
       pricingPath.push({ question: 'Fulfillment', label: 'fulfillment_method', answers: [{ text: requestedMethod, value: bonus, attributes: [] }] });
+      if (selectedGstoreProduct) {
+        pricingPath.push({
+          question: 'Gstore product',
+          label: 'gstore_product',
+          answers: [{
+            text: selectedGstoreProduct.name,
+            value: selectedGstoreProduct.price_gel,
+            attributes: [{ id: selectedGstoreProduct.id, image_url: selectedGstoreProduct.image_url, subtitle: selectedGstoreProduct.subtitle }],
+          }],
+        });
+      }
     }
 
     const quote = this.quoteRepository.create({
@@ -253,6 +335,9 @@ export class TradeInService {
       id: saved.id,
       quote_number: saved.quote_number,
       status: saved.status,
+      offer_credit: dto.final_price + bonus,
+      remaining_price: selectedGstoreProduct ? Math.max(0, selectedGstoreProduct.price_gel - dto.final_price - bonus) : null,
+      gstore_product: selectedGstoreProduct || null,
     };
   }
 
@@ -622,6 +707,16 @@ export class TradeInService {
       return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
     } catch {
       return {};
+    }
+  }
+
+  private parseGstoreProducts(value?: string | null): GstoreOfferProduct[] {
+    if (!value) return [];
+    try {
+      const products = JSON.parse(value);
+      return Array.isArray(products) ? products.filter((product) => product && typeof product.id === 'string') : [];
+    } catch {
+      return [];
     }
   }
 

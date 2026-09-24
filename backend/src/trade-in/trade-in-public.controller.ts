@@ -16,6 +16,11 @@ export class TradeInPublicController {
     return this.tradeInService.getOfferPolicy();
   }
 
+  @Get('gstore-products')
+  listGstoreProducts() {
+    return this.tradeInService.listGstoreProducts();
+  }
+
   @Get('brands')
   listBrands(@Query('category') category: string) {
     return this.tradeInService.listBrands(category);
