@@ -1574,8 +1574,8 @@ button.zzv-public-header-action { cursor: pointer; }
 .zzv-trade-gstore-product { display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 210px; padding: 10px; border: 2px solid transparent; border-radius: 12px; background: #fff; color: #202536; font: inherit; text-align: left; cursor: pointer; transition: transform 160ms ease, border-color 160ms ease; }
 .zzv-trade-gstore-product:hover { transform: translateY(-3px); }
 .zzv-trade-gstore-product.is-selected { border-color: #8c66ff; }
-.zzv-trade-gstore-product-image { display: grid; flex: 0 0 122px; place-items: center; width: 100%; height: 122px; overflow: hidden; border-radius: 9px; background: #f8f7ff; }
-.zzv-trade-gstore-product-image img { display: block; width: 100%; height: 100%; padding: 8px; object-fit: contain; }
+.zzv-trade-gstore-product-image { position: relative; display: block; flex: 0 0 122px; width: 100%; height: 122px; overflow: hidden; border-radius: 9px; background: #f8f7ff; }
+.zzv-trade-gstore-product-image img { position: absolute; inset: 8px; display: block; width: calc(100% - 16px); height: calc(100% - 16px); object-fit: contain; }
 .zzv-trade-gstore-product strong { font-size: 14px; line-height: 1.3; }
 .zzv-trade-gstore-product small { color: #6f7383; font-size: 12px; }
 .zzv-trade-gstore-product-price { margin-top: auto; align-self: center; font-size: 16px; font-weight: 800; }
