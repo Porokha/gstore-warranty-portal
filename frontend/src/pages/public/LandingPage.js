@@ -95,7 +95,7 @@ function HeroDropdown({ label, value, options, placeholder, onChange, disabled =
       {open && (
         <div className="zzv-figma-dropdown-list" role="listbox" aria-label={label}>
           {options.map((option) => (
-            <button key={option.value} type="button" role="option" aria-selected={value === option.value} onClick={() => { onChange(option.value); setOpen(false); }}>
+            <button key={option.value} type="button" role="option" aria-selected={value === option.value} disabled={option.disabled} onClick={() => { onChange(option.value); setOpen(false); }}>
               {option.label}
             </button>
           ))}
@@ -227,7 +227,7 @@ function LandingPage() {
           <aside className="zzv-figma-selector">
             <h2>შეაფასე შენი მოწყობილობა</h2>
             <div className="zzv-figma-selector-grid">
-              <HeroDropdown label="ბრენდი" value={heroBrand} options={(brandsQuery.data || []).map((item) => ({ value: item.brand, label: item.brand }))} placeholder="აირჩიე ბრენდი" onChange={(value) => { setHeroBrand(value); setHeroSearch(''); setHeroProduct(null); setHeroStorage(''); setHeroCondition(''); }} />
+              <HeroDropdown label="ბრენდი" value={heroBrand} options={(brandsQuery.data || []).map((item) => ({ value: item.brand, label: item.coming_soon ? `${item.brand} · მალე` : item.brand, disabled: item.coming_soon }))} placeholder="აირჩიე ბრენდი" onChange={(value) => { setHeroBrand(value); setHeroSearch(''); setHeroProduct(null); setHeroStorage(''); setHeroCondition(''); }} />
               <div className={`zzv-figma-select-field zzv-figma-model-field${!heroBrand ? ' is-mobile-pending' : ''}`} ref={modelRef}>
                 <label htmlFor="home-hero-model">მოდელი</label>
                 <input id="home-hero-model" className="zzv-figma-select" role="combobox" aria-autocomplete="list" aria-expanded={modelOpen} value={heroProduct ? heroProduct.name : heroSearch} disabled={!heroBrand} onFocus={() => { if (heroProduct) { setHeroProduct(null); setHeroSearch(''); setHeroStorage(''); setHeroCondition(''); } setModelOpen(true); }} onChange={(event) => { setHeroSearch(event.target.value); setHeroProduct(null); setHeroStorage(''); setHeroCondition(''); setModelOpen(true); }} placeholder="მოძებნე მოდელი" autoComplete="off" />

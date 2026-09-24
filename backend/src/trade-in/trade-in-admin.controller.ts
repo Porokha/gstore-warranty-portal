@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { UserRole } from '../users/entities/user.entity';
 import { UpdateTradeInCategoryDto } from './dto/update-trade-in-category.dto';
+import { UpdateTradeInBrandDto } from './dto/update-trade-in-brand.dto';
 import { UpdateTradeInPricingDto } from './dto/update-trade-in-pricing.dto';
 import { ExportSelectedTradeInPricingDto, ImportTradeInPricingDto, ReplaceTradeInPricingDto } from './dto/import-trade-in-pricing.dto';
 import { UpdateTradeInProductDto } from './dto/update-trade-in-product.dto';
@@ -31,6 +32,16 @@ export class TradeInAdminController {
   @Get('categories')
   listCategories() {
     return this.tradeInService.listAdminCategories();
+  }
+
+  @Get('brands')
+  listBrands() {
+    return this.tradeInService.listAdminBrands();
+  }
+
+  @Patch('brands/availability')
+  updateBrandAvailability(@Body() dto: UpdateTradeInBrandDto) {
+    return this.tradeInService.updateBrandAvailability(dto);
   }
 
   @Patch('categories/:id')
