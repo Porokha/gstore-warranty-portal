@@ -1487,9 +1487,8 @@ button.zzv-public-header-action { cursor: pointer; }
 .zzv-trade-model-option.is-selected { border-color: var(--zzv-purple-500); background: #f5f2ff; }
 .zzv-trade-brand-option.is-selected,
 .zzv-trade-model-option.is-selected { border-width: 1.5px; }
-.zzv-trade-brand-option.is-coming-soon { background: #f8f8fb; cursor: not-allowed; }
-.zzv-trade-brand-option.is-coming-soon .zzv-trade-brand-logo { opacity: .55; }
-.zzv-trade-brand-option.is-coming-soon .zzv-trade-brand-count { color: var(--zzv-purple-500); font-weight: 700; }
+.zzv-trade-brand-option.is-coming-soon { border-color: #e7e3ef; cursor: not-allowed; }
+.zzv-trade-brand-unavailable { position: absolute; right: 16px; bottom: 20px; color: #9a93aa; font-size: 20px !important; }
 .zzv-trade-brand-logo { display: flex; align-items: center; justify-content: center; width: 100%; height: 64px; margin-bottom: 20px; }
 .zzv-trade-brand-logo img { display: block; width: auto; max-width: 160px; height: auto; max-height: 56px; object-fit: contain; }
 .zzv-trade-brand-logo--samsung img { width: 160px; height: 56px; max-width: 100%; object-fit: cover; object-position: center; mix-blend-mode: multiply; }
@@ -1575,8 +1574,8 @@ button.zzv-public-header-action { cursor: pointer; }
 .zzv-trade-gstore-product { display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 210px; padding: 10px; border: 2px solid transparent; border-radius: 12px; background: #fff; color: #202536; font: inherit; text-align: left; cursor: pointer; transition: transform 160ms ease, border-color 160ms ease; }
 .zzv-trade-gstore-product:hover { transform: translateY(-3px); }
 .zzv-trade-gstore-product.is-selected { border-color: #8c66ff; }
-.zzv-trade-gstore-product-image { display: grid; place-items: center; width: 100%; height: 122px; border-radius: 9px; background: #f8f7ff; }
-.zzv-trade-gstore-product-image img { display: block; max-width: 90%; max-height: 90%; object-fit: contain; }
+.zzv-trade-gstore-product-image { display: grid; flex: 0 0 122px; place-items: center; width: 100%; height: 122px; overflow: hidden; border-radius: 9px; background: #f8f7ff; }
+.zzv-trade-gstore-product-image img { display: block; width: 100%; height: 100%; padding: 8px; object-fit: contain; }
 .zzv-trade-gstore-product strong { font-size: 14px; line-height: 1.3; }
 .zzv-trade-gstore-product small { color: #6f7383; font-size: 12px; }
 .zzv-trade-gstore-product-price { margin-top: auto; align-self: center; font-size: 16px; font-weight: 800; }
@@ -1644,6 +1643,7 @@ button.zzv-public-header-action { cursor: pointer; }
   .zzv-trade-brand-count,
   .zzv-trade-model-price { grid-column: 3; grid-row: 1 / 3; margin: 0; padding: 0; color: var(--zzv-text-primary); font-size: 14px; font-weight: 600; white-space: nowrap; }
   .zzv-trade-brand-option .zzv-trade-brand-count { grid-column: 3; }
+  .zzv-trade-brand-unavailable { position: static; grid-column: 4; grid-row: 1 / 3; justify-self: center; font-size: 18px !important; }
   .zzv-trade-option-arrow { display: none !important; }
   .zzv-trade-option-radio { display: block; grid-column: 4; grid-row: 1 / 3; width: 16px; height: 16px; border: 1px solid var(--zzv-border-default); border-radius: 50%; background: #fff; }
   .is-selected .zzv-trade-option-radio { border: 4px solid var(--zzv-purple-500); }
@@ -2431,7 +2431,7 @@ button.zzv-public-header-action { cursor: pointer; }
   .zzv-trade-gstore-offer { min-height: 124px; margin-bottom: 24px; border-radius: 16px; }
   .zzv-trade-gstore-products { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; scroll-snap-type: x mandatory; }
   .zzv-trade-gstore-product { flex: 0 0 min(48vw, 180px); min-height: 190px; scroll-snap-align: start; }
-  .zzv-trade-gstore-product-image { height: 105px; }
+  .zzv-trade-gstore-product-image { flex-basis: 105px; height: 105px; }
   .zzv-trade-gstore-credit strong { font-size: 19px; }
   .zzv-trade-gstore-head > img { width: 68px; }
   .zzv-trade-flow--offer .zzv-trade-flow-panel { padding-bottom: 152px; }
