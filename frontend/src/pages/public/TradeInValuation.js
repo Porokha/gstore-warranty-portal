@@ -129,6 +129,28 @@ export default function TradeInValuation({ product, t, language, initialStorage 
   const summaryPrice = isCondition && selectedIndexes.length
     ? conditionPreview(answers[selectedIndexes[0]])
     : cashPrice ? cashPrice + amount(pendingStorageAnswer) : Number(detail.max_price) || 0;
+  const summaryAnswerLabel = (stepQuestion, answer) => {
+    const raw = String(answer?.text || '').trim();
+    if (!raw) return null;
+    const grade = stepQuestion?.label === 'condition' ? gradeNames[raw.toLowerCase()] : null;
+    const translated = language === 'ka' ? answer.text_ka || grade?.ka || answerNames[raw] || raw : grade?.en || raw;
+    if (grade) return `${grade.grade} · ${translated}`;
+    if (stepQuestion?.label === 'fully_functional') return `${language === 'ka' ? 'მუშაობს' : 'Working'}: ${translated}`;
+    return translated;
+  };
+  const summarySteps = [
+    ...steps,
+    ...(phase === 'question' && selectedIndexes.length ? [{ question, answers: selectedIndexes.map((index) => answers[index]).filter(Boolean) }] : []),
+  ];
+  const summaryBadges = [
+    ...(storage ? [{ key: 'storage', label: storage }] : []),
+    ...summarySteps.filter((step) => !['storage_size', 'pricing_status'].includes(step.question?.label)).flatMap((step, stepIndex) =>
+      (step.answers || []).map((answer, answerIndex) => ({
+        key: `${stepIndex}-${answerIndex}`,
+        label: summaryAnswerLabel(step.question, answer),
+      })).filter((badge) => badge.label)),
+    ...(manualAssessment ? faults.map((fault) => ({ key: `fault-${fault}`, label: faultOptions.find((item) => item[0] === fault)?.[language === 'ka' ? 1 : 2] || fault })) : []),
+  ];
 
   useEffect(() => {
     if (question?.label !== 'condition' || !initialCondition) return;
@@ -342,7 +364,7 @@ export default function TradeInValuation({ product, t, language, initialStorage 
         <div className="zzv-trade-summary-image">{imageUrl(detail.image_src) && <img src={imageUrl(detail.image_src)} alt={detail.name} />}</div>
         <h2>{detail.name}</h2>
         <p>{detail.brand}</p>
-        {storage && <span className="zzv-trade-summary-badge">{storage}</span>}
+        {summaryBadges.length > 0 && <div className="zzv-trade-summary-badges" aria-label={language === 'ka' ? 'არჩეული მახასიათებლები' : 'Selected details'}>{summaryBadges.map((badge) => <span className="zzv-trade-summary-badge" key={badge.key}>{badge.label}</span>)}</div>}
         {!noExactPrice && <div className="zzv-trade-summary-price"><span>{language === 'ka' ? 'მიმდინარე შეფასება' : 'Current estimate'}</span><strong>{money(summaryPrice)}</strong></div>}
       </aside>
       <section className="zzv-trade-flow-panel">
