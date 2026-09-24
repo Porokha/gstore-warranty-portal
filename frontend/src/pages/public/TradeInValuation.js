@@ -10,6 +10,12 @@ const imageUrl = (value) => {
   return `/trade-in${path.startsWith('/') ? path : `/${path}`}`;
 };
 
+const resolvePointer = (tree, pointer) => {
+  if (!pointer || tree?.[pointer.setIndex]?.enabled === false) return null;
+  const questions = tree?.[pointer.setIndex]?.questions || [];
+  const questionIndex = questions.findIndex((item, index) => index >= pointer.questionIndex && item?.enabled !== false);
+  return questionIndex < 0 ? null : { setIndex: pointer.setIndex, questionIndex };
+};
 const getQuestion = (tree, pointer) => pointer ? tree?.[pointer.setIndex]?.questions?.[pointer.questionIndex] || null : null;
 const getPointer = (goTo) => {
   const [setIndex, questionIndex] = String(goTo || '').split(',').map((part) => Number(part) - 1);
@@ -18,7 +24,7 @@ const getPointer = (goTo) => {
     : null;
 };
 const amount = (answer) => Number(answer?.value ?? answer?.value_current ?? 0) || 0;
-const available = (answer) => answer && String(answer.value_enabled ?? 1) !== '0' && answer.text;
+const available = (answer) => answer && ![0, false, '0'].includes(answer.value_enabled) && answer.text;
 const money = (value) => `₾${Math.max(0, Math.round(value)).toLocaleString()}`;
 const pathEntry = (question, answers, extras = {}) => ({
   question: question?.text,
@@ -72,7 +78,7 @@ export default function TradeInValuation({ product, t, language, initialStorage 
   const productQuery = useQuery(['trade-in-product', product.slug], () => tradeInService.getProduct(product.slug));
   const detail = productQuery.data || product;
   const tree = Array.isArray(detail.tree) ? detail.tree : [];
-  const storageQuestions = tree.flatMap((set) => set.questions || []).filter((question) => question.label === 'storage_size');
+  const storageQuestions = tree.filter((set) => set.enabled !== false).flatMap((set) => set.questions || []).filter((question) => question.enabled !== false && question.label === 'storage_size');
   const storageOptions = [...new Set(storageQuestions.flatMap((question) => (question.answers || []).filter(available).map((answer) => answer.text)))];
   const [phase, setPhase] = useState(initialStorage ? 'question' : 'storage');
   const [storage, setStorage] = useState(initialStorage);
@@ -89,9 +95,9 @@ export default function TradeInValuation({ product, t, language, initialStorage 
   const [displayPrice, setDisplayPrice] = useState(0);
   const [manualAssessment, setManualAssessment] = useState(false);
 
-  const question = getQuestion(tree, pointer);
+  const question = getQuestion(tree, resolvePointer(tree, pointer));
   const answers = (question?.answers || []).filter(available);
-  const isMulti = Number(question?.type || 0) > 0 || question?.label === 'accessories';
+  const isMulti = Number(question?.type || 0) > 0 || question?.type === 'multi' || question?.label === 'accessories';
   const isCondition = question?.label === 'condition';
   const isAccessories = question?.label === 'accessories';
   const cashPrice = Math.max(0, Math.round(price));
@@ -102,12 +108,12 @@ export default function TradeInValuation({ product, t, language, initialStorage 
   const chosenPrice = method === 'gstore' ? gstorePrice : cashPrice;
   const noExactPrice = manualAssessment;
   const conditionPreview = (answer) => {
-    const branchQuestions = tree[getPointer(answer?.go_to)?.setIndex]?.questions || [];
+    const branchQuestions = (tree[getPointer(answer?.go_to)?.setIndex]?.questions || []).filter((item) => item.enabled !== false);
     const storageAnswer = branchQuestions.find((item) => item.label === 'storage_size')?.answers?.find((item) => item.text === storage);
     return amount(answer) + amount(storageAnswer);
   };
   const pendingStorageAnswer = storage && !steps.some((step) => step.question?.label === 'storage_size')
-    ? (tree[getPointer(steps.find((step) => step.question?.label === 'condition')?.answers?.[0]?.go_to)?.setIndex]?.questions || [])
+    ? (tree[getPointer(steps.find((step) => step.question?.label === 'condition')?.answers?.[0]?.go_to)?.setIndex]?.questions || []).filter((item) => item.enabled !== false)
       .find((item) => item.label === 'storage_size')?.answers?.find((item) => item.text === storage)
     : null;
   const summaryPrice = isCondition && selectedIndexes.length
@@ -144,20 +150,20 @@ export default function TradeInValuation({ product, t, language, initialStorage 
   }, [cashPrice, phase]);
 
   const storagePreview = (choice) => {
-    const condition = tree.flatMap((set) => set.questions || []).find((item) => item.label === 'condition');
+    const condition = tree.filter((set) => set.enabled !== false).flatMap((set) => set.questions || []).find((item) => item.enabled !== false && item.label === 'condition');
     const candidates = (condition?.answers || []).filter(available).map((answer) => {
       const branch = getPointer(answer.go_to);
-      const branchQuestions = tree[branch?.setIndex]?.questions || [];
+      const branchQuestions = (tree[branch?.setIndex]?.questions || []).filter((item) => item.enabled !== false);
       const storageAnswer = branchQuestions.find((item) => item.label === 'storage_size')?.answers?.find((item) => item.text === choice);
       return amount(answer) + amount(storageAnswer);
     });
     return candidates.length ? Math.max(...candidates) : null;
   };
 
-  const possibleConditionPrices = (tree.flatMap((set) => set.questions || []).find((item) => item.label === 'condition')?.answers || [])
+  const possibleConditionPrices = (tree.filter((set) => set.enabled !== false).flatMap((set) => set.questions || []).find((item) => item.enabled !== false && item.label === 'condition')?.answers || [])
     .filter(available)
     .map((answer) => {
-      const branchQuestions = tree[getPointer(answer.go_to)?.setIndex]?.questions || [];
+      const branchQuestions = (tree[getPointer(answer.go_to)?.setIndex]?.questions || []).filter((item) => item.enabled !== false);
       const storageAnswer = branchQuestions.find((item) => item.label === 'storage_size')?.answers?.find((item) => item.text === storage);
       return amount(answer) + amount(storageAnswer);
     })
@@ -169,7 +175,7 @@ export default function TradeInValuation({ product, t, language, initialStorage 
     if (!question) return;
     if (question.label === 'storage_size' && chosenAnswers[0]) setStorage(chosenAnswers[0].text);
     setManualAssessment(false);
-    let currentPointer = pointer;
+    let currentPointer = resolvePointer(tree, pointer);
     let currentPrice = price;
     const addedSteps = [];
     let currentAnswers = chosenAnswers;
@@ -189,6 +195,7 @@ export default function TradeInValuation({ product, t, language, initialStorage 
       nextPointer = result === 1 || !first
         ? { setIndex: currentPointer.setIndex, questionIndex: currentPointer.questionIndex + 1 }
         : result === 2 ? getPointer(first.go_to) : null;
+      nextPointer = resolvePointer(tree, nextPointer);
       const nextQuestion = getQuestion(tree, nextPointer);
       ending = !nextQuestion || result === 0 || result === 3 || result === 4;
       if (ending || nextQuestion.label !== 'storage_size' || !storage) break;
@@ -305,7 +312,7 @@ export default function TradeInValuation({ product, t, language, initialStorage 
       </aside>
       <section className="zzv-trade-flow-panel">
         {phase === 'storage' && <>
-          <h1>{language === 'ka' ? 'რამდენი აქვს მეხსიერება?' : 'How much storage does it have?'}</h1>
+          <h1>{language === 'ka' ? storageQuestions[0]?.text_ka || 'რამდენი აქვს მეხსიერება?' : storageQuestions[0]?.text || 'How much storage does it have?'}</h1>
           <div className="zzv-trade-answer-list">
             {storageOptions.map((choice) => <SelectionRow key={choice} selected={storage === choice} onClick={() => setStorage(choice)} title={choice} value={storagePreview(choice) === null ? null : `${t('public.tradeIn.upTo')} ${money(storagePreview(choice))}`} />)}
           </div>
@@ -314,14 +321,14 @@ export default function TradeInValuation({ product, t, language, initialStorage 
         </>}
 
         {phase === 'question' && question && <>
-          <h1>{isCondition ? (language === 'ka' ? 'რა მდგომარეობაშია?' : 'What condition is it in?') : isAccessories ? (language === 'ka' ? 'რა მოყვება?' : 'What is included?') : language === 'ka' ? ({ carrier: 'რომელ ქსელზე მუშაობს?', carrier_lock: 'განბლოკილია მოწყობილობა?', fully_functional: 'სრულად მუშაობს მოწყობილობა?' })[question.label] || question.text : question.text}</h1>
+          <h1>{language === 'ka' ? question.text_ka || (isCondition ? 'რა მდგომარეობაშია?' : isAccessories ? 'რა მოყვება?' : ({ carrier: 'რომელ ქსელზე მუშაობს?', carrier_lock: 'განბლოკილია მოწყობილობა?', fully_functional: 'სრულად მუშაობს მოწყობილობა?' })[question.label] || question.text) : question.text}</h1>
           {isAccessories && <p className="zzv-trade-flow-hint">{language === 'ka' ? 'მონიშნე ყველაფერი, რაც მოყვება. შეგიძლია არცერთი არ მონიშნო.' : 'Select everything included, or continue without selecting any.'}</p>}
           {isCondition && <small className="zzv-trade-group-label">{language === 'ka' ? 'მდგომარეობა' : 'Condition'}</small>}
           <div className="zzv-trade-answer-list">
             {answers.map((answer, index) => {
               const grade = isCondition ? gradeNames[answer.text.toLowerCase()] : null;
               const accessoryIcon = isAccessories ? (/box/i.test(answer.text) ? '/figma-home/trade-accessory-box.svg' : /cable|adapter/i.test(answer.text) ? '/figma-home/imgIconPlug.svg' : '/figma-home/imgIconSmartphone.svg') : null;
-              return <SelectionRow key={`${answer.text}-${index}`} selected={selectedIndexes.includes(index)} onClick={() => setSelectedIndexes((current) => isMulti ? current.includes(index) ? current.filter((item) => item !== index) : [...current, index] : [index])} title={grade ? (language === 'ka' ? grade.ka : grade.en) : language === 'ka' ? answerNames[answer.text] || answer.text : answer.text} subtitle={grade ? (language === 'ka' ? grade.detailKa : grade.detailEn) : null} badge={grade?.grade} icon={accessoryIcon} multiple={isMulti} value={isCondition ? money(conditionPreview(answer)) : amount(answer) ? `${amount(answer) > 0 ? '+' : '-'}${money(Math.abs(amount(answer)))}` : null} />;
+              return <SelectionRow key={`${answer.text}-${index}`} selected={selectedIndexes.includes(index)} onClick={() => setSelectedIndexes((current) => isMulti ? current.includes(index) ? current.filter((item) => item !== index) : [...current, index] : [index])} title={language === 'ka' ? answer.text_ka || (grade ? grade.ka : answerNames[answer.text] || answer.text) : grade ? grade.en : answer.text} subtitle={language === 'ka' ? answer.tooltip_ka || (grade ? grade.detailKa : answer.tooltip) : answer.tooltip || (grade ? grade.detailEn : null)} badge={grade?.grade} icon={accessoryIcon} multiple={isMulti} value={isCondition ? money(conditionPreview(answer)) : amount(answer) ? `${amount(answer) > 0 ? '+' : '-'}${money(Math.abs(amount(answer)))}` : null} />;
             })}
             {isCondition && <SelectionRow selected={false} onClick={() => { setFaults([]); setManualAssessment(true); setPhase('faults'); }} title={language === 'ka' ? 'არ ვიცი — ჩვენ შევაფასებთ' : 'Not sure — we will assess it'} subtitle={language === 'ka' ? 'ფასის დიაპაზონს მიიღებ' : 'Get an estimated price range'} muted />}
           </div>

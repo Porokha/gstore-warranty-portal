@@ -80,6 +80,24 @@ export const tradeInService = {
     return response.data;
   },
 
+  getAdminPricingExport: async () => {
+    const response = await api.get('/shop/admin/trade-in/pricing/export');
+    return response.data;
+  },
+
+  importAdminPricing: async (products) => {
+    const response = await api.post('/shop/admin/trade-in/pricing/import', { products });
+    return response.data;
+  },
+
+  replaceAdminPricing: async (productIds, treeJson) => {
+    const response = await api.post('/shop/admin/trade-in/pricing/replace', {
+      product_ids: productIds,
+      tree_json: treeJson,
+    });
+    return response.data;
+  },
+
   getAdminQuotes: async (params = {}) => {
     const response = await api.get('/shop/admin/trade-in/quotes', { params });
     return response.data;
