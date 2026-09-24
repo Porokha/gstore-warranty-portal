@@ -31,6 +31,37 @@ export const tradeInService = {
     return response.data;
   },
 
+  getGstoreProducts: async () => {
+    const response = await api.get('/trade-in/gstore-products');
+    return response.data;
+  },
+
+  getAdminGstoreProducts: async () => {
+    const response = await api.get('/shop/admin/trade-in/gstore-products');
+    return response.data;
+  },
+
+  saveAdminGstoreProduct: async ({ id, payload }) => {
+    const response = id
+      ? await api.patch(`/shop/admin/trade-in/gstore-products/${id}`, payload)
+      : await api.post('/shop/admin/trade-in/gstore-products', payload);
+    return response.data;
+  },
+
+  deleteAdminGstoreProduct: async (id) => {
+    const response = await api.delete(`/shop/admin/trade-in/gstore-products/${id}`);
+    return response.data;
+  },
+
+  uploadGstoreProductImage: async (file) => {
+    const form = new FormData();
+    form.append('file', file);
+    const response = await api.post('/shop/admin/products/upload-image', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
   getAdminCategories: async () => {
     const response = await api.get('/shop/admin/trade-in/categories');
     return response.data;

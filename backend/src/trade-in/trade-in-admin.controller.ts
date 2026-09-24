@@ -10,6 +10,7 @@ import { ExportSelectedTradeInPricingDto, ImportTradeInPricingDto, ReplaceTradeI
 import { UpdateTradeInProductDto } from './dto/update-trade-in-product.dto';
 import { UpdateTradeInQuoteDto } from './dto/update-trade-in-quote.dto';
 import { UpdateTradeInOfferPolicyDto } from './dto/update-trade-in-offer-policy.dto';
+import { GstoreOfferProductDto } from './dto/gstore-offer-product.dto';
 import { TradeInQuoteStatus } from './entities/trade-in-quote.entity';
 import { TradeInService } from './trade-in.service';
 
@@ -27,6 +28,26 @@ export class TradeInAdminController {
   @Patch('offer-policy')
   updateOfferPolicy(@Body() dto: UpdateTradeInOfferPolicyDto) {
     return this.tradeInService.updateOfferPolicy(dto);
+  }
+
+  @Get('gstore-products')
+  listGstoreProducts() {
+    return this.tradeInService.listGstoreProducts(true);
+  }
+
+  @Post('gstore-products')
+  createGstoreProduct(@Body() dto: GstoreOfferProductDto) {
+    return this.tradeInService.saveGstoreProduct(dto);
+  }
+
+  @Patch('gstore-products/:id')
+  updateGstoreProduct(@Param('id') id: string, @Body() dto: GstoreOfferProductDto) {
+    return this.tradeInService.saveGstoreProduct(dto, id);
+  }
+
+  @Delete('gstore-products/:id')
+  deleteGstoreProduct(@Param('id') id: string) {
+    return this.tradeInService.deleteGstoreProduct(id);
   }
 
   @Get('categories')

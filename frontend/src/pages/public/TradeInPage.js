@@ -871,6 +871,16 @@ const TradeInPage = () => {
     setStage('valuation');
   };
 
+  const restartValuation = () => {
+    setProduct(null);
+    setSelectedProduct(null);
+    setBrand('');
+    setSeries('');
+    setSearch('');
+    setCategory(null);
+    setStage('categories');
+  };
+
   const chooseBrand = (selected) => {
     if (orderedBrands.find((item) => item.brand === selected)?.coming_soon) return;
     setBrand(selected);
@@ -1055,7 +1065,7 @@ const TradeInPage = () => {
           </div>
         )}
 
-        {!loading && stage === 'valuation' && product && <FigmaTradeInValuation key={product.slug} product={product} t={t} language={i18n.language} initialStorage={location.state?.preselectedStorage} initialCondition={location.state?.preselectedCondition} onProgressChange={setValuationStep} backActionRef={valuationBackRef} />}
+        {!loading && stage === 'valuation' && product && <FigmaTradeInValuation key={product.slug} product={product} t={t} language={i18n.language} initialStorage={location.state?.preselectedStorage} initialCondition={location.state?.preselectedCondition} onProgressChange={setValuationStep} backActionRef={valuationBackRef} onRestart={restartValuation} />}
       </Box>
     </Box>
   );

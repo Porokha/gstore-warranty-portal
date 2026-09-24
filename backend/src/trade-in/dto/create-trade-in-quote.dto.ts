@@ -21,6 +21,11 @@ export class CreateTradeInQuoteDto {
   @IsArray()
   pricing_path?: any[];
 
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  gstore_product_id?: string;
+
   @IsString()
   @MaxLength(255)
   customer_name: string;

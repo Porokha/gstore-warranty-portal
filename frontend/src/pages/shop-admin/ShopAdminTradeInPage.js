@@ -38,6 +38,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { tradeInService } from '../../services/tradeInService';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
+import GstoreOfferProducts from './GstoreOfferProducts';
 
 const headerCell = {
   color: '#667085',
@@ -500,7 +501,7 @@ const ShopAdminTradeInPage = () => {
             <Tab label="Quotes" />
             <Tab label="Products" />
             <Tab label="Categories" />
-            <Tab label="Gstore bonus" />
+            <Tab label="Gstore offers" />
           </Tabs>
         </Box>
 
@@ -603,6 +604,7 @@ const ShopAdminTradeInPage = () => {
                       <Box>
                         <Typography sx={{ fontSize: 13, fontWeight: 800 }}>{quote.product_name}</Typography>
                         <Typography sx={{ fontSize: 12, color: '#667085' }}>{quote.customer_name}</Typography>
+                        {quote.pricing_path?.find((entry) => entry.label === 'gstore_product')?.answers?.[0]?.text && <Typography sx={{ fontSize: 11, color: '#5d3bd0' }}>Gstore: {quote.pricing_path.find((entry) => entry.label === 'gstore_product').answers[0].text}</Typography>}
                       </Box>
                       <Typography sx={{ fontSize: 13 }}>{quote.customer_phone}</Typography>
                       <Box>
@@ -746,7 +748,7 @@ const ShopAdminTradeInPage = () => {
               </Box>
             )}
             {tab === 3 && (
-              <Box sx={{ display: 'grid', gap: 2, maxWidth: 600, p: 3 }}>
+              <><Box sx={{ display: 'grid', gap: 2, maxWidth: 600, p: 3 }}>
                 <Typography sx={{ fontWeight: 800, fontSize: 18 }}>Gstore trade-in credit</Typography>
                 <Typography sx={{ color: '#667085', fontSize: 13 }}>Credit = cash offer + percentage bonus + fixed bonus. Both bonuses are zero by default.</Typography>
                 {policyQuery.isError && <Alert severity="warning">Bonus settings are unavailable until the trade-in API update is deployed. No bonus is shown to customers.</Alert>}
@@ -755,7 +757,7 @@ const ShopAdminTradeInPage = () => {
                 {policyMutation.isError && <Alert severity="error">Could not save bonus settings.</Alert>}
                 {policyMutation.isSuccess && <Alert severity="success">Bonus settings saved.</Alert>}
                 <Button variant="contained" disabled={policyQuery.isError || policyMutation.isLoading || Number(offerPolicy.bonus_percent) < 0 || Number(offerPolicy.bonus_percent) > 100 || Number(offerPolicy.bonus_fixed) < 0 || Number(offerPolicy.bonus_fixed) > 100000} onClick={() => policyMutation.mutate({ bonus_percent: Number(offerPolicy.bonus_percent), bonus_fixed: Number(offerPolicy.bonus_fixed) })}>Save bonus</Button>
-              </Box>
+              </Box><GstoreOfferProducts /></>
             )}
           </>
         )}
