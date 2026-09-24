@@ -30,4 +30,14 @@ describe('validatePricingTree', () => {
     (rules[0].questions[0] as any).enabled = false;
     expect(() => validatePricingTree(rules)).toThrow(/first section/);
   });
+
+  it('accepts an explicit manual-review marker without a numeric offer', () => {
+    const rules = [{ name: 'Manual Review', questions: [{ text: 'Pricing status', label: 'pricing_status', answers: [{
+      text: 'Manual evaluation required', value: '', value_enabled: 0, result: 1,
+      attributes: [{ key: 'pricing_status', value: '[manual-review]' }],
+    }] }] }];
+    expect(() => validatePricingTree(rules)).not.toThrow();
+    rules[0].questions[0].answers[0].attributes = [];
+    expect(() => validatePricingTree(rules)).toThrow(/enabled answer/);
+  });
 });

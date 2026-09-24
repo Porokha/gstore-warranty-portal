@@ -188,7 +188,7 @@ const TradeBrandOption = ({ item, selected, onClick, t }) => (
   </button>
 );
 
-const TradeModelOption = ({ item, selected, onClick, t }) => (
+const TradeModelOption = ({ item, selected, onClick, t, language }) => (
   <button
     type="button"
     className={`zzv-trade-model-option${selected ? ' is-selected' : ''}`}
@@ -200,7 +200,7 @@ const TradeModelOption = ({ item, selected, onClick, t }) => (
       <SmartphoneOutlined className="zzv-trade-model-mobile-icon" aria-hidden="true" />
     </span>
     <span className="zzv-trade-model-name">{item.name}</span>
-    <span className="zzv-trade-model-price"><span className="zzv-trade-model-price-prefix">{t('public.tradeIn.upTo')} </span>₾{Math.round(item.max_price || 0).toLocaleString()}</span>
+    <span className="zzv-trade-model-price">{Number(item.max_price) > 0 ? <><span className="zzv-trade-model-price-prefix">{t('public.tradeIn.upTo')} </span>₾{Math.round(item.max_price).toLocaleString()}</> : language === 'ka' ? 'ინდივიდუალური შეფასება' : 'Manual assessment'}</span>
     <ArrowForwardRounded className="zzv-trade-option-arrow" aria-hidden="true" />
     <span className="zzv-trade-option-radio" aria-hidden="true" />
   </button>
@@ -1013,6 +1013,7 @@ const TradeInPage = () => {
                   selected={brand === item.brand}
                   onClick={() => chooseBrand(item.brand)}
                   t={t}
+                  language={i18n.language}
                 />
               ))}
             </div>

@@ -15,7 +15,10 @@ export function validatePricingTree(tree: unknown): asserts tree is any[] {
         throw new BadRequestException(`${location} needs text and answers.`);
       }
       if (question.enabled === false) return;
-      if (!question.answers.some((answer: any) => answer?.value_enabled !== 0 && answer?.value_enabled !== false && answer?.value_enabled !== '0')) {
+      const manualReview = question.label === 'pricing_status'
+        && question.answers.length === 1
+        && question.answers[0]?.attributes?.some((attribute: any) => attribute?.key === 'pricing_status' && attribute?.value === '[manual-review]');
+      if (!manualReview && !question.answers.some((answer: any) => answer?.value_enabled !== 0 && answer?.value_enabled !== false && answer?.value_enabled !== '0')) {
         throw new BadRequestException(`${location} needs at least one enabled answer.`);
       }
       question.answers.forEach((answer: any, answerIndex: number) => {

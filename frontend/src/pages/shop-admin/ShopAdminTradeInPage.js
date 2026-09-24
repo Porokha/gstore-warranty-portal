@@ -76,6 +76,9 @@ const pricingPackage = (products) => ({
   products,
 });
 
+const isManualReviewTree = (tree) => tree?.[0]?.questions?.[0]?.label === 'pricing_status'
+  && tree[0].questions[0].answers?.some((answer) => answer.attributes?.some((attribute) => attribute.key === 'pricing_status' && attribute.value === '[manual-review]'));
+
 const sectionLabel = (section, index) => section?.name || section?.breadcrumb || `Section ${index + 1}`;
 
 const questionTypeLabel = (type) => {
@@ -270,14 +273,24 @@ const ShopAdminTradeInPage = () => {
     setPricingTransferError('');
     try {
       const data = JSON.parse(await file.text());
-      if (data.format !== 'zezva-trade-in-pricing' || data.version !== 1 || !Array.isArray(data.products) || !data.products.length) {
-        throw new Error('Choose a Zezva pricing export (version 1).');
+      if (data.format !== 'zezva-trade-in-pricing') {
+        throw new Error('This is not a Zezva trade-in pricing export.');
+      }
+      if (![1, 2].includes(data.version)) {
+        throw new Error(`Unsupported pricing export version: ${String(data.version)}. Use version 1 or 2.`);
+      }
+      if (!Array.isArray(data.products) || !data.products.length) {
+        throw new Error('The pricing export has no products.');
+      }
+      if (data.version === 2 && (data.currency && data.currency !== 'GEL'
+        || data.products.some((item) => item.pricing_currency && item.pricing_currency !== 'GEL'))) {
+        throw new Error('Only GEL pricing can be imported.');
       }
       const ids = data.products.map((item) => item.id);
       if (new Set(ids).size !== ids.length || data.products.some((item) => !Number.isInteger(item.id) || !item.slug || !Array.isArray(item.tree_json))) {
         throw new Error('Each product needs a unique ID, slug, and pricing tree.');
       }
-      setPricingImport(data.products);
+      setPricingImport(data.products.map(({ id, slug, tree_json }) => ({ id, slug, tree_json })));
       setPricingImportProgress(0);
     } catch (error) {
       setPricingTransferError(error.message);
@@ -971,6 +984,7 @@ const ShopAdminTradeInPage = () => {
         <DialogTitle>Import pricing rules</DialogTitle>
         <DialogContent dividers>
           <Typography sx={{ mb: 1 }}>Update {pricingImport?.length || 0} matching trade-in products from this JSON file?</Typography>
+          {pricingImport?.some((item) => isManualReviewTree(item.tree_json)) && <Alert severity="info" sx={{ mb: 1 }}>{pricingImport.filter((item) => isManualReviewTree(item.tree_json)).length} models have no agreed price and will request manual assessment instead of showing ₾0.</Alert>}
           <Typography sx={{ fontSize: 12, color: '#667085' }}>Products are matched by both ID and slug. Import only changes pricing trees, not product details. Each batch is saved atomically; if a later batch fails, reimporting the file is safe.</Typography>
           {pricingTransferBusy && <Typography sx={{ mt: 2 }}>Updated {pricingImportProgress} of {pricingImport?.length || 0} products...</Typography>}
           {pricingTransferError && <Alert severity="error" sx={{ mt: 2 }}>{String(pricingTransferError)}</Alert>}

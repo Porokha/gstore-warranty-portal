@@ -49,6 +49,8 @@ const answerNames = {
   Unlocked: 'განბლოკილი',
   Locked: 'დაბლოკილი',
   'Other Carrier': 'სხვა ოპერატორი',
+  SIM: 'SIM',
+  eSIM: 'eSIM',
   Yes: 'დიახ',
   No: 'არა',
 };
@@ -79,6 +81,8 @@ export default function TradeInValuation({ product, t, language, initialStorage 
   const gstoreProductsQuery = useQuery('trade-in-gstore-products', tradeInService.getGstoreProducts);
   const detail = productQuery.data || product;
   const tree = Array.isArray(detail.tree) ? detail.tree : [];
+  const isManualReviewProduct = tree[0]?.questions?.[0]?.label === 'pricing_status'
+    && tree[0].questions[0].answers?.some((answer) => answer.attributes?.some((attribute) => attribute.key === 'pricing_status' && attribute.value === '[manual-review]'));
   const storageQuestions = tree.filter((set) => set.enabled !== false).flatMap((set) => set.questions || []).filter((question) => question.enabled !== false && question.label === 'storage_size');
   const storageOptions = [...new Set(storageQuestions.flatMap((question) => (question.answers || []).filter(available).map((answer) => answer.text)))];
   const [phase, setPhase] = useState(initialStorage ? 'question' : 'storage');
@@ -134,6 +138,13 @@ export default function TradeInValuation({ product, t, language, initialStorage 
   useEffect(() => {
     if (!productQuery.isLoading && !storageOptions.length && phase === 'storage') setPhase('question');
   }, [productQuery.isLoading, storageOptions.length, phase]);
+
+  useEffect(() => {
+    if (isManualReviewProduct) {
+      setManualAssessment(true);
+      setPhase('manual-offer');
+    }
+  }, [isManualReviewProduct]);
 
   useEffect(() => {
     const step = phase === 'storage' ? 3 : phase === 'question' && isCondition ? 4 : phase === 'question' ? 5 : phase === 'faults' ? 4 : phase === 'range' || phase === 'offer' || phase === 'manual-offer' ? 5 : phase === 'contact' ? 'contact' : null;
@@ -224,6 +235,7 @@ export default function TradeInValuation({ product, t, language, initialStorage 
 
   const previous = () => {
     setError('');
+    if (isManualReviewProduct && phase === 'manual-offer') return onRestart ? onRestart() : restart();
     if (phase === 'contact') return setPhase(noExactPrice ? (faults.length ? 'range' : 'manual-offer') : 'offer');
     if (phase === 'range') return setPhase('faults');
     if (phase === 'faults') return setPhase('question');
@@ -343,7 +355,7 @@ export default function TradeInValuation({ product, t, language, initialStorage 
         </>}
 
         {phase === 'question' && question && <>
-          <h1>{language === 'ka' ? question.text_ka || (isCondition ? 'რა მდგომარეობაშია?' : isAccessories ? 'რა მოყვება?' : ({ carrier: 'რომელ ქსელზე მუშაობს?', carrier_lock: 'განბლოკილია მოწყობილობა?', fully_functional: 'სრულად მუშაობს მოწყობილობა?' })[question.label] || question.text) : question.text}</h1>
+          <h1>{language === 'ka' ? question.text_ka || (isCondition ? 'რა მდგომარეობაშია?' : isAccessories ? 'რა მოყვება?' : ({ carrier: 'რომელ ქსელზე მუშაობს?', carrier_lock: 'განბლოკილია მოწყობილობა?', fully_functional: 'სრულად მუშაობს მოწყობილობა?', sim_type: 'რომელი SIM ტიპისაა?' })[question.label] || question.text) : question.text}</h1>
           {isAccessories && <p className="zzv-trade-flow-hint">{language === 'ka' ? 'მონიშნე ყველაფერი, რაც მოყვება. შეგიძლია არცერთი არ მონიშნო.' : 'Select everything included, or continue without selecting any.'}</p>}
           {isCondition && <small className="zzv-trade-group-label">{language === 'ka' ? 'მდგომარეობა' : 'Condition'}</small>}
           <div className="zzv-trade-answer-list">
