@@ -35,7 +35,8 @@ const pathEntry = (question, answers, extras = {}) => ({
 
 const gradeNames = {
   'brand new': { grade: 'A+', ka: 'ახალი, გაუხსნელი', en: 'Brand new', detailKa: 'ლუქი დაუზიანებელია', detailEn: 'Factory sealed' },
-  flawless: { grade: 'A', ka: 'როგორც ახალი', en: 'Flawless', detailKa: 'ნახმარობის კვალის გარეშე', detailEn: 'No visible signs of use' },
+  flawless: { grade: 'A+', ka: 'როგორც ახალი', en: 'Flawless', detailKa: 'ნახმარობის კვალის გარეშე', detailEn: 'No visible signs of use' },
+  excellent: { grade: 'A', ka: 'შესანიშნავი', en: 'Excellent', detailKa: 'მინიმალური ნახმარობის კვალი', detailEn: 'Minimal signs of use' },
   'very good': { grade: 'B', ka: 'კარგი', en: 'Very good', detailKa: 'მცირე ნაკაწრები', detailEn: 'Minor signs of use' },
   good: { grade: 'C', ka: 'ნახმარი', en: 'Good', detailKa: 'შესამჩნევი ნახმარობის კვალი', detailEn: 'Visible signs of use' },
   fair: { grade: 'D', ka: 'დაზიანებული', en: 'Fair', detailKa: 'მნიშვნელოვანი დაზიანებები', detailEn: 'Significant wear' },

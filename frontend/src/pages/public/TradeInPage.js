@@ -12,6 +12,7 @@ import {
 import {
   ArrowBackRounded,
   ArrowForwardRounded,
+  LockOutlined,
   SearchRounded,
   SmartphoneOutlined,
 } from '@mui/icons-material';
@@ -174,6 +175,7 @@ const TradeBrandOption = ({ item, selected, onClick, t }) => (
     onClick={onClick}
     aria-pressed={selected}
     disabled={item.coming_soon}
+    title={item.coming_soon ? t('public.tradeIn.comingSoon') : undefined}
   >
     <span className={`zzv-trade-brand-logo${item.brand.toLowerCase() === 'samsung' ? ' zzv-trade-brand-logo--samsung' : ''}`}>
       <img src={brandMarks[item.brand.toLowerCase()] || imageUrl(item.image_src)} alt="" />
@@ -182,9 +184,8 @@ const TradeBrandOption = ({ item, selected, onClick, t }) => (
     {brandFamilyLabels[item.brand.toLowerCase()] && (
       <span className="zzv-trade-brand-family">{brandFamilyLabels[item.brand.toLowerCase()]}</span>
     )}
-    <span className="zzv-trade-brand-count">{item.coming_soon ? t('public.tradeIn.comingSoon') : `${item.product_count} ${t('public.tradeIn.models')}`}</span>
-    <ArrowForwardRounded className="zzv-trade-option-arrow" aria-hidden="true" />
-    <span className="zzv-trade-option-radio" aria-hidden="true" />
+    <span className="zzv-trade-brand-count">{item.product_count} {t('public.tradeIn.models')}</span>
+    {item.coming_soon ? <LockOutlined className="zzv-trade-brand-unavailable" aria-label={t('public.tradeIn.comingSoon')} /> : <><ArrowForwardRounded className="zzv-trade-option-arrow" aria-hidden="true" /><span className="zzv-trade-option-radio" aria-hidden="true" /></>}
   </button>
 );
 
