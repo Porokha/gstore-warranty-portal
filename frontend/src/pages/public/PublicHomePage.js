@@ -100,7 +100,7 @@ const PublicHomePage = () => {
               ? (i18n.language === 'ka' ? 'შეამოწმე კოდი და ნომერი, ან დაგვირეკე' : 'Check the code and phone number, or call us')
               : (i18n.language === 'ka' ? 'სცადე ხელახლა ან დაგვირეკე' : 'Please try again or call us')}</span>
           </div>}
-          {error && <a className="zzv-status-search-call" href="tel:+995322606060"><span>☎</span><span><strong>+995 322 60 60 60</strong><small>{i18n.language === 'ka' ? 'ორშ–შაბ 10:00–19:00' : 'Mon–Sat 10:00–19:00'}</small></span><span aria-hidden="true">›</span></a>}
+          {error && <a className="zzv-status-search-call" href="tel:+995511533522"><span>☎</span><span><strong>+995 511 533 522</strong><small>{i18n.language === 'ka' ? 'ორშ–პარ 10:00–20:00' : 'Mon–Fri 10:00–20:00'}</small></span><span aria-hidden="true">›</span></a>}
           <button className="zzv-status-search-submit" type="submit" disabled={loading}>{loading ? (i18n.language === 'ka' ? 'მოწმდება…' : 'Checking…') : t('public.statusLookup.submit')}</button>
         </form>
       </div>

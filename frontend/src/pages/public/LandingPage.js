@@ -519,7 +519,7 @@ function LandingPage() {
           <div className="zzv-figma-footer-mobile-links">
             <nav aria-label="სერვისები"><strong>სერვისები</strong><Link to="/trade-in">Trade-in</Link><Link to="/warranty-service?tab=case">შეკეთება</Link><span aria-disabled="true">მაღაზია · მალე</span><Link to="/warranty-service?tab=warranty">გარანტია</Link></nav>
             <nav aria-label="კომპანია"><strong>კომპანია</strong><Link to="/about">ჩვენ შესახებ</Link><Link to="/contact">კონტაქტი</Link><Link to="/reviews">შეფასებები</Link><a href="https://gstore.ge" target="_blank" rel="noreferrer">Gstore</a></nav>
-            <div className="zzv-figma-footer-mobile-contact"><strong>კონტაქტი</strong><span>ცოტნე დადიანის ქ. 7 · ქარვასლა, III სართული, B308/1</span><a href="tel:+995322606060">+995 322 60 60 60</a><a href="mailto:hello@zezva.ge">hello@zezva.ge</a></div>
+            <div className="zzv-figma-footer-mobile-contact"><strong>კონტაქტი</strong><span>ცოტნე დადიანის ქ. 7 · ქარვასლა, III სართული, B308/1</span><span>ორშ–პარ 10:00–20:00 · შაბ–კვი დაკეტილია</span><a href="tel:+995511533522">+995 511 533 522</a><a href="mailto:contact@zezva.ge">contact@zezva.ge</a></div>
           </div>
           <div className="zzv-figma-footer-mobile-legal"><span>© 2026 ZEZVA</span><div><Link to="/terms">წესები</Link><Link to="/privacy">კონფიდენციალურობა</Link><button type="button" onClick={() => window.dispatchEvent(new Event('zezva:open-cookie-settings'))}>პარამეტრები</button></div></div>
         </div>
