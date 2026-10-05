@@ -10,6 +10,7 @@ import {
   CropPortraitOutlined,
   DeveloperBoardOutlined,
   DeleteOutline,
+  PhoneIphoneOutlined,
   SensorsOutlined,
   VolumeUpOutlined,
 } from '@mui/icons-material';
@@ -602,6 +603,15 @@ const ShopPage = () => {
     },
     [models, productFacets.models],
   );
+  const visibleDesktopBrands = showAllDesktopBrands
+    ? brandOptions
+    : brandOptions.filter((brand, index) => index < 4 || brands.includes(brand));
+  const matchingDesktopModels = modelOptions.filter((model) =>
+    model.toLocaleLowerCase().includes(desktopModelSearch.trim().toLocaleLowerCase()),
+  );
+  const visibleDesktopModels = desktopModelSearch.trim() || showAllDesktopModels
+    ? matchingDesktopModels
+    : matchingDesktopModels.filter((model, index) => index < 4 || models.includes(model));
   const dynamicPartOptions = useMemo(() => {
     const availableParts = new Set((productFacets.parts || []).map((item) => item.value));
     const filtered = partOptions.filter(([value]) => value === 'all' || availableParts.has(value));
@@ -1059,14 +1069,15 @@ const ShopPage = () => {
             <div className="zpos-figma-filter-heading"><strong>{i18n.language === 'ka' ? 'ფილტრი' : 'Filters'}</strong><button type="button" onClick={resetFilters}>{i18n.language === 'ka' ? 'გასუფთავება' : 'Clear'}</button></div>
             <div className="zpos-figma-filter-group">
               <strong>{t('shop.filters.brandTitle')}</strong>
-              {(showAllDesktopBrands ? brandOptions : brandOptions.slice(0, 4)).map((brand) => <label key={brand}><input type="checkbox" checked={brands.includes(brand)} onChange={() => toggleBrand(brand)} /><span>{brand}</span></label>)}
+              {visibleDesktopBrands.map((brand) => <label key={brand}><input type="checkbox" checked={brands.includes(brand)} onChange={() => toggleBrand(brand)} /><span>{brand}</span></label>)}
               {brandOptions.length > 4 && <button type="button" onClick={() => setShowAllDesktopBrands((current) => !current)}>{showAllDesktopBrands ? t('shop.filters.showLess') : t('shop.filters.showMore', { count: brandOptions.length - 4 })}</button>}
             </div>
             <div className="zpos-figma-filter-group">
               <strong>{t('shop.filters.modelTitle')}</strong>
               <input className="zpos-figma-model-search" type="search" value={desktopModelSearch} onChange={(event) => setDesktopModelSearch(event.target.value)} placeholder={t('shop.filters.searchOptions')} />
-              {(showAllDesktopModels ? modelOptions : modelOptions.slice(0, 4)).filter((model) => model.toLocaleLowerCase().includes(desktopModelSearch.toLocaleLowerCase())).map((model) => <label key={model}><input type="checkbox" checked={models.includes(model)} onChange={() => toggleModel(model)} /><span>{model}</span><small>{productFacets.models?.find((item) => item.value === model)?.count || ''}</small></label>)}
-              {modelOptions.length > 4 && <button type="button" onClick={() => setShowAllDesktopModels((current) => !current)}>{showAllDesktopModels ? t('shop.filters.showLess') : t('shop.filters.showMore', { count: modelOptions.length - 4 })}</button>}
+              {visibleDesktopModels.map((model) => <label key={model}><input type="checkbox" checked={models.includes(model)} onChange={() => toggleModel(model)} /><span>{model}</span><small>{productFacets.models?.find((item) => item.value === model)?.count || ''}</small></label>)}
+              {matchingDesktopModels.length === 0 && <p className="zpos-figma-filter-empty">{t('shop.empty.title')}</p>}
+              {!desktopModelSearch.trim() && modelOptions.length > 4 && <button type="button" onClick={() => setShowAllDesktopModels((current) => !current)}>{showAllDesktopModels ? t('shop.filters.showLess') : t('shop.filters.showMore', { count: modelOptions.length - 4 })}</button>}
             </div>
             <div className="zpos-figma-filter-group">
               <strong>{t('shop.filters.sourceTitle')}</strong>
@@ -1333,19 +1344,21 @@ const ShopPage = () => {
                     }}
                   >
                     <div className={`zpos-thumb ${loadedImages[`product:${product.id}`] ? 'is-loaded' : ''}`}>
+                      {product.stock_quantity <= 0 && <span className="zpos-figma-stock-badge">{i18n.language === 'ka' ? 'შეკვეთით' : 'On order'}</span>}
                       {product.sale_price != null && product.price != null && (
                         <span className="zpos-badge">{t('shop.badges.sale')}</span>
                       )}
-                      {!loadedImages[`product:${product.id}`] && (
+                      {product.image_url && !loadedImages[`product:${product.id}`] && (
                         <div className="zpos-skeleton zpos-skeleton--thumb zpos-image-skeleton" />
                       )}
-                      <img
+                      <PhoneIphoneOutlined className="zpos-figma-image-fallback" aria-hidden="true" />
+                      {product.image_url && <img
                         src={product.image_url}
                         alt={t('shop.imageAlt.thumbnail', { title: product.title })}
                         loading="lazy"
                         onLoad={() => handleImageReady(`product:${product.id}`)}
-                        onError={() => handleImageReady(`product:${product.id}`)}
-                      />
+                        onError={(event) => { event.currentTarget.hidden = true; handleImageReady(`product:${product.id}`); }}
+                      />}
                     </div>
                     <div className="zpos-card-body">
                       <p className="zpos-meta">
