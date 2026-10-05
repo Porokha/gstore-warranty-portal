@@ -13,19 +13,21 @@ import {
 } from '@mui/material';
 import { CurrencyExchangeRounded, Inventory2, ReceiptLong, Settings } from '@mui/icons-material';
 import { useQuery } from 'react-query';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { shopService } from '../../services/shopService';
 import { tradeInService } from '../../services/tradeInService';
 import LanguageSwitcher from './LanguageSwitcher';
 
 const navItems = [
-  { path: '/shop/admin/products', label: 'Products', icon: <Inventory2 fontSize="small" /> },
-  { path: '/shop/admin/orders', label: 'Orders', icon: <ReceiptLong fontSize="small" /> },
-  { path: '/shop/admin/trade-in', label: 'Trade-in', icon: <CurrencyExchangeRounded fontSize="small" /> },
-  { path: '/shop/admin/settings', label: 'Settings', icon: <Settings fontSize="small" /> },
+  { path: '/shop/admin/products', labelKey: 'shopAdminNav.products', icon: <Inventory2 fontSize="small" /> },
+  { path: '/shop/admin/orders', labelKey: 'shopAdminNav.orders', icon: <ReceiptLong fontSize="small" /> },
+  { path: '/shop/admin/trade-in', labelKey: 'shopAdminNav.tradeIn', icon: <CurrencyExchangeRounded fontSize="small" /> },
+  { path: '/shop/admin/settings', labelKey: 'shopAdminNav.settings', icon: <Settings fontSize="small" /> },
 ];
 
 const ShopAdminLayout = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -55,17 +57,15 @@ const ShopAdminLayout = () => {
       className="zzv-shop-admin-shell"
       sx={{
         minHeight: '100vh',
-        bgcolor: '#fbf9ff',
-        background:
-          'radial-gradient(circle at 8% 0%, rgba(130,76,255,0.11), transparent 28%), linear-gradient(180deg, #ffffff 0%, #fbf9ff 48%, #f3eeff 100%)',
+        bgcolor: 'var(--zzv-bg-page)',
         '& .MuiPaper-root': {
-          borderRadius: '20px !important',
+          borderRadius: '12px !important',
         },
         '& .MuiButton-root, & .MuiChip-root, & .MuiOutlinedInput-root, & .MuiAlert-root, & .MuiTabs-root .MuiTab-root': {
-          borderRadius: '14px !important',
+          borderRadius: '8px !important',
         },
         '& .MuiAvatar-root': {
-          borderRadius: '14px !important',
+          borderRadius: '50% !important',
         },
       }}
     >
@@ -73,35 +73,27 @@ const ShopAdminLayout = () => {
         position="sticky"
         elevation={0}
         sx={{
-          bgcolor: 'rgba(255,255,255,0.92)',
-          color: '#18171d',
-          borderBottom: '1px solid #e6def5',
-          backdropFilter: 'blur(18px)',
+          bgcolor: '#fff',
+          color: 'var(--zzv-text-primary)',
+          borderBottom: '1px solid var(--zzv-border-subtle)',
         }}
       >
-        <Toolbar sx={{ minHeight: '72px !important' }}>
+        <Toolbar sx={{ minHeight: '56px !important' }}>
           <Container
+            className="zzv-shop-admin-header"
             maxWidth="xl"
             sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box className="zzv-shop-admin-header__brand" sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <Box
                 component="img"
-                src="/brand-logotype-original.svg"
+                src="/figma-staff/dashboard-logo.svg"
                 alt="ZEZVA"
-                sx={{ width: 40, height: 40 }}
+                sx={{ width: 99, height: 16 }}
               />
-              <Box>
-                <Typography sx={{ fontWeight: 800, fontSize: '18px', lineHeight: 1.1 }}>
-                  Shop Admin
-                </Typography>
-                <Typography sx={{ color: '#70687e', fontSize: '13px' }}>
-                  Products, orders, and catalog controls
-                </Typography>
-              </Box>
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box className="zzv-shop-admin-header__nav" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               {navItems.map((item) => {
                 const active =
                   location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
@@ -144,30 +136,31 @@ const ShopAdminLayout = () => {
                     }
                     sx={{
                       textTransform: 'none',
-                      fontWeight: 700,
-                      px: 2,
-                      color: active ? '#ffffff' : '#4d455e',
-                      bgcolor: active ? '#18171d' : 'transparent',
+                      fontWeight: active ? 600 : 500,
+                      fontSize: 12,
+                      px: 1.5,
+                      color: active ? 'var(--zzv-text-primary)' : 'var(--zzv-text-secondary)',
+                      bgcolor: active ? 'var(--zzv-bg-subtle)' : 'transparent',
                       '&:hover': {
-                        bgcolor: active ? '#18171d' : '#f3effb',
+                        bgcolor: 'var(--zzv-bg-subtle)',
                       },
                     }}
                   >
-                    {item.label}
+                    {t(item.labelKey)}
                   </Button>
                 );
               })}
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+            <Box className="zzv-shop-admin-header__account" sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
               <LanguageSwitcher compact />
               <Paper
                 elevation={0}
                 sx={{
                   px: 1.5,
                   py: 0.75,
-                  bgcolor: '#fbfaff',
-                  border: '1px solid #e6def5',
+                  bgcolor: '#fff',
+                  border: 0,
                   display: 'flex',
                   alignItems: 'center',
                   gap: 1,
@@ -177,7 +170,7 @@ const ShopAdminLayout = () => {
                   sx={{
                     width: 28,
                     height: 28,
-                    bgcolor: '#18171d',
+                    bgcolor: 'var(--zzv-bg-inverse)',
                     color: '#ffffff',
                     fontSize: '13px',
                     fontWeight: 800,
@@ -200,14 +193,14 @@ const ShopAdminLayout = () => {
                   color: '#4d455e',
                 }}
               >
-                Logout
+                {t('shopAdminNav.logout')}
               </Button>
             </Box>
           </Container>
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Container maxWidth={false} sx={{ py: 2, px: { xs: 1.5, sm: 2.5 } }}>
         <Outlet />
       </Container>
     </Box>

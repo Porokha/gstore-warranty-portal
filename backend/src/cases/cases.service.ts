@@ -23,6 +23,7 @@ import { Language } from '../sms/entities/sms-template.entity';
 import { AuditService } from '../audit/audit.service';
 import { PaymentStatus } from '../payments/entities/case-payment.entity';
 import { NotificationsService } from '../notifications/notifications.service';
+import { Partner } from '../partners/entities/partner.entity';
 
 @Injectable()
 export class CasesService {
@@ -31,6 +32,8 @@ export class CasesService {
     private casesRepository: Repository<ServiceCase>,
     @InjectRepository(CaseStatusHistory)
     private historyRepository: Repository<CaseStatusHistory>,
+    @InjectRepository(Partner)
+    private partnersRepository: Repository<Partner>,
     private usersService: UsersService,
     private smsService: SmsService,
     private auditService: AuditService,
@@ -104,7 +107,19 @@ export class CasesService {
       created_by: createdBy,
     });
 
-    const savedCase = await this.casesRepository.save(newCase);
+    const savedCase = isPartnerCase
+      ? await this.casesRepository.manager.transaction(async (manager) => {
+          const partner = await manager.getRepository(Partner)
+            .createQueryBuilder('partner')
+            .setLock('pessimistic_write')
+            .where('partner.id = :id', { id: createDto.partner_id })
+            .getOne();
+          if (!partner || partner.archived_at) {
+            throw new BadRequestException('Partner is unavailable');
+          }
+          return manager.getRepository(ServiceCase).save(newCase);
+        })
+      : await this.casesRepository.save(newCase);
 
     // Create initial history entry
     await this.createHistoryEntry(
@@ -358,6 +373,13 @@ export class CasesService {
       });
     }
 
+    if (updateDto.partner_id && updateDto.partner_id !== case_.partner_id) {
+      const partner = await this.partnersRepository.findOne({ where: { id: updateDto.partner_id } });
+      if (!partner || partner.archived_at) {
+        throw new BadRequestException('Partner is unavailable');
+      }
+    }
+
     const oldData = { ...case_ };
     Object.assign(case_, updateDto);
     if (updateDto.deadline_at) {
@@ -421,8 +443,10 @@ export class CasesService {
     // Update status
     case_.status_level = newStatus;
 
-    // Update result if provided
-    if (newResult) {
+    // Outcomes belong to pending/completed stages; moving back clears a stale outcome.
+    if (newStatus < CaseStatusLevel.PENDING) {
+      case_.result_type = null;
+    } else if (newResult) {
       case_.result_type = newResult;
     }
 

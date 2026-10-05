@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Box, Button, Paper, Switch, Typography } from '@mui/material';
+import { Alert, Box, Paper, Switch, Typography } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
+import { useTranslation } from 'react-i18next';
 import { shopService } from '../../services/shopService';
 
 const ShopAdminSettingsPage = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [publicMaintenanceEnabled, setPublicMaintenanceEnabled] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -22,7 +24,8 @@ const ShopAdminSettingsPage = () => {
   const updateMutation = useMutation(
     (payload) => shopService.updateAdminSettings(payload),
     {
-      onSuccess: () => {
+      onSuccess: (updated) => {
+        queryClient.setQueryData(['shop-admin-settings'], updated);
         queryClient.invalidateQueries(['shop-admin-settings']);
         queryClient.invalidateQueries(['public-flags']);
         setSaveError('');
@@ -30,6 +33,7 @@ const ShopAdminSettingsPage = () => {
         window.setTimeout(() => setSaved(false), 3000);
       },
       onError: (error) => {
+        setPublicMaintenanceEnabled(Boolean(data?.enabled));
         const message =
           error?.response?.data?.message ||
           error?.message ||
@@ -41,84 +45,36 @@ const ShopAdminSettingsPage = () => {
   );
 
   return (
-    <Box sx={{ display: 'grid', gap: 2.5 }}>
-      <Box>
-        <Typography sx={{ fontWeight: 800, fontSize: '28px', color: '#172033', mb: 0.5 }}>
-          Settings
-        </Typography>
-        <Typography sx={{ color: '#667085', fontSize: '14px' }}>
-          Control public storefront availability and maintenance state.
-        </Typography>
-      </Box>
+    <Box className="zzv-shop-settings">
+      <header className="zzv-shop-settings__heading">
+        <h1>{t('shopSettings.title')}</h1>
+        <p>{t('shopSettings.description')}</p>
+      </header>
 
-      {saved ? <Alert severity="success">Settings saved successfully.</Alert> : null}
+      {saved ? <Alert severity="success">{t('shopSettings.saved')}</Alert> : null}
       {saveError ? <Alert severity="error">{saveError}</Alert> : null}
 
-      <Paper
-        elevation={0}
-        sx={{
-          p: 3,
-          display: 'grid',
-          gap: 2,
-          border: '1px solid #dbe4f3',
-          background: '#ffffff',
-        }}
-      >
-        <Box sx={{ display: 'grid', gap: 0.5 }}>
-          <Typography sx={{ fontSize: '20px', fontWeight: 800, color: '#172033' }}>
-            Public Maintenance Mode
-          </Typography>
-          <Typography sx={{ color: '#667085', fontSize: '14px', maxWidth: 680 }}>
-            When enabled, visitors see the maintenance page on public routes while staff, shop admin,
-            and preview access remain available.
-          </Typography>
-        </Box>
-
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 2,
-            p: 2,
-            borderRadius: '20px',
-            border: '1px solid #e5eaf3',
-            background: publicMaintenanceEnabled ? '#fff6f6' : '#f7fafc',
-          }}
-        >
-          <Box sx={{ display: 'grid', gap: 0.4 }}>
-            <Typography sx={{ fontWeight: 700, color: '#172033' }}>
-              {publicMaintenanceEnabled ? 'Enabled' : 'Disabled'}
-            </Typography>
-            <Typography sx={{ color: '#667085', fontSize: '13px' }}>
-              {publicMaintenanceEnabled
-                ? 'Public users are currently redirected to maintenance mode.'
-                : 'Public pages are currently visible to visitors.'}
-            </Typography>
+      <Paper className="zzv-shop-settings__panel" elevation={0}>
+        <h2>{t('shopSettings.technicalMode')}</h2>
+        <Box className="zzv-shop-settings__row">
+          <Box className="zzv-shop-settings__copy">
+            <Typography component="h3">{publicMaintenanceEnabled ? t('shopSettings.maintenanceOn') : t('shopSettings.siteOpen')}</Typography>
+            <Typography component="p">{publicMaintenanceEnabled ? t('shopSettings.maintenanceDescription') : t('shopSettings.openDescription')}</Typography>
           </Box>
+          <span className={`zzv-shop-settings__badge ${publicMaintenanceEnabled ? 'is-maintenance' : ''}`}>
+            {publicMaintenanceEnabled ? t('shopSettings.maintenanceBadge') : t('shopSettings.openBadge')}
+          </span>
           <Switch
+            inputProps={{ 'aria-label': t('shopSettings.technicalMode') }}
             checked={publicMaintenanceEnabled}
             onChange={(event) => {
               setSaved(false);
               setSaveError('');
               setPublicMaintenanceEnabled(event.target.checked);
+              updateMutation.mutate({ enabled: event.target.checked });
             }}
             disabled={isLoading || updateMutation.isLoading}
           />
-        </Box>
-
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Button
-            variant="contained"
-            onClick={() => updateMutation.mutate({ enabled: publicMaintenanceEnabled })}
-            disabled={isLoading || updateMutation.isLoading}
-            sx={{
-              minWidth: 160,
-              color: '#fff !important',
-            }}
-          >
-            {updateMutation.isLoading ? 'Saving...' : 'Save Settings'}
-          </Button>
         </Box>
       </Paper>
     </Box>

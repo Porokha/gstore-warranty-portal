@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Box,
@@ -27,6 +28,7 @@ import {
 } from '@mui/material';
 import {
   DeleteOutlineRounded,
+  CloseRounded,
   DownloadRounded,
   EditRounded,
   ExpandMoreRounded,
@@ -81,12 +83,8 @@ const isManualReviewTree = (tree) => tree?.[0]?.questions?.[0]?.label === 'prici
 
 const sectionLabel = (section, index) => section?.name || section?.breadcrumb || `Section ${index + 1}`;
 
-const questionTypeLabel = (type) => {
-  if (type === 2 || type === 'multi') return 'Multi';
-  return 'Single';
-};
-
 const ShopAdminTradeInPage = () => {
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState(0);
   const [search, setSearch] = useState('');
@@ -103,6 +101,8 @@ const ShopAdminTradeInPage = () => {
   const [bulkPricingOpen, setBulkPricingOpen] = useState(false);
   const [bulkPricingProgress, setBulkPricingProgress] = useState(0);
   const [quoteStatus, setQuoteStatus] = useState('');
+  const [quotePage, setQuotePage] = useState(1);
+  const [quoteSearch, setQuoteSearch] = useState('');
   const [offerPolicy, setOfferPolicy] = useState({ bonus_percent: 0, bonus_fixed: 0 });
   const [editingProduct, setEditingProduct] = useState(null);
   const [productForm, setProductForm] = useState({
@@ -137,10 +137,15 @@ const ShopAdminTradeInPage = () => {
   });
 
   const quotesQuery = useQuery(
-    ['trade-in-admin-quotes', quoteStatus],
-    () => tradeInService.getAdminQuotes({ status: quoteStatus || undefined }),
-    { enabled: tab === 0 },
+    ['trade-in-admin-quotes', quoteStatus, quotePage],
+    () => tradeInService.getAdminQuotes({ status: quoteStatus || undefined, page: quotePage, limit: 25 }),
+    { enabled: tab === 0, keepPreviousData: true },
   );
+  const visibleQuotes = (quotesQuery.data?.items || []).filter((quote) => {
+    const needle = quoteSearch.trim().toLocaleLowerCase();
+    return !needle || [quote.quote_number, quote.product_name, quote.customer_name, quote.customer_phone]
+      .some((value) => String(value || '').toLocaleLowerCase().includes(needle));
+  });
   const productsQuery = useQuery(
     ['trade-in-admin-products', search, productCategory, productSubcategory, productPage],
     () => tradeInService.getAdminProducts({
@@ -195,6 +200,7 @@ const ShopAdminTradeInPage = () => {
     (id) => tradeInService.deleteAdminQuote(id),
     {
       onSuccess: () => {
+        setEditingQuote(null);
         setConfirmState({ open: false, title: '', message: '', onConfirm: null });
         queryClient.invalidateQueries('trade-in-admin-quotes');
         queryClient.invalidateQueries('shop-admin-trade-in-badge');
@@ -487,6 +493,15 @@ const ShopAdminTradeInPage = () => {
     });
   };
 
+  const confirmDeleteQuote = (quote) => {
+    setConfirmState({
+      open: true,
+      title: t('shopTradeIn.deleteQuote'),
+      message: t('shopTradeIn.deleteQuoteConfirmation', { number: quote.quote_number }),
+      onConfirm: () => deleteQuoteMutation.mutate(quote.id),
+    });
+  };
+
   return (
     <Box className="zzv-admin-page zzv-admin-page--shop-tradein">
       <Box className="zzv-admin-page-head" sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 2, mb: 2 }}>
@@ -495,7 +510,7 @@ const ShopAdminTradeInPage = () => {
             Trade-in
           </Typography>
           <Typography sx={{ color: '#667085', fontSize: 13 }}>
-            Quotes, device catalogue, and category availability
+            {t('shopTradeIn.description')}
           </Typography>
         </Box>
         <Tooltip title="Refresh">
@@ -511,23 +526,34 @@ const ShopAdminTradeInPage = () => {
       <Paper className="zzv-admin-table-card zzv-shop-tradein-panel" elevation={0} sx={{ border: '1px solid #dce4f0', borderRadius: '10px !important', overflow: 'hidden' }}>
         <Box className="zzv-admin-filter-card" sx={{ px: 2, borderBottom: '1px solid #e5eaf2' }}>
           <Tabs value={tab} onChange={(_, value) => setTab(value)}>
-            <Tab label="Quotes" />
-            <Tab label="Products" />
-            <Tab label="Categories" />
-            <Tab label="Gstore offers" />
+            <Tab label={t('shopTradeIn.quotes')} />
+            <Tab label={t('shopTradeIn.products')} />
+            <Tab label={t('shopTradeIn.categories')} />
+            <Tab label={t('shopTradeIn.gstoreOffers')} />
           </Tabs>
         </Box>
 
         <Box className="zzv-shop-tradein-toolbar" sx={{ p: 2, display: 'flex', gap: 1.5, alignItems: 'center', borderBottom: '1px solid #e5eaf2' }}>
           {tab === 0 && (
-            <FormControl size="small" sx={{ minWidth: 180 }}>
-              <Select value={quoteStatus} displayEmpty onChange={(event) => setQuoteStatus(event.target.value)}>
-                <MenuItem value="">All statuses</MenuItem>
-                {['pending', 'contacted', 'accepted', 'completed', 'cancelled'].map((status) => (
-                  <MenuItem key={status} value={status}>{status}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <>
+              <TextField
+                size="small"
+                fullWidth
+                value={quoteSearch}
+                onChange={(event) => setQuoteSearch(event.target.value)}
+                placeholder={t('shopTradeIn.searchQuotes')}
+                inputProps={{ 'aria-label': t('shopTradeIn.searchQuotes') }}
+                InputProps={{ startAdornment: <InputAdornment position="start"><SearchRounded fontSize="small" /></InputAdornment> }}
+              />
+              <FormControl size="small" sx={{ minWidth: 180 }}>
+                <Select value={quoteStatus} displayEmpty onChange={(event) => { setQuoteStatus(event.target.value); setQuotePage(1); }}>
+                  <MenuItem value="">{t('shopTradeIn.allStatuses')}</MenuItem>
+                  {['pending', 'contacted', 'accepted', 'completed', 'cancelled'].map((status) => (
+                    <MenuItem key={status} value={status}>{t(`shopTradeIn.statuses.${status}`)}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </>
           )}
           {tab === 1 && (
             <>
@@ -578,9 +604,20 @@ const ShopAdminTradeInPage = () => {
             </>
           )}
           <Typography sx={{ ml: 'auto', color: '#667085', fontSize: 12 }}>
-            {tab === 0 ? `${quotesQuery.data?.total || 0} records` : tab === 1 ? `${productsQuery.data?.total || 0} records` : tab === 2 ? `${categoriesQuery.data?.length || 0} records` : 'Offer policy'}
+            {tab === 0 ? t('shopTradeIn.records', { count: quotesQuery.data?.total || 0 }) : tab === 1 ? t('shopTradeIn.records', { count: productsQuery.data?.total || 0 }) : tab === 2 ? t('shopTradeIn.records', { count: categoriesQuery.data?.length || 0 }) : t('shopTradeIn.offerPolicy')}
           </Typography>
         </Box>
+
+        {tab === 0 && (
+          <Box className="zzv-shop-tradein__quote-filters">
+            {['', 'pending', 'contacted', 'accepted', 'completed', 'cancelled'].map((status) => (
+              <button key={status || 'all'} type="button" className={quoteStatus === status ? 'is-active' : ''} onClick={() => { setQuoteStatus(status); setQuotePage(1); }}>
+                {status ? t(`shopTradeIn.statuses.${status}`) : t('shopTradeIn.all')}
+              </button>
+            ))}
+            {quoteSearch && <span>{t('shopTradeIn.pageSearchNote')}</span>}
+          </Box>
+        )}
 
         {tab === 1 && (
           <Box sx={{ px: 2, py: 1, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, borderBottom: '1px solid #e5eaf2' }}>
@@ -606,13 +643,14 @@ const ShopAdminTradeInPage = () => {
         ) : (
           <>
             {tab === 0 && (
-              <Box sx={{ overflowX: 'auto' }}>
+              <>
+              <Box className="zzv-shop-tradein__quotes-scroll">
                 <Box sx={{ minWidth: 900 }}>
-                  <Box sx={{ display: 'grid', gridTemplateColumns: '140px 1.4fr 1fr 120px 140px 170px 96px', gap: 2, px: 2, py: 1.25, bgcolor: '#f8f9fc' }}>
-                    {['Quote', 'Device / customer', 'Phone', 'Offer', 'Created', 'Status', 'Actions'].map((label) => <Typography key={label} sx={headerCell}>{label}</Typography>)}
+                  <Box className="zzv-shop-tradein__quote-row zzv-shop-tradein__quote-row--head" sx={{ display: 'grid', gridTemplateColumns: '140px 1.4fr 1fr 120px 140px 170px 96px', gap: 2, px: 2, py: 1.25, bgcolor: '#f8f9fc' }}>
+                    {[t('shopTradeIn.number'), t('shopTradeIn.deviceCustomer'), t('shopTradeIn.phone'), t('shopTradeIn.offer'), t('shopTradeIn.created'), t('shopTradeIn.status'), t('shopTradeIn.actions')].map((label) => <Typography key={label} sx={headerCell}>{label}</Typography>)}
                   </Box>
-                  {(quotesQuery.data?.items || []).map((quote) => (
-                    <Box key={quote.id} sx={{ display: 'grid', gridTemplateColumns: '140px 1.4fr 1fr 120px 140px 170px 96px', gap: 2, alignItems: 'center', px: 2, py: 1.4, borderTop: '1px solid #edf0f5' }}>
+                  {visibleQuotes.map((quote) => (
+                    <Box key={quote.id} className="zzv-shop-tradein__quote-row" sx={{ display: 'grid', gridTemplateColumns: '140px 1.4fr 1fr 120px 140px 170px 96px', gap: 2, alignItems: 'center', px: 2, py: 1.4, borderTop: '1px solid #edf0f5' }}>
                       <Typography sx={{ fontSize: 13, fontWeight: 800 }}>{quote.quote_number}</Typography>
                       <Box>
                         <Typography sx={{ fontSize: 13, fontWeight: 800 }}>{quote.product_name}</Typography>
@@ -630,12 +668,13 @@ const ShopAdminTradeInPage = () => {
                       </Box>
                       <Typography sx={{ fontSize: 12, color: '#667085' }}>{new Date(quote.created_at).toLocaleDateString()}</Typography>
                       <Select
+                        className={`zzv-shop-tradein__status zzv-shop-tradein__status--${quote.status}`}
                         size="small"
                         value={quote.status}
                         onChange={(event) => quoteMutation.mutate({ id: quote.id, payload: { status: event.target.value } })}
                         sx={{ borderRadius: '7px !important', fontSize: 12 }}
                       >
-                        {['pending', 'contacted', 'accepted', 'completed', 'cancelled'].map((status) => <MenuItem key={status} value={status}>{status}</MenuItem>)}
+                        {['pending', 'contacted', 'accepted', 'completed', 'cancelled'].map((status) => <MenuItem key={status} value={status}>{t(`shopTradeIn.statuses.${status}`)}</MenuItem>)}
                       </Select>
                       <Stack direction="row" spacing={0.5}>
                         <Tooltip title="Edit quote">
@@ -647,14 +686,7 @@ const ShopAdminTradeInPage = () => {
                           <IconButton
                             size="small"
                             color="error"
-                            onClick={() =>
-                              setConfirmState({
-                                open: true,
-                                title: 'Delete trade-in quote',
-                                message: `Delete ${quote.quote_number}? This cannot be undone.`,
-                                onConfirm: () => deleteQuoteMutation.mutate(quote.id),
-                              })
-                            }
+                            onClick={() => confirmDeleteQuote(quote)}
                           >
                             <DeleteOutlineRounded fontSize="small" />
                           </IconButton>
@@ -662,24 +694,35 @@ const ShopAdminTradeInPage = () => {
                       </Stack>
                     </Box>
                   ))}
+                  {!visibleQuotes.length && <Box className="zzv-shop-tradein__empty">{t('shopTradeIn.noQuotes')}</Box>}
                 </Box>
               </Box>
+              <Box className="zzv-shop-tradein__pagination">
+                <span>{t('shopTradeIn.pageOf', { page: quotePage, total: quotesQuery.data?.total_pages || 1 })}</span>
+                <div>
+                  <Button size="small" disabled={quotePage <= 1} onClick={() => setQuotePage((page) => page - 1)}>{t('shopTradeIn.previous')}</Button>
+                  <Button size="small" disabled={quotePage >= (quotesQuery.data?.total_pages || 1)} onClick={() => setQuotePage((page) => page + 1)}>{t('shopTradeIn.next')}</Button>
+                </div>
+              </Box>
+              </>
             )}
 
             {tab === 1 && (
-              <Box sx={{ overflowX: 'auto' }}>
+              <Box className="zzv-shop-tradein__products-scroll">
                 <Box sx={{ minWidth: 940 }}>
-                  <Box sx={{ display: 'grid', gridTemplateColumns: '40px 64px 1.6fr .8fr .8fr .9fr 110px 94px 100px', gap: 2, px: 2, py: 1.25, bgcolor: '#f8f9fc' }}>
+                  <Box className="zzv-shop-tradein__product-row zzv-shop-tradein__product-row--head" sx={{ display: 'grid', gridTemplateColumns: '40px minmax(220px,1.6fr) .8fr .8fr .9fr 110px 94px 140px', gap: 2, px: 2, py: 1.25, bgcolor: '#f8f9fc' }}>
                     <Checkbox size="small" checked={allPageSelected} indeterminate={!allPageSelected && pageProductIds.some((id) => selectedProductIds.includes(id))} onChange={(event) => setSelectedProductIds((current) => event.target.checked ? [...new Set([...current, ...pageProductIds])] : current.filter((id) => !pageProductIds.includes(id)))} inputProps={{ 'aria-label': 'Select this page' }} />
-                    {['Image', 'Product', 'Brand', 'Category', 'Subcategory', 'Max offer', 'Visible', 'Actions'].map((label) => <Typography key={label} sx={headerCell}>{label}</Typography>)}
+                    {[t('shopTradeIn.product'), t('shopTradeIn.brand'), t('shopTradeIn.category'), t('shopTradeIn.subcategory'), t('shopTradeIn.maxOffer'), t('shopTradeIn.visible'), t('shopTradeIn.actions')].map((label) => <Typography key={label} sx={headerCell}>{label}</Typography>)}
                   </Box>
                   {(productsQuery.data?.items || []).map((product) => (
-                    <Box key={product.id} sx={{ display: 'grid', gridTemplateColumns: '40px 64px 1.6fr .8fr .8fr .9fr 110px 94px 100px', gap: 2, alignItems: 'center', px: 2, py: 1, borderTop: '1px solid #edf0f5' }}>
+                    <Box key={product.id} className="zzv-shop-tradein__product-row" sx={{ display: 'grid', gridTemplateColumns: '40px minmax(220px,1.6fr) .8fr .8fr .9fr 110px 94px 140px', gap: 2, alignItems: 'center', px: 2, py: 1, borderTop: '1px solid #edf0f5' }}>
                       <Checkbox size="small" checked={selectedProductIds.includes(product.id)} onChange={(event) => setSelectedProductIds((current) => event.target.checked ? [...current, product.id] : current.filter((id) => id !== product.id))} inputProps={{ 'aria-label': `Select ${product.name}` }} />
-                      <Box component="img" src={imageUrl(product.image_src)} alt="" sx={{ width: 46, height: 46, objectFit: 'contain' }} />
-                      <Box>
-                        <Typography sx={{ fontSize: 13, fontWeight: 800 }}>{product.name}</Typography>
-                        <Typography sx={{ fontSize: 10, color: '#667085' }}>{product.slug}</Typography>
+                      <Box className="zzv-shop-tradein__product-name">
+                        <Box component="img" src={imageUrl(product.image_src)} alt="" sx={{ width: 40, height: 40, objectFit: 'contain' }} />
+                        <Box>
+                          <Typography sx={{ fontSize: 13, fontWeight: 800 }}>{product.name}</Typography>
+                          <Typography sx={{ fontSize: 10, color: '#667085' }}>{product.slug}</Typography>
+                        </Box>
                       </Box>
                       <Typography sx={{ fontSize: 13 }}>{product.brand || '—'}</Typography>
                       <Typography sx={{ fontSize: 13 }}>{product.category || '—'}</Typography>
@@ -690,55 +733,48 @@ const ShopAdminTradeInPage = () => {
                         onChange={(event) => productMutation.mutate({ id: product.id, payload: { enabled: event.target.checked } })}
                       />
                       <Stack direction="row" spacing={0.5}>
+                        <Button size="small" className="zzv-shop-tradein__pricing-action" startIcon={<PriceChangeRounded fontSize="small" />} onClick={() => openPricingEditor(product)}>{t('shopTradeIn.pricing')}</Button>
                         <Tooltip title="Edit product">
                           <IconButton size="small" onClick={() => openProductEditor(product)}>
                             <EditRounded fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Edit pricing">
-                          <IconButton size="small" onClick={() => openPricingEditor(product)}>
-                            <PriceChangeRounded fontSize="small" />
                           </IconButton>
                         </Tooltip>
                       </Stack>
                     </Box>
                   ))}
                 </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, p: 2, borderTop: '1px solid #e5eaf2' }}>
-                  <Button size="small" disabled={productPage <= 1} onClick={() => setProductPage((page) => page - 1)}>Previous</Button>
-                  <Typography sx={{ fontSize: 12 }}>Page {productPage} of {productsQuery.data?.total_pages || 1}</Typography>
-                  <Button size="small" disabled={productPage >= (productsQuery.data?.total_pages || 1)} onClick={() => setProductPage((page) => page + 1)}>Next</Button>
+                <Box className="zzv-shop-tradein__pagination">
+                  <span>{t('shopTradeIn.pageOf', { page: productPage, total: productsQuery.data?.total_pages || 1 })}</span>
+                  <div>
+                    <Button size="small" disabled={productPage <= 1} onClick={() => setProductPage((page) => page - 1)}>{t('shopTradeIn.previous')}</Button>
+                    <Button size="small" disabled={productPage >= (productsQuery.data?.total_pages || 1)} onClick={() => setProductPage((page) => page + 1)}>{t('shopTradeIn.next')}</Button>
+                  </div>
                 </Box>
               </Box>
             )}
 
             {tab === 2 && (
-              <Box>
+              <Box className="zzv-shop-tradein__categories">
                 {brandAvailabilityMutation.isError && <Alert severity="error">Could not update brand availability.</Alert>}
+                {categoryMutation.isError && <Alert severity="error">{t('shopTradeIn.categoryUpdateFailed')}</Alert>}
+                <Box className="zzv-shop-tradein__category-head"><span>{t('shopTradeIn.category')}</span><span>{t('shopTradeIn.availability')}</span></Box>
                 {(categoriesQuery.data || []).map((category) => (
-                  <Box key={category.id} sx={{ borderTop: '1px solid #edf0f5' }}>
-                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: '1fr 140px 140px 130px' }, gap: 2, alignItems: 'center', px: 2, py: 1.3 }}>
-                      <Box>
-                        <Typography sx={{ fontWeight: 800, fontSize: 14 }}>{category.label}</Typography>
-                        <Typography sx={{ color: '#667085', fontSize: 11 }}>{category.slug}</Typography>
-                        <Button size="small" endIcon={<ExpandMoreRounded sx={{ transform: expandedBrandCategory === category.slug ? 'rotate(180deg)' : 'none' }} />} onClick={() => setExpandedBrandCategory((current) => current === category.slug ? '' : category.slug)}>
-                          Brand subcategories
-                        </Button>
+                  <Box key={category.id} className="zzv-shop-tradein__category">
+                    <Box className="zzv-shop-tradein__category-row">
+                      <Box className="zzv-shop-tradein__category-name">
+                        <IconButton size="small" aria-label={t('shopTradeIn.brandSubcategories')} onClick={() => setExpandedBrandCategory((current) => current === category.slug ? '' : category.slug)}>
+                          <ExpandMoreRounded sx={{ transform: expandedBrandCategory === category.slug ? 'rotate(180deg)' : 'rotate(-90deg)' }} />
+                        </IconButton>
+                        <Box>
+                          <Typography sx={{ fontWeight: 800, fontSize: 14 }}>{category.label}</Typography>
+                          <Typography sx={{ color: '#667085', fontSize: 11 }}>{category.slug}</Typography>
+                        </Box>
                       </Box>
-                      <Chip size="small" label={`Order ${category.sort_order}`} />
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Switch
-                          checked={Boolean(category.coming_soon)}
-                          onChange={(event) => categoryMutation.mutate({ id: category.id, payload: { coming_soon: event.target.checked } })}
-                        />
-                        <Typography sx={{ fontSize: 12 }}>Coming soon</Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Switch
-                          checked={Boolean(category.enabled)}
-                          onChange={(event) => categoryMutation.mutate({ id: category.id, payload: { enabled: event.target.checked } })}
-                        />
-                        <Typography sx={{ fontSize: 12 }}>Enabled</Typography>
+                      <Box className="zzv-shop-tradein__availability" role="group" aria-label={`${category.label} ${t('shopTradeIn.availability')}`}>
+                        {['hidden', 'soon', 'active'].map((availability) => {
+                          const active = availability === 'hidden' ? !category.enabled : availability === 'soon' ? category.enabled && category.coming_soon : category.enabled && !category.coming_soon;
+                          return <button key={availability} type="button" className={active ? `is-active is-${availability}` : ''} disabled={categoryMutation.isLoading} onClick={() => categoryMutation.mutate({ id: category.id, payload: { enabled: availability !== 'hidden', coming_soon: availability === 'soon' } })}>{t(`shopTradeIn.availabilityStates.${availability}`)}</button>;
+                        })}
                       </Box>
                     </Box>
                     <Collapse in={expandedBrandCategory === category.slug} unmountOnExit>
@@ -780,57 +816,56 @@ const ShopAdminTradeInPage = () => {
         open={Boolean(editingProduct)}
         onClose={() => setEditingProduct(null)}
         fullWidth
-        maxWidth="sm"
-        PaperProps={{ sx: { borderRadius: '18px !important' } }}
+        maxWidth="md"
+        className="zzv-tradein-edit"
+        PaperProps={{ sx: { borderRadius: '16px !important' } }}
       >
-        <DialogTitle sx={{ fontWeight: 900 }}>Edit trade-in product</DialogTitle>
-        <DialogContent dividers>
-          <Stack spacing={2} sx={{ pt: 1 }}>
-            <TextField
-              label="Product name"
-              value={productForm.name}
-              onChange={(event) => setProductForm((prev) => ({ ...prev, name: event.target.value }))}
-              fullWidth
-            />
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-              <TextField
-                label="Brand"
-                value={productForm.brand}
-                onChange={(event) => setProductForm((prev) => ({ ...prev, brand: event.target.value }))}
-                fullWidth
-              />
-              <TextField
-                label="Category"
-                value={productForm.category}
-                onChange={(event) => setProductForm((prev) => ({ ...prev, category: event.target.value }))}
-                fullWidth
-              />
-            </Stack>
-            <TextField
-              label="Subcategory"
-              value={productForm.category2}
-              onChange={(event) => setProductForm((prev) => ({ ...prev, category2: event.target.value }))}
-              fullWidth
-            />
-            <TextField
-              label="Image path"
-              value={productForm.image_src}
-              onChange={(event) => setProductForm((prev) => ({ ...prev, image_src: event.target.value }))}
-              fullWidth
-            />
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Switch
-                checked={Boolean(productForm.enabled)}
-                onChange={(event) => setProductForm((prev) => ({ ...prev, enabled: event.target.checked }))}
-              />
-              <Typography sx={{ fontSize: 13, fontWeight: 800 }}>Visible in catalogue</Typography>
-            </Box>
-          </Stack>
+        <DialogTitle className="zzv-tradein-edit__header">
+          <Box className="zzv-tradein-edit__thumbnail">
+            {productForm.image_src ? (
+              <img src={imageUrl(productForm.image_src)} alt="" onError={(event) => { event.currentTarget.src = '/figma-shop-admin/trade-in-modal-placeholder.svg'; }} />
+            ) : <img src="/figma-shop-admin/trade-in-modal-placeholder.svg" alt="" />}
+          </Box>
+          <Box className="zzv-tradein-edit__heading">
+            <Typography component="h2">{t('shopTradeIn.editProduct', 'Edit product')}</Typography>
+            <Typography>{[editingProduct?.name, editingProduct?.brand, editingProduct?.category].filter(Boolean).join(' · ')}</Typography>
+          </Box>
+          <IconButton size="small" aria-label={t('shopTradeIn.close', 'Close')} onClick={() => setEditingProduct(null)}><CloseRounded fontSize="small" /></IconButton>
+        </DialogTitle>
+        <DialogContent className="zzv-tradein-edit__content">
+          {productMutation.isError && <Alert severity="error">{String(productMutation.error?.response?.data?.message || t('shopTradeIn.productSaveFailed', 'Product could not be saved.'))}</Alert>}
+          <section className="zzv-tradein-edit__group">
+            <h3>{t('shopTradeIn.basicDetails', 'Basic details')}</h3>
+            <div className="zzv-tradein-edit__fields">
+              <label htmlFor="tradein-edit-name">{t('shopTradeIn.productName', 'Product name')}</label>
+              <TextField id="tradein-edit-name" size="small" value={productForm.name} onChange={(event) => setProductForm((prev) => ({ ...prev, name: event.target.value }))} fullWidth />
+              <label htmlFor="tradein-edit-slug">{t('shopTradeIn.productAddress', 'Address')}</label>
+              <TextField id="tradein-edit-slug" size="small" value={editingProduct?.slug || ''} fullWidth inputProps={{ readOnly: true }} />
+              <label htmlFor="tradein-edit-brand">{t('shopTradeIn.brand', 'Brand')}</label>
+              <TextField id="tradein-edit-brand" size="small" value={productForm.brand} onChange={(event) => setProductForm((prev) => ({ ...prev, brand: event.target.value }))} fullWidth />
+              <label htmlFor="tradein-edit-image">{t('shopTradeIn.imageAddress', 'Image address')}</label>
+              <TextField id="tradein-edit-image" size="small" value={productForm.image_src} onChange={(event) => setProductForm((prev) => ({ ...prev, image_src: event.target.value }))} fullWidth />
+            </div>
+          </section>
+          <section className="zzv-tradein-edit__group">
+            <h3>{t('shopTradeIn.classification', 'Classification')}</h3>
+            <div className="zzv-tradein-edit__fields zzv-tradein-edit__fields--grid">
+              <div><label htmlFor="tradein-edit-category">{t('shopTradeIn.category', 'Category')}</label><TextField id="tradein-edit-category" size="small" value={productForm.category} onChange={(event) => setProductForm((prev) => ({ ...prev, category: event.target.value }))} fullWidth /></div>
+              <div><label htmlFor="tradein-edit-subcategory">{t('shopTradeIn.subcategory', 'Subcategory')}</label><TextField id="tradein-edit-subcategory" size="small" value={productForm.category2} onChange={(event) => setProductForm((prev) => ({ ...prev, category2: event.target.value }))} fullWidth /></div>
+            </div>
+          </section>
+          <section className="zzv-tradein-edit__group">
+            <h3>{t('shopTradeIn.priceAndVisibility', 'Price and visibility')}</h3>
+            <div className="zzv-tradein-edit__fields zzv-tradein-edit__fields--grid">
+              <div><label htmlFor="tradein-edit-max-price">{t('shopTradeIn.maxOfferGel', 'Maximum offer ₾')}</label><TextField id="tradein-edit-max-price" size="small" value={editingProduct?.max_price ?? 0} fullWidth inputProps={{ readOnly: true }} helperText={t('shopTradeIn.editInPricingRules', 'Edit this value in pricing rules')} /></div>
+              <div className="zzv-tradein-edit__visibility"><span>{t('shopTradeIn.visible', 'Visible')}</span><Switch className="zzv-tradein-edit__switch" checked={Boolean(productForm.enabled)} onChange={(event) => setProductForm((prev) => ({ ...prev, enabled: event.target.checked }))} inputProps={{ 'aria-label': t('shopTradeIn.visible', 'Visible') }} /></div>
+            </div>
+          </section>
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setEditingProduct(null)}>Cancel</Button>
+        <DialogActions className="zzv-tradein-edit__footer">
+          <Button onClick={() => setEditingProduct(null)}>{t('shopTradeIn.cancel', 'Cancel')}</Button>
           <Button variant="contained" onClick={saveProduct} disabled={productMutation.isLoading}>
-            Save
+            {t('shopTradeIn.save', 'Save')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -840,32 +875,18 @@ const ShopAdminTradeInPage = () => {
         onClose={() => setPricingProduct(null)}
         fullWidth
         maxWidth="lg"
-        PaperProps={{ sx: { borderRadius: '18px !important' } }}
+        className="zzv-pricing-dialog"
+        PaperProps={{ sx: { borderRadius: '20px !important' } }}
       >
-        <DialogTitle sx={{ fontWeight: 900 }}>
-          Edit pricing rules
-          <Typography sx={{ color: '#667085', fontSize: 12, mt: 0.5 }}>
-            {pricingProduct?.name}
-          </Typography>
+        <DialogTitle className="zzv-pricing-dialog__header">
+          <Box>
+            <Typography component="h2">{t('shopTradeIn.pricingRules', 'Pricing rules')}</Typography>
+            <Typography className="zzv-pricing-dialog__subtitle">{pricingProduct?.name}</Typography>
+          </Box>
+          <IconButton aria-label={t('common.close', 'Close')} onClick={() => setPricingProduct(null)} size="small"><CloseRounded fontSize="small" /></IconButton>
         </DialogTitle>
-        <DialogContent dividers>
-          <Stack spacing={2}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-              <Typography sx={{ fontSize: 12, color: '#667085' }}>
-                First section values are base offers. Keep section and question positions stable: navigation uses 1-based references such as 2,3.
-              </Typography>
-              <Stack direction="row" spacing={1}>
-                <Button size="small" startIcon={<DownloadRounded />} onClick={() => {
-                  try {
-                    const treeJson = pricingRawMode ? JSON.parse(pricingRaw) : pricingTree;
-                    downloadJson(`trade-in-pricing-${pricingProduct.id}.json`, pricingPackage([{ id: pricingProduct.id, slug: pricingProduct.slug, name: pricingProduct.name, tree_json: treeJson }]));
-                  } catch (error) { setPricingError(error.message); }
-                }}>Export JSON</Button>
-                <Button size="small" variant="outlined" onClick={togglePricingRawMode}>
-                  {pricingRawMode ? 'Visual editor' : 'Raw JSON'}
-                </Button>
-              </Stack>
-            </Box>
+        <DialogContent className="zzv-pricing-dialog__content">
+          <Box>
             {pricingError && <Alert severity="error">{pricingError}</Alert>}
             {pricingMutation.isError && <Alert severity="error">{String(pricingMutation.error?.response?.data?.message || 'Pricing rules could not be saved.')}</Alert>}
             {pricingRawMode ? (
@@ -879,103 +900,123 @@ const ShopAdminTradeInPage = () => {
                 sx={{ '& textarea': { fontFamily: 'monospace', fontSize: 12 } }}
               />
             ) : (
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '230px 1fr' }, gap: 2, minHeight: 460 }}>
-                <Box sx={{ border: '1px solid #e5eaf2', borderRadius: '8px', p: 1 }}>
-                  <Typography sx={headerCell}>Sections / steps</Typography>
-                  <Stack spacing={0.75} sx={{ mt: 1 }}>
+              <Box className="zzv-pricing-dialog__layout">
+                <Box className="zzv-pricing-dialog__rail">
+                  <Typography className="zzv-pricing-dialog__rail-label">{t('shopTradeIn.basePrice', 'Base price')}</Typography>
+                  <Stack spacing={0.5}>
                     {pricingTree.length === 0 && (
                       <Typography sx={{ color: '#667085', fontSize: 13 }}>No pricing sections.</Typography>
                     )}
                     {pricingTree.map((section, index) => (
-                      <Button
-                        key={`${sectionLabel(section, index)}-${index}`}
-                        variant={activePricingSection === index ? 'contained' : 'outlined'}
-                        onClick={() => setActivePricingSection(index)}
-                        sx={{ justifyContent: 'flex-start', borderRadius: '9px !important', textTransform: 'none' }}
-                      >
-                        {index + 1}. {sectionLabel(section, index)} {section.enabled === false ? '(disabled)' : ''}
-                      </Button>
+                      <React.Fragment key={`${sectionLabel(section, index)}-${index}`}>
+                        {index === 1 && <Typography className="zzv-pricing-dialog__rail-label">{t('shopTradeIn.adjustments', 'Adjustments')}</Typography>}
+                        <button
+                          type="button"
+                          className={`zzv-pricing-dialog__section ${activePricingSection === index ? 'is-active' : ''}`}
+                          onClick={() => setActivePricingSection(index)}
+                        >
+                          <span className="zzv-pricing-dialog__section-number">{index + 1}</span>
+                          <span className="zzv-pricing-dialog__section-name">{sectionLabel(section, index)} {section.enabled === false ? `(${t('shopTradeIn.disabled', 'disabled')})` : ''}</span>
+                          <span className="zzv-pricing-dialog__section-count">{(section.questions || []).reduce((count, question) => count + (question.answers || []).length, 0)}</span>
+                        </button>
+                      </React.Fragment>
                     ))}
-                    <Button size="small" variant="text" onClick={addSection}>+ Add section</Button>
+                    <Button size="small" variant="text" onClick={addSection}>{t('shopTradeIn.addSection', '+ Add section')}</Button>
                   </Stack>
                 </Box>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
+                <Box className="zzv-pricing-dialog__rules">
+                  <Box className="zzv-pricing-dialog__notice">
+                    {activePricingSection === 0
+                      ? t('shopTradeIn.basePriceHint', 'Amounts in this section are base offers. Later sections adjust them.')
+                      : t('shopTradeIn.adjustmentHint', 'Amounts in this section adjust the base offer. Navigation uses section and question numbers.')}
+                  </Box>
                   {pricingTree[activePricingSection] && (
-                    <Paper elevation={0} sx={{ border: '1px solid #e5eaf2', borderRadius: '8px', p: 1.5, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
-                      <TextField size="small" label="Section name" value={pricingTree[activePricingSection].name || ''} onChange={(event) => editSection(activePricingSection, 'name', event.target.value)} sx={{ flex: 1, minWidth: 220 }} />
-                      <Typography sx={{ fontSize: 12 }}>Enabled</Typography>
+                    <Paper elevation={0} className="zzv-pricing-dialog__section-settings">
+                      <TextField size="small" label={t('shopTradeIn.sectionName', 'Section name')} value={pricingTree[activePricingSection].name || ''} onChange={(event) => editSection(activePricingSection, 'name', event.target.value)} sx={{ flex: 1, minWidth: 220 }} />
+                      <Typography sx={{ fontSize: 12 }}>{t('shopTradeIn.enabled', 'Enabled')}</Typography>
                       <Switch checked={pricingTree[activePricingSection].enabled !== false} disabled={activePricingSection === 0} onChange={(event) => editSection(activePricingSection, 'enabled', event.target.checked)} />
                     </Paper>
                   )}
                   {(pricingTree[activePricingSection]?.questions || []).map((question, questionIndex) => (
-                    <Paper key={questionIndex} elevation={0} sx={{ border: '1px solid #e5eaf2', borderRadius: '8px !important', p: 1.5 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, flexWrap: 'wrap' }}>
-                        <Typography sx={{ flex: 1, fontSize: 14, fontWeight: 900 }}>Question {activePricingSection + 1},{questionIndex + 1}</Typography>
-                        <Chip size="small" label={questionTypeLabel(question.type)} />
-                        <Typography sx={{ fontSize: 12 }}>Enabled</Typography>
-                        <Switch size="small" checked={question.enabled !== false} disabled={activePricingSection === 0 && questionIndex === 0 && !(pricingTree[0].questions || []).slice(1).some((item) => item.enabled !== false)} onChange={(event) => editQuestion(activePricingSection, questionIndex, 'enabled', event.target.checked)} />
+                    <Paper key={questionIndex} elevation={0} className="zzv-pricing-dialog__question">
+                      <Box className="zzv-pricing-dialog__question-header">
+                        <Typography sx={{ flex: 1, fontSize: 14, fontWeight: 700 }}>{question.text_ka || question.text || `Question ${activePricingSection + 1},${questionIndex + 1}`}</Typography>
+                        <Chip size="small" label={question.type === 2 || question.type === 'multi' ? t('shopTradeIn.multipleAnswers', 'Multiple answers') : t('shopTradeIn.singleAnswer', 'Single answer')} />
                       </Box>
-                      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 120px' }, gap: 1, mb: 1 }}>
-                        <TextField size="small" label="Question (English)" value={question.text || ''} onChange={(event) => editQuestion(activePricingSection, questionIndex, 'text', event.target.value)} />
-                        <TextField size="small" label="Question (Georgian, optional)" value={question.text_ka || ''} onChange={(event) => editQuestion(activePricingSection, questionIndex, 'text_ka', event.target.value)} />
-                        <TextField size="small" label="Key / label" value={question.label || ''} onChange={(event) => editQuestion(activePricingSection, questionIndex, 'label', event.target.value)} helperText="Used by flow" />
+                      <Box className="zzv-pricing-dialog__answer-head">
+                        <span />
+                        <span>{activePricingSection === 0 && questionIndex === 0 ? t('shopTradeIn.baseGel', 'Base ₾') : t('shopTradeIn.deltaGel', 'Change ₾')}</span>
+                        <span>{t('shopTradeIn.nextStep', 'Next')}</span>
                       </Box>
-                      <TextField select size="small" label="Selection" value={question.type === 'multi' || Number(question.type || 0) > 0 ? 1 : 0} onChange={(event) => editQuestion(activePricingSection, questionIndex, 'type', Number(event.target.value))} sx={{ minWidth: 140, mb: 1 }}>
-                        <MenuItem value={0}>Single answer</MenuItem>
-                        <MenuItem value={1}>Multiple answers</MenuItem>
-                      </TextField>
-                      <Stack spacing={1}>
+                      <Box>
                         {(question.answers || []).map((answer, answerIndex) => {
-                          const isBase = activePricingSection === 0 && questionIndex === 0;
                           const value = Number(answer.value || 0);
                           return (
-                            <Box
-                              key={`${answer.text}-${answerIndex}`}
-                              sx={{
-                                display: 'grid',
-                                gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 105px 125px 95px 75px' },
-                                gap: 1,
-                                alignItems: 'center',
-                                border: '1px solid #eef2f7',
-                                borderRadius: '8px',
-                                p: 1,
-                              }}
-                            >
-                              <TextField size="small" label="Answer (EN)" value={answer.text || ''} onChange={(event) => editAnswer(activePricingSection, questionIndex, answerIndex, 'text', event.target.value)} />
-                              <TextField size="small" label="Answer (KA)" value={answer.text_ka || ''} onChange={(event) => editAnswer(activePricingSection, questionIndex, answerIndex, 'text_ka', event.target.value)} />
+                            <Box key={`${answer.text}-${answerIndex}`} className="zzv-pricing-dialog__answer">
+                              <Box className="zzv-pricing-dialog__answer-label">
+                                <Typography>{answer.text_ka || answer.text || `Answer ${answerIndex + 1}`}</Typography>
+                                {answer.tooltip_ka || answer.tooltip ? <Typography>{answer.tooltip_ka || answer.tooltip}</Typography> : null}
+                              </Box>
                               <TextField
                                 size="small"
                                 type="number"
-                                label={isBase ? 'Base ₾' : 'Delta ₾'}
+                                aria-label={`${answer.text_ka || answer.text} ${activePricingSection === 0 && questionIndex === 0 ? 'base price' : 'price adjustment'}`}
                                 value={value}
                                 onChange={(event) =>
                                   updateAnswerValue(activePricingSection, questionIndex, answerIndex, event.target.value)
                                 }
                               />
-                              <TextField select size="small" label="Action" value={Number(answer.result ?? 1)} onChange={(event) => editAnswer(activePricingSection, questionIndex, answerIndex, 'result', Number(event.target.value))}>
-                                <MenuItem value={0}>Finish</MenuItem><MenuItem value={1}>Next</MenuItem><MenuItem value={2}>Go to</MenuItem><MenuItem value={3}>Manual</MenuItem><MenuItem value={4}>Set price</MenuItem>
-                              </TextField>
-                              <TextField size="small" label="Go to" value={answer.go_to || ''} disabled={Number(answer.result ?? 1) !== 2} onChange={(event) => editAnswer(activePricingSection, questionIndex, answerIndex, 'go_to', event.target.value)} placeholder="2,3" />
-                              <Switch size="small" checked={String(answer.value_enabled ?? 1) !== '0'} onChange={(event) => editAnswer(activePricingSection, questionIndex, answerIndex, 'value_enabled', event.target.checked ? 1 : 0)} inputProps={{ 'aria-label': `Enable answer ${answerIndex + 1}` }} />
-                              <TextField size="small" label="Help text (EN)" value={answer.tooltip || ''} onChange={(event) => editAnswer(activePricingSection, questionIndex, answerIndex, 'tooltip', event.target.value)} sx={{ gridColumn: { md: '1 / 4' } }} />
-                              <TextField size="small" label="Help text (KA)" value={answer.tooltip_ka || ''} onChange={(event) => editAnswer(activePricingSection, questionIndex, answerIndex, 'tooltip_ka', event.target.value)} sx={{ gridColumn: { md: '4 / 7' } }} />
+                              <Typography className="zzv-pricing-dialog__answer-route">{Number(answer.result ?? 1) === 2 ? `→ ${answer.go_to || '—'}` : Number(answer.result ?? 1) === 0 ? '✓' : Number(answer.result ?? 1) === 3 ? '…' : '→'}</Typography>
                             </Box>
                           );
                         })}
-                        <Button size="small" onClick={() => editTree((tree) => tree[activePricingSection].questions[questionIndex].answers.push({ text: 'New answer', text_ka: '', value: 0, result: 1, go_to: '', value_enabled: 1 }))}>+ Add answer</Button>
-                      </Stack>
+                      </Box>
+                      <details className="zzv-pricing-dialog__advanced">
+                        <summary>{t('shopTradeIn.editQuestionDetails', 'Edit question, answers and navigation')}</summary>
+                        <Box className="zzv-pricing-dialog__advanced-fields">
+                          <TextField size="small" label={t('shopTradeIn.questionEnglish', 'Question (English)')} value={question.text || ''} onChange={(event) => editQuestion(activePricingSection, questionIndex, 'text', event.target.value)} />
+                          <TextField size="small" label={t('shopTradeIn.questionGeorgian', 'Question (Georgian)')} value={question.text_ka || ''} onChange={(event) => editQuestion(activePricingSection, questionIndex, 'text_ka', event.target.value)} />
+                          <TextField size="small" label={t('shopTradeIn.flowKey', 'Key / label')} value={question.label || ''} onChange={(event) => editQuestion(activePricingSection, questionIndex, 'label', event.target.value)} />
+                          <TextField select size="small" label={t('shopTradeIn.selection', 'Selection')} value={question.type === 'multi' || Number(question.type || 0) > 0 ? 1 : 0} onChange={(event) => editQuestion(activePricingSection, questionIndex, 'type', Number(event.target.value))}><MenuItem value={0}>{t('shopTradeIn.singleAnswer', 'Single answer')}</MenuItem><MenuItem value={1}>{t('shopTradeIn.multipleAnswers', 'Multiple answers')}</MenuItem></TextField>
+                          <Box className="zzv-pricing-dialog__enabled"><Typography>{t('shopTradeIn.enabled', 'Enabled')}</Typography><Switch size="small" checked={question.enabled !== false} disabled={activePricingSection === 0 && questionIndex === 0 && !(pricingTree[0].questions || []).slice(1).some((item) => item.enabled !== false)} onChange={(event) => editQuestion(activePricingSection, questionIndex, 'enabled', event.target.checked)} /></Box>
+                        </Box>
+                        {(question.answers || []).map((answer, answerIndex) => (
+                          <Box className="zzv-pricing-dialog__advanced-answer" key={answerIndex}>
+                            <Typography>{answerIndex + 1}. {answer.text_ka || answer.text}</Typography>
+                            <Box className="zzv-pricing-dialog__advanced-fields">
+                              <TextField size="small" label={t('shopTradeIn.answerEnglish', 'Answer (EN)')} value={answer.text || ''} onChange={(event) => editAnswer(activePricingSection, questionIndex, answerIndex, 'text', event.target.value)} />
+                              <TextField size="small" label={t('shopTradeIn.answerGeorgian', 'Answer (KA)')} value={answer.text_ka || ''} onChange={(event) => editAnswer(activePricingSection, questionIndex, answerIndex, 'text_ka', event.target.value)} />
+                              <TextField select size="small" label={t('shopTradeIn.action', 'Action')} value={Number(answer.result ?? 1)} onChange={(event) => editAnswer(activePricingSection, questionIndex, answerIndex, 'result', Number(event.target.value))}><MenuItem value={0}>{t('shopTradeIn.finish', 'Finish')}</MenuItem><MenuItem value={1}>{t('shopTradeIn.next', 'Next')}</MenuItem><MenuItem value={2}>{t('shopTradeIn.goTo', 'Go to')}</MenuItem><MenuItem value={3}>{t('shopTradeIn.manual', 'Manual')}</MenuItem><MenuItem value={4}>{t('shopTradeIn.setPrice', 'Set price')}</MenuItem></TextField>
+                              <TextField size="small" label={t('shopTradeIn.goTo', 'Go to')} value={answer.go_to || ''} disabled={Number(answer.result ?? 1) !== 2} onChange={(event) => editAnswer(activePricingSection, questionIndex, answerIndex, 'go_to', event.target.value)} placeholder="2,3" />
+                              <TextField size="small" label={t('shopTradeIn.helpEnglish', 'Help (EN)')} value={answer.tooltip || ''} onChange={(event) => editAnswer(activePricingSection, questionIndex, answerIndex, 'tooltip', event.target.value)} />
+                              <TextField size="small" label={t('shopTradeIn.helpGeorgian', 'Help (KA)')} value={answer.tooltip_ka || ''} onChange={(event) => editAnswer(activePricingSection, questionIndex, answerIndex, 'tooltip_ka', event.target.value)} />
+                              <Box className="zzv-pricing-dialog__enabled"><Typography>{t('shopTradeIn.priceEnabled', 'Price enabled')}</Typography><Switch size="small" checked={String(answer.value_enabled ?? 1) !== '0'} onChange={(event) => editAnswer(activePricingSection, questionIndex, answerIndex, 'value_enabled', event.target.checked ? 1 : 0)} /></Box>
+                            </Box>
+                          </Box>
+                        ))}
+                        <Button size="small" onClick={() => editTree((tree) => tree[activePricingSection].questions[questionIndex].answers.push({ text: 'New answer', text_ka: '', value: 0, result: 1, go_to: '', value_enabled: 1 }))}>{t('shopTradeIn.addAnswer', '+ Add answer')}</Button>
+                      </details>
                     </Paper>
                   ))}
-                  {pricingTree[activePricingSection] && <Button variant="outlined" onClick={addQuestion}>+ Add question</Button>}
+                  {pricingTree[activePricingSection] && <Button variant="outlined" onClick={addQuestion}>{t('shopTradeIn.addQuestion', '+ Add question')}</Button>}
                 </Box>
               </Box>
             )}
-          </Stack>
+          </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setPricingProduct(null)}>Cancel</Button>
+        <DialogActions className="zzv-pricing-dialog__footer">
+          <Box className="zzv-pricing-dialog__footer-left">
+            <Button size="small" onClick={togglePricingRawMode}>{pricingRawMode ? t('shopTradeIn.visualEditor', 'Visual editor') : t('shopTradeIn.rawJson', 'Raw JSON')}</Button>
+            <Button size="small" startIcon={<DownloadRounded />} onClick={() => {
+              try {
+                const treeJson = pricingRawMode ? JSON.parse(pricingRaw) : pricingTree;
+                downloadJson(`trade-in-pricing-${pricingProduct.id}.json`, pricingPackage([{ id: pricingProduct.id, slug: pricingProduct.slug, name: pricingProduct.name, tree_json: treeJson }]));
+              } catch (error) { setPricingError(error.message); }
+            }}>{t('shopTradeIn.exportJson', 'Export JSON')}</Button>
+          </Box>
+          <Button onClick={() => setPricingProduct(null)}>{t('shopTradeIn.cancel', 'Cancel')}</Button>
           <Button variant="contained" onClick={savePricing} disabled={pricingMutation.isLoading}>
-            Save pricing
+            {t('shopTradeIn.savePricing', 'Save pricing')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1006,74 +1047,50 @@ const ShopAdminTradeInPage = () => {
       </Dialog>
 
       <Dialog
+        className="zzv-tradein-quote-edit"
         open={Boolean(editingQuote)}
         onClose={() => setEditingQuote(null)}
         fullWidth
         maxWidth="sm"
-        PaperProps={{ sx: { borderRadius: '18px !important' } }}
       >
-        <DialogTitle sx={{ fontWeight: 900 }}>Edit trade-in quote</DialogTitle>
-        <DialogContent dividers>
-          <Stack spacing={2} sx={{ pt: 1 }}>
-            <TextField
-              select
-              label="Status"
-              value={quoteForm.status}
-              onChange={(event) => setQuoteForm((prev) => ({ ...prev, status: event.target.value }))}
-              fullWidth
-            >
-              {['pending', 'contacted', 'accepted', 'completed', 'cancelled'].map((status) => (
-                <MenuItem key={status} value={status}>{status}</MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              label="Product"
-              value={quoteForm.product_name}
-              onChange={(event) => setQuoteForm((prev) => ({ ...prev, product_name: event.target.value }))}
-              fullWidth
-            />
-            <TextField
-              label="Customer name"
-              value={quoteForm.customer_name}
-              onChange={(event) => setQuoteForm((prev) => ({ ...prev, customer_name: event.target.value }))}
-              fullWidth
-            />
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-              <TextField
-                label="Phone"
-                value={quoteForm.customer_phone}
-                onChange={(event) => setQuoteForm((prev) => ({ ...prev, customer_phone: event.target.value }))}
-                fullWidth
-              />
-              <TextField
-                label="Email"
-                value={quoteForm.customer_email}
-                onChange={(event) => setQuoteForm((prev) => ({ ...prev, customer_email: event.target.value }))}
-                fullWidth
-              />
-            </Stack>
-            <TextField
-              label="Final offer"
-              type="number"
-              value={quoteForm.final_price}
-              onChange={(event) => setQuoteForm((prev) => ({ ...prev, final_price: event.target.value }))}
-              fullWidth
-            />
-            <TextField
-              label="Notes"
-              value={quoteForm.notes}
-              onChange={(event) => setQuoteForm((prev) => ({ ...prev, notes: event.target.value }))}
-              multiline
-              minRows={4}
-              fullWidth
-            />
-          </Stack>
+        <DialogTitle className="zzv-tradein-quote-edit__header">
+          <Box className="zzv-tradein-quote-edit__heading">
+            <Typography component="h2">{t('shopTradeIn.editQuote')}</Typography>
+            <Typography>{editingQuote?.quote_number}</Typography>
+          </Box>
+          <IconButton aria-label={t('shopTradeIn.close')} size="small" onClick={() => setEditingQuote(null)}><CloseRounded fontSize="small" /></IconButton>
+        </DialogTitle>
+        <DialogContent className="zzv-tradein-quote-edit__content">
+          <section className="zzv-tradein-quote-edit__group">
+            <h3>{t('shopTradeIn.customer')}</h3>
+            <div className="zzv-tradein-quote-edit__fields">
+              <div><label htmlFor="tradein-quote-customer">{t('shopTradeIn.customerName')}</label><TextField id="tradein-quote-customer" size="small" fullWidth value={quoteForm.customer_name} onChange={(event) => setQuoteForm((prev) => ({ ...prev, customer_name: event.target.value }))} /></div>
+              <div><label htmlFor="tradein-quote-phone">{t('shopTradeIn.phone')}</label><TextField id="tradein-quote-phone" size="small" fullWidth value={quoteForm.customer_phone} onChange={(event) => setQuoteForm((prev) => ({ ...prev, customer_phone: event.target.value }))} /></div>
+            </div>
+          </section>
+          <section className="zzv-tradein-quote-edit__group">
+            <h3>{t('shopTradeIn.deviceAndOffer')}</h3>
+            <div className="zzv-tradein-quote-edit__fields">
+              <div><label htmlFor="tradein-quote-product">{t('shopTradeIn.product')}</label><TextField id="tradein-quote-product" size="small" fullWidth value={quoteForm.product_name} onChange={(event) => setQuoteForm((prev) => ({ ...prev, product_name: event.target.value }))} /></div>
+              <div><label htmlFor="tradein-quote-offer">{t('shopTradeIn.finalOfferGel')}</label><TextField id="tradein-quote-offer" size="small" fullWidth type="number" inputProps={{ min: 0, step: 0.01 }} value={quoteForm.final_price} onChange={(event) => setQuoteForm((prev) => ({ ...prev, final_price: event.target.value }))} /></div>
+              <div><label htmlFor="tradein-quote-status">{t('shopTradeIn.status')}</label><TextField id="tradein-quote-status" select size="small" fullWidth value={quoteForm.status} onChange={(event) => setQuoteForm((prev) => ({ ...prev, status: event.target.value }))}>{['pending', 'contacted', 'accepted', 'completed', 'cancelled'].map((status) => <MenuItem key={status} value={status}>{t(`shopTradeIn.statuses.${status}`)}</MenuItem>)}</TextField></div>
+              <div><label htmlFor="tradein-quote-date">{t('shopTradeIn.created')}</label><TextField id="tradein-quote-date" size="small" fullWidth value={editingQuote?.created_at ? new Date(editingQuote.created_at).toLocaleDateString(i18n.language === 'ka' ? 'ka-GE' : 'en-GB') : ''} InputProps={{ readOnly: true }} /></div>
+            </div>
+          </section>
+          <details className="zzv-tradein-quote-edit__more">
+            <summary>{t('shopTradeIn.additionalDetails')}</summary>
+            <div className="zzv-tradein-quote-edit__extra-fields">
+              <div><label htmlFor="tradein-quote-email">{t('shopTradeIn.customerEmail')}</label><TextField id="tradein-quote-email" size="small" type="email" fullWidth value={quoteForm.customer_email} onChange={(event) => setQuoteForm((prev) => ({ ...prev, customer_email: event.target.value }))} /></div>
+              <div><label htmlFor="tradein-quote-notes">{t('shopTradeIn.notes')}</label><TextField id="tradein-quote-notes" size="small" multiline minRows={3} fullWidth value={quoteForm.notes} onChange={(event) => setQuoteForm((prev) => ({ ...prev, notes: event.target.value }))} /></div>
+            </div>
+          </details>
+          {quoteMutation.isError && <Alert severity="error">{t('shopTradeIn.quoteSaveFailed')}</Alert>}
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setEditingQuote(null)}>Cancel</Button>
-          <Button variant="contained" onClick={saveQuote} disabled={quoteMutation.isLoading}>
-            Save
-          </Button>
+        <DialogActions className="zzv-tradein-quote-edit__footer">
+          <Button color="error" startIcon={<DeleteOutlineRounded />} onClick={() => confirmDeleteQuote(editingQuote)} disabled={quoteMutation.isLoading}>{t('shopTradeIn.delete')}</Button>
+          <span className="zzv-tradein-quote-edit__footer-spacer" />
+          <Button onClick={() => setEditingQuote(null)}>{t('shopTradeIn.cancel')}</Button>
+          <Button variant="contained" onClick={saveQuote} disabled={quoteMutation.isLoading || !Number.isFinite(Number(quoteForm.final_price)) || Number(quoteForm.final_price) < 0}>{t('shopTradeIn.save')}</Button>
         </DialogActions>
       </Dialog>
 

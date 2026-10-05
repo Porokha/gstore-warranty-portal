@@ -3,25 +3,17 @@ import { useTranslation } from 'react-i18next';
 import {
   Box,
   TextField,
-  Button,
-  ButtonBase,
   Alert,
   Typography,
-  Checkbox,
-  FormControlLabel,
-  FormGroup,
-  Chip,
-  Divider,
 } from '@mui/material';
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
-import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
-import FlagRoundedIcon from '@mui/icons-material/FlagRounded';
 import { useAuth } from '../../contexts/AuthContext';
 import { paymentsService } from '../../services/paymentsService';
 import { useMutation, useQueryClient } from 'react-query';
 import { isManagementRole } from '../../utils/roles';
+import StatusStepper from './StatusStepper';
 
-const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange }) => {
+const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange, statusTimestamps }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -56,7 +48,7 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange }) =
   const canSubmit =
     hasStatusChange ||
     hasOfferAction ||
-    (canManageCases && allowsResult && (formData.result_type || hasNotes));
+    (canManageCases && allowsResult && (formData.result_type !== (case_.result_type || '') || hasNotes));
 
   const createOfferMutation = useMutation(
     (data) => paymentsService.createOffer(case_.id, data),
@@ -115,6 +107,10 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange }) =
     { value: 3, label: t('status.pending'), description: t('case.statusPendingHelp') },
     { value: 4, label: t('status.completed'), description: t('case.statusCompletedHelp') },
   ];
+  const selectedStage = statusOptions.find((status) => status.value === formData.new_status_level);
+  const nextStage = case_.status_level < 4
+    ? statusOptions.find((status) => status.value === case_.status_level + 1)
+    : null;
   const resultOptions = [
     { value: 'covered', label: t('result.covered'), description: t('case.resultCoveredHelp') },
     { value: 'payable', label: t('result.payable'), description: t('case.resultPayableHelp') },
@@ -122,26 +118,11 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange }) =
     { value: 'replaceable', label: t('result.replaceable'), description: t('case.resultReplaceableHelp') },
   ];
 
-  // Technicians can only move forward
-  const availableStatuses = canManageCases
-    ? statusOptions
-    : statusOptions.filter((s) => s.value >= case_.status_level);
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-    }));
-  };
-
-  const handleCheckboxChange = (e) => {
-    const { name, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      payment_methods: checked
-        ? [...prev.payment_methods, name]
-        : prev.payment_methods.filter((m) => m !== name),
     }));
   };
 
@@ -160,24 +141,24 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange }) =
 
     // Validation
     if (!canManageCases && formData.new_status_level <= case_.status_level) {
-      setError('Technicians can only move status forward');
+      setError(t('case.technicianForwardOnly'));
       return;
     }
 
     // Special validation for Covered
     if (formData.result_type === 'covered' && !formData.note_public) {
-      setError('Public note is required when setting result to Covered');
+      setError(t('case.coveredPublicNoteRequired'));
       return;
     }
 
     // Special validation for Payable
     if (formData.result_type === 'payable') {
       if (!hasPayablePayment && !formData.offer_amount) {
-        setError('Offer amount is required for Payable result');
+        setError(t('case.payableAmountRequired'));
         return;
       }
       if (!hasPayablePayment && formData.payment_methods.length === 0) {
-        setError('At least one payment method must be selected');
+        setError(t('case.paymentMethodRequired'));
         return;
       }
       if (formData.new_status_level === 4 && !hasPaidPayablePayment) {
@@ -193,13 +174,13 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange }) =
     // Special validation for Replaceable
     if (formData.result_type === 'replaceable') {
       if (!formData.replacement_product_title) {
-        setError('Replacement product title is required');
+        setError(t('case.replacementTitleRequired'));
         return;
       }
     }
 
     if (formData.new_status_level === 4 && !formData.result_type) {
-      setError('Result type is required when completing a case');
+      setError(t('case.completionResultRequired'));
       return;
     }
 
@@ -253,57 +234,12 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange }) =
       }
       onDraftChange?.(null);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update case');
+      setError(err.response?.data?.message || t('case.updateFailed'));
     }
   };
 
   return (
-    <Box
-      component="form"
-      onSubmit={handleSubmit}
-      sx={{
-        p: { xs: 1.25, sm: 1.5 },
-        border: '1px solid',
-        borderColor: 'divider',
-        borderRadius: '6px',
-        bgcolor: 'background.paper',
-        '& .MuiChip-root, & .MuiAlert-root, & .MuiButton-root': {
-          borderRadius: '6px',
-        },
-        '& .MuiOutlinedInput-root': {
-          borderRadius: '6px',
-        },
-      }}
-    >
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: { xs: 'flex-start', sm: 'center' },
-          justifyContent: 'space-between',
-          flexDirection: { xs: 'column', sm: 'row' },
-          gap: 0.75,
-          mb: 1.25,
-        }}
-      >
-        <Box>
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            {t('case.chooseNextStage')}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {canManageCases
-              ? t('case.chooseNextStageManagerHelp')
-              : t('case.chooseNextStageTechnicianHelp')}
-          </Typography>
-        </Box>
-        {hasStatusChange && (
-          <Chip
-            icon={<ArrowForwardRoundedIcon />}
-            label={t('case.statusChangeReady')}
-            color="primary"
-            variant="outlined"
-          />
-        )}
-      </Box>
+    <Box component="form" onSubmit={handleSubmit} className="zzv-case-flow">
 
       {error && (
         <Alert severity="error" sx={{ mb: 1.25, py: 0.25 }}>
@@ -314,151 +250,78 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange }) =
       {generatedCode && (
         <Alert severity="success" sx={{ mb: 1.25, py: 0.25 }}>
           <Typography variant="body1" gutterBottom>
-            <strong>6-digit Code Generated:</strong> {generatedCode}
+            <strong>{t('case.generatedPickupCode')}:</strong> {generatedCode}
           </Typography>
           <Typography variant="body2">
-            This code will be used when the customer picks up the device.
+            {t('case.pickupCodeHelp')}
           </Typography>
         </Alert>
       )}
 
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
-          gap: 0.75,
-        }}
+      <StatusStepper
+        currentStatus={case_.status_level}
+        selectedStatus={formData.new_status_level}
+        statusTimestamps={statusTimestamps}
+        onSelectStatus={selectStatus}
+        canSelectStatus={(status) => canManageCases || status > case_.status_level}
       >
-        {availableStatuses.map((status) => {
-          const isSelected = formData.new_status_level === status.value;
-          const isCurrent = case_.status_level === status.value;
-          const isReadOnlyCurrent = !canManageCases && isCurrent;
-
-          return (
-            <ButtonBase
-              key={status.value}
-              disabled={isReadOnlyCurrent}
-              onClick={() => selectStatus(status.value)}
-              sx={{
-                justifyContent: 'flex-start',
-                alignItems: 'flex-start',
-                textAlign: 'left',
-                minHeight: 68,
-                p: 1,
-                border: '1px solid',
-                borderColor: isSelected ? 'primary.main' : 'divider',
-                borderRadius: '6px',
-                bgcolor: isSelected ? 'rgba(165,118,255,0.09)' : 'background.paper',
-                transition: 'border-color 140ms ease, background-color 140ms ease',
-                '&:hover': {
-                  borderColor: 'primary.main',
-                  bgcolor: 'rgba(165,118,255,0.05)',
-                },
-                '&.Mui-disabled': {
-                  opacity: 1,
-                  color: 'inherit',
-                },
-              }}
-            >
-              <Box
-                sx={{
-                  width: 28,
-                  height: 28,
-                  flex: '0 0 28px',
-                  display: 'grid',
-                  placeItems: 'center',
-                  mr: 0.875,
-                  borderRadius: '50%',
-                  bgcolor: isSelected ? 'primary.main' : 'action.hover',
-                  color: isSelected ? '#fff' : 'text.secondary',
-                }}
-              >
-                {isSelected ? <CheckCircleRoundedIcon fontSize="small" /> : status.value}
-              </Box>
-              <Box sx={{ minWidth: 0 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
-                  <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                    {status.label}
-                  </Typography>
-                  {isCurrent && (
-                    <Chip label={t('case.currentStage')} size="small" color="primary" />
-                  )}
-                </Box>
-                <Typography variant="caption" color="text.secondary">
-                  {status.description}
-                </Typography>
-              </Box>
-            </ButtonBase>
-          );
-        })}
-      </Box>
+      <div className="zzv-case-flow__action-bar">
+        <div className="zzv-case-flow__action-copy">
+          <span>{hasStatusChange ? t('case.unsavedStage') : nextStage ? t('case.nextStage') : t('case.currentStage')}</span>
+          <strong>{hasStatusChange ? selectedStage?.label : nextStage?.label || selectedStage?.label}</strong>
+          <p>{hasStatusChange ? selectedStage?.description : nextStage?.description || selectedStage?.description}</p>
+        </div>
+        <div className="zzv-case-flow__stage-controls">
+          {canSubmit ? (
+            <button type="submit" className="zzv-case-flow__advance" disabled={isLoading || createOfferMutation.isLoading || generateCodeMutation.isLoading}>
+              {t('common.updateStatus')} <ArrowForwardRoundedIcon fontSize="small" />
+            </button>
+          ) : case_.status_level < 4 && (
+            <button type="button" className="zzv-case-flow__advance" onClick={() => selectStatus(case_.status_level + 1)}>
+              {t('case.moveToNextStage')} <ArrowForwardRoundedIcon fontSize="small" />
+            </button>
+          )}
+        </div>
+      </div>
+      </StatusStepper>
 
       {allowsResult && (
-        <Box sx={{ mt: 1.5 }}>
-          <Divider sx={{ mb: 1.25 }} />
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-            <FlagRoundedIcon color="primary" fontSize="small" />
-            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-              {t('case.chooseOutcome')}
-            </Typography>
-          </Box>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            {formData.new_status_level === 4
-              ? t('case.completedOutcomeHelp')
-              : t('case.pendingOutcomeHelp')}
-          </Typography>
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
-              gap: 0.75,
-            }}
-          >
+        <section className="zzv-case-flow__panel">
+          <h2>{t('common.result')}</h2>
+          <div className="zzv-case-flow__result-grid">
             {resultOptions.map((result) => {
               const isSelected = formData.result_type === result.value;
               return (
-                <ButtonBase
+                <button type="button"
                   key={result.value}
                   onClick={() => setFormData((prev) => ({ ...prev, result_type: result.value }))}
-                  sx={{
-                    justifyContent: 'flex-start',
-                    textAlign: 'left',
-                    minHeight: 58,
-                    p: 0.875,
-                    border: '1px solid',
-                    borderColor: isSelected ? 'primary.main' : 'divider',
-                    borderRadius: '6px',
-                    bgcolor: isSelected ? 'rgba(165,118,255,0.09)' : 'background.paper',
-                    '&:hover': { borderColor: 'primary.main' },
-                  }}
+                  className={`zzv-case-flow__result ${isSelected ? 'is-selected' : ''}`}
+                  aria-pressed={isSelected}
                 >
-                  <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                      {result.label}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {result.description}
-                    </Typography>
-                  </Box>
-                </ButtonBase>
+                  <img src={`/figma-staff/result-${result.value}.svg`} alt="" />
+                  <strong>{result.label}</strong>
+                  <span>{result.description}</span>
+                </button>
               );
             })}
-          </Box>
-        </Box>
+          </div>
+        </section>
       )}
 
       {!allowsResult && (
-        <Alert severity="info" sx={{ mt: 1.5, py: 0.25 }}>
-          {t('case.outcomeAvailableLater')}
-        </Alert>
+        <section className="zzv-case-flow__panel">
+          <h2>{t('common.result')}</h2>
+          <div className="zzv-case-flow__locked">
+            <img src="/figma-staff/result-lock.svg" alt="" />{t('case.outcomeAvailableLater')}
+          </div>
+        </section>
       )}
 
       {/* Special fields for Payable */}
       {formData.result_type === 'payable' && !hasPayablePayment && formData.new_status_level === 3 && (
-        <Box sx={{ mt: 1.25, p: 1.25, backgroundColor: '#f5f5f5', borderRadius: '6px' }}>
-          <Typography variant="subtitle2" gutterBottom>
-            {t('result.payable')} - {t('payment.offerDetails') || 'Offer Details'}
-          </Typography>
+        <section className="zzv-case-flow__panel">
+          <h2>{t('payment.offerDetails')}</h2>
+          <div className="zzv-case-flow__payment-fields">
           <TextField
             fullWidth
             type="number"
@@ -466,7 +329,6 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange }) =
             name="offer_amount"
             value={formData.offer_amount}
             onChange={handleChange}
-            margin="normal"
             required
             inputProps={{ min: 0, step: 0.01 }}
           />
@@ -477,35 +339,26 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange }) =
             name="estimated_days_after_payment"
             value={formData.estimated_days_after_payment}
             onChange={handleChange}
-            margin="normal"
             inputProps={{ min: 1 }}
           />
-          <FormGroup>
-            <Typography variant="body2" sx={{ mt: 1, mb: 1 }}>
-              {t('payment.allowedMethods') || 'Allowed Payment Methods'}
-            </Typography>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  name="online"
-                  checked={formData.payment_methods.includes('online')}
-                  onChange={handleCheckboxChange}
-                />
-              }
-              label={t('payment.online') || 'Online'}
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  name="onsite"
-                  checked={formData.payment_methods.includes('onsite')}
-                  onChange={handleCheckboxChange}
-                />
-              }
-              label={t('payment.onsite') || 'Onsite'}
-            />
-          </FormGroup>
-        </Box>
+          <div className="zzv-case-flow__method-field">
+            <span>{t('payment.allowedMethods')}</span>
+            <div className="zzv-case-flow__method-options" role="group" aria-label={t('payment.allowedMethods')}>
+              {[
+                { value: 'online', label: t('payment.online'), methods: ['online'] },
+                { value: 'onsite', label: t('payment.onsite'), methods: ['onsite'] },
+              ].map((method) => (
+                <button
+                  key={method.value}
+                  type="button"
+                  aria-pressed={formData.payment_methods.length === method.methods.length && method.methods.every((item) => formData.payment_methods.includes(item))}
+                  onClick={() => setFormData((prev) => ({ ...prev, payment_methods: method.methods }))}
+                >{method.label}</button>
+              ))}
+            </div>
+          </div>
+          </div>
+        </section>
       )}
 
       {formData.result_type === 'payable' && hasPayablePayment && (
@@ -518,17 +371,15 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange }) =
 
       {/* Special fields for Replaceable */}
       {formData.result_type === 'replaceable' && (
-        <Box sx={{ mt: 1.25, p: 1.25, backgroundColor: '#f5f5f5', borderRadius: '6px' }}>
-          <Typography variant="subtitle2" gutterBottom>
-            {t('result.replaceable')} - {t('replacement.details') || 'Replacement Details'}
-          </Typography>
+        <section className="zzv-case-flow__panel">
+          <h2>{t('replacement.details')}</h2>
+          <div className="zzv-case-flow__payment-fields">
           <TextField
             fullWidth
             label={t('replacement.productTitle') || 'Replacement Product Title'}
             name="replacement_product_title"
             value={formData.replacement_product_title}
             onChange={handleChange}
-            margin="normal"
             required
           />
           <TextField
@@ -538,26 +389,17 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange }) =
             name="replacement_product_price"
             value={formData.replacement_product_price}
             onChange={handleChange}
-            margin="normal"
             inputProps={{ min: 0, step: 0.01 }}
           />
-        </Box>
+          </div>
+        </section>
       )}
 
-      <Divider sx={{ mt: 1.5, mb: 1.25 }} />
-      <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-        {t('case.statusNotes')}
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-        {t('case.statusNotesHelp')}
-      </Typography>
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
-          gap: 1,
-        }}
-      >
+      <details className="zzv-case-flow__panel zzv-case-flow__note-panel" open={formData.result_type === 'covered' ? true : undefined}>
+        <summary>{t('case.statusNotes')}</summary>
+        <div className="zzv-case-flow__panel-content">
+          <p className="zzv-case-flow__helper">{t('case.statusNotesHelp')}</p>
+          <div className="zzv-case-flow__notes">
         <TextField
           fullWidth
           multiline
@@ -580,24 +422,9 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange }) =
           onChange={handleChange}
           margin="normal"
         />
-      </Box>
-
-      <Box mt={1.25} display="flex" justifyContent="flex-end">
-        <Button
-          type="submit"
-          variant="contained"
-          size="large"
-          endIcon={<ArrowForwardRoundedIcon />}
-          disabled={
-            isLoading ||
-            !canSubmit ||
-            createOfferMutation.isLoading ||
-            generateCodeMutation.isLoading
-          }
-        >
-          {t('common.updateStatus')}
-        </Button>
-      </Box>
+          </div>
+        </div>
+      </details>
     </Box>
   );
 };

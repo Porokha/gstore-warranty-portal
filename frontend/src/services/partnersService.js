@@ -29,6 +29,16 @@ export const partnersService = {
     return response.data;
   },
 
+  archiveOrDelete: async (id) => {
+    const response = await api.delete(`/partners/${id}`);
+    return response.data;
+  },
+
+  restore: async (id) => {
+    const response = await api.post(`/partners/${id}/restore`);
+    return response.data;
+  },
+
   getCases: async (id) => {
     const response = await api.get(`/partners/${id}/cases`);
     return response.data;

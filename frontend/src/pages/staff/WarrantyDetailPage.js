@@ -1,358 +1,137 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery } from 'react-query';
-import {
-  Box,
-  Paper,
-  Typography,
-  Grid,
-  Chip,
-  Button,
-  CircularProgress,
-  Alert,
-  Divider,
-  Snackbar,
-} from '@mui/material';
-import { ArrowBack, Edit, Sms } from '@mui/icons-material';
+import { Alert, CircularProgress, Snackbar } from '@mui/material';
 import { warrantiesService } from '../../services/warrantiesService';
 import { useAuth } from '../../contexts/AuthContext';
 import { isManagementRole } from '../../utils/roles';
 
+const ASSET = '/figma-staff/';
+const fmtDate = (value) => value && !Number.isNaN(new Date(value).getTime())
+  ? new Date(value).toLocaleDateString('en-GB') : '—';
+const Field = ({ label, value, children }) => <div className="zzv-warranty-detail__field">
+  <span>{label}</span><strong>{children || value || '—'}</strong>
+</div>;
+const Section = ({ title, children, className = '' }) => <section className={`zzv-warranty-detail__section ${className}`}>
+  <h2>{title}</h2><div className="zzv-warranty-detail__section-body">{children}</div>
+</section>;
+
 const WarrantyDetailPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const ka = i18n.language?.startsWith('ka');
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const canManageWarranties = isManagementRole(user?.role);
-  const [notification, setNotification] = React.useState({
-    open: false,
-    message: '',
-    severity: 'success',
-  });
-
+  const [notification, setNotification] = useState(null);
   const { data: warranty, isLoading, error } = useQuery(
-    ['warranty', id],
-    () => warrantiesService.getById(id),
-    {
-      enabled: !!id,
-    }
+    ['warranty', id], () => warrantiesService.getById(id), { enabled: !!id },
   );
-
   const resendSmsMutation = useMutation(
     () => warrantiesService.resendCreatedSms(id),
     {
-      onSuccess: (result) => {
-        setNotification({
-          open: true,
-          message: result?.message || 'Warranty SMS resent successfully',
-          severity: result?.success === false ? 'warning' : 'success',
-        });
-      },
-      onError: (err) => {
-        setNotification({
-          open: true,
-          message: err.response?.data?.message || 'Warranty SMS could not be resent',
-          severity: 'error',
-        });
-      },
-    }
+      onSuccess: (result) => setNotification({
+        message: result?.message || t('warranty.resendWarrantySmsSuccess'),
+        severity: result?.success === false ? 'warning' : 'success',
+      }),
+      onError: (err) => setNotification({
+        message: err.response?.data?.message || t('warranty.resendWarrantySmsError'),
+        severity: 'error',
+      }),
+    },
   );
 
-  const formatCurrency = (value) => {
-    if (value === null || value === undefined) {
-      return 'N/A';
-    }
-    const numeric = Number(value);
-    if (Number.isNaN(numeric)) {
-      return value;
-    }
-    return `₾${numeric.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
+  if (isLoading) return <div className="zzv-warranty-detail__loading"><CircularProgress /></div>;
+  if (error || !warranty) return <div className="zzv-warranty-detail">
+    <button type="button" className="zzv-warranty-detail__back" onClick={() => navigate('/staff/warranties')}>
+      <img src={`${ASSET}warranty-imgIconChevronLeft.svg`} alt="" />{t('common.warranties')}
+    </button>
+    <Alert severity={error?.response?.status === 404 || !warranty ? 'warning' : 'error'}>
+      {error?.response?.status === 404 || !warranty ? t('warranty.warrantyNotFound') : t('common.errorLoading')}
+    </Alert>
+  </div>;
 
-  if (isLoading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
-    );
-  }
+  const endDate = new Date(warranty.warranty_end);
+  const isActive = !Number.isNaN(endDate.getTime()) && endDate >= new Date();
+  const daysLeft = Math.ceil((endDate - new Date()) / 86400000);
+  const name = `${warranty.customer_name || ''} ${warranty.customer_last_name || ''}`.trim();
+  const price = Number(warranty.price);
+  const hasExtra = warranty.brand || warranty.model || warranty.condition || warranty.personal_identification_number || warranty.imei;
 
-  if (error) {
-    return (
-      <Box>
-        <Box display="flex" alignItems="center" gap={2} mb={3}>
-          <Button
-            startIcon={<ArrowBack />}
-            onClick={() => navigate('/staff/warranties')}
-            sx={{ textTransform: 'none' }}
-          >
-            {t('common.back') || 'Back'}
-          </Button>
-        </Box>
-        <Alert severity="error">
-          {error.response?.status === 404 
-            ? (t('warranty.warrantyNotFound') || 'Warranty not found')
-            : (t('common.errorLoading') || 'Error loading warranty')}
-        </Alert>
-      </Box>
-    );
-  }
+  return <main className="zzv-warranty-detail">
+    <button type="button" className="zzv-warranty-detail__back" onClick={() => navigate('/staff/warranties')}>
+      <img src={`${ASSET}warranty-imgIconChevronLeft.svg`} alt="" />{t('common.warranties')}
+    </button>
+    <div className="zzv-warranty-detail__card">
+      <header className="zzv-warranty-detail__head">
+        <div className="zzv-warranty-detail__identity">
+          <div><h1>{warranty.warranty_id}</h1><span className={`zzv-warranty-detail__status ${isActive ? 'is-active' : ''}`}>{isActive ? t('common.active') : t('common.expired')}</span></div>
+          <p>{ka ? 'შეძენილია' : 'Purchased'} {fmtDate(warranty.purchase_date)} · {isActive ? `${ka ? 'დარჩა' : 'Remaining'} ${daysLeft} ${ka ? 'დღე' : 'days'}` : (ka ? 'ვადა გასულია' : 'Expired')}</p>
+        </div>
+        <div className="zzv-warranty-detail__actions">
+          {canManageWarranties && <button type="button" className="zzv-warranty-detail__secondary" disabled={resendSmsMutation.isLoading || !warranty.customer_phone} onClick={() => resendSmsMutation.mutate()}>
+            {resendSmsMutation.isLoading ? <CircularProgress size={16} /> : <img src={`${ASSET}warranty-imgIconLeft.svg`} alt="" />}{t('warranty.resendSmsAction')}
+          </button>}
+          <button type="button" className="zzv-warranty-detail__secondary" onClick={() => navigate(`/staff/cases/new?warranty_id=${id}`)}>
+            <img src={`${ASSET}warranty-imgIconLeft1.svg`} alt="" />{t('warranty.newCaseAction')}
+          </button>
+          {canManageWarranties && <button type="button" className="zzv-warranty-detail__primary" onClick={() => navigate(`/staff/warranties/${id}/edit`)}>
+            <img src={`${ASSET}warranty-imgIconLeft2.svg`} alt="" />{t('warranty.editAction')}
+          </button>}
+        </div>
+      </header>
 
-  if (!warranty && !isLoading) {
-    return (
-      <Box>
-        <Box display="flex" alignItems="center" gap={2} mb={3}>
-          <Button
-            startIcon={<ArrowBack />}
-            onClick={() => navigate('/staff/warranties')}
-            sx={{ textTransform: 'none' }}
-          >
-            {t('common.back') || 'Back'}
-          </Button>
-        </Box>
-        <Alert severity="warning">
-          {t('warranty.warrantyNotFound') || 'Warranty not found'}
-        </Alert>
-      </Box>
-    );
-  }
-
-  const isActive = new Date(warranty.warranty_end) >= new Date();
-  const daysLeft = Math.ceil((new Date(warranty.warranty_end) - new Date()) / (1000 * 60 * 60 * 24));
-
-  return (
-    <Box>
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
-        <Box display="flex" alignItems="center" gap={2}>
-          <Button
-            startIcon={<ArrowBack />}
-            onClick={() => navigate('/staff/warranties')}
-            sx={{ textTransform: 'none' }}
-          >
-            {t('common.back') || 'Back'}
-          </Button>
-          <Typography variant="h4">{t('warranty.warrantyDetails') || 'Warranty Details'}</Typography>
-        </Box>
-        {canManageWarranties && (
-          <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
-            <Button
-              variant="outlined"
-              startIcon={resendSmsMutation.isLoading ? <CircularProgress size={16} /> : <Sms />}
-              disabled={resendSmsMutation.isLoading || !warranty.customer_phone}
-              onClick={() => resendSmsMutation.mutate()}
-              sx={{ textTransform: 'none' }}
-            >
-              {t('warranty.resendWarrantySms') || 'Resend warranty SMS'}
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<Edit />}
-              onClick={() => navigate(`/staff/warranties/${id}/edit`)}
-              sx={{ textTransform: 'none' }}
-            >
-              {t('warranty.editWarranty') || 'Edit Warranty'}
-            </Button>
-          </Box>
-        )}
-      </Box>
-
-      <Paper sx={{ p: 4 }}>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5 }}>
-              {t('warranty.warrantyId')}
-            </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-              {warranty.warranty_id}
-            </Typography>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5 }}>
-              {t('common.status')}
-            </Typography>
-            <Chip
-              label={isActive ? (t('common.active') || 'Active') : (t('common.expired') || 'Expired')}
-              color={isActive ? 'success' : 'default'}
-              sx={{ mb: 2 }}
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5 }}>
-              {t('warranty.product')}
-            </Typography>
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              {warranty.title}
-            </Typography>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5 }}>
-              {t('warranty.sku')}
-            </Typography>
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              {warranty.sku || 'N/A'}
-            </Typography>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5 }}>
-              {t('warranty.price')}
-            </Typography>
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              {formatCurrency(warranty.price)}
-            </Typography>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5 }}>
-              {t('warranty.serialNumber')}
-            </Typography>
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              {warranty.serial_number || 'N/A'}
-            </Typography>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5 }}>
-              {t('warranty.deviceType')}
-            </Typography>
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              {warranty.device_type || 'N/A'}
-            </Typography>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5 }}>
-              {t('warranty.customerName')}
-            </Typography>
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              {warranty.customer_name} {warranty.customer_last_name || ''}
-            </Typography>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5 }}>
-              {t('warranty.customerPhone')}
-            </Typography>
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              {warranty.customer_phone}
-            </Typography>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5 }}>
-              {t('warranty.purchaseDate')}
-            </Typography>
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              {new Date(warranty.purchase_date).toLocaleDateString()}
-            </Typography>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5 }}>
-              {t('warranty.warrantyStart')}
-            </Typography>
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              {new Date(warranty.warranty_start).toLocaleDateString()}
-            </Typography>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5 }}>
-              {t('warranty.warrantyEnd')}
-            </Typography>
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              {new Date(warranty.warranty_end).toLocaleDateString()}
-            </Typography>
-          </Grid>
-          {isActive && (
-            <Grid item xs={12} md={6}>
-              <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5 }}>
-                {t('warranty.daysLeft')}
-              </Typography>
-              <Chip
-                label={`${daysLeft} ${t('common.days')}`}
-                color={daysLeft <= 30 ? 'warning' : 'success'}
-                sx={{ mb: 2 }}
-              />
-            </Grid>
-          )}
-
-          {canManageWarranties && (
-            <>
-              <Grid item xs={12}>
-                <Divider sx={{ my: 2 }} />
-                <Typography variant="h6" sx={{ mb: 2, color: '#64748b' }}>
-                  {t('warranty.adminOnlyInfo')}
-                </Typography>
-              </Grid>
-
-              {warranty.brand && (
-                <Grid item xs={12} md={6}>
-                  <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5 }}>
-                    {t('warranty.brand') || 'Brand'}
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {warranty.brand}
-                  </Typography>
-                </Grid>
-              )}
-
-              {warranty.model && (
-                <Grid item xs={12} md={6}>
-                  <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5 }}>
-                    {t('warranty.model') || 'Model'}
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {warranty.model}
-                  </Typography>
-                </Grid>
-              )}
-
-              {warranty.condition && (
-                <Grid item xs={12} md={6}>
-                  <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5 }}>
-                    {t('warranty.condition') || 'Condition'}
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {warranty.condition}
-                  </Typography>
-                </Grid>
-              )}
-
-              {warranty.personal_identification_number && (
-                <Grid item xs={12} md={6}>
-                  <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5 }}>
-                    {t('warranty.personalIdentificationNumber') || 'P/N'}
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {warranty.personal_identification_number}
-                  </Typography>
-                </Grid>
-              )}
-
-              {warranty.admin_notes && (
-                <Grid item xs={12}>
-                  <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5 }}>
-                    {t('warranty.adminNotes') || 'Admin Notes'}
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2, whiteSpace: 'pre-wrap' }}>
-                    {warranty.admin_notes}
-                  </Typography>
-                </Grid>
-              )}
-            </>
-          )}
-        </Grid>
-      </Paper>
-      <Snackbar
-        open={notification.open}
-        autoHideDuration={5000}
-        onClose={() => setNotification((prev) => ({ ...prev, open: false }))}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert
-          severity={notification.severity}
-          onClose={() => setNotification((prev) => ({ ...prev, open: false }))}
-          sx={{ width: '100%' }}
-        >
-          {notification.message}
-        </Alert>
-      </Snackbar>
-    </Box>
-  );
+      <div className="zzv-warranty-detail__sections">
+        <Section title={ka ? 'პროდუქტი' : 'Product'}>
+          <div className="zzv-warranty-detail__grid zzv-warranty-detail__grid--two">
+            <Field label={t('warranty.product')} value={warranty.title} />
+            <Field label={t('warranty.sku')} value={warranty.sku} />
+            <Field label={t('warranty.serialNumber')} value={warranty.serial_number} />
+            <Field label={t('warranty.deviceType')} value={warranty.device_type} />
+            <Field label={t('warranty.price')} value={Number.isFinite(price) ? `₾${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'} />
+          </div>
+        </Section>
+        <Section title={ka ? 'კლიენტი' : 'Customer'}>
+          <div className="zzv-warranty-detail__grid zzv-warranty-detail__grid--two">
+            <Field label={t('warranty.customerName')} value={name} />
+            <Field label={t('warranty.customerPhone')} value={warranty.customer_phone} />
+            {warranty.customer_email && <Field label={t('warranty.customerEmail')} value={warranty.customer_email} />}
+          </div>
+        </Section>
+        <Section title={ka ? 'ვადები' : 'Dates'}>
+          <div className="zzv-warranty-detail__grid zzv-warranty-detail__grid--three">
+            <Field label={t('warranty.purchaseDate')} value={fmtDate(warranty.purchase_date)} />
+            <Field label={t('warranty.warrantyStart')} value={fmtDate(warranty.warranty_start)} />
+            <Field label={t('warranty.warrantyEnd')}>
+              {fmtDate(warranty.warranty_end)} {isActive && <small>· {ka ? 'დარჩა' : 'Remaining'} {daysLeft} {ka ? 'დღე' : 'days'}</small>}
+            </Field>
+          </div>
+        </Section>
+        {canManageWarranties && hasExtra && <Section title={t('warranty.adminOnlyInfo')}>
+          <div className="zzv-warranty-detail__grid zzv-warranty-detail__grid--three">
+            {warranty.brand && <Field label={t('warranty.brand')} value={warranty.brand} />}
+            {warranty.model && <Field label={t('warranty.model')} value={warranty.model} />}
+            {warranty.condition && <Field label={t('warranty.condition')} value={warranty.condition} />}
+            {warranty.personal_identification_number && <Field label={t('warranty.personalIdentificationNumber')} value={warranty.personal_identification_number} />}
+            {warranty.imei && <Field label="IMEI" value={warranty.imei} />}
+          </div>
+        </Section>}
+        {canManageWarranties && warranty.admin_notes && <Section title={warranty.created_source === 'auto_woo' ? t('warranty.importData') : t('warranty.adminNotes')} className="zzv-warranty-detail__section--notes">
+          <pre>{warranty.admin_notes.split('\n').map((line, index) => {
+            const separator = line.indexOf(':');
+            if (separator < 0) return <span key={index} className="zzv-warranty-detail__note-line">{line || '\u00a0'}</span>;
+            const label = line.slice(0, separator + 1);
+            const value = line.slice(separator + 1);
+            return <span key={index} className="zzv-warranty-detail__note-line"><span className="zzv-warranty-detail__note-key">{label}</span><span className={/source|rule|status/i.test(label) ? 'zzv-warranty-detail__note-value--success' : 'zzv-warranty-detail__note-value'}>{value}</span></span>;
+          })}</pre>
+        </Section>}
+      </div>
+    </div>
+    <Snackbar open={Boolean(notification)} autoHideDuration={5000} onClose={() => setNotification(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
+      <Alert severity={notification?.severity || 'success'} onClose={() => setNotification(null)}>{notification?.message}</Alert>
+    </Snackbar>
+  </main>;
 };
 
 export default WarrantyDetailPage;

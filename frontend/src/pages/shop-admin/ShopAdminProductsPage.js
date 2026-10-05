@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Box,
@@ -13,6 +14,7 @@ import {
   Grid,
   IconButton,
   LinearProgress,
+  Menu,
   MenuItem,
   Paper,
   Stack,
@@ -31,10 +33,10 @@ import {
 } from '@mui/material';
 import {
   Add,
+  CloseRounded,
   Edit,
   Download,
   DeleteOutline,
-  FileUpload,
   RestoreFromTrash,
   Save,
   Search,
@@ -64,11 +66,6 @@ const emptyForm = {
   is_active: true,
 };
 
-const productScopes = [
-  { value: 'active', label: 'Catalog' },
-  { value: 'trash', label: 'Trash' },
-];
-
 const productSources = [
   { value: 'manual', label: 'Zezva Products' },
   { value: 'mobilesentrix', label: 'MobileSentrix' },
@@ -77,7 +74,7 @@ const productSources = [
 const productOnlyStatusLabelKa = 'ხელმისაწვდომია, მხოლოდ სერვისთან ერთად';
 const serviceUnavailableLabelKa = 'სერვისი არ არის ხელმისაწვდომი';
 
-const formatAdminProductPrice = (product) => {
+const formatAdminProductPrice = (product, unavailable = 'Unavailable') => {
   if (product.sale_price != null) {
     return `₾${Number(product.sale_price).toFixed(2)}`;
   }
@@ -90,10 +87,16 @@ const formatAdminProductPrice = (product) => {
     return productOnlyStatusLabelKa;
   }
 
-  return 'Unavailable';
+  return unavailable;
 };
 
+const formatAdminCount = (value) => Number(value || 0).toLocaleString('en-US').replaceAll(',', ' ');
+const formatAdminTimestamp = (value) => new Date(value).toLocaleString('en-GB', {
+  day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false,
+}).replaceAll('/', '.');
+
 const ShopAdminProductsPage = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const csvInputRef = useRef(null);
   const imageInputRef = useRef(null);
@@ -103,11 +106,19 @@ const ShopAdminProductsPage = () => {
   const [selectedIds, setSelectedIds] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [productModalOpen, setProductModalOpen] = useState(false);
+  const [previewProduct, setPreviewProduct] = useState(null);
   const [mobileSentrixResult, setMobileSentrixResult] = useState(null);
+  const [mobileSentrixMappingOpen, setMobileSentrixMappingOpen] = useState(false);
   const [mobileSentrixJobId, setMobileSentrixJobId] = useState(null);
   const [mobileSentrixSearch, setMobileSentrixSearch] = useState('');
   const [mobileSentrixStockFilter, setMobileSentrixStockFilter] = useState('all');
-  const [mobileSentrixVisibilityFilter, setMobileSentrixVisibilityFilter] = useState('all');
+  const [mobileSentrixQuickFilter, setMobileSentrixQuickFilter] = useState('all');
+  const [mobileSentrixSyncFilter, setMobileSentrixSyncFilter] = useState('all');
+  const [syncMenuAnchor, setSyncMenuAnchor] = useState(null);
+  const [manualSearch, setManualSearch] = useState('');
+  const [manualStockFilter, setManualStockFilter] = useState('all');
+  const [manualDeviceFilter, setManualDeviceFilter] = useState('all');
+  const [manualPartFilter, setManualPartFilter] = useState('all');
   const [adminProductPage, setAdminProductPage] = useState(1);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -166,6 +177,7 @@ const ShopAdminProductsPage = () => {
   );
   const mobileSentrixJob = mobileSentrixJobResult?.job || latestMobileSentrixJob;
   const mobileSentrixJobRunning = ['queued', 'running'].includes(mobileSentrixJob?.status);
+  const previewRateEntry = Object.entries(mobileSentrixResult?.exchange_rates || {})[0] || null;
 
   useEffect(() => {
     if (mobileSentrixJob?.status === 'completed') {
@@ -178,10 +190,19 @@ const ShopAdminProductsPage = () => {
     setSelectedId(null);
     setSelectedIds([]);
     setForm(emptyForm);
+    setPreviewProduct(null);
     setAdminProductPage(1);
     setMobileSentrixSearch('');
+    setMobileSentrixResult(null);
+    setMobileSentrixMappingOpen(false);
     setMobileSentrixStockFilter('all');
-    setMobileSentrixVisibilityFilter('all');
+    setMobileSentrixQuickFilter('all');
+    setMobileSentrixSyncFilter('all');
+    setSyncMenuAnchor(null);
+    setManualSearch('');
+    setManualStockFilter('all');
+    setManualDeviceFilter('all');
+    setManualPartFilter('all');
   }, [scope, productSource]);
 
   const invalidateProducts = async () => {
@@ -340,10 +361,8 @@ const ShopAdminProductsPage = () => {
       }),
     {
       onSuccess: (result) => {
-        setMobileSentrixResult(result);
-        setMessage(
-          `MobileSentrix preview loaded. ${result.items?.length || 0} mapped items, ${result.total_items || 0} total matches.`,
-        );
+        setMobileSentrixResult({ ...result, previewed_at: new Date().toISOString() });
+        setMessage('');
         setError('');
       },
       onError: (mutationError) => {
@@ -361,15 +380,12 @@ const ShopAdminProductsPage = () => {
       }),
     {
       onSuccess: async (result) => {
+        setMobileSentrixResult(null);
         const job = result.job;
         if (job?.id) {
           setMobileSentrixJobId(job.id);
         }
-        setMessage(
-          result.already_running
-            ? 'MobileSentrix full catalog sync is already running. Progress is shown below.'
-            : 'MobileSentrix full catalog sync started in the background. Progress is shown below.',
-        );
+        setMessage('');
         setError('');
         await queryClient.invalidateQueries(['mobilesentrix-sync-latest']);
       },
@@ -382,15 +398,12 @@ const ShopAdminProductsPage = () => {
 
   const mobileSentrixRefreshMutation = useMutation(() => shopService.refreshMobileSentrixProducts(), {
     onSuccess: async (result) => {
+      setMobileSentrixResult(null);
       const job = result.job;
       if (job?.id) {
         setMobileSentrixJobId(job.id);
       }
-      setMessage(
-        result.already_running
-          ? 'MobileSentrix sync is already running. Progress is shown below.'
-          : 'MobileSentrix stock and price refresh started in the background. Progress is shown below.',
-      );
+      setMessage('');
       setError('');
       await queryClient.invalidateQueries(['mobilesentrix-sync-latest']);
     },
@@ -424,7 +437,19 @@ const ShopAdminProductsPage = () => {
   );
   const displayedProducts = useMemo(() => {
     if (productSource !== 'mobilesentrix') {
-      return products;
+      const search = manualSearch.trim().toLocaleLowerCase();
+      return products.filter((product) => {
+        const quantity = Number(product.stock_quantity || 0);
+        const matchesSearch = !search || [product.title, product.slug, product.brand, product.device_model, product.part_category]
+          .filter(Boolean).some((value) => String(value).toLocaleLowerCase().includes(search));
+        const matchesStock = manualStockFilter === 'all'
+          || (manualStockFilter === 'available' && quantity >= 10)
+          || (manualStockFilter === 'low' && quantity > 0 && quantity < 10)
+          || (manualStockFilter === 'none' && quantity <= 0);
+        return matchesSearch && matchesStock
+          && (manualDeviceFilter === 'all' || product.device_category === manualDeviceFilter)
+          && (manualPartFilter === 'all' || product.part_category === manualPartFilter);
+      });
     }
 
     const search = mobileSentrixSearch.trim().toLowerCase();
@@ -446,14 +471,30 @@ const ShopAdminProductsPage = () => {
         mobileSentrixStockFilter === 'all' ||
         (mobileSentrixStockFilter === 'in_stock' && Number(product.stock_quantity || 0) > 0) ||
         (mobileSentrixStockFilter === 'out_of_stock' && Number(product.stock_quantity || 0) <= 0);
-      const matchesVisibility =
-        mobileSentrixVisibilityFilter === 'all' ||
-        (mobileSentrixVisibilityFilter === 'visible' && product.is_active) ||
-        (mobileSentrixVisibilityFilter === 'hidden' && !product.is_active);
+      const matchesQuick = mobileSentrixQuickFilter === 'all'
+        || (mobileSentrixQuickFilter === 'visible' && product.is_active)
+        || (mobileSentrixQuickFilter === 'hidden' && !product.is_active)
+        || (mobileSentrixQuickFilter === 'low' && Number(product.stock_quantity || 0) > 0 && Number(product.stock_quantity || 0) < 10);
+      const matchesSync = mobileSentrixSyncFilter === 'all'
+        || (mobileSentrixSyncFilter === 'synced' && Boolean(product.supplier_synced_at))
+        || (mobileSentrixSyncFilter === 'not_synced' && !product.supplier_synced_at);
 
-      return matchesSearch && matchesStock && matchesVisibility;
+      return matchesSearch && matchesStock && matchesQuick && matchesSync;
     });
-  }, [mobileSentrixSearch, mobileSentrixStockFilter, mobileSentrixVisibilityFilter, productSource, products]);
+  }, [manualSearch, manualStockFilter, manualDeviceFilter, manualPartFilter, mobileSentrixSearch, mobileSentrixStockFilter, mobileSentrixQuickFilter, mobileSentrixSyncFilter, productSource, products]);
+  const manualCounts = useMemo(() => products.reduce((counts, product) => {
+    const quantity = Number(product.stock_quantity || 0);
+    counts[quantity <= 0 ? 'none' : quantity < 10 ? 'low' : 'available'] += 1;
+    return counts;
+  }, { available: 0, low: 0, none: 0 }), [products]);
+  const manualDevices = useMemo(() => [...new Set(products.map((product) => product.device_category).filter(Boolean))].sort(), [products]);
+  const manualParts = useMemo(() => [...new Set(products.map((product) => product.part_category).filter(Boolean))].sort(), [products]);
+  const manualHasFilters = Boolean(manualSearch.trim() || manualStockFilter !== 'all' || manualDeviceFilter !== 'all' || manualPartFilter !== 'all');
+  const mobileSentrixCounts = useMemo(() => ({
+    visible: products.filter((product) => product.is_active).length,
+    hidden: products.filter((product) => !product.is_active).length,
+    low: products.filter((product) => Number(product.stock_quantity || 0) > 0 && Number(product.stock_quantity || 0) < 10).length,
+  }), [products]);
   const allSelected =
     displayedProducts.length > 0 &&
     displayedProducts.every((product) => selectedIds.includes(product.id));
@@ -549,6 +590,24 @@ const ShopAdminProductsPage = () => {
         ? [...new Set([...current, ...visibleIds])]
         : current.filter((id) => !visibleIds.includes(id)),
     );
+  };
+
+  const exportSelectedManualProducts = () => {
+    const selected = products.filter((product) => selectedIds.includes(product.id));
+    if (!selected.length) return;
+    const cell = (value) => {
+      const raw = String(value ?? '');
+      const safe = /^[=+\-@]/.test(raw) ? `'${raw}` : raw;
+      return `"${safe.replace(/"/g, '""')}"`;
+    };
+    const fields = ['id', 'title', 'brand', 'slug', 'device_category', 'part_category', 'price', 'service_price', 'stock_quantity', 'is_active'];
+    const csv = [fields.join(','), ...selected.map((product) => fields.map((field) => cell(product[field])).join(','))].join('\r\n');
+    const url = URL.createObjectURL(new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8' }));
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `zezva-products-${new Date().toISOString().slice(0, 10)}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleFullMobileSentrixSync = () => {
@@ -666,6 +725,7 @@ const ShopAdminProductsPage = () => {
   const renderVisibilitySwitch = (product) => (
     <Tooltip title={product.is_active ? 'Visible in public shop' : 'Hidden from public shop'}>
       <Switch
+        className="zzv-shop-sentrix__visibility"
         size="small"
         checked={Boolean(product.is_active)}
         disabled={scope === 'trash' || toggleVisibilityMutation.isLoading}
@@ -681,240 +741,59 @@ const ShopAdminProductsPage = () => {
   );
 
   const renderProductEditor = () => (
-    <>
-      <Box sx={{ mb: 2.5 }}>
-        {form.image_url ? (
-          <Box
-            component="img"
-            src={form.image_url}
-            alt="Product preview"
-            sx={{
-              width: '100%',
-              maxHeight: 220,
-              objectFit: 'contain',
-              borderRadius: 3,
-              border: '1px solid #dce4f0',
-              background: '#f8fbff',
-              mb: 1.5,
-            }}
-          />
-        ) : null}
-        <Stack direction="row" spacing={1.25}>
-          <Button
-            variant="outlined"
-            startIcon={<FileUpload />}
-            onClick={() => imageInputRef.current?.click()}
-            disabled={uploadImageMutation.isLoading}
-            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
-          >
-            {uploadImageMutation.isLoading ? 'Uploading...' : 'Upload Image'}
-          </Button>
-          <input
-            ref={imageInputRef}
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) {
-                uploadImageMutation.mutate(file);
-              }
-              event.target.value = '';
-            }}
-          />
-        </Stack>
-      </Box>
+    <Box component="form" id="shop-admin-product-form" onSubmit={handleSubmit} className="zzv-shop-product-modal__form">
+      <section className="zzv-shop-product-modal__group">
+        <h3>{t('shopProducts.basicDetails', 'Basic details')}</h3>
+        <div className="zzv-shop-product-modal__fields">
+          <label htmlFor="shop-product-title">{t('shopProducts.productName', 'Product name')}</label>
+          <TextField id="shop-product-title" size="small" fullWidth required value={form.title} onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))} />
+          <label htmlFor="shop-product-slug">{t('shopProducts.address', 'Address')}</label>
+          <TextField id="shop-product-slug" size="small" fullWidth value={form.slug} onChange={(event) => setForm((prev) => ({ ...prev, slug: event.target.value }))} helperText={t('shopProducts.slugHint', 'Leave blank to generate automatically.')} />
+          <div className="zzv-shop-product-modal__grid">
+            <div><label htmlFor="shop-product-brand">{t('shopProducts.manufacturer', 'Manufacturer')}</label><TextField id="shop-product-brand" size="small" fullWidth value={form.brand} onChange={(event) => setForm((prev) => ({ ...prev, brand: event.target.value }))} /></div>
+            <div><label htmlFor="shop-product-source">{t('shopProducts.type', 'Type')}</label><TextField id="shop-product-source" select size="small" fullWidth value={form.inventory_source} onChange={(event) => setForm((prev) => ({ ...prev, inventory_source: event.target.value }))}><MenuItem value="oem">OEM</MenuItem><MenuItem value="third-party">Third party</MenuItem></TextField></div>
+          </div>
+          <div className="zzv-shop-product-modal__upload" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); const file = event.dataTransfer.files?.[0]; if (file?.type.startsWith('image/') && !uploadImageMutation.isLoading) uploadImageMutation.mutate(file); }}>
+            {form.image_url ? <img src={form.image_url} alt="" /> : <img src="/figma-shop-admin/new-product-upload.svg" alt="" />}
+            <div><strong>{t('shopProducts.uploadImage', 'Upload image')}</strong><span>{t('shopProducts.orDropHere', 'or drop it here')}</span></div>
+            <Button type="button" variant="contained" onClick={() => imageInputRef.current?.click()} disabled={uploadImageMutation.isLoading}>{uploadImageMutation.isLoading ? t('shopProducts.uploading', 'Uploading...') : t('shopProducts.chooseImage', 'Choose image')}</Button>
+            <input ref={imageInputRef} type="file" accept="image/*" hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) uploadImageMutation.mutate(file); event.target.value = ''; }} />
+          </div>
+        </div>
+      </section>
 
-      <Box component="form" id="shop-admin-product-form" onSubmit={handleSubmit}>
-        <Grid container spacing={2}>
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Title"
-              value={form.title}
-              onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Brand"
-              value={form.brand}
-              onChange={(event) => setForm((prev) => ({ ...prev, brand: event.target.value }))}
-              helperText="Used in the public shop brand filter and CSV imports."
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Slug"
-              value={form.slug}
-              onChange={(event) => setForm((prev) => ({ ...prev, slug: event.target.value }))}
-              helperText="Optional. Leave blank to auto-generate."
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              select
-              fullWidth
-              label="Device"
-              value={form.device_category}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, device_category: event.target.value }))
-              }
-            >
-              <MenuItem value="smartphones">smartphones</MenuItem>
-              <MenuItem value="laptops">laptops</MenuItem>
-              <MenuItem value="accessories">accessories</MenuItem>
-            </TextField>
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              select
-              fullWidth
-              label="Part"
-              value={form.part_category}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, part_category: event.target.value }))
-              }
-            >
-              {['board', 'screen', 'sensor', 'battery', 'camera', 'speaker', 'charging', 'accessory'].map(
-                (value) => (
-                  <MenuItem key={value} value={value}>
-                    {value}
-                  </MenuItem>
-                ),
-              )}
-            </TextField>
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              select
-              fullWidth
-              label="Source"
-              value={form.inventory_source}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, inventory_source: event.target.value }))
-              }
-            >
-              <MenuItem value="oem">oem</MenuItem>
-              <MenuItem value="third-party">third-party</MenuItem>
-            </TextField>
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              select
-              fullWidth
-              label="Visibility"
-              value={form.is_active ? 'active' : 'hidden'}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, is_active: event.target.value === 'active' }))
-              }
-            >
-              <MenuItem value="active">active</MenuItem>
-              <MenuItem value="hidden">hidden</MenuItem>
-            </TextField>
-          </Grid>
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Issue Label"
-              value={form.issue_label}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, issue_label: event.target.value }))
-              }
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              multiline
-              minRows={3}
-              label="Description"
-              value={form.description}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, description: event.target.value }))
-              }
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Image URL"
-              value={form.image_url}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, image_url: event.target.value }))
-              }
-              helperText="If this is an external URL, the backend downloads and stores it locally when you save."
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              type="number"
-              label="Price"
-              value={form.price}
-              onChange={(event) => setForm((prev) => ({ ...prev, price: event.target.value }))}
-              helperText={
-                form.price === '' && form.service_price !== ''
-                  ? productOnlyStatusLabelKa
-                  : 'Leave empty to make this product available only with service.'
-              }
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              type="number"
-              label="Sale Price"
-              value={form.sale_price}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, sale_price: event.target.value }))
-              }
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              type="number"
-              label="Service Price"
-              value={form.service_price}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, service_price: event.target.value }))
-              }
-              helperText={
-                form.service_price === ''
-                  ? serviceUnavailableLabelKa
-                  : 'Leave empty to disable the service-bundle option.'
-              }
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              type="number"
-              label="Stock Quantity"
-              value={form.stock_quantity}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, stock_quantity: event.target.value }))
-              }
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              type="number"
-              label="Sort Order"
-              value={form.sort_order}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, sort_order: event.target.value }))
-              }
-            />
-          </Grid>
-        </Grid>
-      </Box>
-    </>
+      <section className="zzv-shop-product-modal__group">
+        <h3>{t('shopProducts.classification', 'Classification')}</h3>
+        <div className="zzv-shop-product-modal__fields zzv-shop-product-modal__grid">
+          <div><label htmlFor="shop-product-device">{t('shopProducts.device', 'Device')}</label><TextField id="shop-product-device" select size="small" fullWidth value={form.device_category} onChange={(event) => setForm((prev) => ({ ...prev, device_category: event.target.value }))}><MenuItem value="smartphones">{t('shopProducts.smartphones', 'Smartphones')}</MenuItem><MenuItem value="laptops">{t('shopProducts.laptops', 'Laptops')}</MenuItem><MenuItem value="accessories">{t('shopProducts.accessories', 'Accessories')}</MenuItem></TextField></div>
+          <div><label htmlFor="shop-product-issue">{t('shopProducts.issueLabel', 'Issue label')}</label><TextField id="shop-product-issue" size="small" fullWidth value={form.issue_label} onChange={(event) => setForm((prev) => ({ ...prev, issue_label: event.target.value }))} /></div>
+          <div><label htmlFor="shop-product-part">{t('shopProducts.part', 'Part')}</label><TextField id="shop-product-part" select size="small" fullWidth value={form.part_category} onChange={(event) => setForm((prev) => ({ ...prev, part_category: event.target.value }))}>{['board', 'screen', 'sensor', 'battery', 'camera', 'speaker', 'charging', 'accessory'].map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}</TextField></div>
+          <div><label htmlFor="shop-product-sort">{t('shopProducts.sortOrder', 'Sort order')}</label><TextField id="shop-product-sort" size="small" fullWidth type="number" value={form.sort_order} onChange={(event) => setForm((prev) => ({ ...prev, sort_order: event.target.value }))} /></div>
+        </div>
+      </section>
+
+      <section className="zzv-shop-product-modal__group">
+        <h3>{t('shopProducts.priceAndStock', 'Price and stock')}</h3>
+        <div className="zzv-shop-product-modal__fields zzv-shop-product-modal__grid">
+          <div><label htmlFor="shop-product-price">{t('shopProducts.priceGel', 'Price ₾')}</label><TextField id="shop-product-price" size="small" fullWidth type="number" value={form.price} onChange={(event) => setForm((prev) => ({ ...prev, price: event.target.value }))} helperText={form.price === '' && form.service_price !== '' ? productOnlyStatusLabelKa : t('shopProducts.priceHint', 'Leave empty for service only.')} /></div>
+          <div><label htmlFor="shop-product-service-price">{t('shopProducts.servicePriceGel', 'Service price ₾')}</label><TextField id="shop-product-service-price" size="small" fullWidth type="number" value={form.service_price} onChange={(event) => setForm((prev) => ({ ...prev, service_price: event.target.value }))} helperText={form.service_price === '' ? serviceUnavailableLabelKa : t('shopProducts.servicePriceHint', 'Leave empty to disable service bundle.')} /></div>
+          <div><label htmlFor="shop-product-stock">{t('shopProducts.stock', 'Stock')}</label><TextField id="shop-product-stock" size="small" fullWidth type="number" value={form.stock_quantity} onChange={(event) => setForm((prev) => ({ ...prev, stock_quantity: event.target.value }))} inputProps={{ min: 0 }} /></div>
+          <div className="zzv-shop-product-modal__visibility"><span>{t('shopProducts.visibility', 'Visibility')}</span><Switch className="zzv-tradein-edit__switch" checked={Boolean(form.is_active)} onChange={(event) => setForm((prev) => ({ ...prev, is_active: event.target.checked }))} inputProps={{ 'aria-label': t('shopProducts.visibility', 'Visibility') }} /></div>
+        </div>
+      </section>
+
+      <details className="zzv-shop-product-modal__more">
+        <summary>{t('shopProducts.additionalDetails', 'Additional details')}</summary>
+        <div className="zzv-shop-product-modal__fields">
+          <label htmlFor="shop-product-image-url">{t('shopProducts.imageUrl', 'Image URL')}</label>
+          <TextField id="shop-product-image-url" size="small" fullWidth value={form.image_url} onChange={(event) => setForm((prev) => ({ ...prev, image_url: event.target.value }))} helperText={t('shopProducts.imageUrlHint', 'External images are downloaded when saved.')} />
+          <label htmlFor="shop-product-sale-price">{t('shopProducts.salePrice', 'Sale price')}</label>
+          <TextField id="shop-product-sale-price" size="small" fullWidth type="number" value={form.sale_price} onChange={(event) => setForm((prev) => ({ ...prev, sale_price: event.target.value }))} />
+          <label htmlFor="shop-product-description">{t('shopProducts.description', 'Description')}</label>
+          <TextField id="shop-product-description" size="small" fullWidth multiline minRows={3} value={form.description} onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))} />
+        </div>
+      </details>
+    </Box>
   );
 
   return (
@@ -922,36 +801,20 @@ const ShopAdminProductsPage = () => {
       <Grid item xs={12}>
         <Paper className="zzv-admin-table-card zzv-shop-products-panel" elevation={0} sx={{ borderRadius: 3, border: '1px solid #dce4f0', overflow: 'hidden' }}>
           <Box className="zzv-admin-filter-card" sx={{ p: 3, borderBottom: '1px solid #e6edf7' }}>
-            <Tabs
-              value={productSource}
-              onChange={(event, value) => setProductSource(value)}
-              sx={{ mb: 2, minHeight: 40 }}
-            >
-              {productSources.map((item) => (
-                <Tab
-                  key={item.value}
-                  value={item.value}
-                  label={item.label}
-                  sx={{ textTransform: 'none', minHeight: 40, fontWeight: 700 }}
-                />
-              ))}
-            </Tabs>
-
             <Stack
+              className="zzv-shop-catalog__heading"
               direction={{ xs: 'column', md: 'row' }}
               spacing={2}
               justifyContent="space-between"
               alignItems={{ xs: 'flex-start', md: 'center' }}
             >
               <Box>
-                <Typography sx={{ fontSize: '24px', fontWeight: 800, color: '#172033' }}>
-                  {productSource === 'manual' ? 'Products' : 'MobileSentrix Products'}
+                <Typography component="h1" sx={{ fontSize: '20px', fontWeight: 600, color: '#14121c' }}>
+                  {t('shopProducts.title')}
                 </Typography>
-                {productSource === 'manual' ? (
-                  <Typography sx={{ color: '#667085', mt: 0.75 }}>
-                    Catalog management, CSV import, image handling, and trash recovery.
-                  </Typography>
-                ) : null}
+                <Typography sx={{ color: '#5b5670', mt: 0.5, fontSize: '12px' }}>
+                  {t('shopProducts.subtitle')}
+                </Typography>
               </Box>
               {productSource === 'manual' ? (
                 <Stack direction="row" spacing={1.25} flexWrap="wrap">
@@ -962,7 +825,7 @@ const ShopAdminProductsPage = () => {
                     disabled={importMutation.isLoading}
                     sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
                   >
-                    {importMutation.isLoading ? 'Importing...' : 'Import CSV'}
+                    {importMutation.isLoading ? t('shopProducts.importing') : t('shopProducts.importCsv')}
                   </Button>
                   <Button
                     variant="outlined"
@@ -971,142 +834,58 @@ const ShopAdminProductsPage = () => {
                     disabled={downloadTemplateMutation.isLoading}
                     sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
                   >
-                    {downloadTemplateMutation.isLoading ? 'Preparing...' : 'Download Template'}
+                    {downloadTemplateMutation.isLoading ? t('shopProducts.preparing') : t('shopProducts.downloadTemplate')}
                   </Button>
                   <Button
                     onClick={() => applyProductToForm(null)}
                     startIcon={<Add />}
                     sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
                   >
-                    New Product
+                    {t('shopProducts.newProduct')}
                   </Button>
-                  {scope === 'active' ? (
-                    <Button
-                      color="warning"
-                      variant="outlined"
-                      disabled={selectedIds.length === 0}
-                      onClick={handleBulkDelete}
-                      sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
-                    >
-                      Delete Selected
-                    </Button>
-                  ) : (
-                    <>
-                      <Button
-                        color="primary"
-                        variant="outlined"
-                        disabled={selectedIds.length === 0}
-                        onClick={handleBulkRestore}
-                        sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
-                      >
-                        Restore Selected
-                      </Button>
-                      <Button
-                        color="error"
-                        variant="outlined"
-                        disabled={selectedIds.length === 0}
-                        onClick={handleBulkPermanentDelete}
-                        sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
-                      >
-                        Delete Permanently
-                      </Button>
-                    </>
-                  )}
                 </Stack>
               ) : (
-                <Stack direction="row" spacing={0.75} sx={{ flexWrap: 'nowrap', overflowX: 'auto', pb: 0.5 }}>
-                  <Tooltip title="New Product">
-                    <IconButton color="primary" onClick={() => applyProductToForm(null)} sx={{ border: '1px solid #dce4f0' }}>
-                      <Add />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title={mobileSentrixPreviewMutation.isLoading ? 'Loading preview...' : 'Preview Catalog'}>
-                    <span>
-                      <IconButton
-                        color="primary"
-                        onClick={() => mobileSentrixPreviewMutation.mutate()}
-                        disabled={mobileSentrixPreviewMutation.isLoading}
-                        sx={{ border: '1px solid #dce4f0' }}
-                      >
-                        <Search />
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                  <Tooltip title={mobileSentrixSyncMutation.isLoading || mobileSentrixJobRunning ? 'Sync running...' : 'Sync Fully'}>
-                    <span>
-                      <IconButton
-                        color="primary"
-                        onClick={handleFullMobileSentrixSync}
-                        disabled={mobileSentrixSyncMutation.isLoading || mobileSentrixJobRunning}
-                        sx={{ border: '1px solid #dce4f0', bgcolor: '#eef2ff' }}
-                      >
-                        <Sync />
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                  <Tooltip title={mobileSentrixRefreshMutation.isLoading || mobileSentrixJobRunning ? 'Refresh running...' : 'Refresh Existing'}>
-                    <span>
-                      <IconButton
-                        color="primary"
-                        onClick={() => mobileSentrixRefreshMutation.mutate()}
-                        disabled={mobileSentrixRefreshMutation.isLoading || mobileSentrixJobRunning}
-                        sx={{ border: '1px solid #dce4f0' }}
-                      >
-                        <Sync />
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                  <Tooltip title={mobileSentrixSelectedRefreshMutation.isLoading ? 'Refreshing selected...' : 'Refresh Selected'}>
-                    <span>
-                      <IconButton
-                        color="primary"
-                        onClick={handleRefreshSelectedMobileSentrix}
-                        disabled={selectedIds.length === 0 || mobileSentrixSelectedRefreshMutation.isLoading}
-                        sx={{ border: '1px solid #dce4f0' }}
-                      >
-                        <Sync />
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                  <Tooltip title="Hide Selected">
-                    <span>
-                      <IconButton
-                        color="warning"
-                        disabled={selectedIds.length === 0}
-                        onClick={() => handleBulkVisibility(false)}
-                        sx={{ border: '1px solid #dce4f0' }}
-                      >
-                        <VisibilityOff />
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                  <Tooltip title="Show Selected">
-                    <span>
-                      <IconButton
-                        color="success"
-                        disabled={selectedIds.length === 0}
-                        onClick={() => handleBulkVisibility(true)}
-                        sx={{ border: '1px solid #dce4f0' }}
-                      >
-                        <Visibility />
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                  <Tooltip title="Delete Selected">
-                    <span>
-                      <IconButton
-                        color="error"
-                        disabled={selectedIds.length === 0}
-                        onClick={handleBulkDelete}
-                        sx={{ border: '1px solid #dce4f0' }}
-                      >
-                        <DeleteOutline />
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                </Stack>
+                <>
+                  <Button className="zzv-shop-sentrix__sync-button" variant="outlined" startIcon={<Sync />} onClick={(event) => setSyncMenuAnchor(event.currentTarget)}
+                    aria-haspopup="menu" aria-expanded={Boolean(syncMenuAnchor)}>
+                    {t('shopProducts.sync')}
+                  </Button>
+                  <Menu anchorEl={syncMenuAnchor} open={Boolean(syncMenuAnchor)} onClose={() => setSyncMenuAnchor(null)}
+                    className="zzv-shop-sentrix__sync-menu" anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    transformOrigin={{ vertical: 'top', horizontal: 'right' }}>
+                    <div className="zzv-shop-sentrix__menu-label">{t('shopProducts.check')}</div>
+                    <MenuItem disabled={mobileSentrixPreviewMutation.isLoading} onClick={() => { setSyncMenuAnchor(null); mobileSentrixPreviewMutation.mutate(); }}>
+                      <Search fontSize="small" /><span><strong>{t('shopProducts.previewCatalog')}</strong><small>{t('shopProducts.previewCatalogHint')}</small></span>
+                    </MenuItem>
+                    <div className="zzv-shop-sentrix__menu-label">{t('shopProducts.sync')}</div>
+                    <MenuItem disabled={mobileSentrixSyncMutation.isLoading || mobileSentrixJobRunning} onClick={() => { setSyncMenuAnchor(null); handleFullMobileSentrixSync(); }}>
+                      <Sync fontSize="small" /><span><strong>{t('shopProducts.syncFully')}</strong><small>{t('shopProducts.syncFullyHint')}</small></span>
+                    </MenuItem>
+                    <MenuItem disabled={mobileSentrixRefreshMutation.isLoading || mobileSentrixJobRunning} onClick={() => { setSyncMenuAnchor(null); mobileSentrixRefreshMutation.mutate(); }}>
+                      <RestoreFromTrash fontSize="small" /><span><strong>{t('shopProducts.refreshExisting')}</strong><small>{t('shopProducts.refreshExistingHint')}</small></span>
+                    </MenuItem>
+                    <MenuItem disabled><Sync fontSize="small" /><span><strong>{t('shopProducts.rerunMapping')}</strong><small>{t('shopProducts.rerunMappingHint')}</small></span></MenuItem>
+                  </Menu>
+                </>
               )}
             </Stack>
+
+            <div className="zzv-shop-catalog__tabs">
+              <Tabs value={productSource} onChange={(event, value) => {
+                setProductSource(value);
+                setScope('active');
+              }}>
+                {productSources.map((item) => (
+                  <Tab key={item.value} value={item.value}
+                    label={`${t(item.value === 'manual' ? 'shopProducts.zezvaTab' : 'shopProducts.sentrixTab')}${item.value === productSource ? ` ${productsTotal}` : ''}`}
+                  />
+                ))}
+              </Tabs>
+              <button type="button" className={scope === 'trash' ? 'is-active' : ''}
+                onClick={() => setScope(scope === 'trash' ? 'active' : 'trash')}>
+                {t('shopProducts.trash')}
+              </button>
+            </div>
 
             {productSource === 'manual' ? (
               <input
@@ -1124,81 +903,111 @@ const ShopAdminProductsPage = () => {
               />
             ) : null}
 
-            {productSource === 'manual' ? (
-              <Tabs
-                value={scope}
-                onChange={(event, value) => setScope(value)}
-                sx={{ mt: 2, minHeight: 40 }}
-              >
-                {productScopes.map((item) => (
-                  <Tab
-                    key={item.value}
-                    value={item.value}
-                    label={item.label}
-                    sx={{ textTransform: 'none', minHeight: 40, fontWeight: 700 }}
-                  />
-                ))}
-              </Tabs>
-            ) : null}
-
             {message && <Alert sx={{ mt: 2 }}>{message}</Alert>}
             {error && (
               <Alert severity="error" sx={{ mt: 2 }}>
                 {error}
               </Alert>
             )}
-            {productSource === 'manual' && selectedIds.length > 0 && (
-              <Alert severity="info" sx={{ mt: 2 }}>
-                {selectedIds.length} product{selectedIds.length === 1 ? '' : 's'} selected.
-              </Alert>
-            )}
-            {productSource === 'mobilesentrix' && mobileSentrixJob && (
-              <Paper
-                elevation={0}
-                sx={{ mt: 2, p: 2, borderRadius: 3, border: '1px solid #dce4f0', background: '#fbfcff' }}
-              >
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} justifyContent="space-between">
-                  <Box>
-                    <Typography sx={{ fontWeight: 800, color: '#172033' }}>
-                      Full catalog sync: {mobileSentrixJob.status}
-                    </Typography>
-                    <Typography sx={{ fontSize: '13px', color: '#667085', mt: 0.5 }}>
-                      {mobileSentrixJob.last_message || 'Waiting for progress...'}
-                    </Typography>
-                    {mobileSentrixJob.error_message && (
-                      <Typography sx={{ fontSize: '13px', color: '#b42318', mt: 0.5 }}>
-                        {mobileSentrixJob.error_message}
-                      </Typography>
-                    )}
-                  </Box>
-                  <Typography sx={{ fontWeight: 900, color: '#6f4ef6' }}>
-                    {mobileSentrixJob.progress || 0}%
-                  </Typography>
-                </Stack>
-                <LinearProgress
-                  variant={mobileSentrixJob.total_pages ? 'determinate' : 'indeterminate'}
-                  value={mobileSentrixJob.progress || 0}
-                  sx={{ mt: 1.5, height: 8, borderRadius: 999 }}
-                />
-                <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 1.5 }}>
-                  <Chip
-                    size="small"
-                    label={`Page ${mobileSentrixJob.current_page || 0}/${mobileSentrixJob.total_pages || '?'}`}
-                    sx={{ borderRadius: 2 }}
-                  />
-                  <Chip size="small" label={`${mobileSentrixJob.scanned || 0} scanned`} sx={{ borderRadius: 2 }} />
-                  <Chip color="success" size="small" label={`${mobileSentrixJob.created || 0} created`} sx={{ borderRadius: 2 }} />
-                  <Chip color="primary" size="small" label={`${mobileSentrixJob.updated || 0} updated`} sx={{ borderRadius: 2 }} />
-                  <Chip size="small" label={`${mobileSentrixJob.skipped || 0} skipped`} sx={{ borderRadius: 2 }} />
-                  <Chip color={mobileSentrixJob.failed ? 'error' : 'default'} size="small" label={`${mobileSentrixJob.failed || 0} failed`} sx={{ borderRadius: 2 }} />
-                </Stack>
-              </Paper>
-            )}
+            {productSource === 'manual' && <div className="zzv-shop-catalog__filters">
+              <TextField size="small" fullWidth value={manualSearch} onChange={(event) => setManualSearch(event.target.value)}
+                placeholder={t('shopProducts.searchPlaceholder')} inputProps={{ 'aria-label': t('shopProducts.searchLabel') }}
+                InputProps={{ startAdornment: <Search fontSize="small" /> }} />
+              <div className="zzv-shop-catalog__filter-row">
+                <div className="zzv-shop-catalog__stock-tabs" role="group" aria-label={t('shopProducts.stockFilter')}>
+                  {[
+                    ['all', t('shopProducts.all'), products.length],
+                    ['available', t('shopProducts.inStock'), manualCounts.available],
+                    ['low', t('shopProducts.lowStock'), manualCounts.low],
+                    ['none', t('shopProducts.outOfStock'), manualCounts.none],
+                  ].map(([value, label, count]) => <button key={value} type="button" className={manualStockFilter === value ? 'is-active' : ''}
+                    onClick={() => setManualStockFilter(value)} aria-pressed={manualStockFilter === value}>{label} <span>{count}</span></button>)}
+                </div>
+                <div className="zzv-shop-catalog__selects">
+                  <TextField select size="small" value={manualDeviceFilter} onChange={(event) => setManualDeviceFilter(event.target.value)}
+                    inputProps={{ 'aria-label': t('shopProducts.device') }}>
+                    <MenuItem value="all">{t('shopProducts.allDevices')}</MenuItem>
+                    {manualDevices.map((device) => <MenuItem key={device} value={device}>{device}</MenuItem>)}
+                  </TextField>
+                  <TextField select size="small" value={manualPartFilter} onChange={(event) => setManualPartFilter(event.target.value)}
+                    inputProps={{ 'aria-label': t('shopProducts.part') }}>
+                    <MenuItem value="all">{t('shopProducts.allParts')}</MenuItem>
+                    {manualParts.map((part) => <MenuItem key={part} value={part}>{part}</MenuItem>)}
+                  </TextField>
+                </div>
+              </div>
+              {productsTotal > products.length && manualHasFilters && <p className="zzv-shop-catalog__page-note">{t('shopProducts.pageOnly')}</p>}
+            </div>}
+            {productSource === 'mobilesentrix' && mobileSentrixResult && <section className="zzv-shop-sentrix__result" aria-label={t('shopProducts.previewComplete')}>
+              <div className="zzv-shop-sentrix__result-head">
+                <span className="zzv-shop-sentrix__result-check"><img src="/figma-shop-admin/sentrix-check.svg" alt="" /></span>
+                <strong>{t('shopProducts.previewComplete')}</strong>
+                <span className="zzv-shop-sentrix__divider" />
+                <time dateTime={mobileSentrixResult.previewed_at}>{formatAdminTimestamp(mobileSentrixResult.previewed_at)}</time>
+              </div>
+              <div className="zzv-shop-sentrix__result-metrics">
+                <div><strong>{formatAdminCount(mobileSentrixResult.total_items)}</strong><span>{t('shopProducts.supplierTotal')}</span></div>
+                <div><strong>{mobileSentrixResult.items?.length || 0}</strong><span>{t('shopProducts.mappedSample')}</span></div>
+                <div><strong>{formatAdminCount(mobileSentrixResult.total_pages)}</strong><span>{t('shopProducts.supplierPages')}</span></div>
+                <div><strong>{previewRateEntry ? `${previewRateEntry[0]} ${Number(previewRateEntry[1]).toFixed(4)}` : '—'}</strong><span>{t('shopProducts.officialRate')}</span></div>
+              </div>
+              <div className="zzv-shop-sentrix__result-footer">
+                <p>{t('shopProducts.previewSampleNote')}</p>
+                <div>
+                  <button type="button" disabled={!mobileSentrixResult.items?.length} onClick={() => setMobileSentrixMappingOpen(true)}><img src="/figma-shop-admin/sentrix-mapping.svg" alt="" />{t('shopProducts.viewMapping')}</button>
+                  <button type="button" className="is-primary" disabled={mobileSentrixJobRunning} onClick={handleFullMobileSentrixSync}><img src="/figma-shop-admin/sentrix-full-sync.svg" alt="" />{t('shopProducts.syncFully')}</button>
+                </div>
+              </div>
+            </section>}
+            {productSource === 'mobilesentrix' && mobileSentrixJob && (!mobileSentrixResult || mobileSentrixJobRunning) && <section className={`zzv-shop-sentrix__progress zzv-shop-sentrix__progress--${mobileSentrixJob.status}`} aria-label={t('shopProducts.syncProgress')}>
+              <div className="zzv-shop-sentrix__progress-head">
+                <strong>{t(mobileSentrixJob.status === 'completed' ? 'shopProducts.syncComplete' : mobileSentrixJob.status === 'failed' ? 'shopProducts.syncFailed' : mobileSentrixJob.mode === 'refresh-existing' ? 'shopProducts.refreshRunning' : 'shopProducts.fullSyncRunning')}</strong>
+                <span className="zzv-shop-sentrix__divider" />
+                <span>{formatAdminCount(mobileSentrixJob.scanned)} / {mobileSentrixJob.total_items ? formatAdminCount(mobileSentrixJob.total_items) : '—'}</span>
+                {mobileSentrixJobRunning && <button type="button" disabled title={t('shopProducts.stopUnavailable')}><img src="/figma-shop-admin/sentrix-stop.svg" alt="" />{t('shopProducts.stop')}</button>}
+              </div>
+              <LinearProgress variant={mobileSentrixJob.total_pages ? 'determinate' : 'indeterminate'}
+                value={Math.max(0, Math.min(100, Number(mobileSentrixJob.progress || 0)))} />
+              <p>{mobileSentrixJob.error_message || (mobileSentrixJob.status === 'completed'
+                ? t('shopProducts.syncCompleteSummary', { created: mobileSentrixJob.created || 0, updated: mobileSentrixJob.updated || 0, failed: mobileSentrixJob.failed || 0 })
+                : t('shopProducts.syncProgressNote'))}</p>
+            </section>}
           </Box>
 
+          {productSource === 'manual' && selectedIds.length > 0 && <div className="zzv-shop-catalog__selection-bar">
+            <strong>{t('shopProducts.selected', { count: selectedIds.length })}</strong>
+            <div>
+              {scope === 'active' ? <>
+                <button type="button" onClick={() => handleBulkVisibility(true)}><Visibility fontSize="small" />{t('shopProducts.showSelected')}</button>
+                <button type="button" onClick={() => handleBulkVisibility(false)}><VisibilityOff fontSize="small" />{t('shopProducts.hideSelected')}</button>
+                <button type="button" onClick={exportSelectedManualProducts}><Download fontSize="small" />{t('shopProducts.exportSelected')}</button>
+                <button type="button" className="is-danger" onClick={handleBulkDelete}><DeleteOutline fontSize="small" />{t('shopProducts.deleteSelected')}</button>
+              </> : <>
+                <button type="button" onClick={handleBulkRestore}><RestoreFromTrash fontSize="small" />{t('shopProducts.restoreSelected')}</button>
+                <button type="button" className="is-danger" onClick={handleBulkPermanentDelete}><DeleteOutline fontSize="small" />{t('shopProducts.deletePermanently')}</button>
+              </>}
+              <button type="button" className="zzv-shop-catalog__clear-selection" onClick={() => setSelectedIds([])} aria-label={t('shopProducts.clearSelection')}>×</button>
+            </div>
+          </div>}
+          {productSource === 'mobilesentrix' && selectedIds.length > 0 && <div className="zzv-shop-catalog__selection-bar">
+            <strong>{t('shopProducts.selected', { count: selectedIds.length })}</strong>
+            <div>
+              {scope === 'active' ? <>
+                <button type="button" disabled={mobileSentrixSelectedRefreshMutation.isLoading} onClick={handleRefreshSelectedMobileSentrix}><Sync fontSize="small" />{t('shopProducts.refreshSelected')}</button>
+                <button type="button" onClick={() => handleBulkVisibility(true)}><Visibility fontSize="small" />{t('shopProducts.showSelected')}</button>
+                <button type="button" onClick={() => handleBulkVisibility(false)}><VisibilityOff fontSize="small" />{t('shopProducts.hideSelected')}</button>
+                <button type="button" className="is-danger" onClick={handleBulkDelete}><DeleteOutline fontSize="small" />{t('shopProducts.deleteSelected')}</button>
+              </> : <>
+                <button type="button" onClick={handleBulkRestore}><RestoreFromTrash fontSize="small" />{t('shopProducts.restoreSelected')}</button>
+                <button type="button" className="is-danger" onClick={handleBulkPermanentDelete}><DeleteOutline fontSize="small" />{t('shopProducts.deletePermanently')}</button>
+              </>}
+              <button type="button" className="zzv-shop-catalog__clear-selection" onClick={() => setSelectedIds([])} aria-label={t('shopProducts.clearSelection')}>×</button>
+            </div>
+          </div>}
+
           {productSource === 'manual' ? (
-            <Box sx={{ overflowX: 'auto' }}>
-              <Table>
+            <Box className="zzv-shop-catalog__table-wrap" sx={{ overflowX: 'auto' }}>
+              <Table className="zzv-shop-catalog__table">
               <TableHead>
                 <TableRow>
                   <TableCell padding="checkbox">
@@ -1208,11 +1017,14 @@ const ShopAdminProductsPage = () => {
                       onChange={(event) => handleSelectAll(event.target.checked)}
                     />
                   </TableCell>
-                  <TableCell>Title</TableCell>
-                  <TableCell>Device</TableCell>
-                  <TableCell>Price</TableCell>
-                  <TableCell>{scope === 'trash' ? 'Deleted' : 'Status'}</TableCell>
-                  <TableCell align="right">Actions</TableCell>
+                  <TableCell>{t('shopProducts.product')}</TableCell>
+                  <TableCell>{t('shopProducts.manufacturer')}</TableCell>
+                  <TableCell>{t('shopProducts.device')}</TableCell>
+                  <TableCell>{t('shopProducts.part')}</TableCell>
+                  <TableCell>{t('shopProducts.price')}</TableCell>
+                  <TableCell>{t('shopProducts.servicePrice')}</TableCell>
+                  <TableCell>{scope === 'trash' ? t('shopProducts.deleted') : t('shopProducts.stock')}</TableCell>
+                  <TableCell align="right">{t('shopProducts.actions')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -1231,38 +1043,25 @@ const ShopAdminProductsPage = () => {
                           </Box>
                         </Stack>
                       </TableCell>
-                      <TableCell>
-                        <Stack direction="row" spacing={1}>
-                          <Skeleton variant="rounded" width={84} height={24} />
-                          <Skeleton variant="rounded" width={74} height={24} />
-                        </Stack>
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton variant="text" width={110} height={24} />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton variant="rounded" width={76} height={24} />
-                      </TableCell>
-                      <TableCell align="right">
-                        <Skeleton variant="circular" width={32} height={32} sx={{ ml: 'auto' }} />
-                      </TableCell>
+                      {Array.from({ length: 6 }).map((__, cellIndex) => <TableCell key={cellIndex}><Skeleton variant="text" width={cellIndex === 5 ? 36 : 90} height={22} /></TableCell>)}
+                      <TableCell align="right"><Skeleton variant="rounded" width={80} height={28} sx={{ ml: 'auto' }} /></TableCell>
                     </TableRow>
                   ))
                 )}
-                {!isLoading && products.length === 0 && (
+                {!isLoading && displayedProducts.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6}>
-                      {scope === 'trash' ? 'Trash is empty.' : 'No products found.'}
+                    <TableCell colSpan={9}>
+                      {scope === 'trash' ? t('shopProducts.emptyTrash') : manualHasFilters ? t('shopProducts.noMatches') : t('shopProducts.emptyCatalog')}
                     </TableCell>
                   </TableRow>
                 )}
                 {!isLoading &&
-                  products.map((product) => (
+                  displayedProducts.map((product) => (
                     <TableRow
                       hover
                       key={product.id}
                       onClick={() => scope === 'active' && applyProductToForm(product)}
-                      selected={scope === 'active' && product.id === selectedId}
+                      selected={selectedIds.includes(product.id)}
                       sx={{ cursor: scope === 'active' ? 'pointer' : 'default' }}
                     >
                       <TableCell
@@ -1277,65 +1076,37 @@ const ShopAdminProductsPage = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        <Stack direction="row" spacing={1.5} alignItems="center">
+                        <Stack className="zzv-shop-catalog__product-cell" direction="row" spacing={1.5} alignItems="center">
                           {product.image_url ? (
                             <Box
                               component="img"
                               src={product.image_url}
                               alt={product.title}
-                              sx={{
-                                width: 44,
-                                height: 44,
-                                borderRadius: 2,
-                                objectFit: 'cover',
-                                border: '1px solid #dce4f0',
-                              }}
+                              className="zzv-shop-catalog__thumbnail"
                             />
-                          ) : null}
-                          <Box>
-                            <Typography sx={{ fontWeight: 700, color: '#172033' }}>
-                              {product.title}
-                            </Typography>
-                            <Typography sx={{ fontSize: '12px', color: '#667085' }}>
-                              {[product.brand, product.slug].filter(Boolean).join(' • ')}
-                            </Typography>
+                          ) : <span className="zzv-shop-catalog__thumbnail zzv-shop-catalog__thumbnail--empty"><img src="/figma-shop-admin/product-placeholder.svg" alt="" /></span>}
+                          <Box className="zzv-shop-catalog__cell-copy">
+                            <strong>{product.title}</strong>
+                            <small>{[product.brand, product.inventory_source].filter(Boolean).join(' · ') || product.slug}</small>
                           </Box>
                         </Stack>
                       </TableCell>
-                      <TableCell>
-                        <Stack direction="row" spacing={1} flexWrap="wrap">
-                          <Chip size="small" label={product.device_category} sx={{ borderRadius: 2 }} />
-                          <Chip
-                            size="small"
-                            variant="outlined"
-                            label={product.part_category}
-                            sx={{ borderRadius: 2 }}
-                          />
-                        </Stack>
-                      </TableCell>
-                      <TableCell>{formatAdminProductPrice(product)}</TableCell>
-                      <TableCell>
-                        {scope === 'trash' ? (
-                          <Typography sx={{ fontSize: '12px', color: '#667085' }}>
-                            {product.deleted_at ? new Date(product.deleted_at).toLocaleString() : 'Unknown'}
-                          </Typography>
-                        ) : (
-                          <Stack direction="row" spacing={1} alignItems="center">
-                            {renderVisibilitySwitch(product)}
-                            <Chip
-                              size="small"
-                              icon={product.is_active ? <Visibility /> : <VisibilityOff />}
-                              label={product.is_active ? 'Visible' : 'Hidden'}
-                              color={product.is_active ? 'success' : 'default'}
-                              sx={{ borderRadius: 2 }}
-                            />
-                          </Stack>
-                        )}
+                      <TableCell><span className="zzv-shop-catalog__cell-copy"><strong>{product.brand || '—'}</strong><small>{product.inventory_source || '—'}</small></span></TableCell>
+                      <TableCell><span className="zzv-shop-catalog__cell-copy"><strong>{product.device_model || product.device_category || '—'}</strong><small>{product.device_model ? product.device_category : product.slug}</small></span></TableCell>
+                      <TableCell><span className="zzv-shop-catalog__cell-copy"><strong>{product.part_category || '—'}</strong><small>{product.issue_label || '—'}</small></span></TableCell>
+                      <TableCell className="zzv-shop-catalog__money">{formatAdminProductPrice(product, t('shopProducts.unavailable'))}</TableCell>
+                      <TableCell className="zzv-shop-catalog__money">{product.service_price == null ? '—' : `₾${Number(product.service_price).toFixed(2)}`}</TableCell>
+                      <TableCell>{scope === 'trash'
+                        ? <span className="zzv-shop-catalog__deleted-date">{product.deleted_at ? new Date(product.deleted_at).toLocaleDateString() : '—'}</span>
+                        : <span className={`zzv-shop-catalog__stock zzv-shop-catalog__stock--${Number(product.stock_quantity || 0) <= 0 ? 'none' : Number(product.stock_quantity || 0) < 10 ? 'low' : 'available'}`}>{product.stock_quantity ?? 0}</span>}
                       </TableCell>
                       <TableCell align="right">
                         {scope === 'trash' ? (
                           <Stack direction="row" spacing={1} justifyContent="flex-end">
                             <IconButton
+                              className="zzv-shop-catalog__action"
+                              aria-label={t('shopProducts.restore')}
+                              title={t('shopProducts.restore')}
                               onClick={(event) => {
                                 event.stopPropagation();
                                 restoreMutation.mutate(product.id);
@@ -1345,6 +1116,9 @@ const ShopAdminProductsPage = () => {
                               <RestoreFromTrash />
                             </IconButton>
                             <IconButton
+                              className="zzv-shop-catalog__action zzv-shop-catalog__action--delete"
+                              aria-label={t('shopProducts.deletePermanently')}
+                              title={t('shopProducts.deletePermanently')}
                               onClick={(event) => {
                                 event.stopPropagation();
                                 handlePermanentDelete(product.id);
@@ -1357,6 +1131,9 @@ const ShopAdminProductsPage = () => {
                         ) : (
                           <Stack direction="row" spacing={0.5} justifyContent="flex-end">
                             <IconButton
+                              className="zzv-shop-catalog__action"
+                              aria-label={t('shopProducts.edit')}
+                              title={t('shopProducts.edit')}
                               onClick={(event) => {
                                 event.stopPropagation();
                                 applyProductToForm(product);
@@ -1365,7 +1142,20 @@ const ShopAdminProductsPage = () => {
                             >
                               <Edit />
                             </IconButton>
+                            <IconButton className="zzv-shop-catalog__action"
+                              aria-label={product.is_active ? t('shopProducts.hide') : t('shopProducts.show')}
+                              title={product.is_active ? t('shopProducts.hide') : t('shopProducts.show')}
+                              disabled={toggleVisibilityMutation.isLoading}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                toggleVisibilityMutation.mutate({ id: product.id, isActive: !product.is_active });
+                              }}>
+                              {product.is_active ? <Visibility /> : <VisibilityOff />}
+                            </IconButton>
                             <IconButton
+                              className="zzv-shop-catalog__action zzv-shop-catalog__action--delete"
+                              aria-label={t('shopProducts.delete')}
+                              title={t('shopProducts.delete')}
                               onClick={(event) => {
                                 event.stopPropagation();
                                 handleSoftDelete(product.id);
@@ -1384,84 +1174,41 @@ const ShopAdminProductsPage = () => {
             </Box>
           ) : (
             <>
-            <Paper
-              className="zzv-admin-filter-card zzv-shop-products-toolbar"
-              elevation={0}
-              sx={{
-                m: 2,
-                mb: 0,
-                p: 1.5,
-                borderRadius: 3,
-                border: '1px solid #dce4f0',
-                background: '#fbfcff',
-              }}
-            >
-              <Stack
-                direction={{ xs: 'column', md: 'row' }}
-                spacing={1.25}
-                alignItems={{ xs: 'stretch', md: 'center' }}
-                justifyContent="space-between"
-              >
-                <TextField
-                  size="small"
-                  value={mobileSentrixSearch}
-                  onChange={(event) => setMobileSentrixSearch(event.target.value)}
-                  placeholder="Search title, SKU, brand, model..."
-                  InputProps={{
-                    startAdornment: <Search sx={{ color: '#98a2b3', mr: 1 }} fontSize="small" />,
-                  }}
-                  sx={{ minWidth: { md: 360 }, flex: 1 }}
-                />
-                <Stack direction="row" spacing={1} sx={{ flexWrap: 'nowrap' }}>
-                  <TextField
-                    select
-                    size="small"
-                    label="Stock"
-                    value={mobileSentrixStockFilter}
-                    onChange={(event) => setMobileSentrixStockFilter(event.target.value)}
-                    sx={{ minWidth: 140 }}
-                  >
-                    <MenuItem value="all">All stock</MenuItem>
-                    <MenuItem value="in_stock">In stock</MenuItem>
-                    <MenuItem value="out_of_stock">Out of stock</MenuItem>
+            <div className="zzv-shop-sentrix__filters">
+              <TextField size="small" fullWidth value={mobileSentrixSearch} onChange={(event) => setMobileSentrixSearch(event.target.value)}
+                placeholder={t('shopProducts.sentrixSearchPlaceholder')} inputProps={{ 'aria-label': t('shopProducts.searchLabel') }}
+                InputProps={{ startAdornment: <Search fontSize="small" /> }} />
+              <div className="zzv-shop-sentrix__filter-row">
+                <div className="zzv-shop-catalog__stock-tabs" role="group" aria-label={t('shopProducts.catalogFilter')}>
+                  {[
+                    ['all', t('shopProducts.all'), products.length],
+                    ['visible', t('shopProducts.inCatalog'), mobileSentrixCounts.visible],
+                    ['hidden', t('shopProducts.hidden'), mobileSentrixCounts.hidden],
+                    ['low', t('shopProducts.lowStock'), mobileSentrixCounts.low],
+                  ].map(([value, label, count]) => <button key={value} type="button" className={mobileSentrixQuickFilter === value ? 'is-active' : ''}
+                    onClick={() => setMobileSentrixQuickFilter(value)} aria-pressed={mobileSentrixQuickFilter === value}>{label} <span>{count}</span></button>)}
+                </div>
+                <div className="zzv-shop-catalog__selects">
+                  <TextField select size="small" value={mobileSentrixStockFilter} onChange={(event) => setMobileSentrixStockFilter(event.target.value)}
+                    inputProps={{ 'aria-label': t('shopProducts.stockFilter') }}>
+                    <MenuItem value="all">{t('shopProducts.allStock')}</MenuItem>
+                    <MenuItem value="in_stock">{t('shopProducts.inStock')}</MenuItem>
+                    <MenuItem value="out_of_stock">{t('shopProducts.outOfStock')}</MenuItem>
                   </TextField>
-                  <TextField
-                    select
-                    size="small"
-                    label="Catalog"
-                    value={mobileSentrixVisibilityFilter}
-                    onChange={(event) => setMobileSentrixVisibilityFilter(event.target.value)}
-                    sx={{ minWidth: 140 }}
-                  >
-                    <MenuItem value="all">All</MenuItem>
-                    <MenuItem value="visible">Visible</MenuItem>
-                    <MenuItem value="hidden">Hidden</MenuItem>
+                  <TextField select size="small" value={mobileSentrixSyncFilter} onChange={(event) => setMobileSentrixSyncFilter(event.target.value)}
+                    inputProps={{ 'aria-label': t('shopProducts.syncFilter') }}>
+                    <MenuItem value="all">{t('shopProducts.allSync')}</MenuItem>
+                    <MenuItem value="synced">{t('shopProducts.synced')}</MenuItem>
+                    <MenuItem value="not_synced">{t('shopProducts.notSynced')}</MenuItem>
                   </TextField>
-                </Stack>
-                <Typography sx={{ color: '#667085', fontSize: '12px', fontWeight: 800, whiteSpace: 'nowrap' }}>
-                  {displayedProducts.length} / {products.length} shown
-                </Typography>
-              </Stack>
-            </Paper>
-            <Box sx={{ overflowX: 'auto' }}>
+                </div>
+              </div>
+              {productsTotal > products.length && (mobileSentrixSearch || mobileSentrixQuickFilter !== 'all' || mobileSentrixStockFilter !== 'all' || mobileSentrixSyncFilter !== 'all') && <p className="zzv-shop-catalog__page-note">{t('shopProducts.pageOnly')}</p>}
+            </div>
+            <Box className="zzv-shop-sentrix__table-wrap" sx={{ overflowX: 'auto' }}>
               <Table
+                className="zzv-shop-sentrix__table"
                 size="small"
-                sx={{
-                  '& th': {
-                    bgcolor: '#f8fbff',
-                    color: '#667085',
-                    fontSize: '11px',
-                    fontWeight: 900,
-                    letterSpacing: '0.08em',
-                    textTransform: 'uppercase',
-                    whiteSpace: 'nowrap',
-                  },
-                  '& td': {
-                    borderColor: '#e6edf7',
-                    py: 1.25,
-                    verticalAlign: 'middle',
-                  },
-                }}
               >
                 <TableHead>
                   <TableRow>
@@ -1472,15 +1219,15 @@ const ShopAdminProductsPage = () => {
                         onChange={(event) => handleSelectAll(event.target.checked)}
                       />
                     </TableCell>
-                    <TableCell>Product</TableCell>
-                    <TableCell>SKU / Supplier ID</TableCell>
-                    <TableCell>Mapping</TableCell>
-                    <TableCell>Supplier Price</TableCell>
-                    <TableCell>Zezva Price</TableCell>
-                    <TableCell>Stock</TableCell>
-                    <TableCell>Catalog</TableCell>
-                    <TableCell>Synced</TableCell>
-                    <TableCell align="right">Actions</TableCell>
+                    <TableCell>{t('shopProducts.product')}</TableCell>
+                    <TableCell>{t('shopProducts.skuId')}</TableCell>
+                    <TableCell>{t('shopProducts.mapping')}</TableCell>
+                    <TableCell>{t('shopProducts.supplierPrice')}</TableCell>
+                    <TableCell align="right">Zezva</TableCell>
+                    <TableCell>{t('shopProducts.stock')}</TableCell>
+                    <TableCell>{scope === 'trash' ? t('shopProducts.deleted') : t('shopProducts.catalog')}</TableCell>
+                    <TableCell>{t('shopProducts.sync')}</TableCell>
+                    <TableCell align="right">{t('shopProducts.actions')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -1513,8 +1260,8 @@ const ShopAdminProductsPage = () => {
                     <TableRow>
                       <TableCell colSpan={10}>
                         {products.length === 0
-                          ? 'No MobileSentrix products synced yet. Click Sync Fully to import supplier products.'
-                          : 'No products match the current filters.'}
+                          ? scope === 'trash' ? t('shopProducts.emptyTrash') : t('shopProducts.noSentrixProducts')
+                          : t('shopProducts.noMatches')}
                       </TableCell>
                     </TableRow>
                   )}
@@ -1538,120 +1285,53 @@ const ShopAdminProductsPage = () => {
                             }
                           />
                         </TableCell>
-                        <TableCell sx={{ minWidth: 340 }}>
-                          <Stack direction="row" spacing={1.5} alignItems="center">
+                        <TableCell>
+                          <Stack className="zzv-shop-sentrix__product" direction="row" spacing={1.5} alignItems="center">
                             {product.image_url ? (
                               <Box
                                 component="img"
                                 src={product.image_url}
                                 alt={product.title}
-                                sx={{
-                                  width: 52,
-                                  height: 52,
-                                  borderRadius: 2,
-                                  objectFit: 'contain',
-                                  border: '1px solid #dce4f0',
-                                  background: '#f8fbff',
-                                  p: 0.75,
-                                  flexShrink: 0,
-                                }}
+                                className="zzv-shop-sentrix__thumbnail"
                               />
                             ) : (
-                              <Box
-                                sx={{
-                                  width: 52,
-                                  height: 52,
-                                  borderRadius: 2,
-                                  border: '1px solid #dce4f0',
-                                  background: '#f8fbff',
-                                  display: 'grid',
-                                  placeItems: 'center',
-                                  color: '#667085',
-                                  fontWeight: 900,
-                                  flexShrink: 0,
-                                }}
-                              >
-                                MS
-                              </Box>
+                              <span className="zzv-shop-sentrix__thumbnail zzv-shop-sentrix__thumbnail--empty"><img src="/figma-shop-admin/sentrix-placeholder.svg" alt="" /></span>
                             )}
-                            <Box sx={{ minWidth: 0 }}>
-                              <Typography sx={{ fontWeight: 800, color: '#172033', lineHeight: 1.25 }}>
-                                {product.title}
-                              </Typography>
-                              <Typography sx={{ fontSize: '12px', color: '#667085', mt: 0.4 }}>
-                                {[product.brand, product.device_model].filter(Boolean).join(' • ') || 'MobileSentrix product'}
-                              </Typography>
-                            </Box>
+                            <span className="zzv-shop-catalog__cell-copy"><strong>{product.title}</strong><small>{product.quality_line || product.inventory_source || product.brand || 'MobileSentrix'}</small></span>
                           </Stack>
                         </TableCell>
                         <TableCell>
-                          <Typography sx={{ fontWeight: 800, color: '#172033', fontSize: '13px' }}>
-                            {product.supplier_sku || 'No SKU'}
-                          </Typography>
-                          <Typography sx={{ color: '#667085', fontSize: '12px' }}>
-                            ID {product.supplier_product_id || product.id}
-                          </Typography>
+                          <span className="zzv-shop-catalog__cell-copy"><strong>{product.supplier_sku || '—'}</strong><small>{product.sku || product.supplier_product_id || '—'}</small></span>
                         </TableCell>
                         <TableCell>
-                          <Stack direction="row" spacing={0.75} flexWrap="wrap">
-                            <Chip size="small" label={product.device_category} sx={{ borderRadius: 2 }} />
-                            <Chip size="small" variant="outlined" label={product.part_category} sx={{ borderRadius: 2 }} />
-                            <Chip size="small" variant="outlined" label={product.quality_line || product.inventory_source} sx={{ borderRadius: 2 }} />
-                          </Stack>
+                          <span className="zzv-shop-sentrix__mapping">{[product.part_category, product.device_model || product.device_category].filter(Boolean).join(' — ') || '—'}</span>
                         </TableCell>
                         <TableCell>
-                          <Typography sx={{ fontWeight: 800, color: '#172033' }}>
-                            {product.supplier_currency || 'EUR'} {Number(product.supplier_price_usd || 0).toFixed(2)}
-                          </Typography>
-                          <Typography sx={{ color: '#667085', fontSize: '12px' }}>
-                            rate {Number(product.supplier_exchange_rate || 0).toFixed(4)}
-                          </Typography>
+                          <span className="zzv-shop-catalog__cell-copy"><strong>{product.supplier_currency || 'EUR'} {Number(product.supplier_price_usd || 0).toFixed(2)}</strong><small>{t('shopProducts.exchangeRate')} {Number(product.supplier_exchange_rate || 0).toFixed(4)}</small></span>
+                        </TableCell>
+                        <TableCell align="right" className="zzv-shop-sentrix__price">
+                          {formatAdminProductPrice(product, '—')}
                         </TableCell>
                         <TableCell>
-                          <Typography sx={{ fontWeight: 900, color: '#172033' }}>
-                            {formatAdminProductPrice(product)}
-                          </Typography>
+                          <span className={`zzv-shop-catalog__stock zzv-shop-catalog__stock--${Number(product.stock_quantity || 0) <= 0 ? 'none' : Number(product.stock_quantity || 0) < 10 ? 'low' : 'available'}`}>{product.stock_quantity ?? 0}</span>
                         </TableCell>
+                        <TableCell>{scope === 'trash'
+                          ? <span className="zzv-shop-catalog__deleted-date">{product.deleted_at ? new Date(product.deleted_at).toLocaleDateString() : '—'}</span>
+                          : renderVisibilitySwitch(product)}</TableCell>
                         <TableCell>
-                          <Chip
-                            size="small"
-                            color={product.stock_quantity > 0 ? 'success' : 'default'}
-                            label={product.stock_quantity > 0 ? `${product.stock_quantity} in stock` : 'Out of stock'}
-                            sx={{ borderRadius: 2, fontWeight: 800 }}
-                          />
-                        </TableCell>
-                        <TableCell>{renderVisibilitySwitch(product)}</TableCell>
-                        <TableCell>
-                          <Typography sx={{ color: '#667085', fontSize: '12px', whiteSpace: 'nowrap' }}>
-                            {product.supplier_synced_at
-                              ? new Date(product.supplier_synced_at).toLocaleString()
-                              : 'Not synced'}
-                          </Typography>
+                          <span className="zzv-shop-catalog__cell-copy"><strong>{product.supplier_synced_at ? new Date(product.supplier_synced_at).toLocaleDateString() : '—'}</strong><small>{product.supplier_synced_at ? t('shopProducts.automatic') : t('shopProducts.notSynced')}</small></span>
                         </TableCell>
                         <TableCell align="right">
-                          <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                            <Tooltip title="Refresh product">
-                              <span>
-                                <IconButton
-                                  size="small"
-                                  color="primary"
-                                  disabled={mobileSentrixSelectedRefreshMutation.isLoading}
-                                  onClick={() => refreshMobileSentrixProduct(product.id)}
-                                >
-                                  <Sync fontSize="small" />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
-                            <Tooltip title="Edit product">
-                              <IconButton size="small" color="primary" onClick={() => applyProductToForm(product)}>
-                                <Edit fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Move to trash">
-                              <IconButton size="small" color="error" onClick={() => handleSoftDelete(product.id)}>
-                                <DeleteOutline fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
+                          <Stack className="zzv-shop-sentrix__actions" direction="row" spacing={0.5} justifyContent="flex-end">
+                            {scope === 'trash' ? <>
+                              <IconButton size="small" title={t('shopProducts.restore')} aria-label={t('shopProducts.restore')} onClick={() => restoreMutation.mutate(product.id)}><RestoreFromTrash fontSize="small" /></IconButton>
+                              <IconButton size="small" title={t('shopProducts.deletePermanently')} aria-label={t('shopProducts.deletePermanently')} onClick={() => handlePermanentDelete(product.id)}><img src="/figma-shop-admin/sentrix-delete.svg" alt="" /></IconButton>
+                            </> : <>
+                              <IconButton size="small" title={t('shopProducts.edit')} aria-label={t('shopProducts.edit')} onClick={() => applyProductToForm(product)}><img src="/figma-shop-admin/sentrix-edit.svg" alt="" /></IconButton>
+                              <IconButton size="small" title={t('shopProducts.view')} aria-label={t('shopProducts.view')} onClick={() => setPreviewProduct(product)}><img src="/figma-shop-admin/sentrix-view.svg" alt="" /></IconButton>
+                              <IconButton size="small" title={t('shopProducts.refreshProduct')} aria-label={t('shopProducts.refreshProduct')} disabled={mobileSentrixSelectedRefreshMutation.isLoading} onClick={() => refreshMobileSentrixProduct(product.id)}><Sync fontSize="small" /></IconButton>
+                              <IconButton size="small" title={t('shopProducts.delete')} aria-label={t('shopProducts.delete')} onClick={() => handleSoftDelete(product.id)}><img src="/figma-shop-admin/sentrix-delete.svg" alt="" /></IconButton>
+                            </>}
                           </Stack>
                         </TableCell>
                       </TableRow>
@@ -1669,71 +1349,101 @@ const ShopAdminProductsPage = () => {
             sx={{ p: 2, borderTop: '1px solid #e6edf7' }}
           >
             <Typography sx={{ fontSize: '13px', color: '#667085', fontWeight: 700 }}>
-              Showing page {adminProductPage} of {productsTotalPages} • {productsTotal} products
+              {t('shopProducts.showingPage', { page: adminProductPage, pages: productsTotalPages, total: productsTotal })}
             </Typography>
             <Stack direction="row" spacing={1}>
               <Button
                 variant="outlined"
                 disabled={adminProductPage <= 1 || isLoading}
-                onClick={() => setAdminProductPage((current) => Math.max(1, current - 1))}
+                onClick={() => { setSelectedIds([]); setAdminProductPage((current) => Math.max(1, current - 1)); }}
                 sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
               >
-                Previous
+                {t('shopProducts.previous')}
               </Button>
               <Button
                 variant="outlined"
                 disabled={adminProductPage >= productsTotalPages || isLoading}
-                onClick={() => setAdminProductPage((current) => current + 1)}
+                onClick={() => { setSelectedIds([]); setAdminProductPage((current) => current + 1); }}
                 sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 3 }}
               >
-                Next
+                {t('shopProducts.next')}
               </Button>
             </Stack>
           </Stack>
         </Paper>
       </Grid>
 
+      <Dialog open={mobileSentrixMappingOpen} onClose={() => setMobileSentrixMappingOpen(false)} maxWidth="sm" fullWidth
+        PaperProps={{ className: 'zzv-shop-sentrix__mapping-dialog' }}>
+        <DialogTitle>{t('shopProducts.previewMappingsTitle')}</DialogTitle>
+        <DialogContent dividers>
+          <p>{t('shopProducts.previewSampleNote')}</p>
+          <ul>
+            {(mobileSentrixResult?.items || []).map((item, index) => <li key={item.supplier_product_id || item.supplier_sku || index}>
+              <strong>{item.title}</strong>
+              <span>{[item.device_category, item.part_category, item.device_model].filter(Boolean).join(' / ') || '—'}</span>
+            </li>)}
+          </ul>
+        </DialogContent>
+        <DialogActions><Button onClick={() => setMobileSentrixMappingOpen(false)}>{t('common.close')}</Button></DialogActions>
+      </Dialog>
+
+      <Dialog open={Boolean(previewProduct)} onClose={() => setPreviewProduct(null)} maxWidth="sm" fullWidth
+        PaperProps={{ className: 'zzv-shop-sentrix__preview' }}>
+        <DialogTitle>{previewProduct?.title}</DialogTitle>
+        <DialogContent dividers>
+          {previewProduct && <div className="zzv-shop-sentrix__preview-body">
+            {previewProduct.image_url ? <img src={previewProduct.image_url} alt={previewProduct.title} />
+              : <span className="zzv-shop-sentrix__thumbnail zzv-shop-sentrix__thumbnail--empty"><img src="/figma-shop-admin/sentrix-placeholder.svg" alt="" /></span>}
+            <dl>
+              <div><dt>{t('shopProducts.skuId')}</dt><dd>{previewProduct.supplier_sku || previewProduct.supplier_product_id || '—'}</dd></div>
+              <div><dt>{t('shopProducts.mapping')}</dt><dd>{[previewProduct.part_category, previewProduct.device_model || previewProduct.device_category].filter(Boolean).join(' — ') || '—'}</dd></div>
+              <div><dt>{t('shopProducts.supplierPrice')}</dt><dd>{previewProduct.supplier_currency || 'EUR'} {Number(previewProduct.supplier_price_usd || 0).toFixed(2)}</dd></div>
+              <div><dt>{t('shopProducts.price')}</dt><dd>{formatAdminProductPrice(previewProduct, '—')}</dd></div>
+              <div><dt>{t('shopProducts.stock')}</dt><dd>{previewProduct.stock_quantity ?? 0}</dd></div>
+              <div><dt>{t('shopProducts.sync')}</dt><dd>{previewProduct.supplier_synced_at ? new Date(previewProduct.supplier_synced_at).toLocaleString() : t('shopProducts.notSynced')}</dd></div>
+            </dl>
+          </div>}
+        </DialogContent>
+        <DialogActions><Button onClick={() => setPreviewProduct(null)}>{t('common.close')}</Button></DialogActions>
+      </Dialog>
+
       <Dialog
         open={productModalOpen}
         onClose={() => setProductModalOpen(false)}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 4,
-            border: '1px solid #dce4f0',
-          },
-        }}
+        className="zzv-shop-product-modal"
+        PaperProps={{ sx: { borderRadius: '16px !important' } }}
       >
-        <DialogTitle sx={{ pb: 1 }}>
-          <Typography sx={{ fontSize: '24px', fontWeight: 900, color: '#172033' }}>
-            {selectedProduct ? 'Edit Product' : 'New Product'}
-          </Typography>
-          <Typography sx={{ color: '#667085', mt: 0.5, fontSize: '14px' }}>
-            Upload an image directly, or paste an image URL and it will be downloaded on save.
-          </Typography>
+        <DialogTitle className="zzv-shop-product-modal__header">
+          <div className="zzv-shop-product-modal__thumbnail">
+            {form.image_url ? <img src={form.image_url} alt="" /> : <img src="/figma-shop-admin/trade-in-modal-placeholder.svg" alt="" />}
+          </div>
+          <div className="zzv-shop-product-modal__heading">
+            <Typography component="h2">{selectedProduct ? t('shopProducts.editProduct', 'Edit product') : t('shopProducts.newProduct', 'New product')}</Typography>
+            <Typography>{t('shopProducts.zezvaCatalog', 'Zezva catalogue')}</Typography>
+          </div>
+          <IconButton size="small" aria-label={t('shopProducts.close', 'Close')} onClick={() => setProductModalOpen(false)}><CloseRounded fontSize="small" /></IconButton>
         </DialogTitle>
-        <DialogContent dividers sx={{ pt: 2.5 }}>
+        <DialogContent className="zzv-shop-product-modal__content">
           {renderProductEditor()}
         </DialogContent>
-        <DialogActions sx={{ p: 2, gap: 1, flexWrap: 'wrap' }}>
+        <DialogActions className="zzv-shop-product-modal__footer">
           {selectedProduct && scope === 'active' ? (
             <Button
+              className="zzv-shop-product-modal__delete"
               color="warning"
-              variant="outlined"
               startIcon={<DeleteOutline />}
               onClick={() => handleSoftDelete(selectedProduct.id)}
-              sx={{ textTransform: 'none', fontWeight: 800, borderRadius: 3, mr: 'auto' }}
             >
-              Delete
+              {t('shopProducts.delete', 'Delete')}
             </Button>
           ) : null}
           <Button
-            variant="outlined"
             onClick={() => setProductModalOpen(false)}
-            sx={{ textTransform: 'none', fontWeight: 800, borderRadius: 3 }}
           >
-            Cancel
+            {t('shopProducts.cancel', 'Cancel')}
           </Button>
           <Button
             type="submit"
@@ -1741,19 +1451,8 @@ const ShopAdminProductsPage = () => {
             variant="contained"
             startIcon={<Save />}
             disabled={createMutation.isLoading || updateMutation.isLoading || uploadImageMutation.isLoading}
-            sx={{
-              textTransform: 'none',
-              fontWeight: 800,
-              borderRadius: 3,
-              bgcolor: '#172033',
-              color: '#ffffff',
-              '& .MuiButton-startIcon': {
-                color: 'inherit',
-              },
-              '&:hover': { bgcolor: '#0f1726' },
-            }}
           >
-            {selectedProduct ? 'Save Changes' : 'Create Product'}
+            {selectedProduct ? t('shopProducts.save', 'Save') : t('shopProducts.create', 'Create')}
           </Button>
         </DialogActions>
       </Dialog>

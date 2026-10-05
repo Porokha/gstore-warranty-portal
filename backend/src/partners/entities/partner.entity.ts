@@ -31,6 +31,9 @@ export class Partner {
   @Column({ default: true })
   active: boolean;
 
+  @Column({ type: 'datetime', nullable: true })
+  archived_at: Date | null;
+
   @CreateDateColumn()
   created_at: Date;
 

@@ -391,9 +391,12 @@ const SettingsPage = () => {
   }
 
   return (
-    <div>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">{t('common.settings')}</Typography>
+    <div className="zzv-staff-workspace zzv-staff-workspace--settings">
+      <Box className="zzv-staff-workspace__heading">
+        <Box>
+          <Typography variant="h4">{t('common.settings')}</Typography>
+          <Typography variant="body2" color="text.secondary">{t('staffWorkspace.settingsDescription')}</Typography>
+        </Box>
       </Box>
 
       {saveSuccess && (
@@ -402,7 +405,7 @@ const SettingsPage = () => {
         </Alert>
       )}
 
-      <Paper sx={{ p: 3, borderRadius: 3 }}>
+      <Paper className="zzv-staff-workspace__panel" sx={{ p: 3, borderRadius: 3 }}>
         <Tabs value={tab} onChange={(e, newValue) => setTab(newValue)} sx={{ mb: 3 }}>
           <Tab label={t('settings.smsNotifications') || 'SMS Notifications'} />
           <Tab label={t('settings.smsTemplates') || 'SMS Templates'} />
