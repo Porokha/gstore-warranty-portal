@@ -1096,6 +1096,7 @@ const ShopPage = () => {
             <button className="zpos-reset-btn" type="button" onClick={resetFilters}>
               {t('shop.filters.reset')}
             </button>
+            <button className="zpos-figma-filter-close" type="button" onClick={closeFilters} aria-label={t('shop.filters.close')}>×</button>
           </div>
 
           <div className={`zpos-sidebar-scroll ${isFacetsFetching ? 'is-refetching' : ''}`}>
@@ -1230,6 +1231,10 @@ const ShopPage = () => {
                 </label>
               </div>
             </section>
+          </div>
+          <div className="zpos-figma-filter-actions">
+            <button type="button" onClick={resetFilters}>{t('shop.filters.reset')}</button>
+            <button type="button" onClick={closeFilters}>{isInitialProductsLoading ? '...' : productsTotal.toLocaleString(i18n.language === 'ka' ? 'ka-GE' : 'en-US')} {i18n.language === 'ka' ? 'ნაწილი' : 'parts'}</button>
           </div>
         </aside>
 
