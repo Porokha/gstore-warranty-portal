@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import {
   Alert,
@@ -38,6 +39,7 @@ const statusChipColor = {
 const formatMoney = (value) => `₾${Number(value || 0).toFixed(2)}`;
 
 const ShopAdminOrdersPage = () => {
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const [scope, setScope] = useState('active');
   const [error, setError] = useState('');
@@ -45,6 +47,7 @@ const ShopAdminOrdersPage = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortMode, setSortMode] = useState('unread');
   const [unreadOnly, setUnreadOnly] = useState(false);
+  const [search, setSearch] = useState('');
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   const [confirmState, setConfirmState] = useState({
     open: false,
@@ -117,6 +120,12 @@ const ShopAdminOrdersPage = () => {
   const filteredOrders = useMemo(() => {
     let result = [...orders];
 
+    if (scope === 'active' && search.trim()) {
+      const query = search.trim().toLocaleLowerCase();
+      result = result.filter((order) => [order.order_number, order.customer_name, order.customer_last_name, order.customer_phone]
+        .some((value) => String(value || '').toLocaleLowerCase().includes(query)));
+    }
+
     if (scope === 'active' && statusFilter !== 'all') {
       result = result.filter((order) => order.status === statusFilter);
     }
@@ -144,7 +153,7 @@ const ShopAdminOrdersPage = () => {
     }
 
     return result;
-  }, [orders, scope, sortMode, statusFilter, unreadOnly]);
+  }, [orders, scope, search, sortMode, statusFilter, unreadOnly]);
 
   const selectedOrder = useMemo(
     () => filteredOrders.find((order) => order.id === selectedOrderId) || null,
@@ -205,9 +214,9 @@ const ShopAdminOrdersPage = () => {
     ));
 
   return (
-    <Grid className="zzv-admin-page zzv-admin-page--shop-orders" container spacing={3}>
+    <Grid className="zzv-admin-page zzv-admin-page--shop-orders zzv-shop-orders" container spacing={0}>
       <Grid item xs={12}>
-        <Paper className="zzv-admin-table-card zzv-shop-orders-panel" elevation={0} sx={{ borderRadius: 4, border: '1px solid #dce4f0', overflow: 'hidden' }}>
+        <Paper className="zzv-admin-table-card zzv-shop-orders-panel" elevation={0} sx={{ overflow: 'hidden' }}>
           <Box className="zzv-admin-filter-card" sx={{ p: 3, borderBottom: '1px solid #e6edf7', background: 'linear-gradient(180deg, #fbfcff 0%, #f6f8fc 100%)' }}>
             <Stack
               direction={{ xs: 'column', md: 'row' }}
@@ -217,15 +226,15 @@ const ShopAdminOrdersPage = () => {
             >
               <Box>
                 <Typography sx={{ fontSize: '26px', fontWeight: 900, color: '#172033' }}>
-                  Shop Orders
+                  {t('shopOrders.title')}
                 </Typography>
                 <Typography sx={{ color: '#667085', mt: 0.75 }}>
-                  Inbox-style order workflow with unread tracking, quick filters, and trash recovery.
+                  {t('shopOrders.description')}
                 </Typography>
               </Box>
               <Stack direction="row" spacing={1} flexWrap="wrap">
                 <Chip
-                  label={`${unreadCount} unread`}
+                  label={t('shopOrders.unreadCount', { count: unreadCount })}
                   sx={{
                     borderRadius: 999,
                     bgcolor: unreadCount ? '#efe7ff' : '#eef3f8',
@@ -234,7 +243,7 @@ const ShopAdminOrdersPage = () => {
                   }}
                 />
                 <Chip
-                  label={`${orders.length} total`}
+                  label={t('shopOrders.totalCount', { count: orders.length })}
                   sx={{ borderRadius: 999, bgcolor: '#eef3f8', color: '#344054', fontWeight: 800 }}
                 />
               </Stack>
@@ -245,7 +254,7 @@ const ShopAdminOrdersPage = () => {
                 <Tab
                   key={item.value}
                   value={item.value}
-                  label={item.label}
+                  label={t(`shopOrders.${item.value === 'active' ? 'inbox' : 'trash'}`)}
                   sx={{ textTransform: 'none', minHeight: 42, fontWeight: 800 }}
                 />
               ))}
@@ -260,22 +269,30 @@ const ShopAdminOrdersPage = () => {
           </Box>
 
           {scope === 'active' ? (
-            <Grid container sx={{ minHeight: 640 }}>
-              <Grid item xs={12} lg={4.5} sx={{ borderRight: { lg: '1px solid #e6edf7' } }}>
-                <Box sx={{ p: 2.5, borderBottom: '1px solid #e6edf7' }}>
+            <Grid container className="zzv-shop-orders__split" sx={{ minHeight: 640 }}>
+              <Grid item xs={12} lg={4.5} className="zzv-shop-orders__list-column" sx={{ borderRight: { lg: '1px solid #e6edf7' } }}>
+                <Box className="zzv-shop-orders__toolbar">
+                  <TextField
+                    size="small"
+                    fullWidth
+                    placeholder={t('shopOrders.search')}
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    inputProps={{ 'aria-label': t('shopOrders.search') }}
+                  />
                   <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.25}>
                     <TextField
                       select
                       size="small"
                       fullWidth
-                      label="Status"
+                      label={t('shopOrders.status')}
                       value={statusFilter}
                       onChange={(event) => setStatusFilter(event.target.value)}
                     >
-                      <MenuItem value="all">All statuses</MenuItem>
+                      <MenuItem value="all">{t('shopOrders.allStatuses')}</MenuItem>
                       {statusOptions.map((status) => (
                         <MenuItem key={status} value={status}>
-                          {status}
+                          {t(`shopOrders.statuses.${status}`)}
                         </MenuItem>
                       ))}
                     </TextField>
@@ -283,33 +300,34 @@ const ShopAdminOrdersPage = () => {
                       select
                       size="small"
                       fullWidth
-                      label="Sort"
+                      label={t('shopOrders.sort')}
                       value={sortMode}
                       onChange={(event) => setSortMode(event.target.value)}
                     >
-                      <MenuItem value="unread">Unread first</MenuItem>
-                      <MenuItem value="newest">Newest first</MenuItem>
-                      <MenuItem value="oldest">Oldest first</MenuItem>
+                      <MenuItem value="unread">{t('shopOrders.unreadFirst')}</MenuItem>
+                      <MenuItem value="newest">{t('shopOrders.newestFirst')}</MenuItem>
+                      <MenuItem value="oldest">{t('shopOrders.oldestFirst')}</MenuItem>
                     </TextField>
                   </Stack>
                   <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 1.5 }}>
                     <Chip
-                      label="Unread only"
+                      label={t('shopOrders.allCount', { count: orders.length })}
                       clickable
-                      onClick={() => setUnreadOnly((current) => !current)}
+                      onClick={() => { setUnreadOnly(false); setStatusFilter('all'); }}
                       sx={{
                         borderRadius: 999,
-                        bgcolor: unreadOnly ? '#172033' : '#eef3f8',
-                        color: unreadOnly ? '#fff' : '#344054',
+                        bgcolor: !unreadOnly && statusFilter === 'all' ? '#172033' : '#eef3f8',
+                        color: !unreadOnly && statusFilter === 'all' ? '#fff' : '#344054',
                         fontWeight: 800,
                       }}
                     />
+                    <Chip label={t('shopOrders.unreadCount', { count: unreadCount })} clickable onClick={() => { setUnreadOnly(true); setStatusFilter('all'); }} sx={{ bgcolor: unreadOnly ? '#efe7ff' : '#f6f8fc', color: unreadOnly ? '#6941c6' : '#475467', fontWeight: 700 }} />
                     {statusOptions.map((status) => (
                       <Chip
                         key={status}
-                        label={`${status} ${activeCountByStatus[status] || 0}`}
+                        label={`${t(`shopOrders.statuses.${status}`)} ${activeCountByStatus[status] || 0}`}
                         clickable
-                        onClick={() => setStatusFilter((current) => (current === status ? 'all' : status))}
+                        onClick={() => { setUnreadOnly(false); setStatusFilter((current) => (current === status ? 'all' : status)); }}
                         sx={{
                           borderRadius: 999,
                           bgcolor: statusFilter === status ? '#efe7ff' : '#f6f8fc',
@@ -321,13 +339,13 @@ const ShopAdminOrdersPage = () => {
                   </Stack>
                 </Box>
 
-                <Box sx={{ p: 2, maxHeight: 680, overflowY: 'auto', bgcolor: '#fcfdff' }}>
+                <Box className="zzv-shop-orders__list">
                   {isLoading && renderInboxSkeleton()}
                   {!isLoading && filteredOrders.length === 0 && (
                     <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: '1px dashed #dce4f0', textAlign: 'center' }}>
-                      <Typography sx={{ fontWeight: 800, color: '#172033' }}>No matching orders</Typography>
+                      <Typography sx={{ fontWeight: 800, color: '#172033' }}>{t('shopOrders.noMatches')}</Typography>
                       <Typography sx={{ color: '#667085', mt: 0.5 }}>
-                        Change the filters or wait for new shop orders to arrive.
+                        {t('shopOrders.noMatchesDescription')}
                       </Typography>
                     </Paper>
                   )}
@@ -339,6 +357,7 @@ const ShopAdminOrdersPage = () => {
                       return (
                         <Paper
                           key={order.id}
+                          className={`zzv-shop-orders__item ${selected ? 'is-selected' : ''} ${unread ? 'is-unread' : ''}`}
                           elevation={0}
                           onClick={() => setSelectedOrderId(order.id)}
                           sx={{
@@ -362,13 +381,7 @@ const ShopAdminOrdersPage = () => {
                                 <Typography sx={{ fontWeight: 900, color: '#172033' }}>
                                   {order.order_number}
                                 </Typography>
-                                {unread && (
-                                  <Chip
-                                    size="small"
-                                    label="Unread"
-                                    sx={{ borderRadius: 999, bgcolor: '#6941c6', color: '#fff', fontWeight: 800 }}
-                                  />
-                                )}
+                                {unread && <span className="zzv-shop-orders__unread-dot" title={t('shopOrders.unread')} />}
                               </Stack>
                               <Typography sx={{ fontSize: '15px', fontWeight: 700, color: '#172033', mt: 0.5 }}>
                                 {order.customer_name} {order.customer_last_name || ''}
@@ -384,17 +397,17 @@ const ShopAdminOrdersPage = () => {
                           <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1.25 }}>
                             <Chip
                               size="small"
-                              label={order.status}
+                              label={t(`shopOrders.statuses.${order.status}`, { defaultValue: order.status })}
                               color={statusChipColor[order.status] || 'default'}
                               sx={{ borderRadius: 999, fontWeight: 700 }}
                             />
                             <Chip
                               size="small"
-                              label={`${Array.isArray(order.items_json) ? order.items_json.length : 0} items`}
+                              label={t('shopOrders.itemsCount', { count: Array.isArray(order.items_json) ? order.items_json.length : 0 })}
                               sx={{ borderRadius: 999, bgcolor: '#eef3f8', color: '#344054', fontWeight: 700 }}
                             />
                             <Typography sx={{ fontSize: '11px', color: '#98a2b3', ml: 'auto' }}>
-                              {new Date(order.created_at).toLocaleString()}
+                              {new Date(order.created_at).toLocaleString(i18n.language === 'ka' ? 'ka-GE' : 'en-GB')}
                             </Typography>
                           </Stack>
                         </Paper>
@@ -403,17 +416,17 @@ const ShopAdminOrdersPage = () => {
                 </Box>
               </Grid>
 
-              <Grid item xs={12} lg={7.5}>
-                <Box sx={{ p: 3 }}>
+              <Grid item xs={12} lg={7.5} className="zzv-shop-orders__detail-column">
+                <Box className="zzv-shop-orders__detail">
                   {selectedOrder ? (
-                    <Stack spacing={2.5}>
-                      <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>
+                    <Stack spacing={2.5} className="zzv-shop-orders__detail-content">
+                      <Stack className="zzv-shop-orders__detail-heading" direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>
                         <Box>
                           <Typography sx={{ fontSize: '28px', fontWeight: 900, color: '#172033' }}>
                             {selectedOrder.order_number}
                           </Typography>
                           <Typography sx={{ color: '#667085', mt: 0.5 }}>
-                            Created {new Date(selectedOrder.created_at).toLocaleString()}
+                            {t('shopOrders.created')} {new Date(selectedOrder.created_at).toLocaleString(i18n.language === 'ka' ? 'ka-GE' : 'en-GB')}
                           </Typography>
                         </Box>
                         <Stack direction="row" spacing={1} flexWrap="wrap">
@@ -424,11 +437,11 @@ const ShopAdminOrdersPage = () => {
                         </Stack>
                       </Stack>
 
-                      <Grid container spacing={2}>
+                      <Grid container spacing={2} className="zzv-shop-orders__info-grid">
                         <Grid item xs={12} md={6}>
-                          <Paper elevation={0} sx={{ p: 2.25, borderRadius: 3, border: '1px solid #e6edf7', height: '100%' }}>
+                          <Paper elevation={0} className="zzv-shop-orders__info-card" sx={{ height: '100%' }}>
                             <Typography sx={{ fontSize: '12px', fontWeight: 800, color: '#667085', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                              Customer
+                              {t('shopOrders.customer')}
                             </Typography>
                             <Typography sx={{ fontSize: '20px', fontWeight: 900, color: '#172033', mt: 1 }}>
                               {selectedOrder.customer_name} {selectedOrder.customer_last_name || ''}
@@ -438,38 +451,38 @@ const ShopAdminOrdersPage = () => {
                           </Paper>
                         </Grid>
                         <Grid item xs={12} md={6}>
-                          <Paper elevation={0} sx={{ p: 2.25, borderRadius: 3, border: '1px solid #e6edf7', height: '100%' }}>
+                          <Paper elevation={0} className="zzv-shop-orders__info-card" sx={{ height: '100%' }}>
                             <Typography sx={{ fontSize: '12px', fontWeight: 800, color: '#667085', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                              Order Meta
+                              {t('shopOrders.orderMeta')}
                             </Typography>
                             <Stack spacing={0.9} sx={{ mt: 1 }}>
                               <Typography sx={{ color: '#344054' }}>
-                                Heard about us: <strong>{selectedOrder.heard_about || 'Not provided'}</strong>
+                                {t('shopOrders.heardAbout')}: <strong>{selectedOrder.heard_about || t('shopOrders.notProvided')}</strong>
                               </Typography>
                               <Typography sx={{ color: '#344054' }}>
-                                Partner warranty: <strong>{selectedOrder.has_partner_warranty ? 'Yes' : 'No'}</strong>
+                                {t('shopOrders.partnerWarranty')}: <strong>{selectedOrder.has_partner_warranty ? t('shopOrders.yes') : t('shopOrders.no')}</strong>
                               </Typography>
                               {selectedOrder.has_partner_warranty && (
                                 <Typography sx={{ color: '#344054' }}>
-                                  Warranty ID: <strong>{selectedOrder.partner_warranty_id || 'Missing'}</strong>
+                                  {t('shopOrders.warrantyId')}: <strong>{selectedOrder.partner_warranty_id || t('shopOrders.missing')}</strong>
                                 </Typography>
                               )}
                               <Typography sx={{ color: '#344054' }}>
-                                Payment: <strong>{selectedOrder.payment_method || 'onsite'}</strong>
+                                {t('shopOrders.payment')}: <strong>{selectedOrder.payment_method || 'onsite'}</strong>
                               </Typography>
                             </Stack>
                           </Paper>
                         </Grid>
                       </Grid>
 
-                      <Paper elevation={0} sx={{ p: 2.25, borderRadius: 3, border: '1px solid #e6edf7' }}>
+                      <Paper elevation={0} className="zzv-shop-orders__workflow">
                         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ xs: 'stretch', md: 'center' }}>
                           <Box>
                             <Typography sx={{ fontSize: '12px', fontWeight: 800, color: '#667085', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                              Workflow
+                              {t('shopOrders.workflow')}
                             </Typography>
                             <Typography sx={{ fontSize: '18px', fontWeight: 900, color: '#172033', mt: 1 }}>
-                              Update status and keep the inbox clean
+                              {t('shopOrders.workflowDescription')}
                             </Typography>
                           </Box>
                           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.25}>
@@ -487,7 +500,7 @@ const ShopAdminOrdersPage = () => {
                             >
                               {statusOptions.map((status) => (
                                 <MenuItem key={status} value={status}>
-                                  {status}
+                                  {t(`shopOrders.statuses.${status}`)}
                                 </MenuItem>
                               ))}
                             </TextField>
@@ -519,21 +532,22 @@ const ShopAdminOrdersPage = () => {
                                 }
                                 sx={{ textTransform: 'none', fontWeight: 800, borderRadius: 3 }}
                               >
-                                Move to Trash
+                                {t('shopOrders.moveToTrash')}
                               </Button>
                             </Stack>
                           </Stack>
                         </Stack>
                       </Paper>
 
-                      <Paper elevation={0} sx={{ p: 2.25, borderRadius: 3, border: '1px solid #e6edf7' }}>
+                      <Paper elevation={0} className="zzv-shop-orders__items-card">
                         <Typography sx={{ fontSize: '12px', fontWeight: 800, color: '#667085', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                          Items
+                          {t('shopOrders.items')}
                         </Typography>
                         <Stack spacing={1.25} sx={{ mt: 1.5 }}>
                           {(selectedOrder.items_json || []).map((item, index) => (
                             <Box
                               key={`${selectedOrder.id}-item-${index}`}
+                              className="zzv-shop-orders__product"
                               sx={{
                                 p: 1.5,
                                 borderRadius: 3,
@@ -547,7 +561,7 @@ const ShopAdminOrdersPage = () => {
                                     {item.title}
                                   </Typography>
                                   <Typography sx={{ fontSize: '12px', color: '#667085', mt: 0.35 }}>
-                                    {item.mode} • qty {item.quantity}
+                                    {item.mode} • {t('shopOrders.quantity')} {item.quantity}
                                   </Typography>
                                 </Box>
                                 <Typography sx={{ fontWeight: 900, color: '#172033', whiteSpace: 'nowrap' }}>
@@ -560,25 +574,26 @@ const ShopAdminOrdersPage = () => {
                         <Divider sx={{ my: 2 }} />
                         <Stack spacing={1}>
                           <Stack direction="row" justifyContent="space-between">
-                            <Typography sx={{ color: '#667085' }}>Subtotal</Typography>
+                            <Typography sx={{ color: '#667085' }}>{t('shopOrders.subtotal')}</Typography>
                             <Typography sx={{ fontWeight: 800 }}>{formatMoney(selectedOrder.subtotal_amount)}</Typography>
                           </Stack>
                           <Stack direction="row" justifyContent="space-between">
-                            <Typography sx={{ color: '#667085' }}>Service</Typography>
+                            <Typography sx={{ color: '#667085' }}>{t('shopOrders.service')}</Typography>
                             <Typography sx={{ fontWeight: 800 }}>{formatMoney(selectedOrder.service_amount)}</Typography>
                           </Stack>
                           <Stack direction="row" justifyContent="space-between">
-                            <Typography sx={{ color: '#172033', fontWeight: 900 }}>Total</Typography>
+                            <Typography sx={{ color: '#172033', fontWeight: 900 }}>{t('shopOrders.total')}</Typography>
                             <Typography sx={{ color: '#172033', fontWeight: 900 }}>{formatMoney(selectedOrder.total_amount)}</Typography>
                           </Stack>
                         </Stack>
                       </Paper>
                     </Stack>
                   ) : (
-                    <Paper elevation={0} sx={{ p: 4, borderRadius: 3, border: '1px dashed #dce4f0', textAlign: 'center' }}>
-                      <Typography sx={{ fontWeight: 900, color: '#172033' }}>Select an order</Typography>
+                    <Paper elevation={0} className="zzv-shop-orders__empty">
+                      <img src="/figma-shop-admin/orders-empty.svg" alt="" width="48" height="48" />
+                      <Typography sx={{ fontWeight: 900, color: '#172033' }}>{t('shopOrders.selectOrder')}</Typography>
                       <Typography sx={{ color: '#667085', mt: 0.75 }}>
-                        Choose an order from the inbox to view customer details, items, and workflow controls.
+                        {t('shopOrders.selectOrderDescription')}
                       </Typography>
                     </Paper>
                   )}
@@ -586,7 +601,7 @@ const ShopAdminOrdersPage = () => {
               </Grid>
             </Grid>
           ) : (
-            <Box sx={{ p: 3 }}>
+            <Box className="zzv-shop-orders__trash">
               {isLoading &&
                 Array.from({ length: 4 }).map((_, index) => (
                   <Paper key={`trash-skeleton-${index}`} elevation={0} sx={{ p: 2, borderRadius: 3, border: '1px solid #e5ebf3', mb: 1.5 }}>
@@ -596,15 +611,15 @@ const ShopAdminOrdersPage = () => {
                 ))}
               {!isLoading && orders.length === 0 && (
                 <Paper elevation={0} sx={{ p: 4, borderRadius: 3, border: '1px dashed #dce4f0', textAlign: 'center' }}>
-                  <Typography sx={{ fontWeight: 900, color: '#172033' }}>Trash is empty</Typography>
+                  <Typography sx={{ fontWeight: 900, color: '#172033' }}>{t('shopOrders.trashEmpty')}</Typography>
                   <Typography sx={{ color: '#667085', mt: 0.75 }}>
-                    Deleted shop orders will appear here for restore or permanent delete.
+                    {t('shopOrders.trashEmptyDescription')}
                   </Typography>
                 </Paper>
               )}
               {!isLoading &&
                 orders.map((order) => (
-                  <Paper key={order.id} elevation={0} sx={{ p: 2.25, borderRadius: 3, border: '1px solid #e6edf7', mb: 1.5 }}>
+                  <Paper key={order.id} className="zzv-shop-orders__trash-item" elevation={0} sx={{ mb: 1.5 }}>
                     <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>
                       <Box>
                         <Typography sx={{ fontWeight: 900, color: '#172033' }}>{order.order_number}</Typography>
@@ -612,7 +627,7 @@ const ShopAdminOrdersPage = () => {
                           {order.customer_name} {order.customer_last_name || ''} • {order.customer_phone}
                         </Typography>
                         <Typography sx={{ color: '#98a2b3', fontSize: '12px', mt: 0.5 }}>
-                          Deleted {order.deleted_at ? new Date(order.deleted_at).toLocaleString() : 'Unknown'}
+                          {t('shopOrders.deleted')} {order.deleted_at ? new Date(order.deleted_at).toLocaleString(i18n.language === 'ka' ? 'ka-GE' : 'en-GB') : t('shopOrders.unknown')}
                         </Typography>
                       </Box>
                       <Stack direction="row" spacing={1}>
@@ -623,7 +638,7 @@ const ShopAdminOrdersPage = () => {
                           onClick={() => restoreMutation.mutate(order.id)}
                           sx={{ textTransform: 'none', fontWeight: 800, borderRadius: 3 }}
                         >
-                          Restore
+                          {t('shopOrders.restore')}
                         </Button>
                         <Button
                           color="error"
@@ -641,7 +656,7 @@ const ShopAdminOrdersPage = () => {
                           }
                           sx={{ textTransform: 'none', fontWeight: 800, borderRadius: 3 }}
                         >
-                          Delete Permanently
+                          {t('shopOrders.deletePermanently')}
                         </Button>
                       </Stack>
                     </Stack>

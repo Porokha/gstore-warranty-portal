@@ -24,9 +24,9 @@ import ResultBar from '../../components/cases/ResultBar';
 import CustomDataTable from '../../components/common/CustomDataTable';
 
 const metricCardSx = {
-  p: 2.5,
-  borderRadius: 4,
-  border: '1px solid rgba(165, 118, 255, 0.16)',
+  p: 2,
+  borderRadius: '12px',
+  border: '1px solid var(--zzv-border-subtle)',
   boxShadow: 'none',
   display: 'flex',
   alignItems: 'center',
@@ -40,9 +40,9 @@ const metricCardSx = {
 };
 
 const metricIconWrapSx = {
-  width: 52,
-  height: 52,
-  borderRadius: 3,
+  width: 40,
+  height: 40,
+  borderRadius: '8px',
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -190,17 +190,19 @@ const MyCasesPage = () => {
   const completedCount = normalizeCases(completedCases).length;
 
   return (
-    <Box>
-      <Box mb={3}>
-        <Typography variant="h4" sx={{ mb: 1 }}>
+    <Box className="zzv-staff-workspace zzv-staff-workspace--my-cases">
+      <Box className="zzv-staff-workspace__heading">
+        <Box>
+        <Typography variant="h4">
           {t('common.myServiceCases') || 'My Service Cases'}
         </Typography>
-        <Typography variant="body1" color="text.secondary">
+        <Typography variant="body2" color="text.secondary">
           {t('dashboard.welcome')}
         </Typography>
+        </Box>
       </Box>
 
-      <Grid container spacing={2.5} mb={3}>
+      <Grid container spacing={2} className="zzv-staff-workspace__metrics">
         <Grid item xs={12} md={4}>
           <Paper
             sx={metricCardSx}

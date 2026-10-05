@@ -23,8 +23,9 @@ export const filesService = {
     return response.data;
   },
 
-  getFileUrl: (file) => {
-    const baseUrl = process.env.REACT_APP_API_URL || '/api';
-    return `${baseUrl}/files/${file.id}/download`;
+  download: async (fileId) => {
+    const response = await api.get(`/files/${fileId}/download`, { responseType: 'blob' });
+    return response.data;
   },
+
 };

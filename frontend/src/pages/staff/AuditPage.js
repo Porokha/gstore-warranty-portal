@@ -58,14 +58,17 @@ const AuditPage = () => {
   }
 
   return (
-    <Box>
-      <Typography variant="h4" gutterBottom>
-        {t('common.audit') || 'Audit Log'}
-      </Typography>
+    <Box className="zzv-staff-workspace zzv-staff-workspace--audit">
+      <Box className="zzv-staff-workspace__heading">
+        <Box>
+          <Typography variant="h4">{t('common.audit')}</Typography>
+          <Typography variant="body2" color="text.secondary">{t('staffWorkspace.auditDescription')}</Typography>
+        </Box>
+      </Box>
 
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Box display="flex" gap={2} flexWrap="wrap">
+      <Paper className="zzv-staff-workspace__filters">
+        <Box className="zzv-staff-workspace__filter-grid">
           <TextField
             size="small"
             label={t('common.userId') || 'User ID'}
@@ -103,8 +106,8 @@ const AuditPage = () => {
       </Paper>
 
       {/* Audit Logs Table */}
-      <TableContainer component={Paper}>
-        <Table>
+      <TableContainer component={Paper} className="zzv-staff-workspace__table-wrap">
+        <Table className="zzv-staff-workspace__table">
           <TableHead>
             <TableRow>
               <TableCell>{t('common.date') || 'Date'}</TableCell>
@@ -127,14 +130,14 @@ const AuditPage = () => {
                     <Chip label={log.action} size="small" />
                   </TableCell>
                   <TableCell>
-                    <Accordion>
+                    <Accordion className="zzv-staff-workspace__audit-detail" disableGutters elevation={0}>
                       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                         <Typography variant="body2">
                           {t('common.viewPayload') || 'View Payload'}
                         </Typography>
                       </AccordionSummary>
                       <AccordionDetails>
-                        <pre style={{ fontSize: '12px', overflow: 'auto' }}>
+                        <pre>
                           {JSON.stringify(log.payload_json, null, 2)}
                         </pre>
                       </AccordionDetails>
@@ -157,4 +160,3 @@ const AuditPage = () => {
 };
 
 export default AuditPage;
-

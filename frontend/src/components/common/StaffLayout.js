@@ -25,23 +25,11 @@ import {
   Alert,
   Badge,
   CircularProgress,
+  useMediaQuery,
 } from '@mui/material';
 import {
-  Dashboard as DashboardIcon,
-  FolderOpen as OpenCasesIcon,
-  Folder as ClosedCasesIcon,
-  VerifiedUser as WarrantiesIcon,
-  AccountBalance as FinanceIcon,
-  BarChart as StatisticsIcon,
-  Settings as SettingsIcon,
-  History as AuditIcon,
-  CloudUpload as ImportIcon,
   Notifications as NotificationsIcon,
-  ExpandMore as ExpandMoreIcon,
-  Person as PersonIcon,
-  Business as PartnersIcon,
-  ChevronLeft,
-  ChevronRight,
+  Menu as MenuIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { usersService } from '../../services/usersService';
@@ -49,8 +37,9 @@ import { notificationsService } from '../../services/notificationsService';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { hasFinanceStatisticsAccess, isManagementRole, isTechnicianRole, roleLabel, ROLE } from '../../utils/roles';
 
-const EXPANDED_DRAWER_WIDTH = 280;
-const COLLAPSED_DRAWER_WIDTH = 88;
+const EXPANDED_DRAWER_WIDTH = 240;
+const COLLAPSED_DRAWER_WIDTH = 64;
+const navIcon = (name) => `/figma-staff/nav-${name}.svg`;
 
 const StaffLayout = () => {
   const { t, i18n } = useTranslation();
@@ -72,7 +61,10 @@ const StaffLayout = () => {
     if (typeof window === 'undefined') return false;
     return localStorage.getItem('zezva.sidebar.collapsed') === 'true';
   });
-  const drawerWidth = isCollapsed ? COLLAPSED_DRAWER_WIDTH : EXPANDED_DRAWER_WIDTH;
+  const isMobile = useMediaQuery('(max-width:920px)');
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const drawerWidth = isMobile ? EXPANDED_DRAWER_WIDTH : isCollapsed ? COLLAPSED_DRAWER_WIDTH : EXPANDED_DRAWER_WIDTH;
+  const sidebarCollapsed = !isMobile && isCollapsed;
   const mustChangePassword = Boolean(user?.must_change_password);
   const receivesManagerNotifications = [ROLE.MANAGER, ROLE.TECH_MANAGER, ROLE.SUPER_TECHNICIAN].includes(user?.role);
   const queryClient = useQueryClient();
@@ -116,6 +108,10 @@ const StaffLayout = () => {
   }, [mustChangePassword]);
 
   const toggleSidebar = () => {
+    if (isMobile) {
+      setMobileMenuOpen(false);
+      return;
+    }
     setIsCollapsed((prev) => {
       const next = !prev;
       if (typeof window !== 'undefined') {
@@ -217,30 +213,30 @@ const StaffLayout = () => {
   };
 
   const menuItems = [
-    { path: '/staff/dashboard', label: t('common.dashboard'), icon: <DashboardIcon /> },
+    { path: '/staff/dashboard', label: t('common.dashboard'), icon: navIcon('dashboard') },
     ...(isTechnicianRole(user?.role)
-      ? [{ path: '/staff/my-cases', label: t('common.myServiceCases') || 'My Service Cases', icon: <OpenCasesIcon /> }]
+      ? [{ path: '/staff/my-cases', label: t('common.myServiceCases') || 'My Service Cases', icon: navIcon('cases') }]
       : []),
-    { path: '/staff/cases', label: t('common.serviceCases'), icon: <OpenCasesIcon /> },
-    { path: '/staff/partners', label: t('common.partners') || 'Partners', icon: <PartnersIcon /> },
-    { path: '/staff/warranties', label: t('common.warranties'), icon: <WarrantiesIcon /> },
+    { path: '/staff/cases', label: t('common.serviceCases'), icon: navIcon('cases') },
+    { path: '/staff/partners', label: t('common.partners') || 'Partners', icon: navIcon('partners') },
+    { path: '/staff/warranties', label: t('common.warranties'), icon: navIcon('warranties') },
     ...(hasManagementAccess
       ? [
           ...(canViewFinanceStatistics
             ? [
-                { path: '/staff/finance', label: t('common.finance'), icon: <FinanceIcon /> },
-                { path: '/staff/statistics', label: t('common.statistics') || 'Statistics', icon: <StatisticsIcon /> },
+                { path: '/staff/finance', label: t('common.finance'), icon: navIcon('finance') },
+                { path: '/staff/statistics', label: t('common.statistics') || 'Statistics', icon: navIcon('statistics') },
               ]
             : []),
-          ...(isAdmin ? [{ path: '/staff/import', label: t('common.importData'), icon: <ImportIcon /> }] : []),
+          ...(isAdmin ? [{ path: '/staff/import', label: t('common.importData'), icon: navIcon('import') }] : []),
         ]
       : []),
   ];
 
   const bottomMenuItems = isAdmin
     ? [
-        { path: '/staff/settings', label: t('common.settings'), icon: <SettingsIcon /> },
-        { path: '/staff/audit', label: t('common.audit'), icon: <AuditIcon /> },
+        { path: '/staff/settings', label: t('common.settings'), icon: navIcon('settings') },
+        { path: '/staff/audit', label: t('common.audit'), icon: navIcon('audit') },
       ]
     : [];
 
@@ -259,77 +255,70 @@ const StaffLayout = () => {
       sx={{
         display: 'flex',
         minHeight: '100vh',
-        bgcolor: '#fbf9ff',
-        '& .MuiPaper-root': {
-          borderRadius: '20px',
-        },
-        '& .MuiButton-root, & .MuiChip-root, & .MuiOutlinedInput-root, & .MuiAlert-root': {
-          borderRadius: '14px',
-        },
+        bgcolor: '#fbfafe',
+        fontFamily: 'var(--font-platform)',
       }}
     >
       <Drawer
-        variant="permanent"
+        variant={isMobile ? 'temporary' : 'permanent'}
+        open={isMobile ? mobileMenuOpen : true}
+        onClose={() => setMobileMenuOpen(false)}
+        ModalProps={{ keepMounted: true }}
         sx={{
-          width: drawerWidth,
+          width: isMobile ? 0 : drawerWidth,
           flexShrink: 0,
           '& .MuiDrawer-paper': {
             width: drawerWidth,
             boxSizing: 'border-box',
-            bgcolor: '#18171d',
-            color: '#f7f3ff',
-            borderRight: '1px solid rgba(130, 76, 255, 0.28)',
-            boxShadow: '14px 0 44px rgba(24, 23, 29, 0.16)',
+            bgcolor: '#14121c',
+            color: '#9c97ae',
+            borderRight: '1px solid #14121c',
+            boxShadow: 'none',
             transition: 'width 0.2s ease',
           },
         }}
       >
         <Toolbar
           sx={{
-            bgcolor: '#18171d',
-            minHeight: '80px !important',
+            bgcolor: '#14121c',
+            minHeight: '68px !important',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            px: isCollapsed ? 1 : 2,
-            py: 2,
+            px: sidebarCollapsed ? 1 : 1.5,
+            py: 1,
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {isCollapsed ? (
+            {sidebarCollapsed ? (
               <Box
                 component="img"
                 src="/brand-logotype-original.svg"
                 alt="ZEZVA mini logo"
-                sx={{ width: 36, height: 36 }}
+                sx={{ width: 32, height: 32 }}
               />
             ) : (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Box
-                  component="img"
-                  src="/brand-logo-horizontal.svg"
-                  alt="ZEZVA logo"
-                  sx={{ width: 132, height: 'auto' }}
-                />
-              </Box>
+              <Box component="img" src="/figma-staff/dashboard-logo.svg" alt="ZEZVA" width={99} height={16} />
             )}
           </Box>
-          <IconButton onClick={toggleSidebar} size="small" sx={{ color: '#f5f3ff' }}>
-            {isCollapsed ? <ChevronRight fontSize="small" /> : <ChevronLeft fontSize="small" />}
+          <IconButton onClick={toggleSidebar} size="small" aria-label={sidebarCollapsed ? 'Expand navigation' : 'Collapse navigation'} sx={{ color: '#9c97ae', width: 36, height: 36, borderRadius: '8px' }}>
+            <Box component="img" src="/figma-staff/nav-collapse.svg" alt="" width={20} height={20} sx={{ transform: sidebarCollapsed ? 'rotate(180deg)' : 'none' }} />
           </IconButton>
         </Toolbar>
         
         <Box 
           sx={{ 
-            overflow: isCollapsed ? 'hidden' : 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: sidebarCollapsed ? 'hidden' : 'auto',
             flex: 1,
             '&::-webkit-scrollbar': {
-              display: isCollapsed ? 'none' : 'auto',
+              display: sidebarCollapsed ? 'none' : 'auto',
             },
-            scrollbarWidth: isCollapsed ? 'none' : 'thin',
+            scrollbarWidth: sidebarCollapsed ? 'none' : 'thin',
           }}
         >
-          <List sx={{ px: 2, py: 1 }}>
+          <List sx={{ px: 1.5, py: 0 }}>
             {menuItems.map((item) => {
               const isActive = location.pathname === item.path || 
                 (item.path === '/staff/my-cases' && location.pathname.startsWith('/staff/my-cases')) ||
@@ -340,17 +329,19 @@ const StaffLayout = () => {
                   <ListItemButton 
                     component={Link} 
                     to={item.path}
+                    onClick={() => setMobileMenuOpen(false)}
                     selected={isActive}
                     sx={{
-                      borderRadius: 2,
-                      py: 1.5,
-                      justifyContent: isCollapsed ? 'center' : 'flex-start',
-                      px: isCollapsed ? 1.5 : 2,
+                      height: 40,
+                      borderRadius: '8px',
+                      py: 0,
+                      justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+                      px: sidebarCollapsed ? 0 : 1.5,
                       '&.Mui-selected': {
-                      bgcolor: 'rgba(130, 76, 255, 0.24)',
+                      bgcolor: '#26222f',
                       color: '#ffffff',
                       '&:hover': {
-                          bgcolor: 'rgba(130, 76, 255, 0.34)',
+                          bgcolor: '#322c3d',
                         },
                       },
                       '&:hover': {
@@ -360,23 +351,23 @@ const StaffLayout = () => {
                   >
                     <Box
                       sx={{
-                        mr: isCollapsed ? 0 : 2,
+                        mr: sidebarCollapsed ? 0 : 1,
                         display: 'flex',
                         alignItems: 'center',
-                        color: isActive ? '#ffffff' : '#d8cbff',
                       }}
                     >
-                      {item.icon}
+                      <Box component="img" src={item.icon} alt="" width={20} height={20} sx={{ filter: isActive ? 'brightness(0) invert(1)' : 'none' }} />
                     </Box>
                     <ListItemText 
                       primary={item.label}
                       primaryTypographyProps={{
                         fontSize: '14px',
+                        color: isActive ? '#ffffff' : '#9c97ae',
                         fontWeight: isActive ? 600 : 400,
                       }}
                       sx={{
-                        opacity: isCollapsed ? 0 : 1,
-                        maxWidth: isCollapsed ? 0 : '100%',
+                        opacity: sidebarCollapsed ? 0 : 1,
+                        maxWidth: sidebarCollapsed ? 0 : '100%',
                         transition: 'opacity 0.2s ease',
                       }}
                     />
@@ -387,10 +378,10 @@ const StaffLayout = () => {
           </List>
 
           {bottomMenuItems.length > 0 && (
-            <>
-              <Divider sx={{ borderColor: 'rgba(165, 118, 255, 0.18)', my: 2, mx: 2 }} />
+            <Box sx={{ mt: 'auto', pb: 1.5 }}>
+              <Divider sx={{ borderColor: '#26222f', my: 1.5, mx: 1.5 }} />
 
-              <List sx={{ px: 2, py: 1 }}>
+              <List sx={{ px: 1.5, py: 0 }}>
                 {bottomMenuItems.map((item) => {
                   const isActive = location.pathname === item.path;
                   return (
@@ -398,17 +389,19 @@ const StaffLayout = () => {
                       <ListItemButton 
                         component={Link} 
                         to={item.path}
+                        onClick={() => setMobileMenuOpen(false)}
                         selected={isActive}
                         sx={{
-                          borderRadius: 2,
-                          py: 1.5,
-                          justifyContent: isCollapsed ? 'center' : 'flex-start',
-                          px: isCollapsed ? 1.5 : 2,
+                          height: 40,
+                          borderRadius: '8px',
+                          py: 0,
+                          justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+                          px: sidebarCollapsed ? 0 : 1.5,
                           '&.Mui-selected': {
-                            bgcolor: 'rgba(130, 76, 255, 0.24)',
+                            bgcolor: '#26222f',
                             color: '#ffffff',
                             '&:hover': {
-                              bgcolor: 'rgba(130, 76, 255, 0.34)',
+                              bgcolor: '#322c3d',
                             },
                           },
                           '&:hover': {
@@ -418,23 +411,23 @@ const StaffLayout = () => {
                       >
                         <Box
                           sx={{
-                            mr: isCollapsed ? 0 : 2,
+                            mr: sidebarCollapsed ? 0 : 1,
                             display: 'flex',
                             alignItems: 'center',
-                            color: isActive ? '#ffffff' : '#d8cbff',
                           }}
                         >
-                          {item.icon}
+                          <Box component="img" src={item.icon} alt="" width={20} height={20} sx={{ filter: isActive ? 'brightness(0) invert(1)' : 'none' }} />
                         </Box>
                         <ListItemText 
                           primary={item.label}
                           primaryTypographyProps={{
                             fontSize: '14px',
+                            color: isActive ? '#ffffff' : '#9c97ae',
                             fontWeight: isActive ? 600 : 400,
                           }}
                           sx={{
-                            opacity: isCollapsed ? 0 : 1,
-                            maxWidth: isCollapsed ? 0 : '100%',
+                            opacity: sidebarCollapsed ? 0 : 1,
+                            maxWidth: sidebarCollapsed ? 0 : '100%',
                             transition: 'opacity 0.2s ease',
                           }}
                         />
@@ -443,89 +436,10 @@ const StaffLayout = () => {
                   );
                 })}
               </List>
-            </>
+            </Box>
           )}
         </Box>
 
-        {/* User Profile Section */}
-        <Box
-          sx={{
-            p: 2,
-            borderTop: '1px solid rgba(130, 76, 255, 0.22)',
-            bgcolor: 'rgba(255,255,255,0.08)',
-          }}
-        >
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: isCollapsed ? 0 : 1.5,
-              justifyContent: isCollapsed ? 'center' : 'flex-start',
-            }}
-          >
-            <Avatar
-              onClick={(e) => setUserMenuAnchor(e.currentTarget)}
-              sx={{
-                bgcolor: '#1f2937',
-                border: '1px solid rgba(255,255,255,0.18)',
-                width: 40,
-                height: 40,
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              {getInitials(user?.name || 'User')}
-            </Avatar>
-            {!isCollapsed && (
-              <>
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontWeight: 600,
-                      color: '#ffffff',
-                      fontSize: '13px',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {user?.name || 'User'} {user?.last_name || ''}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: '#d8cbff',
-                      fontSize: '11px',
-                      textTransform: 'capitalize',
-                    }}
-                  >
-                    {roleLabel(user?.role)}
-                  </Typography>
-                </Box>
-                <IconButton
-                  size="small"
-                  sx={{ color: '#d8cbff' }}
-                  onClick={(e) => setUserMenuAnchor(e.currentTarget)}
-                >
-                  <ExpandMoreIcon />
-                </IconButton>
-              </>
-            )}
-          </Box>
-        </Box>
-
-        <Menu
-          anchorEl={userMenuAnchor}
-          open={Boolean(userMenuAnchor)}
-          onClose={() => setUserMenuAnchor(null)}
-        >
-          <MenuItem onClick={openPasswordDialog}>
-            {t('common.accountSettings') || 'Account settings'}
-          </MenuItem>
-          <MenuItem onClick={handleLogout}>Logout</MenuItem>
-        </Menu>
       </Drawer>
 
       {/* Main Content Area */}
@@ -535,33 +449,36 @@ const StaffLayout = () => {
           position="sticky"
           elevation={0}
           sx={{
-            bgcolor: 'rgba(255,255,255,0.92)',
-            color: '#18171d',
-            borderBottom: '1px solid #e6def5',
-            backdropFilter: 'blur(18px)',
-            zIndex: (theme) => theme.zIndex.drawer + 1,
+            bgcolor: '#ffffff',
+            color: '#14121c',
+            borderBottom: '1px solid #eae7f2',
+            zIndex: (theme) => isMobile ? theme.zIndex.appBar : theme.zIndex.drawer + 1,
           }}
         >
           <Toolbar 
             sx={{ 
               justifyContent: 'space-between', 
-              px: 3,
-              minHeight: '64px !important',
+              px: 2,
+              minHeight: '52px !important',
               overflow: 'hidden',
             }}
           >
-            <Box sx={{ flexGrow: 1, minWidth: 0, overflow: 'hidden' }} />
+            {isMobile ? (
+              <IconButton onClick={() => setMobileMenuOpen(true)} aria-label="Open navigation" sx={{ color: '#5b5670' }}>
+                <MenuIcon />
+              </IconButton>
+            ) : <Box sx={{ flexGrow: 1, minWidth: 0 }} />}
             <Box 
               sx={{ 
                 display: 'flex', 
                 alignItems: 'center', 
-                gap: 2,
+                gap: 1,
                 flexShrink: 0,
               }}
             >
               {receivesManagerNotifications && (
                 <IconButton
-                  sx={{ color: '#70687e', flexShrink: 0 }}
+                  sx={{ color: '#5b5670', flexShrink: 0, width: 36, height: 36 }}
                   onClick={handleNotificationsOpen}
                   aria-label={t('notifications.title')}
                 >
@@ -574,32 +491,44 @@ const StaffLayout = () => {
                   </Badge>
                 </IconButton>
               )}
-              <IconButton sx={{ color: '#70687e', flexShrink: 0 }}>
-                <PersonIcon />
-              </IconButton>
               <Button
-                variant="outlined"
-                size="small"
-                onClick={toggleLanguage}
+                onClick={(event) => setUserMenuAnchor(event.currentTarget)}
+                aria-label={`${user?.name || 'User'} ${user?.last_name || ''} - ${roleLabel(user?.role)}`}
+                aria-haspopup="menu"
+                aria-expanded={Boolean(userMenuAnchor)}
                 sx={{
-                  minWidth: 'auto',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  height: 48,
                   px: 1.5,
-                  borderColor: '#e6def5',
-                  color: '#70687e',
+                  color: '#14121c',
                   textTransform: 'none',
-                  flexShrink: 0,
-                  whiteSpace: 'nowrap',
-                  '&:hover': {
-                    borderColor: '#824cff',
-                    bgcolor: '#f7f3ff',
-                  },
+                  fontSize: 14,
+                  '&:hover': { bgcolor: '#f6f4fb' },
                 }}
               >
-                {i18n.language === 'en' ? 'KA' : 'EN'}
+                <Avatar sx={{ width: 32, height: 32, bgcolor: '#14121c', color: '#fff', fontSize: 12, fontWeight: 700 }}>
+                  {getInitials(`${user?.name || 'User'} ${user?.last_name || ''}`)}
+                </Avatar>
+                {!isMobile && <span>{user?.name || 'User'} {user?.last_name || ''}</span>}
+                <Box component="img" src="/figma-staff/profile-chevron.svg" alt="" width={16} height={16} />
               </Button>
             </Box>
           </Toolbar>
         </AppBar>
+
+        <Menu
+          anchorEl={userMenuAnchor}
+          open={Boolean(userMenuAnchor)}
+          onClose={() => setUserMenuAnchor(null)}
+        >
+          <MenuItem onClick={openPasswordDialog}>{t('common.accountSettings')}</MenuItem>
+          <MenuItem onClick={() => { toggleLanguage(); setUserMenuAnchor(null); }}>
+            {i18n.language === 'en' ? 'ქართული' : 'English'}
+          </MenuItem>
+          <MenuItem onClick={handleLogout}>{t('common.logout')}</MenuItem>
+        </Menu>
 
         <Menu
           anchorEl={notificationsAnchor}
@@ -665,10 +594,8 @@ const StaffLayout = () => {
           component="main"
           sx={{
             flexGrow: 1,
-            bgcolor: '#fbf9ff',
-            background:
-              'radial-gradient(circle at 8% 0%, rgba(130,76,255,0.11), transparent 28%), linear-gradient(180deg, #ffffff 0%, #fbf9ff 48%, #f3eeff 100%)',
-            p: 3,
+            bgcolor: '#fbfafe',
+            p: { xs: 1.5, md: 2 },
             overflowY: 'auto',
             overflowX: 'hidden',
             width: '100%',

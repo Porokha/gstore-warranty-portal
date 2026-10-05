@@ -135,9 +135,12 @@ const FinancePage = () => {
   }
 
   return (
-    <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">{t('common.finance')}</Typography>
+    <Box className="zzv-staff-workspace zzv-staff-workspace--finance">
+      <Box className="zzv-staff-workspace__heading">
+        <Box>
+          <Typography variant="h4">{t('common.finance')}</Typography>
+          <Typography variant="body2" color="text.secondary">{t('staffWorkspace.financeDescription')}</Typography>
+        </Box>
         <Button
           variant="outlined"
           startIcon={<DownloadIcon />}
@@ -149,8 +152,8 @@ const FinancePage = () => {
       </Box>
 
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Box display="flex" gap={2} flexWrap="wrap">
+      <Paper className="zzv-staff-workspace__filters">
+        <Box className="zzv-staff-workspace__filter-grid">
           <TextField
             size="small"
             label={t('common.startDate') || 'Start Date'}
@@ -213,15 +216,15 @@ const FinancePage = () => {
       </Paper>
 
       {/* Payments Table */}
-      <TableContainer component={Paper}>
-        <Table>
+      <TableContainer component={Paper} className="zzv-staff-workspace__table-wrap">
+        <Table className="zzv-staff-workspace__table">
           <TableHead>
             <TableRow>
               <TableCell>{t('common.date') || 'Date'}</TableCell>
               <TableCell>{t('case.caseNumber')}</TableCell>
               <TableCell>{t('case.customerName')}</TableCell>
-              <TableCell>{t('common.phone')}</TableCell>
-              <TableCell>{t('payment.type') || 'Type'}</TableCell>
+              <TableCell>{t('case.customerPhone')}</TableCell>
+              <TableCell>{t('staffWorkspace.paymentType')}</TableCell>
               <TableCell>{t('common.amount') || 'Amount'}</TableCell>
               <TableCell>{t('payment.method') || 'Payment Method'}</TableCell>
               <TableCell>{t('payment.status') || 'Payment Status'}</TableCell>
@@ -240,7 +243,7 @@ const FinancePage = () => {
                     {payment.case_?.customer_name} {payment.case_?.customer_last_name}
                   </TableCell>
                   <TableCell>{payment.case_?.customer_phone || '-'}</TableCell>
-                  <TableCell>{payment.offer_type}</TableCell>
+                  <TableCell>{payment.offer_type || '-'}</TableCell>
                   <TableCell>{payment.offer_amount || 0} ₾</TableCell>
                   <TableCell>{payment.payment_method || '-'}</TableCell>
                   <TableCell>

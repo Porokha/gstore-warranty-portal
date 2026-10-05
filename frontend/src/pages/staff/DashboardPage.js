@@ -1,970 +1,369 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from 'react-query';
-import { useNavigate } from 'react-router-dom';
 import {
-  Typography,
-  Grid,
-  Paper,
-  Box,
-  Card,
-  CardContent,
-  Chip,
-  LinearProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Avatar,
-  IconButton,
-  Link,
-  Select,
-  MenuItem,
-  FormControl,
-  CircularProgress,
-  Popover,
-  TextField,
   Button,
+  CircularProgress,
+  IconButton,
+  MenuItem,
+  Popover,
+  Select,
+  TextField,
 } from '@mui/material';
 import {
-  FolderOpen as FolderIcon,
-  CalendarToday as CalendarIcon,
-  Warning as WarningIcon,
-  CheckCircle as CheckCircleIcon,
-  VerifiedUser as WarrantyIcon,
-  AccountBalance as PaymentIcon,
-  TrendingDown as TrendingDownIcon,
-  TrendingUp as TrendingUpIcon,
-  Star as StarIcon,
-  Visibility as ViewIcon,
-  ArrowDropDown as ArrowDropDownIcon,
-  FilterList as FilterIcon,
-  Close as CloseIcon,
-} from '@mui/icons-material';
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { dashboardService } from '../../services/dashboardService';
 import { casesService } from '../../services/casesService';
 import { useAuth } from '../../contexts/AuthContext';
 import { hasFinanceStatisticsAccess, isManagementRole } from '../../utils/roles';
+import CaseQuickViewDialog from '../../components/cases/CaseQuickViewDialog';
+
+const STATUS_COLORS = {
+  completed: '#1aa078',
+  opened: '#eae7f2',
+  investigating: '#2563eb',
+  pending: '#d2691e',
+};
+
+const STATUS_LEVELS = {
+  1: 'opened',
+  2: 'investigating',
+  3: 'pending',
+  4: 'completed',
+};
+
+const deviceLabel = (name, language) => {
+  const labels = {
+    Phone: ['სმარტფონები', 'Smartphones'],
+    Smartphone: ['სმარტფონები', 'Smartphones'],
+    Laptop: ['ლეპტოპები', 'Laptops'],
+    Tablet: ['ტაბლეტები', 'Tablets'],
+    Desktop: ['დესკტოპები', 'Desktops'],
+    Wearable: ['ტარებადი', 'Wearables'],
+    Accessory: ['აქსესუარები', 'Accessories'],
+  };
+  return labels[name]?.[language === 'ka' ? 0 : 1] || name;
+};
+
+const DashboardKpi = ({ icon, tone, label, value, details, onClick }) => (
+  <button className="zzv-staff-kpi" type="button" onClick={onClick}>
+    <span className="zzv-staff-kpi__head">
+      <span className={'zzv-staff-kpi__icon zzv-staff-kpi__icon--' + tone}>
+        <img src={'/figma-staff/kpi-' + icon + '.svg'} width="20" height="20" alt="" />
+      </span>
+      <span>{label}</span>
+    </span>
+    <strong className="zzv-staff-kpi__value">{value}</strong>
+    <span className="zzv-staff-kpi__details">
+      {details.map((detail) => (
+        <span className="zzv-staff-kpi__detail" key={detail.label}>
+          <strong style={{ color: detail.color }}>{detail.value}</strong>
+          <span>{detail.label}</span>
+        </span>
+      ))}
+    </span>
+  </button>
+);
+
+const BarPanel = ({ title, data, color, emptyLabel, suffix }) => (
+  <section className="zzv-staff-chart">
+    <h2>{title}</h2>
+    {data.length > 0 ? (
+      <div className="zzv-staff-chart__plot">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 2, right: 2, bottom: 0, left: 0 }}>
+            <CartesianGrid vertical={false} stroke="#eae7f2" strokeDasharray="3 3" />
+            <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#5b5670', fontSize: 12 }} interval={0} />
+            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9c97ae', fontSize: 11 }} width={38} />
+            <Tooltip
+              cursor={{ fill: '#f6f4fb' }}
+              formatter={(value) => [suffix ? value + ' ' + suffix : value, title]}
+              contentStyle={{ border: '1px solid #eae7f2', borderRadius: 8, fontFamily: 'Google Sans', fontSize: 12 }}
+            />
+            <Bar dataKey="value" fill={color} radius={[3, 3, 0, 0]} maxBarSize={44} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    ) : <div className="zzv-staff-chart__empty">{emptyLabel}</div>}
+  </section>
+);
 
 const DashboardPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const hasManagementAccess = isManagementRole(user?.role);
-  const canViewFinanceStatistics = hasFinanceStatisticsAccess(user?.role);
-  const brand = {
-    violet: '#A576FF',
-    violetSoft: '#EFE7FF',
-    violetDeep: '#8F5EF0',
-    ink: '#18181B',
-    muted: '#5B5568',
-    border: '#E3D7FF',
-    surface: '#FBF9FF',
-    black: '#000000',
-  };
+  const canManage = isManagementRole(user?.role);
+  const canViewFinance = hasFinanceStatisticsAccess(user?.role);
+  const locale = i18n.resolvedLanguage === 'ka' ? 'ka-GE' : 'en-US';
+  const number = (value) => new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(value || 0);
   const [timeFilter, setTimeFilter] = useState('30');
   const [filterAnchor, setFilterAnchor] = useState(null);
-  const [customStart, setCustomStart] = useState(null);
-  const [customEnd, setCustomEnd] = useState(null);
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
+  const [appliedStart, setAppliedStart] = useState('');
+  const [appliedEnd, setAppliedEnd] = useState('');
+  const [previewCaseId, setPreviewCaseId] = useState(null);
+  const filterButtonRef = useRef(null);
 
-  const getTimeRange = () => {
-    const end = new Date();
-    const start = new Date();
-    if (timeFilter === 'custom' && customStart && customEnd) {
-      return { start: customStart, end: customEnd };
+  const getRange = () => {
+    if (timeFilter === 'custom' && appliedStart && appliedEnd) {
+      return {
+        start: new Date(appliedStart + 'T00:00:00'),
+        end: new Date(appliedEnd + 'T23:59:59'),
+      };
     }
-    start.setDate(start.getDate() - parseInt(timeFilter));
+    const end = new Date();
+    const start = new Date(end);
+    start.setDate(start.getDate() - Number(timeFilter));
     return { start, end };
   };
+  const range = getRange();
+  const queryKey = [timeFilter, appliedStart, appliedEnd];
 
-  const timeRange = getTimeRange();
-
-  const { data: stats, isLoading } = useQuery(
-    ['dashboard', timeFilter, customStart, customEnd],
-    () => dashboardService.getStats(timeRange.start, timeRange.end),
-    {
-      refetchInterval: 30000,
-    }
+  const { data: stats, isLoading, isError } = useQuery(
+    ['dashboard-stats', ...queryKey],
+    () => dashboardService.getStats(range.start, range.end),
+    { refetchInterval: 30000 },
   );
-
-  const { data: statusChartData } = useQuery(
-    ['dashboard', 'cases-by-status', timeFilter, customStart, customEnd],
-    () => dashboardService.getCasesByStatus(timeRange.start, timeRange.end),
-    {
-      refetchInterval: 30000,
-    }
+  const { data: statusChartData = [] } = useQuery(
+    ['dashboard-status', ...queryKey],
+    () => dashboardService.getCasesByStatus(range.start, range.end),
+    { refetchInterval: 30000 },
   );
-
-  const { data: completionChartData } = useQuery(
-    ['dashboard', 'completion-time', timeFilter, customStart, customEnd],
-    () => dashboardService.getCompletionTimeByDevice(timeRange.start, timeRange.end),
-    {
-      refetchInterval: 30000,
-    }
+  const { data: completionChartData = [] } = useQuery(
+    ['dashboard-completion', ...queryKey],
+    () => dashboardService.getCompletionTimeByDevice(range.start, range.end),
+    { refetchInterval: 30000 },
   );
-
-  const { data: recentCases } = useQuery(
+  const { data: casesByCategory = [] } = useQuery(
+    ['dashboard-category', ...queryKey],
+    () => dashboardService.getCasesByCategory(range.start, range.end),
+    { refetchInterval: 30000 },
+  );
+  const { data: recentCases = [], isLoading: casesLoading } = useQuery(
     'recent-cases',
     () => casesService.getAll({ limit: 5, sort: 'opened_at', order: 'DESC' }),
     {
       refetchInterval: 30000,
-      select: (data) => {
-        // Handle both array and { data: [...] } response formats
-        if (Array.isArray(data)) return data;
-        if (data?.data && Array.isArray(data.data)) return data.data;
-        return [];
-      },
-    }
-  );
-
-  const { data: casesByCategory } = useQuery(
-    ['dashboard', 'cases-by-category', timeFilter, customStart, customEnd],
-    () => dashboardService.getCasesByCategory(timeRange.start, timeRange.end),
-    {
-      refetchInterval: 30000,
-    }
-  );
-
-  const { data: urgentCasesCount } = useQuery(
-    'urgent-cases-count',
-    () => casesService.getAll({ status: 'opened,investigating,pending', priority: 'high,critical' }),
-    {
-      select: (data) => data?.data?.length || 0,
-      refetchInterval: 30000,
-    }
+      select: (data) => Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [],
+    },
   );
 
   const realTime = stats?.realTime || {};
-  const timeFiltered = stats?.timeFiltered || {};
+  const period = stats?.timeFiltered || {};
+  const loadingValue = isLoading ? '…' : isError ? '—' : null;
+  const completedCount = Number(period.closedCases || 0);
+  const onTimePercent = completedCount ? Math.round((Number(period.onTimeCases || 0) / completedCount) * 1000) / 10 : 0;
+  const activeCount = Number(period.activeWarranties || 0);
+  const expiredCount = Number(period.expiredWarranties || 0);
+  const activeShare = activeCount + expiredCount ? Math.round(activeCount / (activeCount + expiredCount) * 100) : 0;
+  const totalPaid = Number(period.totalMoneyIn || 0);
+  const totalPayments = Number(period.totalPayments || 0);
+  const chartRows = (rows) => (Array.isArray(rows) ? rows : [])
+    .filter((item) => Number(item.value) > 0)
+    .map((item) => ({ ...item, label: deviceLabel(item.name, i18n.resolvedLanguage) }));
+  const completionRows = chartRows(completionChartData);
+  const categoryRows = chartRows(casesByCategory);
+  const statusRows = (Array.isArray(statusChartData) ? statusChartData : [])
+    .map((item) => ({
+      ...item,
+      status: String(item.name || '').toLowerCase(),
+      value: Number(item.value || 0),
+    }))
+    .filter((item) => item.value > 0);
+  const statusTotal = statusRows.reduce((sum, item) => sum + item.value, 0);
 
-  // Calculate on-time percentage
-  const totalCompleted = timeFiltered.closedCases || 0;
-  const onTimeCount = timeFiltered.onTimeCases || 0;
-  const onTimePercentage = totalCompleted > 0 ? Math.round((onTimeCount / totalCompleted) * 100 * 10) / 10 : 0;
-
-  // Chart data from API
-  const statusData = statusChartData || [];
-  const completionTimeData = completionChartData || [];
-
-  const getStatusColor = (status) => {
-    const statusMap = {
-      'opened': '#d4befe',
-      'investigating': '#a576ff',
-      'pending': '#6d28d9',
-      'completed': '#000000',
-    };
-    return statusMap[status?.toLowerCase()] || '#64748b';
+  const openCustomFilter = () => setFilterAnchor(filterButtonRef.current);
+  const selectPeriod = (event) => {
+    if (event.target.value === 'custom') {
+      openCustomFilter();
+      return;
+    }
+    setTimeFilter(event.target.value);
+    setCustomStart('');
+    setCustomEnd('');
+    setAppliedStart('');
+    setAppliedEnd('');
   };
-
-  const getStatusFromLevel = (level) => {
-    const levelMap = {
-      1: 'opened',
-      2: 'investigating',
-      3: 'pending',
-      4: 'completed',
-    };
-    return levelMap[level] || 'opened';
-  };
-
-  const getPriorityColor = (priority) => {
-    const priorityMap = {
-      'high': '#8f5ef0',
-      'critical': '#000000',
-      'normal': '#5b5568',
-      'low': '#d4befe',
-    };
-    return priorityMap[priority?.toLowerCase()] || '#5b5568';
-  };
-
-  const formatDate = (date) => {
-    if (!date) return '';
-    return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
-  const isOverdue = (deadline, statusLevel) => {
-    if (!deadline || statusLevel === 3) return false;
-    return new Date(deadline) < new Date();
-  };
-
-  const handleFilterClick = (event) => {
-    setFilterAnchor(event.currentTarget);
-  };
-
-  const handleFilterClose = () => {
+  const applyCustomFilter = () => {
+    if (!customStart || !customEnd || customStart > customEnd) return;
+    setAppliedStart(customStart);
+    setAppliedEnd(customEnd);
+    setTimeFilter('custom');
     setFilterAnchor(null);
   };
-
-  const handleFilterChange = (type) => {
-    if (type === 'custom') {
-      setTimeFilter('custom');
-    } else {
-      setTimeFilter(type);
-      setCustomStart(null);
-      setCustomEnd(null);
-    }
-    handleFilterClose();
-  };
-
-  const applyCustomFilter = () => {
-    if (customStart && customEnd) {
-      setTimeFilter('custom');
-      handleFilterClose();
-    }
+  const formatDate = (value) => {
+    if (!value) return '—';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '—';
+    return new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date).replaceAll('/', '.');
   };
 
   return (
-    <Box className="zzv-admin-page zzv-admin-page--dashboard">
-      {/* Welcome Section */}
-      <Box className="zzv-admin-page-head" mb={4}>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Box>
-            <Typography variant="h4" sx={{ fontWeight: 700, color: brand.ink, mb: 1 }}>
-              {t('dashboard.title')}
-            </Typography>
-            <Typography variant="body1" sx={{ color: brand.muted }}>
-              {t('dashboard.welcome')}
-            </Typography>
-          </Box>
-          <Box display="flex" gap={1} alignItems="center">
-            <FormControl size="small" sx={{ minWidth: 140 }}>
-              <Select
-                value={timeFilter}
-                onChange={(e) => {
-                  if (e.target.value !== 'custom') {
-                    setTimeFilter(e.target.value);
-                  }
-                }}
-                IconComponent={ArrowDropDownIcon}
-                sx={{ fontSize: '14px', bgcolor: '#ffffff', borderRadius: 2 }}
-              >
-                <MenuItem value="7">{t('dashboard.filters.last7')}</MenuItem>
-                <MenuItem value="30">{t('dashboard.filters.last30')}</MenuItem>
-                <MenuItem value="90">{t('dashboard.filters.last90')}</MenuItem>
-                <MenuItem value="custom">{t('dashboard.filters.customRange')}</MenuItem>
-              </Select>
-            </FormControl>
-            <IconButton
-              size="small"
-              onClick={handleFilterClick}
-              sx={{ border: `1px solid ${brand.border}`, color: brand.muted, bgcolor: '#fff' }}
-            >
-              <FilterIcon />
-            </IconButton>
-          </Box>
-        </Box>
-      </Box>
-
+    <div className="zzv-figma-staff-dashboard">
+      <header className="zzv-figma-staff-dashboard__head">
+        <div>
+          <h1>{t('dashboard.title')}</h1>
+          <p>{t('dashboard.welcome')}</p>
+        </div>
+        <div className="zzv-figma-staff-dashboard__controls">
+          <Select
+            value={timeFilter}
+            onChange={selectPeriod}
+            size="small"
+            aria-label={t('dashboard.filters.customDateRange')}
+            className="zzv-figma-staff-dashboard__period"
+            IconComponent={() => <img src="/figma-staff/select-chevron.svg" width="20" height="20" alt="" />}
+          >
+            <MenuItem value="7">{t('dashboard.filters.last7')}</MenuItem>
+            <MenuItem value="30">{t('dashboard.filters.last30')}</MenuItem>
+            <MenuItem value="90">{t('dashboard.filters.last90')}</MenuItem>
+            <MenuItem value="custom">{t('dashboard.filters.customRange')}</MenuItem>
+          </Select>
+          <IconButton ref={filterButtonRef} onClick={openCustomFilter} aria-label={t('dashboard.filters.customDateRange')} className="zzv-figma-staff-dashboard__filter">
+            <img src="/figma-staff/filter.svg" width="16" height="16" alt="" />
+          </IconButton>
+        </div>
+      </header>
       <Popover
         open={Boolean(filterAnchor)}
         anchorEl={filterAnchor}
-        onClose={handleFilterClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
+        onClose={() => setFilterAnchor(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <Box sx={{ p: 2, minWidth: 300 }}>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{t('dashboard.filters.customDateRange')}</Typography>
-            <IconButton size="small" onClick={handleFilterClose}>
-              <CloseIcon fontSize="small" />
-            </IconButton>
-          </Box>
-          <TextField
-            fullWidth
-            type="date"
-            label={t('dashboard.filters.startDate')}
-            value={customStart ? customStart.toISOString().split('T')[0] : ''}
-            onChange={(e) => setCustomStart(e.target.value ? new Date(e.target.value) : null)}
-            InputLabelProps={{ shrink: true }}
-            sx={{ mb: 2 }}
-            size="small"
-          />
-          <TextField
-            fullWidth
-            type="date"
-            label={t('dashboard.filters.endDate')}
-            value={customEnd ? customEnd.toISOString().split('T')[0] : ''}
-            onChange={(e) => setCustomEnd(e.target.value ? new Date(e.target.value) : null)}
-            InputLabelProps={{ shrink: true }}
-            sx={{ mb: 2 }}
-            size="small"
-          />
-          <Button
-            fullWidth
-            variant="contained"
-            onClick={applyCustomFilter}
-            disabled={!customStart || !customEnd}
-            size="small"
-          >
-            {t('dashboard.filters.apply')}
-          </Button>
-        </Box>
+        <div className="zzv-figma-staff-dashboard__date-filter">
+          <strong>{t('dashboard.filters.customDateRange')}</strong>
+          <TextField label={t('dashboard.filters.startDate')} type="date" size="small" value={customStart} onChange={(event) => setCustomStart(event.target.value)} InputLabelProps={{ shrink: true }} />
+          <TextField label={t('dashboard.filters.endDate')} type="date" size="small" value={customEnd} onChange={(event) => setCustomEnd(event.target.value)} InputLabelProps={{ shrink: true }} />
+          <Button variant="contained" onClick={applyCustomFilter} disabled={!customStart || !customEnd || customStart > customEnd}>{t('dashboard.filters.apply')}</Button>
+        </div>
       </Popover>
 
-      {/* Summary Cards Row 1 - Smaller */}
-      <Grid container spacing={2} mb={2}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            sx={{
-              background: `linear-gradient(135deg, ${brand.violet} 0%, ${brand.violetDeep} 100%)`,
-              color: '#ffffff',
-              borderRadius: 2,
-              boxShadow: '0 18px 36px rgba(143, 94, 240, 0.2)',
-              cursor: 'pointer',
-              '&:hover': { boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)' },
-            }}
-            onClick={() => navigate('/staff/cases')}
-          >
-            <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
-              <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
-                <FolderIcon sx={{ fontSize: 28, opacity: 0.9 }} />
-                <Chip label={t('common.active')} size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
-              </Box>
-              {isLoading ? (
-                <CircularProgress size={24} sx={{ color: '#ffffff' }} />
-              ) : (
-                <>
-                  <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, fontSize: '28px' }}>
-                    {realTime.openCases || 0}
-                  </Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '13px' }}>
-                    {t('dashboard.cards.openCases')}
-                  </Typography>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
+      {isError && <p className="zzv-figma-staff-dashboard__error" role="alert">{t('dashboard.loadError')}</p>}
 
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            sx={{
-              background: `linear-gradient(135deg, ${brand.black} 0%, #2a2a2f 100%)`,
-              color: '#ffffff',
-              borderRadius: 2,
-              boxShadow: '0 18px 36px rgba(0, 0, 0, 0.18)',
-              cursor: 'pointer',
-              '&:hover': { boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)' },
-            }}
-            onClick={() => navigate('/staff/cases?closeToDeadline=true')}
-          >
-            <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
-              <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
-                <CalendarIcon sx={{ fontSize: 28, opacity: 0.9 }} />
-                <Chip label={t('dashboard.badges.dueSoon')} size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
-              </Box>
-              {isLoading ? (
-                <CircularProgress size={24} sx={{ color: '#ffffff' }} />
-              ) : (
-                <>
-                  <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, fontSize: '28px' }}>
-                    {realTime.closeToDeadline || 0}
-                  </Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '13px' }}>
-                    {t('dashboard.cards.closeToDeadline')}
-                  </Typography>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
+      <div className="zzv-staff-kpis">
+        <DashboardKpi
+          icon="cases" tone="purple" label={t('dashboard.cards.openCases')}
+          value={loadingValue ?? number(realTime.openCases)}
+          onClick={() => navigate('/staff/cases')}
+          details={[
+            { value: loadingValue ?? number(realTime.closeToDeadline), label: t('dashboard.cards.closeToDeadline'), color: '#d2691e' },
+            { value: loadingValue ?? number(realTime.dueCases), label: t('dashboard.cards.dueCases'), color: '#dc4a4a' },
+          ]}
+        />
+        {canManage && (
+          <DashboardKpi
+            icon="warranties" tone="blue" label={t('dashboard.cards.activeWarranties')}
+            value={loadingValue ?? number(activeCount)}
+            onClick={() => navigate('/staff/warranties?status=active')}
+            details={[
+              { value: loadingValue ?? number(expiredCount), label: t('dashboard.cards.expiredShort'), color: '#9c97ae' },
+              { value: loadingValue ?? activeShare + '%', label: t('dashboard.cards.activeShare'), color: '#2563eb' },
+            ]}
+          />
+        )}
+        <DashboardKpi
+          icon="completed" tone="green" label={t('dashboard.cards.completedInPeriod')}
+          value={loadingValue ?? number(completedCount)}
+          onClick={() => navigate('/staff/cases/closed')}
+          details={[
+            { value: loadingValue ?? number(period.avgCompletionTime), label: t('dashboard.kpi.avgTimeShort'), color: '#14121c' },
+            { value: loadingValue ?? onTimePercent + '%', label: t('dashboard.kpi.onTimePerformance'), color: '#1aa078' },
+          ]}
+        />
+        {canViewFinance && (
+          <DashboardKpi
+            icon="payments" tone="purple" label={t('dashboard.cards.payments')}
+            value={loadingValue ?? '₾' + number(totalPaid)}
+            onClick={() => navigate('/staff/finance')}
+            details={[
+              { value: loadingValue ?? number(totalPayments), label: t('dashboard.cards.paidPayments'), color: '#1aa078' },
+              { value: loadingValue ?? '₾' + number(totalPayments ? totalPaid / totalPayments : 0), label: t('dashboard.cards.averagePayment'), color: '#d2691e' },
+            ]}
+          />
+        )}
+      </div>
 
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            sx={{
-              background: `linear-gradient(135deg, ${brand.violetDeep} 0%, #6d28d9 100%)`,
-              color: '#ffffff',
-              borderRadius: 2,
-              boxShadow: '0 18px 36px rgba(109, 40, 217, 0.2)',
-              cursor: 'pointer',
-              '&:hover': { boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)' },
-            }}
-            onClick={() => navigate('/staff/cases?due=true')}
-          >
-            <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
-              <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
-                <WarningIcon sx={{ fontSize: 28, opacity: 0.9 }} />
-                <Chip label={t('dashboard.badges.urgent')} size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
-              </Box>
-              {isLoading ? (
-                <CircularProgress size={24} sx={{ color: '#ffffff' }} />
-              ) : (
-                <>
-                  <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, fontSize: '28px' }}>
-                    {realTime.dueCases || 0}
-                  </Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '13px' }}>
-                    {t('dashboard.cards.dueCases')}
-                  </Typography>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            sx={{
-              background: `linear-gradient(135deg, ${brand.violetSoft} 0%, ${brand.violet} 100%)`,
-              color: brand.ink,
-              borderRadius: 2,
-              boxShadow: '0 18px 36px rgba(165, 118, 255, 0.18)',
-              cursor: 'pointer',
-              '&:hover': { boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)' },
-            }}
-            onClick={() => navigate('/staff/cases/closed')}
-          >
-            <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
-              <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
-                <CheckCircleIcon sx={{ fontSize: 28, opacity: 0.9 }} />
-                <Chip label={t('dashboard.badges.completed')} size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.55)', color: brand.ink, height: 22, fontSize: '11px' }} />
-              </Box>
-              {isLoading ? (
-                <CircularProgress size={24} sx={{ color: '#ffffff' }} />
-              ) : (
-                <>
-                  <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, fontSize: '28px' }}>
-                    {timeFiltered.closedCases || 0}
-                  </Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '13px' }}>
-                    {t('dashboard.cards.closedThisMonth')}
-                  </Typography>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {hasManagementAccess && (
-        <Grid container spacing={2} mb={2}>
-          <Grid item xs={12} sm={6} md={4}>
-            <Card
-              sx={{
-                bgcolor: '#10b981',
-                color: '#ffffff',
-                borderRadius: 2,
-                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-                cursor: 'pointer',
-                '&:hover': { boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)' },
-              }}
-              onClick={() => navigate('/staff/warranties?status=active')}
-            >
-              <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
-                <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
-                  <WarrantyIcon sx={{ fontSize: 28, opacity: 0.9 }} />
-                  <Chip label={t('common.active')} size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
-                </Box>
-                {isLoading ? (
-                  <CircularProgress size={24} sx={{ color: '#ffffff' }} />
-                ) : (
-                  <>
-                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, fontSize: '28px' }}>
-                      {timeFiltered.activeWarranties || 0}
-                    </Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '13px' }}>
-                      {t('dashboard.cards.activeWarranties')}
-                    </Typography>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={4}>
-            <Card
-              sx={{
-                background: `linear-gradient(135deg, #2d2b34 0%, ${brand.black} 100%)`,
-                color: '#ffffff',
-                borderRadius: 2,
-                boxShadow: '0 18px 36px rgba(0, 0, 0, 0.18)',
-                cursor: 'pointer',
-                '&:hover': { boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)' },
-              }}
-              onClick={() => navigate('/staff/warranties?status=expired')}
-            >
-              <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
-                <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
-                  <WarrantyIcon sx={{ fontSize: 28, opacity: 0.9 }} />
-                  <Chip label={t('common.expired')} size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
-                </Box>
-                {isLoading ? (
-                  <CircularProgress size={24} sx={{ color: '#ffffff' }} />
-                ) : (
-                  <>
-                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, fontSize: '28px' }}>
-                      {timeFiltered.expiredWarranties || 0}
-                    </Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '13px' }}>
-                      {t('dashboard.cards.expiredWarranties')}
-                    </Typography>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {canViewFinanceStatistics && (
-            <Grid item xs={12} sm={6} md={4}>
-              <Card
-                sx={{
-                  background: `linear-gradient(135deg, ${brand.violet} 0%, ${brand.black} 100%)`,
-                  color: '#ffffff',
-                  borderRadius: 2,
-                  boxShadow: '0 18px 36px rgba(63, 30, 120, 0.18)',
-                  cursor: 'pointer',
-                  '&:hover': { boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)' },
-                }}
-                onClick={() => navigate('/staff/finance')}
-              >
-                <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
-                  <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
-                    <PaymentIcon sx={{ fontSize: 28, opacity: 0.9 }} />
-                    <Chip label={t('dashboard.badges.revenue')} size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', height: 22, fontSize: '11px' }} />
-                  </Box>
-                  {isLoading ? (
-                    <CircularProgress size={24} sx={{ color: '#ffffff' }} />
-                  ) : (
-                    <>
-                      <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, fontSize: '28px' }}>
-                        ₾{timeFiltered.totalMoneyIn?.toFixed(0) || 0}
-                      </Typography>
-                      <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '13px' }}>
-                        {t('dashboard.cards.payments')}
-                      </Typography>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
-          )}
-        </Grid>
-      )}
-
-      {/* Charts Section - Same Height */}
-      <Grid container spacing={2} mb={2}>
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2.5, borderRadius: 3, boxShadow: '0 18px 48px rgba(63, 30, 120, 0.08)', border: `1px solid ${brand.border}` }}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-              <Typography variant="h6" sx={{ fontWeight: 700, color: brand.ink, fontSize: '16px' }}>
-                {t('dashboard.charts.completionTime')}
-              </Typography>
-              <FormControl size="small" sx={{ minWidth: 120 }}>
-                <Select
-                  value={timeFilter}
-                  onChange={(e) => {
-                    if (e.target.value !== 'custom') {
-                      setTimeFilter(e.target.value);
-                    }
-                  }}
-                  IconComponent={ArrowDropDownIcon}
-                  sx={{ fontSize: '13px' }}
-                >
-                  <MenuItem value="7">{t('dashboard.filters.last7')}</MenuItem>
-                  <MenuItem value="30">{t('dashboard.filters.last30')}</MenuItem>
-                  <MenuItem value="90">{t('dashboard.filters.last90')}</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
-            {completionChartData && completionChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={completionChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={brand.border} />
-                  <XAxis dataKey="name" stroke={brand.muted} fontSize={11} />
-                  <YAxis stroke={brand.muted} fontSize={11} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#ffffff',
-                      border: `1px solid ${brand.border}`,
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                    }}
-                  />
-                  <Bar dataKey="value" fill={brand.violet} radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <Box display="flex" justifyContent="center" alignItems="center" height={250}>
-                <Typography variant="body2" sx={{ color: brand.muted }}>{t('dashboard.charts.noData')}</Typography>
-              </Box>
-            )}
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2.5, borderRadius: 3, boxShadow: '0 18px 48px rgba(63, 30, 120, 0.08)', border: `1px solid ${brand.border}` }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: brand.ink, mb: 2, fontSize: '16px' }}>
-              {t('dashboard.charts.casesByStatus')}
-            </Typography>
-            {statusChartData && statusChartData.length > 0 ? (
-              <>
-                <ResponsiveContainer width="100%" height={250}>
+      <div className="zzv-staff-chart-grid">
+        <BarPanel title={t('dashboard.charts.completionTime')} data={completionRows} color="#7c4df5" emptyLabel={t('dashboard.charts.noData')} suffix={t('common.days')} />
+        <section className="zzv-staff-chart">
+          <h2>{t('dashboard.charts.casesByStatus')}</h2>
+          {statusRows.length ? (
+            <div className="zzv-staff-status-chart">
+              <div className="zzv-staff-status-chart__donut">
+                <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie
-                      data={statusChartData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ percentage }) => `${percentage}%`}
-                      outerRadius={90}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {statusChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
+                    <Pie data={statusRows} dataKey="value" cx="50%" cy="50%" innerRadius={65} outerRadius={90} startAngle={90} endAngle={-270} stroke="none">
+                      {statusRows.map((item) => <Cell key={item.status} fill={STATUS_COLORS[item.status] || '#9c97ae'} />)}
                     </Pie>
-                    <Tooltip />
+                    <Tooltip formatter={(value) => [value, t('dashboard.table.status')]} />
                   </PieChart>
                 </ResponsiveContainer>
-                <Box display="flex" justifyContent="center" gap={2} mt={1.5} flexWrap="wrap">
-                  {statusChartData.map((item, index) => (
-                    <Box key={index} display="flex" alignItems="center" gap={0.75}>
-                      <Box
-                        sx={{
-                          width: 10,
-                          height: 10,
-                          borderRadius: '50%',
-                          bgcolor: item.color,
-                        }}
-                      />
-                      <Typography variant="caption" sx={{ color: brand.muted, fontSize: '11px' }}>
-                        {item.name}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Box>
-              </>
-            ) : (
-              <Box display="flex" justifyContent="center" alignItems="center" height={250}>
-                <Typography variant="body2" sx={{ color: '#64748b' }}>{t('dashboard.charts.noData')}</Typography>
-              </Box>
-            )}
-          </Paper>
-        </Grid>
-      </Grid>
+                <span><strong>{number(statusTotal)}</strong><small>{t('dashboard.casesCount')}</small></span>
+              </div>
+              <div className="zzv-staff-status-chart__legend">
+                {statusRows.map((item) => (
+                  <div key={item.status}>
+                    <span className="zzv-staff-status-chart__dot" style={{ background: STATUS_COLORS[item.status] || '#9c97ae' }} />
+                    <span>{t('status.' + item.status, { defaultValue: item.name })}</span>
+                    <strong>{Math.round(item.value / statusTotal * 100)}%</strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : <div className="zzv-staff-chart__empty">{t('dashboard.charts.noData')}</div>}
+        </section>
+        <BarPanel title={t('dashboard.charts.casesByCategory')} data={categoryRows} color="#7c4df5" emptyLabel={t('dashboard.charts.noData')} />
+        <BarPanel title={t('dashboard.charts.avgCompletionByCategory')} data={completionRows} color="#1aa078" emptyLabel={t('dashboard.charts.noData')} suffix={t('common.days')} />
+      </div>
 
-      {hasManagementAccess && (
-      <Grid container spacing={2} mb={2}>
-        <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2.5, borderRadius: 2, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
-            <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
-              <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 500, fontSize: '13px' }}>
-                {t('dashboard.kpi.avgServiceTime')}
-              </Typography>
-              <TrendingDownIcon sx={{ color: '#10b981', fontSize: 18 }} />
-            </Box>
-            {isLoading ? (
-              <CircularProgress size={20} />
-            ) : (
-              <>
-                <Typography variant="h5" sx={{ fontWeight: 700, color: '#1e293b', mb: 1, fontSize: '24px' }}>
-                  {timeFiltered.avgCompletionTime?.toFixed(1) || 0} {t('common.days')}
-                </Typography>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Typography variant="caption" sx={{ color: '#10b981', fontWeight: 600, fontSize: '11px' }}>
-                    {t('dashboard.kpi.faster')}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: '#64748b', fontSize: '11px' }}>
-                    {t('dashboard.kpi.vsLastMonth')}
-                  </Typography>
-                </Box>
-              </>
-            )}
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2.5, borderRadius: 2, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
-            <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
-              <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 500, fontSize: '13px' }}>
-                {t('dashboard.kpi.onTimePerformance')}
-              </Typography>
-            </Box>
-            {isLoading ? (
-              <CircularProgress size={20} />
-            ) : (
-              <>
-                <Typography variant="h5" sx={{ fontWeight: 700, color: '#1e293b', mb: 1, fontSize: '24px' }}>
-                  {onTimePercentage}%
-                </Typography>
-                <LinearProgress
-                  variant="determinate"
-                  value={onTimePercentage}
-                  sx={{
-                    height: 6,
-                    borderRadius: 3,
-                    bgcolor: '#e2e8f0',
-                    '& .MuiLinearProgress-bar': {
-                      bgcolor: '#10b981',
-                      borderRadius: 3,
-                    },
-                  }}
-                />
-              </>
-            )}
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2.5, borderRadius: 2, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
-            <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
-              <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 500, fontSize: '13px' }}>
-                {t('dashboard.kpi.customerSatisfaction')}
-              </Typography>
-              <StarIcon sx={{ color: '#f59e0b', fontSize: 18 }} />
-            </Box>
-            <Typography variant="h5" sx={{ fontWeight: 700, color: '#1e293b', mb: 1, fontSize: '24px' }}>
-              4.6/5.0
-            </Typography>
-            <Box display="flex" alignItems="center" gap={1}>
-              <TrendingUpIcon sx={{ color: '#10b981', fontSize: 14 }} />
-              <Typography variant="caption" sx={{ color: '#10b981', fontWeight: 600, fontSize: '11px' }}>
-                {t('dashboard.kpi.ratingChange')}
-              </Typography>
-              <Typography variant="caption" sx={{ color: '#64748b', fontSize: '11px' }}>
-                {t('dashboard.kpi.vsLastMonth')}
-              </Typography>
-            </Box>
-          </Paper>
-        </Grid>
-      </Grid>
-      )}
-
-      {/* Cases by Category and Average Completion by Category */}
-      <Grid container spacing={2} mb={2}>
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2.5, borderRadius: 2, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, color: '#1e293b', mb: 2, fontSize: '16px' }}>
-              {t('dashboard.charts.casesByCategory') || 'Cases by Category'}
-            </Typography>
-            {casesByCategory && casesByCategory.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={casesByCategory}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="name" stroke="#64748b" fontSize={11} />
-                  <YAxis stroke="#64748b" fontSize={11} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#ffffff',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                    }}
-                  />
-                  <Bar dataKey="value" fill="#8b5cf6" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <Box display="flex" justifyContent="center" alignItems="center" height={250}>
-                <Typography variant="body2" sx={{ color: '#64748b' }}>{t('dashboard.charts.noData')}</Typography>
-              </Box>
-            )}
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2.5, borderRadius: 2, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, color: '#1e293b', mb: 2, fontSize: '16px' }}>
-              {t('dashboard.charts.avgCompletionByCategory') || 'Average Completion by Category'}
-            </Typography>
-            {completionChartData && completionChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={completionChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="name" stroke="#64748b" fontSize={11} />
-                  <YAxis stroke="#64748b" fontSize={11} label={{ value: t('common.days') || 'Days', angle: -90, position: 'insideLeft' }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#ffffff',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                    }}
-                    formatter={(value) => [`${value} ${t('common.days') || 'days'}`, '']}
-                  />
-                  <Bar dataKey="value" fill="#10b981" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <Box display="flex" justifyContent="center" alignItems="center" height={250}>
-                <Typography variant="body2" sx={{ color: '#64748b' }}>{t('dashboard.charts.noData')}</Typography>
-              </Box>
-            )}
-          </Paper>
-        </Grid>
-      </Grid>
-
-      {/* {t('dashboard.table.recentCases')} Table */}
-      <Paper sx={{ borderRadius: 2, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)', overflow: 'hidden' }}>
-        <Box sx={{ p: 2.5, borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6" sx={{ fontWeight: 600, color: '#1e293b', fontSize: '16px' }}>
-            {t('dashboard.table.recentCases')}
-          </Typography>
-          <Link
-            component="button"
-            variant="body2"
-            onClick={() => navigate('/staff/cases')}
-            sx={{
-              color: '#3b82f6',
-              textDecoration: 'none',
-              cursor: 'pointer',
-              fontWeight: 500,
-              fontSize: '13px',
-              '&:hover': { textDecoration: 'underline' },
-            }}
-          >
-            {t('dashboard.table.viewAll')}
-          </Link>
-        </Box>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow sx={{ bgcolor: '#f8fafc' }}>
-                <TableCell sx={{ fontWeight: 600, color: '#64748b', fontSize: '11px', textTransform: 'uppercase', py: 1.5 }}>
-                  {t('dashboard.table.caseId')}
-                </TableCell>
-                <TableCell sx={{ fontWeight: 600, color: '#64748b', fontSize: '11px', textTransform: 'uppercase', py: 1.5 }}>
-                  {t('dashboard.table.customer')}
-                </TableCell>
-                <TableCell sx={{ fontWeight: 600, color: '#64748b', fontSize: '11px', textTransform: 'uppercase', py: 1.5 }}>
-                  {t('dashboard.table.product')}
-                </TableCell>
-                <TableCell sx={{ fontWeight: 600, color: '#64748b', fontSize: '11px', textTransform: 'uppercase', py: 1.5 }}>
-                  {t('dashboard.table.status')}
-                </TableCell>
-                <TableCell sx={{ fontWeight: 600, color: '#64748b', fontSize: '11px', textTransform: 'uppercase', py: 1.5 }}>
-                  {t('dashboard.table.priority')}
-                </TableCell>
-                <TableCell sx={{ fontWeight: 600, color: '#64748b', fontSize: '11px', textTransform: 'uppercase', py: 1.5 }}>
-                  {t('dashboard.table.technician')}
-                </TableCell>
-                <TableCell sx={{ fontWeight: 600, color: '#64748b', fontSize: '11px', textTransform: 'uppercase', py: 1.5 }}>
-                  {t('dashboard.table.deadline')}
-                </TableCell>
-                <TableCell sx={{ fontWeight: 600, color: '#64748b', fontSize: '11px', textTransform: 'uppercase', py: 1.5 }}>
-                  {t('dashboard.table.actions')}
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {(!recentCases || recentCases.length === 0) ? (
-                <TableRow>
-                  <TableCell colSpan={8} sx={{ textAlign: 'center', py: 4, color: '#64748b' }}>
-                    {t('dashboard.table.noRecentCases') || 'No recent cases'}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                recentCases.slice(0, 5).map((caseItem) => (
-                <TableRow key={caseItem.id} hover>
-                  <TableCell sx={{ py: 1.5 }}>
-                    <Link
-                      component="button"
-                      onClick={() => navigate(`/staff/cases/${caseItem.id}`)}
-                      sx={{
-                        color: '#3b82f6',
-                        textDecoration: 'none',
-                        cursor: 'pointer',
-                        fontWeight: 500,
-                        fontSize: '13px',
-                        '&:hover': { textDecoration: 'underline' },
-                      }}
-                    >
-                      #{caseItem.case_number}
-                    </Link>
-                  </TableCell>
-                  <TableCell sx={{ py: 1.5 }}>
-                    <Box display="flex" alignItems="center" gap={1.5}>
-                      <Avatar
-                        sx={{
-                          width: 32,
-                          height: 32,
-                          bgcolor: '#3b82f6',
-                          fontSize: '12px',
-                        }}
-                      >
-                        {caseItem.customer_name?.[0] || 'C'}
-                      </Avatar>
-                      <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 500, color: '#1e293b', fontSize: '13px' }}>
-                          {caseItem.customer_name} {caseItem.customer_last_name}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: '#64748b', fontSize: '11px' }}>
-                          {caseItem.customer_phone}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </TableCell>
-                  <TableCell sx={{ py: 1.5 }}>
-                    <Typography variant="body2" sx={{ color: '#1e293b', fontSize: '13px' }}>
-                      {caseItem.product_title || 'N/A'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell sx={{ py: 1.5 }}>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Box
-                        sx={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: '50%',
-                          bgcolor: getStatusColor(getStatusFromLevel(caseItem.status_level)),
-                        }}
-                      />
-                      <Typography variant="body2" sx={{ color: '#1e293b', textTransform: 'capitalize', fontSize: '13px' }}>
-                        {getStatusFromLevel(caseItem.status_level)}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell sx={{ py: 1.5 }}>
-                    <Chip
-                      label={caseItem.priority || 'Normal'}
-                      size="small"
-                      sx={{
-                        bgcolor: getPriorityColor(caseItem.priority) === '#ef4444' ? '#fee2e2' : '#f1f5f9',
-                        color: getPriorityColor(caseItem.priority),
-                        fontWeight: 500,
-                        fontSize: '10px',
-                        height: 22,
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell sx={{ py: 1.5 }}>
-                    <Typography variant="body2" sx={{ color: '#1e293b', fontSize: '13px' }}>
-                      {caseItem.technician?.name || t('dashboard.table.unassigned')}
-                    </Typography>
-                  </TableCell>
-                  <TableCell sx={{ py: 1.5 }}>
-                    {isOverdue(caseItem.deadline_at, caseItem.status_level) ? (
-                      <Typography variant="body2" sx={{ color: '#ef4444', fontWeight: 500, fontSize: '13px' }}>
-                        ▲ {t('dashboard.table.overdue')}
-                      </Typography>
-                    ) : (
-                      <Typography variant="body2" sx={{ color: '#64748b', fontSize: '13px' }}>
-                        {formatDate(caseItem.deadline_at)}
-                      </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell sx={{ py: 1.5 }}>
-                    <IconButton
-                      size="small"
-                      onClick={() => navigate(`/staff/cases/${caseItem.id}`)}
-                      sx={{ color: '#64748b' }}
-                    >
-                      <ViewIcon fontSize="small" />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
-    </Box>
+      <section className="zzv-staff-recent">
+        <header>
+          <h2>{t('dashboard.table.recentCases')}</h2>
+          <button type="button" onClick={() => navigate('/staff/cases')}>{t('dashboard.table.viewAll')}</button>
+        </header>
+        <div className="zzv-staff-recent__scroll">
+          <table>
+            <thead><tr>
+              {['caseId', 'customer', 'product', 'status', 'priority', 'technician', 'deadline', 'actions'].map((key) => <th key={key}>{t('dashboard.table.' + key)}</th>)}
+            </tr></thead>
+            <tbody>
+              {casesLoading ? (
+                <tr><td colSpan="8" className="zzv-staff-recent__empty"><CircularProgress size={20} /></td></tr>
+              ) : recentCases.length ? recentCases.slice(0, 5).map((caseItem) => {
+                const status = STATUS_LEVELS[caseItem.status_level] || 'opened';
+                const priority = String(caseItem.priority || 'normal').toLowerCase();
+                const overdue = caseItem.deadline_at && caseItem.status_level < 3 && !caseItem.parts_waiting && new Date(caseItem.deadline_at) < new Date();
+                return (
+                  <tr key={caseItem.id}>
+                    <td><button type="button" className="zzv-staff-recent__link" onClick={() => navigate('/staff/cases/' + caseItem.id)}>{caseItem.case_number || caseItem.id}</button></td>
+                    <td>{[caseItem.customer_name, caseItem.customer_last_name].filter(Boolean).join(' ') || '—'}</td>
+                    <td title={caseItem.product_title || ''}>{caseItem.product_title || '—'}</td>
+                    <td><span className={'zzv-staff-recent__badge zzv-staff-recent__badge--' + status}>{t('status.' + status)}</span></td>
+                    <td><span className={'zzv-staff-recent__priority zzv-staff-recent__priority--' + priority}>{t('dashboard.priority.' + priority, { defaultValue: caseItem.priority || 'Normal' })}</span></td>
+                    <td>{[caseItem.assigned_technician?.name, caseItem.assigned_technician?.last_name].filter(Boolean).join(' ') || t('dashboard.table.unassigned')}</td>
+                    <td className={overdue ? 'is-overdue' : ''}>{overdue ? '↑ ' + t('dashboard.table.overdue') : formatDate(caseItem.deadline_at)}</td>
+                    <td><button type="button" className="zzv-staff-recent__view" onClick={() => setPreviewCaseId(caseItem.id)} aria-label={t('dashboard.openCase', { number: caseItem.case_number || caseItem.id })}><img src="/figma-staff/table-view.svg" width="16" height="16" alt="" /></button></td>
+                  </tr>
+                );
+              }) : <tr><td colSpan="8" className="zzv-staff-recent__empty">{t('dashboard.table.noRecentCases')}</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <CaseQuickViewDialog caseId={previewCaseId} onClose={() => setPreviewCaseId(null)} />
+    </div>
   );
 };
 

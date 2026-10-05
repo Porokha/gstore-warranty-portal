@@ -389,13 +389,16 @@ const ImportPage = () => {
   };
 
   return (
-    <Container maxWidth="md">
-      <Box sx={{ mt: 4, mb: 4 }}>
-        <Typography variant="h4" gutterBottom>
-          {t('importPage.title')}
-        </Typography>
+    <Container maxWidth={false} className="zzv-staff-workspace zzv-staff-workspace--import">
+      <Box sx={{ mb: 4 }}>
+        <Box className="zzv-staff-workspace__heading">
+          <Box>
+            <Typography variant="h4">{t('importPage.title')}</Typography>
+            <Typography variant="body2" color="text.secondary">{t('staffWorkspace.importDescription')}</Typography>
+          </Box>
+        </Box>
 
-        <Paper sx={{ p: 3 }}>
+        <Paper className="zzv-staff-workspace__panel" sx={{ p: 3 }}>
           <Tabs value={tab} onChange={(e, newValue) => setTab(newValue)} sx={{ mb: 3 }}>
             <Tab label={t('importPage.tabs.cases')} />
             <Tab label={t('importPage.tabs.warranties')} />
@@ -823,4 +826,3 @@ const ImportPage = () => {
 };
 
 export default ImportPage;
-

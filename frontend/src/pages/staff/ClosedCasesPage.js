@@ -82,14 +82,16 @@ const ClosedCasesPage = () => {
   }
 
   return (
-    <div>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">{t('common.closedCases')}</Typography>
+    <div className="zzv-staff-workspace zzv-staff-workspace--closed-cases">
+      <Box className="zzv-staff-workspace__heading">
+        <Box>
+          <Typography variant="h4">{t('common.closedCases')}</Typography>
+        </Box>
       </Box>
 
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Box display="flex" gap={2} flexWrap="wrap">
+      <Paper className="zzv-staff-workspace__filters">
+        <Box className="zzv-staff-workspace__filter-grid">
           <TextField
             size="small"
             label={t('common.search') || 'Search'}
@@ -129,8 +131,8 @@ const ClosedCasesPage = () => {
       </Paper>
 
       {/* Cases Table */}
-      <TableContainer component={Paper}>
-        <Table>
+      <TableContainer component={Paper} className="zzv-staff-workspace__table-wrap">
+        <Table className="zzv-staff-workspace__table">
           <TableHead>
             <TableRow>
               <TableCell>{t('case.caseNumber')}</TableCell>
@@ -213,4 +215,3 @@ const ClosedCasesPage = () => {
 };
 
 export default ClosedCasesPage;
-

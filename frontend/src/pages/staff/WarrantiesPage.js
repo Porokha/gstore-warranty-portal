@@ -9,19 +9,17 @@ import {
   Chip,
   IconButton,
   TextField,
+  InputAdornment,
   Select,
   MenuItem,
   FormControl,
-  InputLabel,
   Button,
-  CircularProgress,
   Tooltip,
   Alert,
   Snackbar,
 } from '@mui/material';
 import {
   Visibility as ViewIcon,
-  Edit as EditIcon,
   Add as AddIcon,
   Delete as DeleteIcon,
   Build as BuildIcon,
@@ -29,12 +27,14 @@ import {
 import { warrantiesService } from '../../services/warrantiesService';
 import { useQueryClient } from 'react-query';
 import { useAuth } from '../../contexts/AuthContext';
-import CustomDataTable from '../../components/common/CustomDataTable';
-import ConfirmDialog from '../../components/common/ConfirmDialog';
+import WarrantyFigmaTable from '../../components/common/WarrantyFigmaTable';
+import WarrantyDeleteDialog from '../../components/common/WarrantyDeleteDialog';
+import WarrantyHistoryDialog from '../../components/common/WarrantyHistoryDialog';
 import { isManagementRole } from '../../utils/roles';
 
 const WarrantiesPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const ka = i18n.language?.startsWith('ka');
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -50,18 +50,21 @@ const WarrantiesPage = () => {
     expired_only: searchParams.get('expired_only') || '',
   });
   const [tablePage, setTablePage] = useState(1);
+  const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
   const [tablePageSize, setTablePageSize] = useState(() => {
     if (typeof window === 'undefined') return 50;
     const stored = localStorage.getItem('warranties-table_pageSize');
     const parsed = parseInt(stored, 10);
-    return [25, 50, 100, 250].includes(parsed) ? parsed : 50;
+    return [25, 50, 100, 250].includes(parsed) ? parsed : 25;
   });
 
   const [deleteDialog, setDeleteDialog] = useState({
     open: false,
     count: 0,
+    warranties: [],
     onConfirm: null,
   });
+  const [historyWarrantyId, setHistoryWarrantyId] = useState(null);
   const [notification, setNotification] = useState({
     open: false,
     message: '',
@@ -71,12 +74,21 @@ const WarrantiesPage = () => {
 
   const warrantyQueryParams = useMemo(
     () => ({
-      ...filters,
+      device_type: filters.device_type,
+      customer_phone: filters.customer_phone,
+      active_only: filters.active_only,
+      expired_only: filters.expired_only,
+      search: debouncedSearch,
       page: tablePage,
       limit: tablePageSize,
     }),
-    [filters, tablePage, tablePageSize],
+    [filters.device_type, filters.customer_phone, filters.active_only, filters.expired_only, debouncedSearch, tablePage, tablePageSize],
   );
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(filters.search), 300);
+    return () => clearTimeout(timer);
+  }, [filters.search]);
 
   const { data: warranties, isLoading, error } = useQuery(
     ['warranties', warrantyQueryParams],
@@ -94,8 +106,8 @@ const WarrantiesPage = () => {
     }
   );
 
-  const handleFilterChange = (key, value) => {
-    const newFilters = { ...filters, [key]: value };
+  const handleFilterChange = (changes) => {
+    const newFilters = { ...filters, ...changes };
     setFilters(newFilters);
     setTablePage(1);
     
@@ -147,6 +159,8 @@ const WarrantiesPage = () => {
     isActive: isWarrantyActive(warranty.warranty_end),
     daysLeft: getDaysLeft(warranty.warranty_end),
   })), [rawData]);
+
+  const csvValue = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
 
   const columns = useMemo(() => [
     {
@@ -273,6 +287,7 @@ const WarrantiesPage = () => {
                   setDeleteDialog({
                     open: true,
                     count: 1,
+                    warranties: [row],
                     onConfirm: async () => {
                       setIsDeleting(true);
                       try {
@@ -306,37 +321,24 @@ const WarrantiesPage = () => {
     },
   ], [t, isAdmin, navigate, queryClient]);
 
-  if (isLoading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Alert severity="error">
-        {t('common.errorLoading') || 'Error loading warranties'}
-      </Alert>
-    );
-  }
-
   return (
     <div className="zzv-admin-page zzv-admin-page--warranties">
-      <Box className="zzv-admin-page-head" display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">{t('common.warranties')}</Typography>
-        <Box display="flex" gap={1}>
+      <div className="zzv-warranties__card">
+      <Box className="zzv-admin-page-head" display="flex" justifyContent="space-between" alignItems="center">
+        <div><Typography variant="h4">{t('common.warranties')}</Typography><p>{t('warranty.listSubtitle', 'Warranty products, terms and customers')}</p></div>
+        <Box className="zzv-warranties__head-actions" display="flex" gap={1}>
           {isAdmin && (
             <>
               <Button
                 variant="outlined"
+                startIcon={<img src="/figma-staff/file-upload.svg" alt="" width="16" height="16" />}
                 onClick={() => navigate('/staff/warranties/import/csv')}
               >
                 {t('common.importCSV') || 'Import CSV'}
               </Button>
               <Button
                 variant="outlined"
+                startIcon={<img src="/figma-staff/case-import.svg" alt="" width="16" height="16" />}
                 onClick={() => navigate('/staff/warranties/import/woocommerce')}
               >
                 {t('common.importWooCommerce') || 'Import from WooCommerce'}
@@ -355,22 +357,25 @@ const WarrantiesPage = () => {
         </Box>
       </Box>
 
-      {/* Filters */}
-      <Paper className="zzv-admin-filter-card" sx={{ p: 2, mb: 3 }}>
-        <Box display="flex" gap={2} flexWrap="wrap">
+      <Paper className="zzv-admin-filter-card" elevation={0}>
+        <Box className="zzv-warranties__filters" display="flex" gap={2} flexWrap="wrap">
           <TextField
             size="small"
-            label={t('common.search')}
             value={filters.search}
-            onChange={(e) => handleFilterChange('search', e.target.value)}
-            sx={{ minWidth: 320 }}
+            onChange={(e) => handleFilterChange({ search: e.target.value })}
+            placeholder={t('warranty.searchPlaceholder', 'Search by number, SKU, serial, customer or phone')}
+            inputProps={{ 'aria-label': t('common.search') }}
+            InputProps={{ startAdornment: <InputAdornment position="start"><img src="/figma-staff/case-search.svg" alt="" width="20" height="20" /></InputAdornment> }}
+            sx={{ width: '100%' }}
           />
+          <div className="zzv-warranties__selects">
           <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>{t('case.deviceType')}</InputLabel>
             <Select
               value={filters.device_type}
-              label={t('case.deviceType')}
-              onChange={(e) => handleFilterChange('device_type', e.target.value)}
+              displayEmpty
+              inputProps={{ 'aria-label': t('case.deviceType') }}
+              renderValue={(value) => value || (ka ? 'მოწყობილობა: ყველა' : 'Device: all')}
+              onChange={(e) => handleFilterChange({ device_type: e.target.value })}
             >
               <MenuItem value="">{t('common.all')}</MenuItem>
               {deviceTypes.map((type) => (
@@ -381,14 +386,17 @@ const WarrantiesPage = () => {
             </Select>
           </FormControl>
           <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>{t('common.status')}</InputLabel>
             <Select
-              value={filters.active_only || filters.expired_only || ''}
-              label={t('common.status')}
+              value={filters.active_only ? 'active' : filters.expired_only ? 'expired' : ''}
+              displayEmpty
+              inputProps={{ 'aria-label': t('common.status') }}
+              renderValue={(value) => value === 'active' ? t('common.active') : value === 'expired' ? t('common.expired') : (ka ? 'სტატუსი: ყველა' : 'Status: all')}
               onChange={(e) => {
                 const value = e.target.value;
-                handleFilterChange('active_only', value === 'active' ? 'true' : '');
-                handleFilterChange('expired_only', value === 'expired' ? 'true' : '');
+                handleFilterChange({
+                  active_only: value === 'active' ? 'true' : '',
+                  expired_only: value === 'expired' ? 'true' : '',
+                });
               }}
             >
               <MenuItem value="">{t('common.all')}</MenuItem>
@@ -396,20 +404,17 @@ const WarrantiesPage = () => {
               <MenuItem value="expired">{t('common.expired') || 'Expired'}</MenuItem>
             </Select>
           </FormControl>
+          </div>
         </Box>
       </Paper>
 
-      <Box className="zzv-admin-table-card">
-      <CustomDataTable
+      {error && <Alert severity="error">{t('common.errorLoading')}</Alert>}
+      <Box className="zzv-admin-table-card" aria-busy={isLoading}>
+      <WarrantyFigmaTable
         columns={columns}
         data={rows}
-        tableKey="warranties-table"
-        frozenColumns={['select', 'warranty_id']}
-        defaultColumnWidth={150}
         pageSizeOptions={[25, 50, 100, 250]}
-        defaultPageSize={50}
-        maxShowAllRows={300}
-        allowShowAll={false}
+        isLoading={isLoading}
         serverPagination={{
           page: tablePage,
           pageSize: tablePageSize,
@@ -421,10 +426,12 @@ const WarrantiesPage = () => {
           },
         }}
         onRowClick={(row) => navigate(`/staff/warranties/${row.id}`)}
-        onBulkDelete={(selectedIds) => {
+        onOpenHistory={(row) => setHistoryWarrantyId(row.id)}
+        onBulkDelete={isAdmin ? (selectedIds) => {
           setDeleteDialog({
             open: true,
             count: selectedIds.length,
+            warranties: rows.filter((row) => selectedIds.includes(row.id)),
             onConfirm: async () => {
               setIsDeleting(true);
               try {
@@ -458,36 +465,38 @@ const WarrantiesPage = () => {
               }
             },
           });
-        }}
+        } : undefined}
         onBulkExport={(selectedIds) => {
           const selectedWarranties = rows.filter((w) => selectedIds.includes(w.id));
           const csv = [
-            ['Warranty ID', 'Product', 'SKU', 'Serial', 'Customer', 'Phone', 'Purchase Date', 'Warranty End', 'Status'].join(','),
+            ['Warranty ID', 'Product', 'SKU', 'Serial', 'Customer', 'Phone', 'Purchase Date', 'Warranty End', 'Status'].map(csvValue).join(','),
             ...selectedWarranties.map((w) =>
               [
                 w.warranty_id,
                 w.title,
                 w.sku,
                 w.serial_number,
-                `${w.customer_name} ${w.customer_last_name}`,
+                `${w.customer_name || ''} ${w.customer_last_name || ''}`.trim(),
                 w.customer_phone,
                 new Date(w.purchase_date).toLocaleDateString(),
                 new Date(w.warranty_end).toLocaleDateString(),
                 w.isActive ? 'Active' : 'Expired',
-              ].join(',')
+              ].map(csvValue).join(',')
             ),
-          ].join('\n');
-          const blob = new Blob([csv], { type: 'text/csv' });
+          ].join('\r\n');
+          const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8' });
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
           a.download = `warranties-${new Date().toISOString().split('T')[0]}.csv`;
           a.click();
+          window.URL.revokeObjectURL(url);
         }}
       />
       </Box>
+      </div>
       
-      <ConfirmDialog
+      <WarrantyDeleteDialog
         open={deleteDialog.open}
         onClose={() => {
           if (!isDeleting) {
@@ -495,12 +504,14 @@ const WarrantiesPage = () => {
           }
         }}
         onConfirm={deleteDialog.onConfirm || (() => {})}
-        title={t('warranty.deleteConfirmTitle') || 'Confirm Delete'}
-        message={t('warranty.deleteConfirmMessage', { count: deleteDialog.count }) || `Are you sure you want to delete ${deleteDialog.count} item(s)?`}
-        confirmText={t('common.delete') || 'Delete'}
-        cancelText={t('common.cancel') || 'Cancel'}
-        severity="error"
+        warranties={deleteDialog.warranties}
         loading={isDeleting}
+      />
+      <WarrantyHistoryDialog
+        warrantyId={historyWarrantyId}
+        onClose={() => setHistoryWarrantyId(null)}
+        onOpenWarranty={(warrantyId) => { setHistoryWarrantyId(null); navigate(`/staff/warranties/${warrantyId}`); }}
+        onOpenCase={(caseId) => { setHistoryWarrantyId(null); navigate(`/staff/cases/${caseId}`); }}
       />
       
       <Snackbar

@@ -36,7 +36,7 @@ const StatisticsPage = () => {
   const { user } = useAuth();
   const hasManagementAccess = isManagementRole(user?.role);
   
-  const [selectedTechnician, setSelectedTechnician] = useState(hasManagementAccess ? '' : user.id);
+  const [selectedTechnician, setSelectedTechnician] = useState(hasManagementAccess ? '' : user?.id || '');
   const [timeFilter, setTimeFilter] = useState('all');
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
@@ -122,11 +122,14 @@ const StatisticsPage = () => {
   const displayData = hasManagementAccess && !selectedTechnician ? allStats : (stats ? [stats] : []);
 
   return (
-    <div>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">
-          {hasManagementAccess ? t('common.technicianStatistics') || 'Technician Statistics' : t('common.myStatistics') || 'My Statistics'}
-        </Typography>
+    <div className="zzv-staff-workspace zzv-staff-workspace--statistics">
+      <Box className="zzv-staff-workspace__heading">
+        <Box>
+          <Typography variant="h4">
+            {hasManagementAccess ? t('common.technicianStatistics') : t('common.myStatistics')}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">{t('staffWorkspace.statisticsDescription')}</Typography>
+        </Box>
         <Button
           variant="contained"
           startIcon={<DownloadIcon />}
@@ -138,18 +141,18 @@ const StatisticsPage = () => {
       </Box>
 
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3 }}>
+      <Paper className="zzv-staff-workspace__filters">
         <Grid container spacing={2} alignItems="center">
           {hasManagementAccess && (
             <Grid item xs={12} md={3}>
               <FormControl fullWidth size="small">
-                <InputLabel>Technician</InputLabel>
+                <InputLabel>{t('staffWorkspace.technician')}</InputLabel>
                 <Select
                   value={selectedTechnician}
-                  label="Technician"
+                  label={t('staffWorkspace.technician')}
                   onChange={(e) => setSelectedTechnician(e.target.value)}
                 >
-                  <MenuItem value="">All Technicians</MenuItem>
+                  <MenuItem value="">{t('staffWorkspace.allTechnicians')}</MenuItem>
                   {technicians?.filter(t => isTechnicianRole(t.role)).map((tech) => (
                     <MenuItem key={tech.id} value={tech.id}>
                       {tech.name} {tech.last_name}
@@ -205,11 +208,11 @@ const StatisticsPage = () => {
 
       {/* Single Technician Stats */}
       {displayStats && (
-        <Grid container spacing={3} mb={3}>
+        <Grid container spacing={2} className="zzv-staff-workspace__metrics">
           <Grid item xs={12} md={3}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" color="text.secondary" gutterBottom>
-                Total Cases
+                {t('staffWorkspace.totalCases')}
               </Typography>
               <Typography variant="h3">{displayStats.totalCases || 0}</Typography>
             </Paper>
@@ -217,7 +220,7 @@ const StatisticsPage = () => {
           <Grid item xs={12} md={3}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" color="text.secondary" gutterBottom>
-                Running Cases
+                {t('staffWorkspace.runningCases')}
               </Typography>
               <Typography variant="h3" color="primary">
                 {displayStats.runningCases || 0}
@@ -227,7 +230,7 @@ const StatisticsPage = () => {
           <Grid item xs={12} md={3}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" color="text.secondary" gutterBottom>
-                Completed Cases
+                {t('staffWorkspace.completedCases')}
               </Typography>
               <Typography variant="h3" color="success.main">
                 {displayStats.completedCases || 0}
@@ -237,7 +240,7 @@ const StatisticsPage = () => {
           <Grid item xs={12} md={3}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" color="text.secondary" gutterBottom>
-                Avg Completion Time
+                {t('common.avgCompletionTime')}
               </Typography>
               <Typography variant="h3">
                 {displayStats.avgCompletionTime || 0} {t('common.days')}
@@ -247,7 +250,7 @@ const StatisticsPage = () => {
           <Grid item xs={12} md={3}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" color="text.secondary" gutterBottom>
-                On-time Cases
+                {t('common.onTimeCases')}
               </Typography>
               <Typography variant="h3" color="success.main">
                 {displayStats.onTimeCases || 0}
@@ -257,7 +260,7 @@ const StatisticsPage = () => {
           <Grid item xs={12} md={3}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" color="text.secondary" gutterBottom>
-                On-time Rate
+                {t('staffWorkspace.onTimeRate')}
               </Typography>
               <Typography variant="h3">
                 {displayStats.onTimeRate || '0'}%
@@ -267,7 +270,7 @@ const StatisticsPage = () => {
           <Grid item xs={12} md={3}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" color="text.secondary" gutterBottom>
-                Total Payments
+                {t('common.totalPayments')}
               </Typography>
               <Typography variant="h3">{displayStats.totalPayments || 0}</Typography>
             </Paper>
@@ -275,7 +278,7 @@ const StatisticsPage = () => {
           <Grid item xs={12} md={3}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" color="text.secondary" gutterBottom>
-                Total Paid Amount
+                {t('staffWorkspace.totalPaidAmount')}
               </Typography>
               <Typography variant="h3" color="success.main">
                 {displayStats.totalPaidAmount?.toFixed(2) || '0.00'} ₾
@@ -287,17 +290,17 @@ const StatisticsPage = () => {
 
       {/* All Technicians Table (Admin only) */}
       {hasManagementAccess && !selectedTechnician && allStats && (
-        <TableContainer component={Paper}>
-          <Table>
+        <TableContainer component={Paper} className="zzv-staff-workspace__table-wrap">
+          <Table className="zzv-staff-workspace__table">
             <TableHead>
               <TableRow>
-                <TableCell>Technician</TableCell>
-                <TableCell align="right">Total Cases</TableCell>
-                <TableCell align="right">Running</TableCell>
-                <TableCell align="right">Completed</TableCell>
-                <TableCell align="right">Avg Completion (days)</TableCell>
-                <TableCell align="right">On-time Rate (%)</TableCell>
-                <TableCell align="right">Total Paid (₾)</TableCell>
+                <TableCell>{t('staffWorkspace.technician')}</TableCell>
+                <TableCell align="right">{t('staffWorkspace.totalCases')}</TableCell>
+                <TableCell align="right">{t('staffWorkspace.runningCases')}</TableCell>
+                <TableCell align="right">{t('staffWorkspace.completedCases')}</TableCell>
+                <TableCell align="right">{t('common.avgCompletionTime')}</TableCell>
+                <TableCell align="right">{t('staffWorkspace.onTimeRate')}</TableCell>
+                <TableCell align="right">{t('staffWorkspace.totalPaidAmount')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

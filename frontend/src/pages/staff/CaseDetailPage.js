@@ -3,10 +3,6 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   Tabs,
   Tab,
@@ -25,17 +21,24 @@ import {
   Paper,
   Divider,
 } from '@mui/material';
-import PrintOutlinedIcon from '@mui/icons-material/PrintOutlined';
 import { casesService } from '../../services/casesService';
 import { paymentsService } from '../../services/paymentsService';
 import { usersService } from '../../services/usersService';
-import ResultBar from '../../components/cases/ResultBar';
-import StatusStepper from '../../components/cases/StatusStepper';
 import StatusChangeForm from '../../components/cases/StatusChangeForm';
 import FileUpload from '../../components/cases/FileUpload';
+import StaffDeleteDialog from '../../components/common/StaffDeleteDialog';
 import { useAuth } from '../../contexts/AuthContext';
 import { printServiceCaseLabel } from '../../utils/serviceCaseLabel';
 import { isManagementRole } from '../../utils/roles';
+
+const formatCaseDateTime = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '-';
+  return date.toLocaleString('en-GB', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  }).replace(/\//g, '.');
+};
 
 const CaseDetailPage = () => {
   const { id } = useParams();
@@ -49,6 +52,10 @@ const CaseDetailPage = () => {
   const [tab, setTab] = useState(0);
   const [internalNote, setInternalNote] = useState('');
   const [internalNoteError, setInternalNoteError] = useState('');
+  const [noteToDelete, setNoteToDelete] = useState(null);
+  const [deleteNoteError, setDeleteNoteError] = useState('');
+  const [caseDeleteOpen, setCaseDeleteOpen] = useState(false);
+  const [caseDeleteError, setCaseDeleteError] = useState('');
   const [paymentActionError, setPaymentActionError] = useState('');
   const [editingPaymentId, setEditingPaymentId] = useState(null);
   const [paymentEditAmount, setPaymentEditAmount] = useState('');
@@ -149,11 +156,24 @@ const CaseDetailPage = () => {
     (historyId) => casesService.deleteInternalNote(id, historyId),
     {
       onSuccess: () => {
+        setNoteToDelete(null);
+        setDeleteNoteError('');
         queryClient.invalidateQueries(['case', id]);
         queryClient.invalidateQueries('cases');
       },
+      onError: (error) => {
+        setDeleteNoteError(error.response?.data?.message || t('case.internalNoteDeleteFailed'));
+      },
     }
   );
+
+  const deleteCaseMutation = useMutation(() => casesService.delete(id), {
+    onSuccess: () => {
+      queryClient.invalidateQueries('cases');
+      navigate(closePath);
+    },
+    onError: (error) => setCaseDeleteError(error.response?.data?.message || t('case.deleteCaseFailed')),
+  });
 
   const markPaymentPaidMutation = useMutation(
     (paymentId) => paymentsService.markAsPaid(paymentId),
@@ -195,7 +215,7 @@ const CaseDetailPage = () => {
         queryClient.invalidateQueries(['case', id]);
       },
       onError: (error) => {
-        setPaymentActionError(error.response?.data?.message || 'Payment reminder SMS failed');
+        setPaymentActionError(error.response?.data?.message || t('payment.reminderFailed'));
       },
     }
   );
@@ -212,7 +232,7 @@ const CaseDetailPage = () => {
         queryClient.invalidateQueries('dashboard');
       },
       onError: (error) => {
-        setPaymentActionError(error.response?.data?.message || 'Payment offer update failed');
+        setPaymentActionError(error.response?.data?.message || t('payment.updateFailed'));
       },
     }
   );
@@ -220,15 +240,15 @@ const CaseDetailPage = () => {
   const handleAddInternalNote = () => {
     const trimmedNote = internalNote.trim();
     if (!trimmedNote) {
-      setInternalNoteError('Internal note is required');
+      setInternalNoteError(t('case.internalNoteRequired'));
       return;
     }
     setInternalNoteError('');
     internalNoteMutation.mutate(trimmedNote);
   };
 
-  const handleDeleteInternalNote = (historyId) => {
-    deleteInternalNoteMutation.mutate(historyId);
+  const handleDeleteInternalNote = () => {
+    if (noteToDelete) deleteInternalNoteMutation.mutate(noteToDelete.id);
   };
 
   const getPaymentStatusLabel = (status) => {
@@ -240,6 +260,16 @@ const CaseDetailPage = () => {
     return labels[status] || status;
   };
 
+  const getPaymentMethodLabel = (method) => String(method || '').split(',')
+    .map((value) => {
+      const normalized = value.trim();
+      return normalized === 'online' || normalized === 'onsite'
+        ? t(`payment.${normalized}`)
+        : normalized;
+    })
+    .filter(Boolean)
+    .join(', ');
+
   const getReminderCooldownRemaining = (payment) => {
     if (!payment.last_reminder_sent_at) return 0;
     const cooldownMs = 30 * 60 * 1000;
@@ -249,7 +279,7 @@ const CaseDetailPage = () => {
 
   const formatReminderCooldown = (milliseconds) => {
     const minutes = Math.ceil(milliseconds / (60 * 1000));
-    return `${minutes} min`;
+    return t('payment.minutesShort', { count: minutes });
   };
 
   const startPaymentAmountEdit = (payment) => {
@@ -266,7 +296,7 @@ const CaseDetailPage = () => {
   const savePaymentAmountEdit = (payment) => {
     const amount = Number(paymentEditAmount);
     if (!Number.isFinite(amount) || amount < 0) {
-      setPaymentActionError('Enter a valid offer amount');
+      setPaymentActionError(t('payment.invalidAmount'));
       return;
     }
 
@@ -324,58 +354,54 @@ const CaseDetailPage = () => {
   }
 
   const statusTimestamps = getStatusTimestamps();
-  const resultPreview = statusDraft
-    ? {
-        ...case_,
-        status_level: statusDraft.new_status_level,
-        result_type: statusDraft.result_type || case_.result_type,
-      }
-    : case_;
   const hasPersistedPayablePayment = payments?.some((payment) => payment.offer_type === 'payable');
   const hasUnsavedPayableDraft =
     statusDraft?.new_status_level === 3 &&
     statusDraft?.result_type === 'payable' &&
     !hasPersistedPayablePayment;
+  const statusLabel = t(['', 'status.opened', 'status.investigating', 'status.pending', 'status.completed'][case_.status_level] || 'common.status');
+  const technicianName = [case_.assigned_technician?.name, case_.assigned_technician?.last_name].filter(Boolean).join(' ');
 
   return (
-    <Dialog open={true} onClose={() => navigate(closePath)} maxWidth="lg" fullWidth>
-        <DialogTitle>
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Typography variant="h6">{localCaseData?.case_number || case_?.case_number}</Typography>
-            <Box display="flex" alignItems="center" gap={1}>
-              <Button
-                variant="outlined"
-                startIcon={<PrintOutlinedIcon />}
-                onClick={() => printServiceCaseLabel(localCaseData)}
-              >
-                {t('case.reprintLabel')}
-              </Button>
-              {hasUnsavedChanges && (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleSaveChanges}
-                  disabled={updateCaseMutation.isLoading}
-                >
-                  {updateCaseMutation.isLoading ? <CircularProgress size={20} /> : t('common.save')}
-                </Button>
-              )}
-              <Button onClick={() => navigate(closePath)}>{t('common.close')}</Button>
-            </Box>
-          </Box>
-        </DialogTitle>
-      <DialogContent>
-        <Tabs value={tab} onChange={(e, newValue) => setTab(newValue)} sx={{ mb: 3 }}>
+    <main className="zzv-case-detail">
+      <button type="button" className="zzv-case-detail__back" onClick={() => navigate(closePath)}>
+        <img src="/figma-staff/detail-back.svg" alt="" />{t('common.openCases')}
+      </button>
+      <section className="zzv-case-detail__card">
+        <header className="zzv-case-detail__head">
+          <div className="zzv-case-detail__identity">
+            <div className="zzv-case-detail__title-row">
+              <h1>{localCaseData.case_number}</h1>
+              <span className={`zzv-case-detail__status zzv-case-detail__status--${case_.status_level}`}>{statusLabel}</span>
+            </div>
+            <p>{t('case.detailOpenedAt', { date: formatCaseDateTime(case_.opened_at) })}
+              {technicianName && <> · {t('case.technician')} {technicianName}</>}
+            </p>
+          </div>
+          <div className="zzv-case-detail__actions">
+            {isAdmin && <button type="button" className="zzv-case-detail__action zzv-case-detail__action--delete" aria-label={t('case.deleteCase')} title={t('case.deleteCase')} onClick={() => { setCaseDeleteError(''); setCaseDeleteOpen(true); }}><img src="/figma-staff/detail-delete.svg" alt="" /></button>}
+            <button type="button" className="zzv-case-detail__action zzv-case-detail__action--print" aria-label={t('case.reprintLabel')} onClick={() => printServiceCaseLabel(localCaseData)}>
+              <img src="/figma-staff/detail-print.svg" alt="" /><span className="zzv-case-detail__print-full" aria-hidden="true">{t('case.reprintLabel')}</span><span className="zzv-case-detail__print-short" aria-hidden="true">{t('case.printLabelShort')}</span>
+            </button>
+            <button type="button" className="zzv-case-detail__action zzv-case-detail__action--save" onClick={handleSaveChanges} disabled={!hasUnsavedChanges || updateCaseMutation.isLoading}>
+              <img src="/figma-staff/detail-save.svg" alt="" />{updateCaseMutation.isLoading ? t('common.saving') : t('common.save')}
+            </button>
+          </div>
+        </header>
+        <Tabs className="zzv-case-detail__tabs" value={tab} onChange={(e, newValue) => setTab(newValue)} variant="scrollable" scrollButtons={false}>
           <Tab label={t('common.details')} />
-          <Tab label={t('common.status')} />
-          <Tab label={t('common.result')} />
+          <Tab label={t('case.statusAndResult')} />
           <Tab label={t('common.files')} />
           <Tab label={t('common.history')} />
         </Tabs>
+        <div className="zzv-case-detail__body">
 
         {/* Tab 1: Details */}
         {tab === 0 && (
-          <Grid container spacing={2}>
+          <div className="zzv-case-detail__sections">
+          <section className="zzv-case-detail__section">
+            <h2>{t('case.listCase')}</h2>
+            <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -405,17 +431,11 @@ const CaseDetailPage = () => {
                 type="number"
               />
             </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label={t('case.productId')}
-                value={localCaseData?.product_id || ''}
-                onChange={(e) => handleFieldChange('product_id', e.target.value ? parseInt(e.target.value) : null)}
-                disabled={!canManageCases}
-                margin="normal"
-                type="number"
-              />
             </Grid>
+          </section>
+          <section className="zzv-case-detail__section">
+            <h2>{t('case.listDevice')}</h2>
+            <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -447,6 +467,16 @@ const CaseDetailPage = () => {
               />
             </Grid>
             <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="IMEI"
+                value={localCaseData?.imei || ''}
+                onChange={(e) => handleFieldChange('imei', e.target.value)}
+                disabled={!canManageCases}
+                margin="normal"
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
               <FormControl fullWidth margin="normal">
                 <InputLabel>{t('case.deviceType')}</InputLabel>
                 <Select
@@ -466,13 +496,19 @@ const CaseDetailPage = () => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="IMEI"
-                value={localCaseData?.imei || ''}
-                onChange={(e) => handleFieldChange('imei', e.target.value)}
+                label={t('case.productId')}
+                value={localCaseData?.product_id || ''}
+                onChange={(e) => handleFieldChange('product_id', e.target.value ? parseInt(e.target.value, 10) : null)}
                 disabled={!canManageCases}
                 margin="normal"
+                type="number"
               />
             </Grid>
+            </Grid>
+          </section>
+          <section className="zzv-case-detail__section">
+            <h2>{t('case.listCustomer')}</h2>
+            <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -526,6 +562,11 @@ const CaseDetailPage = () => {
                 margin="normal"
               />
             </Grid>
+            </Grid>
+          </section>
+          <section className="zzv-case-detail__section">
+            <h2>{t('case.management')}</h2>
+            <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -620,13 +661,14 @@ const CaseDetailPage = () => {
                 }
               />
             </Grid>
-          </Grid>
+            </Grid>
+          </section>
+          </div>
         )}
 
         {/* Tab 2: Status & Notes */}
         {tab === 1 && (
           <Box>
-            <StatusStepper currentStatus={case_.status_level} statusTimestamps={statusTimestamps} />
             {partsWaitingError && (
               <Alert severity="error" sx={{ mt: 2, borderRadius: '6px' }}>
                 {partsWaitingError}
@@ -635,6 +677,7 @@ const CaseDetailPage = () => {
             {(case_.status_level === 2 || case_.parts_waiting) && (
               <Paper
                 variant="outlined"
+                className="zzv-case-payment-card zzv-case-payment-card--draft"
                 sx={{
                   mt: 2,
                   p: 2,
@@ -656,19 +699,19 @@ const CaseDetailPage = () => {
                 >
                   <Box>
                     <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                      Waiting parts delivery
+                      {t('case.partsWaitingTitle')}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       {case_.parts_waiting
-                        ? 'Deadline is frozen until necessary parts are marked received.'
-                        : 'Freeze this investigation deadline while necessary parts are being delivered.'}
+                        ? t('case.partsWaitingActiveHelp')
+                        : t('case.partsWaitingStartHelp')}
                     </Typography>
                     {case_.parts_waiting_started_at && (
                       <Chip
                         size="small"
                         color="warning"
                         variant="outlined"
-                        label={`Started ${new Date(case_.parts_waiting_started_at).toLocaleString()}`}
+                        label={t('case.partsWaitingStarted', { date: formatCaseDateTime(case_.parts_waiting_started_at) })}
                         sx={{ mt: 1 }}
                       />
                     )}
@@ -683,10 +726,10 @@ const CaseDetailPage = () => {
                     sx={{ borderRadius: '6px', whiteSpace: 'nowrap' }}
                   >
                     {partsWaitingMutation.isLoading
-                      ? 'Saving...'
+                      ? t('common.saving')
                       : case_.parts_waiting
-                        ? 'Mark parts received'
-                        : 'Waiting parts'}
+                        ? t('case.markPartsReceived')
+                        : t('case.partsWaiting')}
                   </Button>
                 </Box>
               </Paper>
@@ -697,30 +740,17 @@ const CaseDetailPage = () => {
                 onStatusChange={handleStatusChange}
                 isLoading={statusChangeMutation.isLoading}
                 onDraftChange={setStatusDraft}
+                statusTimestamps={statusTimestamps}
               />
             </Box>
           </Box>
         )}
 
         {/* Tab 3: Result */}
-        {tab === 2 && (
-          <Box>
-            <Typography variant="h6" gutterBottom>
-              {t('common.result')}
-            </Typography>
-            <ResultBar resultType={resultPreview.result_type} size="large" />
-            {statusDraft && statusDraft.new_status_level !== case_.status_level && (
-              <Alert severity="info" sx={{ mt: 2, borderRadius: '6px' }}>
-                {t('case.statusChangeReady')}:{' '}
-                {statusDraft.new_status_level === 3
-                  ? t('status.pending')
-                  : statusDraft.new_status_level === 4
-                    ? t('status.completed')
-                    : statusDraft.new_status_level === 2
-                      ? t('status.investigating')
-                      : t('status.opened')}
-              </Alert>
-            )}
+        {tab === 1 && (hasUnsavedPayableDraft || payments?.length > 0) && (
+          <section className="zzv-case-flow__panel zzv-case-flow__payments">
+            <h2>{t('payment.offersAndPayments')}</h2>
+            <div className="zzv-case-flow__panel-content">
             {hasUnsavedPayableDraft && (
               <Paper
                 variant="outlined"
@@ -736,8 +766,7 @@ const CaseDetailPage = () => {
                   {t('result.payable')} - {t('payment.offerDetails') || 'Offer Details'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Save the status update first. The payment confirmation buttons will become active
-                  immediately after the payable offer is created.
+                  {t('payment.saveOfferFirst')}
                 </Typography>
                 {statusDraft.offer_amount && (
                   <Typography variant="body2" sx={{ mt: 1 }}>
@@ -746,7 +775,7 @@ const CaseDetailPage = () => {
                 )}
                 {statusDraft.payment_methods?.length > 0 && (
                   <Typography variant="body2">
-                    <strong>{t('payment.method')}:</strong> {statusDraft.payment_methods.join(', ')}
+                    <strong>{t('payment.method')}:</strong> {getPaymentMethodLabel(statusDraft.payment_methods.join(','))}
                   </Typography>
                 )}
                 <Box display="flex" gap={1} flexWrap="wrap" sx={{ mt: 1.5 }}>
@@ -761,10 +790,7 @@ const CaseDetailPage = () => {
             )}
             
             {payments && payments.length > 0 && (
-              <Box mt={3}>
-                <Typography variant="h6" gutterBottom>
-                  {t('payment.offersAndPayments') || 'Offers & Payments'}
-                </Typography>
+              <Box>
                 {paymentActionError && (
                   <Alert severity="error" sx={{ mb: 2 }}>
                     {paymentActionError}
@@ -774,15 +800,9 @@ const CaseDetailPage = () => {
                   <Paper
                     key={payment.id}
                     variant="outlined"
-                    sx={{
-                      p: 2,
-                      mb: 2,
-                      borderRadius: 2,
-                      display: 'grid',
-                      gap: 1.5,
-                    }}
+                    className="zzv-case-payment-card"
                   >
-                    <Box display="flex" justifyContent="space-between" alignItems="flex-start" gap={2}>
+                    <Box className="zzv-case-payment-card__head" display="flex" justifyContent="space-between" alignItems="flex-start" gap={2}>
                       <Box>
                         <Typography variant="subtitle1" gutterBottom>
                           {payment.offer_type === 'payable'
@@ -828,7 +848,7 @@ const CaseDetailPage = () => {
                         )}
                         {payment.payment_method && (
                           <Typography variant="body2">
-                            <strong>{t('payment.method')}:</strong> {payment.payment_method}
+                            <strong>{t('payment.method')}:</strong> {getPaymentMethodLabel(payment.payment_method)}
                           </Typography>
                         )}
                         {payment.generated_code && (
@@ -850,19 +870,19 @@ const CaseDetailPage = () => {
                       />
                     </Box>
                     {canManageCases && payment.payment_status !== 'paid' && editingPaymentId !== payment.id && (
-                      <Box display="flex" gap={1} flexWrap="wrap">
+                      <Box className="zzv-case-payment-card__actions" display="flex" gap={1} flexWrap="wrap">
                         <Button
                           variant="outlined"
                           size="small"
                           onClick={() => startPaymentAmountEdit(payment)}
                           disabled={updatePaymentMutation.isLoading}
                         >
-                          Edit amount
+                          {t('payment.editAmount')}
                         </Button>
                       </Box>
                     )}
                     {canManageCases && payment.payment_status !== 'paid' && (
-                      <Box display="flex" gap={1} flexWrap="wrap">
+                      <Box className="zzv-case-payment-card__actions" display="flex" gap={1} flexWrap="wrap">
                         <Button
                           variant="contained"
                           color="success"
@@ -902,10 +922,10 @@ const CaseDetailPage = () => {
                               disabled={reminderDisabled}
                             >
                               {cooldownRemaining > 0
-                                ? `SMS reminder (${formatReminderCooldown(cooldownRemaining)})`
+                                ? t('payment.reminderCooldown', { time: formatReminderCooldown(cooldownRemaining) })
                                 : sendPaymentReminderMutation.isLoading
                                   ? t('common.saving')
-                                  : 'Send payment SMS'}
+                                  : t('payment.sendReminder')}
                             </Button>
                           );
                         })()}
@@ -915,50 +935,25 @@ const CaseDetailPage = () => {
                 ))}
               </Box>
             )}
-
-            {canManageCases && (
-              <Box mt={3}>
-                <Typography variant="h6" gutterBottom>
-                  {t('common.quickActions') || 'Quick Actions'}
-                </Typography>
-                <Box display="flex" gap={2}>
-                  <Button
-                    variant="outlined"
-                    onClick={() => handleStatusChange({ new_status_level: 4, result_type: 'covered' })}
-                  >
-                    {t('common.markCovered') || 'Mark Covered'}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    onClick={() => handleStatusChange({ new_status_level: 4, result_type: 'returned' })}
-                  >
-                    {t('common.markReturned') || 'Mark Returned'}
-                  </Button>
-                </Box>
-              </Box>
-            )}
-          </Box>
+            </div>
+          </section>
         )}
 
         {/* Tab 4: Files */}
-        {tab === 3 && (
+        {tab === 2 && (
           <Box>
             <FileUpload caseId={id} />
           </Box>
         )}
 
         {/* Tab 5: History */}
-        {tab === 4 && (
-          <Box>
-            <Typography variant="h6" gutterBottom>
-              {t('common.history')}
-            </Typography>
-            <Paper variant="outlined" sx={{ p: 2, mb: 2, borderRadius: 2 }}>
-              <Typography variant="subtitle1" gutterBottom>
-                {t('case.addInternalNote', 'Add internal note')}
-              </Typography>
+        {tab === 3 && (
+          <div className="zzv-case-history">
+            <section className="zzv-case-detail__section zzv-case-history__composer">
+              <h2>{t('case.addInternalNote')}</h2>
+              <div className="zzv-case-history__composer-body">
               {internalNoteError && (
-                <Alert severity="error" sx={{ mb: 2 }}>
+                <Alert severity="error" sx={{ mb: 1 }}>
                   {Array.isArray(internalNoteError) ? internalNoteError.join(', ') : internalNoteError}
                 </Alert>
               )}
@@ -971,107 +966,95 @@ const CaseDetailPage = () => {
                 onChange={(event) => setInternalNote(event.target.value)}
                 placeholder={t('case.internalNotePlaceholder', 'Write an internal note for this case...')}
               />
-              <Box mt={1.5} display="flex" justifyContent="flex-end">
+              <div className="zzv-case-history__composer-actions">
                 <Button
                   variant="contained"
                   onClick={handleAddInternalNote}
-                  disabled={internalNoteMutation.isLoading}
+                  disabled={internalNoteMutation.isLoading || !internalNote.trim()}
                 >
-                  {internalNoteMutation.isLoading ? t('common.saving', 'Saving...') : t('common.addNote', 'Add note')}
+                  {internalNoteMutation.isLoading ? t('common.saving') : t('common.addNote')}
                 </Button>
-              </Box>
-            </Paper>
+              </div>
+              </div>
+            </section>
             {case_.status_history && case_.status_history.length > 0 ? (
-              case_.status_history
+              [...case_.status_history]
                 .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
                 .map((history) => (
-                  <Paper
-                    key={history.id}
-                    sx={{ p: 2, mb: 2 }}
-                  >
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      {new Date(history.created_at).toLocaleString()}
+                  <article className="zzv-case-history__entry" key={history.id}>
+                    <div className="zzv-case-history__entry-meta">
+                      <time dateTime={history.created_at}>{formatCaseDateTime(history.created_at)}</time>
                       {history.changed_by_user && (
-                        <>
-                          {' '}·{' '}
+                        <span>
                           {[history.changed_by_user.name, history.changed_by_user.last_name].filter(Boolean).join(' ') ||
                             history.changed_by_user.username}
-                        </>
+                          {history.changed_by_user.username && [history.changed_by_user.name, history.changed_by_user.last_name].some(Boolean)
+                            ? ` (@${history.changed_by_user.username})` : ''}
+                        </span>
                       )}
-                    </Typography>
-                    {history.previous_status_level !== null && (
-                      <Typography variant="body1" gutterBottom>
-                        <strong>{t('common.status')}:</strong>{' '}
-                        {history.previous_status_level} → {history.new_status_level}
-                      </Typography>
+                    </div>
+                    {history.previous_status_level != null && (
+                      <p className="zzv-case-history__transition">
+                        <strong>{t('common.status')}</strong>{' '}
+                        {t(['', 'status.opened', 'status.investigating', 'status.pending', 'status.completed'][history.previous_status_level] || 'common.status')}
+                        <span aria-hidden="true"> → </span>
+                        {t(['', 'status.opened', 'status.investigating', 'status.pending', 'status.completed'][history.new_status_level] || 'common.status')}
+                      </p>
                     )}
-                    {history.new_result && (
-                      <Typography variant="body1" gutterBottom>
-                        <strong>{t('common.result')}:</strong> {history.new_result}
-                      </Typography>
+                    {history.new_result && history.new_result !== history.previous_result && (
+                      <p className="zzv-case-history__transition">
+                        <strong>{t('common.result')}:</strong> {t(`result.${history.new_result}`, { defaultValue: history.new_result })}
+                      </p>
                     )}
                     {history.note_public && (
-                      <Box mt={1} p={1} sx={{ backgroundColor: '#e3f2fd', borderRadius: 1 }}>
-                        <Typography variant="body2">
-                          <strong>{t('common.publicNote')}:</strong> {history.note_public}
-                        </Typography>
-                      </Box>
+                      <p className="zzv-case-history__note zzv-case-history__note--public">
+                        <strong>{t('common.publicNote')}</strong>{history.note_public}
+                      </p>
                     )}
                     {history.note_private && (
-                      <Box mt={1} p={1} sx={{ backgroundColor: '#fff3e0', borderRadius: 1 }}>
-                        <Box display="flex" alignItems="flex-start" justifyContent="space-between" gap={1}>
-                          <Typography variant="body2" color="text.secondary">
-                            <strong>{t('common.privateNote')}:</strong> {history.note_private}
-                          </Typography>
+                      <div className="zzv-case-history__note zzv-case-history__note--private">
+                        <p><strong>{t('common.privateNote')}</strong>{history.note_private}</p>
                           {isAdmin &&
                             history.previous_status_level === null &&
                             history.previous_result === null &&
                             history.new_result === null &&
                             !history.note_public &&
                             history.note_private && (
-                              <Button
-                                size="small"
-                                color="error"
-                                onClick={() => handleDeleteInternalNote(history.id)}
-                                disabled={deleteInternalNoteMutation.isLoading}
-                                sx={{ flexShrink: 0 }}
-                              >
+                              <button type="button" onClick={() => { setDeleteNoteError(''); setNoteToDelete(history); }} disabled={deleteInternalNoteMutation.isLoading}>
                                 {t('common.delete')}
-                              </Button>
+                              </button>
                             )}
-                        </Box>
-                      </Box>
+                      </div>
                     )}
-                  </Paper>
+                  </article>
                 ))
             ) : (
-              <Typography>{t('common.noHistory')}</Typography>
+              <div className="zzv-case-history__empty">{t('common.noHistory')}</div>
             )}
-          </Box>
+          </div>
         )}
-      </DialogContent>
-      <DialogActions>
-        {isAdmin && (
-          <Button
-            color="error"
-            onClick={async () => {
-              if (window.confirm(t('case.deleteCaseConfirm'))) {
-                try {
-                  await casesService.delete(id);
-                  queryClient.invalidateQueries('cases');
-                  navigate(closePath);
-                } catch (error) {
-                  alert(error.response?.data?.message || t('common.errorLoading'));
-                }
-              }
-            }}
-          >
-            {t('case.deleteCase')}
-          </Button>
-        )}
-        <Button onClick={() => navigate(closePath)}>{t('common.close')}</Button>
-      </DialogActions>
-    </Dialog>
+        </div>
+      </section>
+      <StaffDeleteDialog
+        open={Boolean(noteToDelete)}
+        title={t('case.deleteInternalNote')}
+        description={t('case.deleteInternalNoteConfirm')}
+        error={deleteNoteError}
+        loading={deleteInternalNoteMutation.isLoading}
+        onClose={() => { setNoteToDelete(null); setDeleteNoteError(''); }}
+        onConfirm={handleDeleteInternalNote}
+      />
+      {isAdmin && <StaffDeleteDialog
+        open={caseDeleteOpen}
+        title={t('case.deleteCase')}
+        description={t('case.deleteCaseConfirm', { number: case_.case_number })}
+        detail={t('case.deleteCaseAuditNote')}
+        error={caseDeleteError}
+        loading={deleteCaseMutation.isLoading}
+        onClose={() => { setCaseDeleteOpen(false); setCaseDeleteError(''); }}
+        onConfirm={() => deleteCaseMutation.mutate()}
+      />}
+    </main>
   );
 };
 

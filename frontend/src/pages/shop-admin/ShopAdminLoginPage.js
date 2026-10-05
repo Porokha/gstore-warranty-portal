@@ -1,26 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Alert,
-  Box,
-  Button,
-  Container,
-  InputAdornment,
-  Paper,
-  TextField,
-  Typography,
-} from '@mui/material';
-import {
-  Lock as LockIcon,
-  Person as PersonIcon,
-} from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 
 const ShopAdminLoginPage = () => {
+  const { t, i18n } = useTranslation();
   const { login, logout } = useAuth();
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -28,123 +17,103 @@ const ShopAdminLoginPage = () => {
     event.preventDefault();
     setError('');
     setLoading(true);
-
     try {
       const result = await login(username, password);
-
       if (result.user?.role !== 'admin') {
         logout();
-        setError('Only admin users can access the shop admin area.');
+        setError(t('shopAdminLogin.adminOnly'));
         setLoading(false);
         return;
       }
-
       navigate('/shop/admin/products');
     } catch (err) {
-      setError('Invalid credentials');
+      setError(t('login.invalidCredentials'));
       setLoading(false);
     }
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        px: 2,
-        py: 6,
-        background:
-          'radial-gradient(circle at top left, rgba(19, 56, 153, 0.18), transparent 32%), linear-gradient(180deg, #eef3fb 0%, #f7f9fc 100%)',
-      }}
-    >
-      <Container maxWidth="sm">
-        <Paper
-          elevation={0}
-          sx={{
-            p: { xs: 3, md: 4 },
-            borderRadius: 3,
-            border: '1px solid #dce4f0',
-            boxShadow: '0 30px 80px rgba(14, 23, 38, 0.12)',
-          }}
-        >
-          <Box sx={{ textAlign: 'center', mb: 3 }}>
-            <Box
-              component="img"
-              src="/brand-logo-horizontal.svg"
-              alt="ZEZVA"
-              sx={{ width: 180, maxWidth: '100%', height: 'auto', mb: 2 }}
-            />
-            <Typography sx={{ fontSize: '28px', fontWeight: 800, color: '#172033' }}>
-              Shop Admin Login
-            </Typography>
-            <Typography sx={{ color: '#667085', mt: 1 }}>
-              Hidden URL access for product and order management.
-            </Typography>
-          </Box>
-
-          <form onSubmit={handleSubmit}>
-            <TextField
-              fullWidth
-              margin="normal"
-              label="Username"
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              autoFocus
-              required
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <PersonIcon sx={{ color: '#667085' }} />
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <TextField
-              fullWidth
-              margin="normal"
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <LockIcon sx={{ color: '#667085' }} />
-                  </InputAdornment>
-                ),
-              }}
-            />
-
-            {error && (
-              <Alert severity="error" sx={{ mt: 2 }}>
-                {error}
-              </Alert>
-            )}
-
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              disabled={loading}
-              sx={{
-                mt: 3,
-                py: 1.4,
-                borderRadius: 3,
-                textTransform: 'none',
-                fontWeight: 800,
-                bgcolor: '#172033',
-                '&:hover': { bgcolor: '#0f1726' },
-              }}
-            >
-              {loading ? 'Signing in...' : 'Sign in'}
-            </Button>
-          </form>
-        </Paper>
-      </Container>
-    </Box>
+    <main className="zzv-staff-login zzv-shop-admin-login">
+      <section className="zzv-staff-login-card" aria-labelledby="zzv-shop-admin-login-title">
+        <header className="zzv-staff-login-header">
+          <img src="/figma-home/trade-nav-logo.svg" width="147" height="24" alt="ZEZVA" />
+          <h1 id="zzv-shop-admin-login-title">{t('shopAdminLogin.subtitle')}</h1>
+        </header>
+        <form className="zzv-staff-login-form" onSubmit={handleSubmit}>
+          <div className="zzv-staff-login-fields">
+            <label className="zzv-staff-login-field" htmlFor="shop-admin-username">
+              <span>{t('login.usernameShort')}</span>
+              <span className={`zzv-staff-login-input${error ? ' is-error' : ''}`}>
+                <img src="/figma-staff/login-user.svg" width="20" height="20" alt="" />
+                <input
+                  id="shop-admin-username"
+                  type="text"
+                  value={username}
+                  onChange={(event) => { setUsername(event.target.value); setError(''); }}
+                  autoComplete="username"
+                  required
+                  placeholder={t('login.usernamePlaceholder')}
+                  aria-invalid={Boolean(error)}
+                  aria-describedby={error ? 'shop-admin-login-error' : undefined}
+                />
+              </span>
+            </label>
+            <label className="zzv-staff-login-field" htmlFor="shop-admin-password">
+              <span>{t('login.password')}</span>
+              <span className={`zzv-staff-login-input${error ? ' is-error' : ''}`}>
+                <img src="/figma-staff/login-lock.svg" width="20" height="20" alt="" />
+                <input
+                  id="shop-admin-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(event) => { setPassword(event.target.value); setError(''); }}
+                  autoComplete="current-password"
+                  required
+                  placeholder={t('login.passwordPlaceholder')}
+                  aria-invalid={Boolean(error)}
+                  aria-describedby={error ? 'shop-admin-login-error' : undefined}
+                />
+                <button
+                  className="zzv-staff-login-eye"
+                  type="button"
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  aria-label={showPassword ? t('login.hidePassword') : t('login.showPassword')}
+                  aria-pressed={showPassword}
+                >
+                  <img src="/figma-staff/login-eye.svg" width="20" height="20" alt="" />
+                </button>
+              </span>
+            </label>
+          </div>
+          {error && (
+            <div className="zzv-staff-login-error" id="shop-admin-login-error" role="alert">
+              <img src="/figma-staff/login-alert.svg" width="16" height="16" alt="" />
+              <span>{error}</span>
+            </div>
+          )}
+          <button className="zzv-staff-login-submit" type="submit" disabled={loading}>
+            {loading ? t('login.signingIn') : t('login.signIn')}
+          </button>
+        </form>
+        <footer className="zzv-staff-login-footer">
+          <span>{t('shopAdminLogin.employeesOnly')}</span>
+          <div className="zzv-staff-login-languages" role="group" aria-label={t('login.language')}>
+            {['ka', 'en'].map((language) => (
+              <button
+                key={language}
+                className={i18n.resolvedLanguage === language ? 'is-active' : ''}
+                type="button"
+                onClick={() => i18n.changeLanguage(language)}
+                aria-label={language === 'ka' ? 'ქართული' : 'English'}
+                aria-pressed={i18n.resolvedLanguage === language}
+              >
+                <img src={`/figma-home/trade-nav-flag-${language === 'ka' ? 'ge' : 'uk'}.svg`} width="24" height="17" alt="" />
+              </button>
+            ))}
+          </div>
+        </footer>
+      </section>
+    </main>
   );
 };
 

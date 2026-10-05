@@ -2,23 +2,10 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import {
-  Box,
-  Paper,
-  Typography,
-  Grid,
-  TextField,
-  Button,
-  CircularProgress,
-  Alert,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Select,
-  Divider,
-} from '@mui/material';
-import { ArrowBack, Save } from '@mui/icons-material';
+import WarrantiesPage from './WarrantiesPage';
+import WarrantyFormDialog from '../../components/common/WarrantyFormDialog';
 import { warrantiesService } from '../../services/warrantiesService';
+
 const WarrantyEditPage = () => {
   const { t } = useTranslation();
   const { id } = useParams();
@@ -26,266 +13,27 @@ const WarrantyEditPage = () => {
   const queryClient = useQueryClient();
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-
-  const { data: warranty, isLoading } = useQuery(
-    ['warranty', id],
-    () => warrantiesService.getById(id),
-    {
-      enabled: !!id,
-    }
+  const { data: warranty, isLoading, error: loadError } = useQuery(
+    ['warranty', id], () => warrantiesService.getById(id), { enabled: Boolean(id) },
   );
-
-  const [formData, setFormData] = useState({
-    customer_name: '',
-    customer_last_name: '',
-    customer_phone: '',
-    customer_email: '',
-    price: '',
-    brand: '',
-    model: '',
-    condition: '',
-    personal_identification_number: '',
-    admin_notes: '',
+  const updateMutation = useMutation((payload) => warrantiesService.update(id, payload), {
+    onSuccess: () => {
+      queryClient.invalidateQueries(['warranty', id]);
+      queryClient.invalidateQueries('warranties');
+      setSuccess(true);
+      setTimeout(() => navigate(`/staff/warranties/${id}`), 1000);
+    },
+    onError: (err) => setError(err.response?.data?.message || t('common.errorLoading')),
   });
 
-  React.useEffect(() => {
-    if (warranty) {
-      setFormData({
-        customer_name: warranty.customer_name || '',
-        customer_last_name: warranty.customer_last_name || '',
-        customer_phone: warranty.customer_phone || '',
-        customer_email: warranty.customer_email || '',
-        price: warranty.price ?? '',
-        brand: warranty.brand || '',
-        model: warranty.model || '',
-        condition: warranty.condition || '',
-        personal_identification_number: warranty.personal_identification_number || '',
-        admin_notes: warranty.admin_notes || '',
-      });
-    }
-  }, [warranty]);
-
-  const updateMutation = useMutation(
-    (data) => warrantiesService.update(id, data),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['warranty', id]);
-        setSuccess(true);
-        setTimeout(() => {
-          navigate(`/staff/warranties/${id}`);
-        }, 1500);
-      },
-      onError: (error) => {
-        setError(error.response?.data?.message || 'Failed to update warranty');
-      },
-    }
-  );
-
-  const handleChange = (field) => (e) => {
-    setFormData({
-      ...formData,
-      [field]: e.target.value,
-    });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const payload = { ...formData };
-    if (payload.price === '' || payload.price === null || payload.price === undefined) {
-      delete payload.price;
-    } else {
-      payload.price = Number(payload.price);
-    }
-    updateMutation.mutate(payload);
-  };
-
-  if (isLoading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  return (
-    <Box>
-      <Box display="flex" alignItems="center" gap={2} mb={3}>
-        <Button
-          startIcon={<ArrowBack />}
-          onClick={() => navigate(`/staff/warranties/${id}`)}
-          sx={{ textTransform: 'none' }}
-        >
-          {t('common.back') || 'Back'}
-        </Button>
-        <Typography variant="h4">{t('warranty.editWarranty') || 'Edit Warranty'}</Typography>
-      </Box>
-
-      <Paper sx={{ p: 4 }}>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
-            {error}
-          </Alert>
-        )}
-        {success && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            {t('warranty.warrantyUpdated') || 'Warranty updated successfully'}
-          </Alert>
-        )}
-        <form onSubmit={handleSubmit}>
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <Typography variant="h6" sx={{ mb: 2, color: '#64748b' }}>
-                Customer Information
-              </Typography>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label={t('warranty.customerName') || 'Customer Name'}
-                value={formData.customer_name}
-                onChange={handleChange('customer_name')}
-                required
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label={t('warranty.customerName') + ' (Last Name)' || 'Customer Last Name'}
-                value={formData.customer_last_name}
-                onChange={handleChange('customer_last_name')}
-                required
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label={t('warranty.customerPhone') || 'Customer Phone'}
-                value={formData.customer_phone}
-                onChange={handleChange('customer_phone')}
-                required
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label={t('warranty.customerEmail') || 'Customer Email'}
-                type="email"
-                value={formData.customer_email}
-                onChange={handleChange('customer_email')}
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <Divider sx={{ my: 2 }} />
-              <Typography variant="h6" sx={{ mb: 2, color: '#64748b' }}>
-                Product Information (Admin Only)
-              </Typography>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label={t('warranty.brand') || 'Brand'}
-                value={formData.brand}
-                onChange={handleChange('brand')}
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                type="number"
-                label={t('warranty.price') || 'Price'}
-                value={formData.price}
-                onChange={handleChange('price')}
-                inputProps={{ min: 0, step: 0.01 }}
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label={t('warranty.model') || 'Model'}
-                value={formData.model}
-                onChange={handleChange('model')}
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>{t('warranty.condition') || 'Condition'}</InputLabel>
-                <Select
-                  value={formData.condition}
-                  onChange={handleChange('condition')}
-                  label={t('warranty.condition') || 'Condition'}
-                >
-                  <MenuItem value="">None</MenuItem>
-                  <MenuItem value="New">New</MenuItem>
-                  <MenuItem value="Like New">Like New</MenuItem>
-                  <MenuItem value="Excellent">Excellent</MenuItem>
-                  <MenuItem value="Good">Good</MenuItem>
-                  <MenuItem value="Fair">Fair</MenuItem>
-                  <MenuItem value="Poor">Poor</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label={t('warranty.personalIdentificationNumber') || 'P/N (Personal Identification Number)'}
-                value={formData.personal_identification_number}
-                onChange={handleChange('personal_identification_number')}
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <Divider sx={{ my: 2 }} />
-              <Typography variant="h6" sx={{ mb: 2, color: '#64748b' }}>
-                Admin Notes
-              </Typography>
-            </Grid>
-
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                multiline
-                rows={4}
-                label={t('warranty.adminNotes') || 'Admin Notes'}
-                placeholder={t('warranty.adminNotesPlaceholder') || 'Internal notes (not visible to customers)'}
-                value={formData.admin_notes}
-                onChange={handleChange('admin_notes')}
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <Box display="flex" gap={2} justifyContent="flex-end" sx={{ mt: 2 }}>
-                <Button
-                  variant="outlined"
-                  onClick={() => navigate(`/staff/warranties/${id}`)}
-                >
-                  {t('common.cancel') || 'Cancel'}
-                </Button>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  startIcon={updateMutation.isLoading ? <CircularProgress size={20} /> : <Save />}
-                  disabled={updateMutation.isLoading}
-                >
-                  {t('warranty.saveChanges') || 'Save Changes'}
-                </Button>
-              </Box>
-            </Grid>
-          </Grid>
-        </form>
-      </Paper>
-    </Box>
-  );
+  return <>
+    <WarrantiesPage />
+    <WarrantyFormDialog mode="edit" warranty={warranty} loading={isLoading}
+      error={error || (loadError && (loadError.response?.data?.message || t('warranty.warrantyNotFound')))}
+      success={success} saving={updateMutation.isLoading}
+      onSubmit={(payload) => { setError(''); updateMutation.mutate(payload); }}
+      onClose={() => navigate(`/staff/warranties/${id}`)} />
+  </>;
 };
 
 export default WarrantyEditPage;
-
