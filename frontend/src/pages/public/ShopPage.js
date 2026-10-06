@@ -79,6 +79,13 @@ const formatMoney = (value) => `₾${Number(value || 0).toFixed(2)}`;
 const getProductOnlyPrice = (product) => product.sale_price ?? product.price;
 const getServicePrice = (product) => product.service_price;
 const getDisplayPrice = (product) => getProductOnlyPrice(product) ?? getServicePrice(product);
+const getDiscountPercentage = (product) => {
+  const regular = Number(product.price);
+  const sale = Number(product.sale_price);
+  return regular > 0 && product.sale_price != null && sale < regular
+    ? Math.round((1 - sale / regular) * 100)
+    : 0;
+};
 const canBuyProductOnly = (product) => getProductOnlyPrice(product) != null;
 const canBuyWithService = (product) => getServicePrice(product) != null;
 const MODAL_CLOSE_MS = 260;
@@ -809,7 +816,10 @@ const ShopPage = () => {
           canProductOnly: canBuyProductOnly(product),
           canService: canBuyWithService(product),
           image_url: product.image_url,
-          subtitle: `${t(labelForDevice[product.device_category])} • ${t(labelForPart[product.part_category])}`,
+          subtitle: [
+            t(labelForSource[product.inventory_source] || product.inventory_source),
+            product.quality_line && product.quality_line !== 'N/A' ? product.quality_line : null,
+          ].filter(Boolean).join(' · '),
         },
       ];
     });
@@ -978,7 +988,6 @@ const ShopPage = () => {
     }
 
     if (action === 'decrease' && currentItem.qty === 1) {
-      removeCartItem(itemId);
       return;
     }
 
@@ -1350,8 +1359,8 @@ const ShopPage = () => {
                   >
                     <div className={`zpos-thumb ${loadedImages[`product:${product.id}`] ? 'is-loaded' : ''}`}>
                       {product.stock_quantity <= 0 && <span className="zpos-figma-stock-badge">{i18n.language === 'ka' ? 'შეკვეთით' : 'On order'}</span>}
-                      {product.sale_price != null && product.price != null && (
-                        <span className="zpos-badge">{t('shop.badges.sale')}</span>
+                      {getDiscountPercentage(product) > 0 && (
+                        <span className="zpos-badge">-{getDiscountPercentage(product)}%</span>
                       )}
                       {product.image_url && !loadedImages[`product:${product.id}`] && (
                         <div className="zpos-skeleton zpos-skeleton--thumb zpos-image-skeleton" />
@@ -1460,8 +1469,9 @@ const ShopPage = () => {
               >
                 <div className="zpos-cart-line-main">
                   <div className={`zpos-cart-item-thumb ${loadedImages[`cart:${item.id}`] ? 'is-loaded' : ''}`}>
-                    {!loadedImages[`cart:${item.id}`] && <div className="zpos-skeleton zpos-image-skeleton" />}
-                    <img src={item.image_url} alt={t('shop.imageAlt.thumbnail', { title: item.title })} loading="lazy" onLoad={() => handleImageReady(`cart:${item.id}`)} onError={() => handleImageReady(`cart:${item.id}`)} />
+                    {item.image_url && !loadedImages[`cart:${item.id}`] && <div className="zpos-skeleton zpos-image-skeleton" />}
+                    <PhoneIphoneOutlined className="zpos-cart-image-fallback" aria-hidden="true" />
+                    {item.image_url && <img src={item.image_url} alt={t('shop.imageAlt.thumbnail', { title: item.title })} loading="lazy" onLoad={() => handleImageReady(`cart:${item.id}`)} onError={(event) => { event.currentTarget.hidden = true; handleImageReady(`cart:${item.id}`); }} />}
                   </div>
                   <div className="zpos-cart-item-main">
                     <h3 title={item.title}>{item.title}</h3>
@@ -1472,18 +1482,18 @@ const ShopPage = () => {
                 <div className="zpos-cart-item-footer">
                   <div className="zpos-cart-item-actions">
                     <div className="zpos-qty">
-                      <button type="button" onClick={() => updateCart(item.id, 'decrease')}>
+                      <button type="button" disabled={item.qty <= 1} aria-label={i18n.language === 'ka' ? 'რაოდენობის შემცირება' : 'Decrease quantity'} onClick={() => updateCart(item.id, 'decrease')}>
                         -
                       </button>
                       <span>{item.qty}</span>
-                      <button type="button" onClick={() => updateCart(item.id, 'increase')}>
+                      <button type="button" aria-label={i18n.language === 'ka' ? 'რაოდენობის გაზრდა' : 'Increase quantity'} onClick={() => updateCart(item.id, 'increase')}>
                         +
                       </button>
                     </div>
                   </div>
                   <div className="zpos-cart-item-price">{formatMoney(item.price)}</div>
                 </div>
-                {item.canService && <label className="zpos-cart-service-row"><BuildOutlined aria-hidden="true" /><span>{i18n.language === 'ka' ? 'დაყენების სერვისი' : 'Installation service'} · +{formatMoney(Math.max(0, (item.servicePrice || 0) - item.basePrice))}</span><input type="checkbox" checked={item.mode === 'service'} disabled={!item.canProductOnly} onChange={() => toggleCartService(item)} /></label>}
+                {item.canService && <label className={`zpos-cart-service-row ${item.mode === 'service' ? 'is-active' : ''}`}><BuildOutlined aria-hidden="true" /><span>{i18n.language === 'ka' ? 'დაყენების სერვისი' : 'Installation service'} · {item.canProductOnly ? `+${formatMoney(Math.max(0, (item.servicePrice || 0) - item.basePrice))}` : (i18n.language === 'ka' ? 'შედის ფასში' : 'Included')}</span><input type="checkbox" checked={item.mode === 'service'} disabled={!item.canProductOnly} onChange={() => toggleCartService(item)} /></label>}
               </div>
             ))}
           </div>
@@ -1549,15 +1559,19 @@ const ShopPage = () => {
               id="zpos-modal-visual"
               className={`zpos-modal-visual ${loadedImages[`modal:${modalProduct.id}`] ? 'is-loaded' : ''}`}
             >
-              {!loadedImages[`modal:${modalProduct.id}`] && (
+              {modalProduct.image_url && !loadedImages[`modal:${modalProduct.id}`] && (
                 <div className="zpos-skeleton zpos-image-skeleton" />
               )}
-              <img
-                src={modalProduct.image_url}
-                alt={t('shop.imageAlt.preview', { title: modalProduct.title })}
-                onLoad={() => handleImageReady(`modal:${modalProduct.id}`)}
-                onError={() => handleImageReady(`modal:${modalProduct.id}`)}
-              />
+              <span className="zpos-modal-image-frame">
+                <img className="zpos-modal-image-placeholder" src="/figma-shop-product-placeholder.svg" alt="" aria-hidden="true" />
+                {modalProduct.image_url && <img
+                  className="zpos-modal-product-image"
+                  src={modalProduct.image_url}
+                  alt={t('shop.imageAlt.preview', { title: modalProduct.title })}
+                  onLoad={() => handleImageReady(`modal:${modalProduct.id}`)}
+                  onError={(event) => { event.currentTarget.hidden = true; handleImageReady(`modal:${modalProduct.id}`); }}
+                />}
+              </span>
             </div>
 
             <div className="zpos-modal-content">

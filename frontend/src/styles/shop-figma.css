@@ -541,6 +541,9 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-item-thumb {
+  position: relative;
+  display: grid;
+  place-items: center;
   flex: 0 0 72px;
   width: 72px;
   height: 72px;
@@ -548,6 +551,13 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   border: 0;
   border-radius: 8px;
   background: #f7f6fa;
+}
+
+#zpos-root.zpos-root--figma .zpos-cart-image-fallback {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  color: #a5a0b8;
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-item-main {
@@ -618,6 +628,11 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   font-size: 16px;
 }
 
+#zpos-root.zpos-root--figma .zpos-qty button:disabled {
+  color: #bcb7c8;
+  cursor: default;
+}
+
 #zpos-root.zpos-root--figma .zpos-cart-item-price {
   font-size: 16px;
 }
@@ -649,6 +664,15 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   height: 16px;
   margin: 0;
   accent-color: #7c4df5;
+}
+
+#zpos-root.zpos-root--figma .zpos-cart-service-row.is-active {
+  margin: 0 -12px -12px;
+  width: calc(100% + 24px);
+  padding: 10px 12px;
+  border-top-color: #e4dbfe;
+  border-radius: 0 0 11px 11px;
+  background: #f1edff;
 }
 
 #zpos-root.zpos-root--figma .zpos-summary {
@@ -761,13 +785,36 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   background: #fbfafe;
 }
 
-#zpos-root.zpos-root--figma .zpos-modal--figma-product .zpos-modal-visual img {
+#zpos-root.zpos-root--figma .zpos-modal-image-frame {
+  position: relative;
+  display: grid;
+  place-items: center;
   width: min(336px, 100%);
   height: 336px;
-  padding: 5%;
   border: 1px solid #eae7f2;
   border-radius: 12px;
   background: #f6f4fb;
+  overflow: hidden;
+}
+
+#zpos-root.zpos-root--figma .zpos-modal--figma-product .zpos-modal-visual .zpos-modal-image-placeholder {
+  position: absolute;
+  width: auto;
+  height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  opacity: 1;
+}
+
+#zpos-root.zpos-root--figma .zpos-modal--figma-product .zpos-modal-visual .zpos-modal-product-image {
+  width: 100%;
+  height: 100%;
+  padding: 5%;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
   object-fit: contain;
 }
 
@@ -1294,13 +1341,16 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
     overflow: hidden;
   }
 
-  #zpos-root.zpos-root--figma .zpos-modal--figma-product .zpos-modal-visual img {
+  #zpos-root.zpos-root--figma .zpos-modal-image-frame {
     width: 100%;
     height: 100%;
-    max-height: 100%;
-    padding: 6%;
     border: 0;
+    border-radius: 0;
     background: transparent;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-modal--figma-product .zpos-modal-visual .zpos-modal-product-image {
+    padding: 6%;
   }
 
   #zpos-root.zpos-root--figma .zpos-modal--figma-product .zpos-modal-content {
@@ -1332,6 +1382,35 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
     padding: 12px 16px max(12px, env(safe-area-inset-bottom));
     border-top: 1px solid #eae7f2;
     background: #fff;
+  }
+}
+
+@media (max-width: 560px) {
+  #zpos-root.zpos-root--figma .zpos-cart .zpos-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(160px, 1.6fr);
+    align-items: center;
+    gap: 12px;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-cart .zpos-summary-row.is-total {
+    display: grid;
+    gap: 2px;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-cart .zpos-summary-row.is-total span {
+    font-size: 12px;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-cart .zpos-summary-row.is-total strong {
+    font-size: 18px;
+    white-space: nowrap;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-cart .zpos-checkout {
+    min-width: 0;
+    min-height: 52px;
+    margin: 0;
   }
 }
 
