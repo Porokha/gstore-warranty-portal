@@ -1577,7 +1577,7 @@ const ShopPage = () => {
               <div className="zpos-product-badges">
                 <span>{t(labelForSource[modalProduct.inventory_source] || modalProduct.inventory_source)}</span>
                 {modalProduct.quality_line && modalProduct.quality_line !== 'N/A' && <span>{modalProduct.quality_line}</span>}
-                {modalProduct.stock_quantity > 0 && <span>{i18n.language === 'ka' ? 'მარაგშია' : 'In stock'}</span>}
+                <span>{modalProduct.stock_quantity > 0 ? (i18n.language === 'ka' ? 'მარაგშია' : 'In stock') : (i18n.language === 'ka' ? 'შეკვეთით' : 'On order')}</span>
               </div>
 
               <div className="zpos-product-details">
@@ -1587,18 +1587,20 @@ const ShopPage = () => {
                 <div><span>{i18n.language === 'ka' ? 'ტიპი' : 'Type'}</span><strong>{modalProduct.quality_line && modalProduct.quality_line !== 'N/A' ? modalProduct.quality_line : t(labelForPart[modalProduct.part_category] || modalProduct.part_category)}</strong></div>
               </div>
 
-              {canBuyWithService(modalProduct) && (
-                <label className="zpos-product-service">
-                  <span className="zpos-product-service-icon"><BuildOutlined aria-hidden="true" /></span>
-                  <span className="zpos-product-service-copy"><strong>{i18n.language === 'ka' ? 'სერვისიც გჭირდება?' : 'Need installation service?'}</strong><small>{i18n.language === 'ka' ? 'შეაკეთეთ ადგილზე' : 'Repair with our team'}</small></span>
-                  <span className="zpos-product-service-price">+{formatMoney(Math.max(0, (getServicePrice(modalProduct) || 0) - (getProductOnlyPrice(modalProduct) || 0)))}</span>
-                  <input type="checkbox" checked={modalWithService} disabled={!canBuyProductOnly(modalProduct)} onChange={(event) => setModalWithService(event.target.checked)} />
-                </label>
-              )}
+              <div className="zpos-product-purchase">
+                {canBuyWithService(modalProduct) && (
+                  <label className="zpos-product-service">
+                    <span className="zpos-product-service-icon"><BuildOutlined aria-hidden="true" /></span>
+                    <span className="zpos-product-service-copy"><strong>{canBuyProductOnly(modalProduct) ? (i18n.language === 'ka' ? 'სერვისიც გჭირდება?' : 'Need installation service?') : (i18n.language === 'ka' ? 'სერვისი შედის' : 'Service included')}</strong><small>{i18n.language === 'ka' ? 'შეაკეთეთ ადგილზე' : 'Repair with our team'}</small></span>
+                    <span className="zpos-product-service-price">{canBuyProductOnly(modalProduct) ? `+${formatMoney(Math.max(0, (getServicePrice(modalProduct) || 0) - (getProductOnlyPrice(modalProduct) || 0)))}` : (i18n.language === 'ka' ? 'შედის ფასში' : 'Included')}</span>
+                    <input type="checkbox" checked={modalWithService} disabled={!canBuyProductOnly(modalProduct)} onChange={(event) => setModalWithService(event.target.checked)} />
+                  </label>
+                )}
 
-              <div className="zpos-product-bottom">
-                <div><small>{i18n.language === 'ka' ? 'სულ' : 'Total'}</small><strong>{formatMoney(modalWithService ? getServicePrice(modalProduct) : getProductOnlyPrice(modalProduct))}</strong></div>
-                <button type="button" onClick={() => addToCart(modalProduct, modalWithService ? 'service' : 'product')} disabled={!(modalWithService ? canBuyWithService(modalProduct) : canBuyProductOnly(modalProduct))}>{i18n.language === 'ka' ? 'კალათაში' : 'Add to cart'}</button>
+                <div className="zpos-product-bottom">
+                  <div><small>{i18n.language === 'ka' ? 'სულ' : 'Total'}</small><strong>{formatMoney(modalWithService ? getServicePrice(modalProduct) : getProductOnlyPrice(modalProduct))}</strong></div>
+                  <button type="button" onClick={() => addToCart(modalProduct, modalWithService ? 'service' : 'product')} disabled={!(modalWithService ? canBuyWithService(modalProduct) : canBuyProductOnly(modalProduct))}>{i18n.language === 'ka' ? 'კალათაში' : 'Add to cart'}</button>
+                </div>
               </div>
             </div>
           </div>

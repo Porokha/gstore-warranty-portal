@@ -925,12 +925,18 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   text-align: right;
 }
 
+#zpos-root.zpos-root--figma .zpos-product-purchase {
+  display: grid;
+  gap: 16px;
+  margin-top: auto;
+}
+
 #zpos-root.zpos-root--figma .zpos-product-service {
   display: flex;
   align-items: center;
   gap: 12px;
   min-height: 74px;
-  margin-top: 16px;
+  margin-top: 0;
   padding: 12px 16px;
   border-radius: 12px;
   background: #f1edff;
@@ -987,8 +993,8 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-top: auto;
-  padding-top: 16px;
+  margin-top: 0;
+  padding-top: 0;
 }
 
 #zpos-root.zpos-root--figma .zpos-product-bottom > div {
@@ -1398,17 +1404,21 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
     margin-top: 24px;
   }
 
-  #zpos-root.zpos-root--figma .zpos-product-service {
-    margin-top: 24px;
+  #zpos-root.zpos-root--figma .zpos-product-purchase {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    gap: 12px;
+    margin: auto -20px 0;
+    padding: 16px 16px max(12px, env(safe-area-inset-bottom));
+    border-top: 1px solid #eae7f2;
+    background: #fff;
   }
 
   #zpos-root.zpos-root--figma .zpos-product-bottom {
-    position: sticky;
-    bottom: 0;
-    margin: 24px -20px 0;
-    padding: 12px 16px max(12px, env(safe-area-inset-bottom));
-    border-top: 1px solid #eae7f2;
-    background: #fff;
+    position: static;
+    padding: 0;
+    border: 0;
   }
 }
 
