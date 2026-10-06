@@ -1426,7 +1426,16 @@
       "title": "{{customer_name}}, Your order has been received",
       "orderNumber": "Your Order number is {{order_number}}",
       "contact": "For further details our representative will contact you on {{customer_phone_number}} within 1 business day.",
-      "thankYou": "Thank you for Choosing Us"
+      "thankYou": "Thank you for Choosing Us",
+      "orderHeading": "Order",
+      "shortTitle": "Order received",
+      "pickupConfirmation": "We will contact you within one business day to confirm pickup at 7 Tsotne Dadiani Street, Karvasla, floor 3, B308/1.",
+      "orderNumberLabel": "Order number",
+      "customerLabel": "Name and surname",
+      "itemCountLabel": "Items",
+      "amountDueLabel": "Amount due on pickup",
+      "backHome": "Back to home",
+      "continueShopping": "Continue shopping"
     },
     "summaryLine": "{{count}} products ready for checkout.",
     "summaryCount": "{{count}} selected"

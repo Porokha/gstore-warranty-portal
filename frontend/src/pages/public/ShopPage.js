@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery } from 'react-query';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   BatteryChargingFullOutlined,
@@ -379,8 +380,12 @@ const ShopPage = () => {
   );
   const shouldShowFilterLoader = isFacetsFetching && showSlowFilterLoader;
   const orderMutation = useMutation((payload) => shopService.createPublicOrder(payload), {
-    onSuccess: (result) => {
-      setCreatedOrder(result);
+    onSuccess: (result, variables) => {
+      setCreatedOrder({
+        ...result,
+        customer_last_name: variables.customer_last_name,
+        item_count: variables.items.reduce((count, item) => count + item.quantity, 0),
+      });
       setOrderStep(4);
       setOrderErrors({});
       setCart([]);
@@ -1616,8 +1621,8 @@ const ShopPage = () => {
             }
           }}
         >
-          <div className="zpos-modal zpos-order-modal" role="dialog" aria-modal="true" aria-labelledby="zpos-order-title">
-            <button
+          <div className={`zpos-modal zpos-order-modal ${orderStep === 4 ? 'is-success' : ''}`} role="dialog" aria-modal="true" aria-labelledby="zpos-order-title">
+            {orderStep !== 4 && <button
               type="button"
               className="zpos-modal-close"
               onClick={closeOrderModal}
@@ -1627,7 +1632,7 @@ const ShopPage = () => {
                 <path d="M6 6l12 12"></path>
                 <path d="M18 6L6 18"></path>
               </svg>
-            </button>
+            </button>}
 
             <div className="zpos-order-modal-body">
               {orderStep !== 4 ? (
@@ -1860,30 +1865,25 @@ const ShopPage = () => {
                 </>
               ) : (
                 createdOrder && (
-                  <div className="zpos-order-panel zpos-order-success">
-                    <div className="zpos-order-success-head">
-                      <p className="zpos-order-success-kicker">{t('shop.orderFlow.success.kicker')}</p>
-                      <h2 id="zpos-order-title">
-                        {t('shop.orderFlow.success.title', { customer_name: createdOrder.customer_name })}
-                      </h2>
+                  <div className="zpos-order-success-page">
+                    <div className="zpos-order-success-bar">
+                      <button type="button" onClick={closeOrderModal} aria-label={t('common.back')}>‹</button>
+                      <span>{t('shop.orderFlow.success.orderHeading')}</span>
                     </div>
-                    <div className="zpos-order-success-grid">
-                      <div className="zpos-order-success-card">
-                        <span>{t('shop.orderFlow.success.kicker')}</span>
-                        <strong>{t('shop.orderFlow.success.orderNumber', { order_number: createdOrder.order_number })}</strong>
+                    <div className="zpos-order-success-content">
+                      <div className="zpos-order-success-mark"><img src="/figma-shop-success-check.svg" alt="" aria-hidden="true" /></div>
+                      <h2 id="zpos-order-title">{t('shop.orderFlow.success.shortTitle')}</h2>
+                      <p className="zpos-order-success-copy">{t('shop.orderFlow.success.pickupConfirmation')}</p>
+                      <dl className="zpos-order-success-facts">
+                        <div><dt>{t('shop.orderFlow.success.orderNumberLabel')}</dt><dd>#{createdOrder.order_number}</dd></div>
+                        <div><dt>{t('shop.orderFlow.success.customerLabel')}</dt><dd>{[createdOrder.customer_name, createdOrder.customer_last_name].filter(Boolean).join(' ')}</dd></div>
+                        <div><dt>{t('shop.orderFlow.success.itemCountLabel')}</dt><dd>{createdOrder.item_count}</dd></div>
+                        <div><dt>{t('shop.orderFlow.success.amountDueLabel')}</dt><dd>{formatMoney(createdOrder.total_amount)}</dd></div>
+                      </dl>
+                      <div className="zpos-order-success-actions">
+                        <Link to="/">{t('shop.orderFlow.success.backHome')}</Link>
+                        <button type="button" onClick={closeOrderModal}>{t('shop.orderFlow.success.continueShopping')}</button>
                       </div>
-                      <div className="zpos-order-success-card">
-                        <span>{t('shop.orderFlow.stepOne.fields.phone')}</span>
-                        <strong>{createdOrder.customer_phone}</strong>
-                      </div>
-                    </div>
-                    <p className="zpos-order-success-copy">
-                      {t('shop.orderFlow.success.contact', {
-                        customer_phone_number: createdOrder.customer_phone,
-                      })}
-                    </p>
-                    <div className="zpos-order-success-foot">
-                      <strong>{t('shop.orderFlow.success.thankYou')}</strong>
                     </div>
                   </div>
                 )

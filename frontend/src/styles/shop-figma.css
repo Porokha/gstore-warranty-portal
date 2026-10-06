@@ -1028,7 +1028,197 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   cursor: not-allowed;
 }
 
+#zpos-root.zpos-root--figma .zpos-modal-backdrop:has(.zpos-order-modal.is-success) {
+  inset: 72px 0 0;
+  display: block;
+  padding: 0;
+  background: #fbfafe;
+  overflow-y: auto;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-modal.is-success {
+  display: block;
+  width: 100%;
+  max-width: none;
+  min-height: calc(100dvh - 72px);
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: #fbfafe;
+  box-shadow: none;
+  overflow: visible;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-modal.is-success .zpos-order-modal-body {
+  display: block;
+  width: 100%;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-page {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - 72px);
+  color: #14121c;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(1200px, calc(100% - 40px));
+  min-height: 64px;
+  margin: 0 auto;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-bar button {
+  display: grid;
+  place-items: center;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  padding: 0 0 3px;
+  border: 1px solid #d6d2e2;
+  border-radius: 50%;
+  background: #fff;
+  color: #14121c;
+  font: 24px/1 var(--font-platform);
+  cursor: pointer;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(500px, calc(100% - 40px));
+  margin: 36px auto 0;
+  padding-bottom: 24px;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-mark {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #eefaf5;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-mark img {
+  display: block;
+  width: auto;
+  height: auto;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-content h2 {
+  margin: 16px 0 4px;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: center;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-copy {
+  max-width: 410px;
+  margin: 0;
+  color: #5b5670;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-facts {
+  width: 100%;
+  margin: 24px 0 0;
+  padding: 8px 16px;
+  border: 1px solid #eae7f2;
+  border-radius: 12px;
+  background: #fff;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-facts > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 48px;
+  padding: 10px 0;
+  border-bottom: 1px solid #eae7f2;
+  font-size: 14px;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-facts > div:last-child {
+  border-bottom: 0;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-facts dt {
+  color: #5b5670;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-facts dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-actions {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  margin-top: 16px;
+  text-align: center;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-actions a {
+  display: grid;
+  place-items: center;
+  min-height: 56px;
+  border-radius: 12px;
+  background: #7c4df5;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-actions button {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: #5f32d4;
+  font: 600 14px var(--font-platform);
+  cursor: pointer;
+}
+
 @media (max-width: 920px) {
+  #zpos-root.zpos-root--figma .zpos-order-success-bar {
+    width: 100%;
+    min-height: 52px;
+    padding: 0 20px;
+    border-bottom: 1px solid #eae7f2;
+    background: #fff;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-order-success-content {
+    flex: 1;
+    width: 100%;
+    margin: 0;
+    padding: 24px 16px max(16px, env(safe-area-inset-bottom));
+  }
+
+  #zpos-root.zpos-root--figma .zpos-order-success-facts {
+    margin-top: 20px;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-order-success-actions {
+    margin-top: auto;
+    padding-top: 24px;
+  }
+
   #zpos-root.zpos-root--figma .zpos-cart {
     top: 72px;
     width: 100%;
