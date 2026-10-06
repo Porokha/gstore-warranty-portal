@@ -1357,7 +1357,8 @@
       "title": "შეკვეთა",
       "total": "სულ",
       "emptyTitle": "კალათი ცარიელია",
-      "emptyDescription": "დაამატეთ სასურველი ნაწილი"
+      "emptyDescription": "აირჩიე ნაწილი კატალოგიდან ან მოძებნე მოდელის მიხედვით.",
+      "backToCatalog": "კატალოგში დაბრუნება"
     },
     "choiceLabels": {
       "productOnly": "მხოლოდ პროდუქტის ყიდვა",

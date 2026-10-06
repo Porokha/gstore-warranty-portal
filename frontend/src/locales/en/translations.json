@@ -1357,7 +1357,8 @@
       "title": "Repair order",
       "total": "Total",
       "emptyTitle": "No parts added yet",
-      "emptyDescription": "Add a part or open quick view for  service pricing"
+      "emptyDescription": "Choose a part from the catalog or search by model.",
+      "backToCatalog": "Back to catalog"
     },
     "choiceLabels": {
       "productOnly": "Buy only product",

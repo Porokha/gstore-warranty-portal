@@ -968,7 +968,7 @@ const ShopPage = () => {
           return item;
         }
 
-        return { ...item, qty: action === 'increase' ? item.qty + 1 : item.qty - 1 };
+        return { ...item, qty: action === 'increase' ? item.qty + 1 : Math.max(1, item.qty - 1) };
       });
     });
   };
@@ -1425,11 +1425,13 @@ const ShopPage = () => {
             )}
           </div>
 
-          <div id="zpos-cart-items" className="zpos-cart-items">
+          <div id="zpos-cart-items" className={`zpos-cart-items ${cart.length === 0 ? 'is-empty' : ''}`}>
             {cart.length === 0 && (
               <div className="zpos-empty">
+                <img src="/figma-shop-empty-cart.svg" alt="" aria-hidden="true" />
                 <strong>{t('shop.cart.emptyTitle')}</strong>
                 <p>{t('shop.cart.emptyDescription')}</p>
+                <button type="button" onClick={() => setCartViewOpen(false)}>{t('shop.cart.backToCatalog')}</button>
               </div>
             )}
 
@@ -1458,16 +1460,16 @@ const ShopPage = () => {
                         <span>{item.qty}</span>
                         <button type="button" aria-label={i18n.language === 'ka' ? 'რაოდენობის გაზრდა' : 'Increase quantity'} onClick={() => updateCart(item.id, 'increase')}>+</button>
                       </div>
-                      <div className="zpos-cart-item-price">{formatMoney(item.price)}</div>
+                      <div className="zpos-cart-item-price">{formatMoney((item.canProductOnly ? item.basePrice : item.price) * item.qty)}</div>
                     </div>
                   </div>
                 </div>
-                {item.canService && <label className={`zpos-cart-service-row ${item.mode === 'service' ? 'is-active' : ''}`}><span className="zpos-cart-service-icon"><BuildOutlined aria-hidden="true" /></span><span>{i18n.language === 'ka' ? 'დაყენების სერვისი' : 'Installation service'} · {item.canProductOnly ? `+${formatMoney(Math.max(0, (item.servicePrice || 0) - item.basePrice))}` : (i18n.language === 'ka' ? 'შედის ფასში' : 'Included')}</span><input type="checkbox" checked={item.mode === 'service'} disabled={!item.canProductOnly} onChange={() => toggleCartService(item)} /></label>}
+                {item.canService && <label className={`zpos-cart-service-row ${item.mode === 'service' ? 'is-active' : ''}`}><span className="zpos-cart-service-icon"><BuildOutlined aria-hidden="true" /></span><span>{i18n.language === 'ka' ? 'დაყენების სერვისი' : 'Installation service'} · {item.canProductOnly ? `+${formatMoney(Math.max(0, (item.servicePrice || 0) - item.basePrice) * item.qty)}` : (i18n.language === 'ka' ? 'შედის ფასში' : 'Included')}</span><input type="checkbox" checked={item.mode === 'service'} disabled={!item.canProductOnly} onChange={() => toggleCartService(item)} /></label>}
               </div>
             ))}
           </div>
 
-          <div className="zpos-summary">
+          {cart.length > 0 && <div className="zpos-summary">
             <div className="zpos-summary-row">
               <span>{t('shop.summary.subtotal')}</span>
               <strong id="zpos-subtotal">{formatMoney(cartSummary.subtotal)}</strong>
@@ -1484,11 +1486,11 @@ const ShopPage = () => {
               className="zpos-checkout"
               type="button"
               onClick={() => { setCartViewOpen(false); openOrderModal(); }}
-              disabled={cart.length === 0}
+              disabled={cart.length === 0 || removingCartIds.length > 0}
             >
               {t('shop.summary.checkoutDisabled')}
             </button>
-          </div>
+          </div>}
         </aside>
         {cartViewOpen && <button type="button" className="zpos-figma-cart-backdrop" aria-label={t('common.close')} onClick={() => setCartViewOpen(false)} />}
           </>
