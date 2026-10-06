@@ -1375,6 +1375,18 @@
       "checkoutDisabled": "Order"
     },
     "orderFlow": {
+      "checkout": {
+        "title": "Checkout",
+        "contact": "Contact details",
+        "pickup": "Pickup",
+        "pickupStore": "Collect from Zezva Service",
+        "pickupAddress": "7 Tsotne Dadiani Street, Karvasla, Floor III, B308/1",
+        "free": "Free",
+        "payment": "Payment method",
+        "additional": "Additional details",
+        "summary": "Your order",
+        "placeOrder": "Place order"
+      },
       "stepLabels": {
         "1": "Who are you",
         "2": "A few details",
