@@ -104,7 +104,7 @@ const createInitialOrderForm = () => ({
   customer_phone: '',
   customer_email: '',
   heard_about: '',
-  has_partner_warranty: null,
+  has_partner_warranty: false,
   partner_warranty_id: '',
   payment_method: 'onsite',
 });
@@ -884,8 +884,9 @@ const ShopPage = () => {
   }
 
   const updateOrderForm = (field, value) => {
-    setOrderForm((current) => ({ ...current, [field]: value }));
-    setOrderErrors((current) => ({ ...current, [field]: '', submit: '' }));
+    const clearPartnerId = field === 'has_partner_warranty' && value === false;
+    setOrderForm((current) => ({ ...current, [field]: value, ...(clearPartnerId ? { partner_warranty_id: '' } : {}) }));
+    setOrderErrors((current) => ({ ...current, [field]: '', submit: '', ...(clearPartnerId ? { partner_warranty_id: '' } : {}) }));
   };
 
   const validateCheckout = () => {
@@ -899,9 +900,6 @@ const ShopPage = () => {
       nextErrors.customer_email = t('shop.orderFlow.errors.email');
     }
     if (!orderForm.heard_about) nextErrors.heard_about = t('shop.orderFlow.errors.required');
-    if (orderForm.has_partner_warranty === null) {
-      nextErrors.has_partner_warranty = t('shop.orderFlow.errors.required');
-    }
     if (orderForm.has_partner_warranty && !orderForm.partner_warranty_id.trim()) {
       nextErrors.partner_warranty_id = t('shop.orderFlow.errors.required');
     }
@@ -1613,6 +1611,10 @@ const ShopPage = () => {
                     <div className="zpos-checkout-main">
                       <section className="zpos-checkout-card">
                         <h3>{t('shop.orderFlow.checkout.contact')}</h3>
+                        <div className="zpos-checkout-person-type" aria-label={t('shop.orderFlow.checkout.contact')}>
+                          <span aria-current="true">{t('shop.orderFlow.checkout.individual')}</span>
+                          <button type="button" disabled title={t('shop.orderFlow.checkout.businessUnavailable')}>{t('shop.orderFlow.checkout.business')}</button>
+                        </div>
                         <div className="zpos-checkout-fields">
                           {[
                             ['customer_name', 'firstName', 'text'],
@@ -1630,11 +1632,11 @@ const ShopPage = () => {
                       </section>
                       <section className="zpos-checkout-card">
                         <h3>{t('shop.orderFlow.checkout.pickup')}</h3>
-                        <div className="zpos-checkout-option is-selected"><span className="zpos-checkout-radio" /><div><strong>{t('shop.orderFlow.checkout.pickupStore')}</strong><small>{t('shop.orderFlow.checkout.pickupAddress')}</small></div><b>{t('shop.orderFlow.checkout.free')}</b></div>
+                        <div className="zpos-checkout-option is-selected"><div><strong>{t('shop.orderFlow.checkout.pickupStore')}</strong><small>{t('shop.orderFlow.checkout.pickupAddress')}</small></div><b>{t('shop.orderFlow.checkout.free')}</b><span className="zpos-checkout-radio" aria-hidden="true" /></div>
                       </section>
                       <section className="zpos-checkout-card">
                         <h3>{t('shop.orderFlow.checkout.payment')}</h3>
-                        <div className="zpos-checkout-option is-selected"><span className="zpos-checkout-radio" /><div><strong>{t('shop.orderFlow.stepThree.payOnsite')}</strong><small>{t('shop.orderFlow.stepThree.payOnsiteDescription')}</small></div></div>
+                        <div className="zpos-checkout-option is-selected"><div><strong>{t('shop.orderFlow.stepThree.payOnsite')}</strong><small>{t('shop.orderFlow.stepThree.payOnsiteDescription')}</small></div><span className="zpos-checkout-radio" aria-hidden="true" /></div>
                       </section>
                       <section className="zpos-checkout-card">
                         <h3>{t('shop.orderFlow.checkout.additional')}</h3>
@@ -1659,13 +1661,14 @@ const ShopPage = () => {
                       </section>
                     </div>
                     <aside className="zpos-checkout-summary">
-                      <h3>{t('shop.orderFlow.checkout.summary')}</h3>
-                      <div className="zpos-checkout-items">
-                        {cart.map((item) => <div key={`order-summary-${item.id}`}><div><strong>{item.title}</strong><small>{item.mode === 'service' ? t('shop.choiceLabels.withService') : t('shop.choiceLabels.productOnly')} · {item.qty}</small></div><span>{formatMoney(item.price * item.qty)}</span></div>)}
+                      <div className="zpos-checkout-breakdown">
+                        <div><span>{t('shop.orderFlow.checkout.parts')}</span><strong>{formatMoney(cartSummary.subtotal)}</strong></div>
+                        <div><span>{t('shop.summary.serviceUplift')}</span><strong>{formatMoney(cartSummary.serviceTotal)}</strong></div>
+                        <div className="is-total"><span>{t('shop.cart.total')}</span><strong>{formatMoney(cartSummary.total)}</strong></div>
                       </div>
-                      <div className="zpos-checkout-total"><span>{t('shop.cart.total')}</span><strong>{formatMoney(cartSummary.total)}</strong></div>
                       {orderErrors.submit && <p className="zpos-order-submit-error" role="alert">{orderErrors.submit}</p>}
                       <button type="submit" className="zpos-checkout-submit" disabled={orderMutation.isLoading}>{orderMutation.isLoading ? t('shop.orderFlow.stepThree.processing') : `${t('shop.orderFlow.checkout.placeOrder')} · ${formatMoney(cartSummary.total)}`}</button>
+                      <p className="zpos-checkout-note">{t('shop.orderFlow.checkout.pickupNote')}</p>
                     </aside>
                   </form>
                   <div className="zpos-checkout-mobile-action">

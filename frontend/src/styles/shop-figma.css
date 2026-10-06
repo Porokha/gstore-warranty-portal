@@ -1096,33 +1096,64 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
 
 #zpos-root.zpos-root--figma .zpos-checkout-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-columns: minmax(0, 1fr) 440px;
   align-items: start;
-  gap: 28px;
+  gap: 16px;
   width: min(1200px, calc(100% - 40px));
   margin: 12px auto 48px;
 }
 
 #zpos-root.zpos-root--figma .zpos-checkout-main {
   display: grid;
-  gap: 16px;
+  gap: 24px;
   min-width: 0;
 }
 
 #zpos-root.zpos-root--figma .zpos-checkout-card,
 #zpos-root.zpos-root--figma .zpos-checkout-summary {
   min-width: 0;
-  padding: 24px;
-  border: 1px solid #eae7f2;
-  border-radius: 16px;
-  background: #fff;
 }
 
-#zpos-root.zpos-root--figma .zpos-checkout-card h3,
-#zpos-root.zpos-root--figma .zpos-checkout-summary h3 {
-  margin: 0 0 20px;
-  font-size: 18px;
-  font-weight: 700;
+#zpos-root.zpos-root--figma .zpos-checkout-card h3 {
+  margin: 0 0 8px;
+  color: #5b5670;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-person-type {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  min-height: 48px;
+  margin-bottom: 12px;
+  padding: 4px;
+  border-radius: 12px;
+  background: #f6f4fb;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-person-type span,
+#zpos-root.zpos-root--figma .zpos-checkout-person-type button {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-person-type [aria-current="true"] {
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(20, 18, 28, .04);
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-person-type button:disabled {
+  color: #9c97ae;
 }
 
 #zpos-root.zpos-root--figma .zpos-checkout-fields {
@@ -1133,11 +1164,12 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
 
 #zpos-root.zpos-root--figma .zpos-checkout-field {
   display: grid;
-  gap: 8px;
+  gap: 4px;
   min-width: 0;
-  margin-bottom: 14px;
-  font-size: 13px;
-  font-weight: 600;
+  margin-bottom: 12px;
+  color: #5b5670;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 #zpos-root.zpos-root--figma .zpos-checkout-fields .zpos-checkout-field {
@@ -1149,12 +1181,12 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   box-sizing: border-box;
   width: 100%;
   min-height: 48px;
-  padding: 0 14px;
+  padding: 0 16px;
   border: 1px solid #dcd8e7;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #fff;
   color: #171321;
-  font: 500 14px var(--font-platform);
+  font: 400 16px var(--font-platform);
 }
 
 #zpos-root.zpos-root--figma .zpos-checkout-field select {
@@ -1183,17 +1215,19 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px;
-  border: 1px solid #8c66eb;
+  min-height: 68px;
+  padding: 12px 16px;
+  border: 1px solid #7c4df5;
   border-radius: 12px;
-  background: #faf8ff;
+  background: #f1edff;
 }
 
 #zpos-root.zpos-root--figma .zpos-checkout-radio {
-  flex: 0 0 18px;
-  width: 18px;
-  height: 18px;
-  border: 5px solid #7c4df5;
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  margin-left: auto;
+  border: 4px solid #7c4df5;
   border-radius: 50%;
   background: #fff;
 }
@@ -1216,7 +1250,7 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
 
 #zpos-root.zpos-root--figma .zpos-checkout-option b {
   margin-left: auto;
-  color: #5f32d4;
+  color: #1b9e6b;
   white-space: nowrap;
 }
 
@@ -1263,53 +1297,45 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   top: 88px;
 }
 
-#zpos-root.zpos-root--figma .zpos-checkout-items {
-  display: grid;
-  gap: 14px;
+#zpos-root.zpos-root--figma .zpos-checkout-breakdown {
+  padding: 0 12px;
+  border: 1px solid #eae7f2;
+  border-radius: 12px;
+  background: #fff;
 }
 
-#zpos-root.zpos-root--figma .zpos-checkout-items > div {
+#zpos-root.zpos-root--figma .zpos-checkout-breakdown > div {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  font-size: 13px;
+  min-height: 48px;
+  align-items: center;
+  border-bottom: 1px solid #eae7f2;
+  font-size: 14px;
 }
 
-#zpos-root.zpos-root--figma .zpos-checkout-items > div div {
-  display: grid;
-  gap: 4px;
-  min-width: 0;
+#zpos-root.zpos-root--figma .zpos-checkout-breakdown > div:last-child {
+  border-bottom: 0;
 }
 
-#zpos-root.zpos-root--figma .zpos-checkout-items strong {
-  overflow-wrap: anywhere;
+#zpos-root.zpos-root--figma .zpos-checkout-breakdown span {
+  color: #5b5670;
 }
 
-#zpos-root.zpos-root--figma .zpos-checkout-items small {
-  color: #686276;
+#zpos-root.zpos-root--figma .zpos-checkout-breakdown strong {
+  font-weight: 600;
 }
 
-#zpos-root.zpos-root--figma .zpos-checkout-items > div > span {
-  flex-shrink: 0;
-  font-weight: 700;
-}
-
-#zpos-root.zpos-root--figma .zpos-checkout-total {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  margin: 22px 0;
-  padding-top: 18px;
-  border-top: 1px solid #eae7f2;
-  font-size: 16px;
-  font-weight: 700;
+#zpos-root.zpos-root--figma .zpos-checkout-breakdown .is-total strong {
+  font-size: 18px;
 }
 
 #zpos-root.zpos-root--figma .zpos-checkout-submit {
   width: 100%;
-  min-height: 52px;
+  min-height: 56px;
+  margin-top: 12px;
   border: 0;
-  border-radius: 10px;
+  border-radius: 16px;
   background: #7c4df5;
   color: #fff;
   font: 700 15px var(--font-platform);
@@ -1319,6 +1345,14 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
 #zpos-root.zpos-root--figma .zpos-checkout-submit:disabled {
   opacity: .6;
   cursor: wait;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-note {
+  margin: 12px 0 0;
+  color: #5b5670;
+  font-size: 12px;
+  line-height: 1.55;
+  text-align: center;
 }
 
 #zpos-root.zpos-root--figma .zpos-checkout-mobile-action {
@@ -1336,16 +1370,10 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
 
   #zpos-root.zpos-root--figma .zpos-checkout-layout {
     grid-template-columns: minmax(0, 1fr);
-    gap: 12px;
+    gap: 24px;
     width: 100%;
     margin: 0;
-    padding: 16px 16px calc(100px + env(safe-area-inset-bottom));
-  }
-
-  #zpos-root.zpos-root--figma .zpos-checkout-card,
-  #zpos-root.zpos-root--figma .zpos-checkout-summary {
-    padding: 18px;
-    border-radius: 12px;
+    padding: 20px 20px calc(100px + env(safe-area-inset-bottom));
   }
 
   #zpos-root.zpos-root--figma .zpos-checkout-fields {
