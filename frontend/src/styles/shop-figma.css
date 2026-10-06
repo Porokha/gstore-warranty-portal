@@ -523,31 +523,34 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   display: flex;
   flex: 0 0 auto;
   flex-direction: column;
-  gap: 12px;
+  gap: 0;
   width: 100%;
   min-width: 0;
-  padding: 12px;
+  padding: 0;
   border: 1px solid #e7e4ed;
   border-radius: 12px;
   background: #fff;
+  overflow: hidden;
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-line-main {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
   min-width: 0;
+  padding: 12px;
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-item-thumb {
   position: relative;
   display: grid;
   place-items: center;
-  flex: 0 0 72px;
-  width: 72px;
-  height: 72px;
-  padding: 6px;
+  flex: 0 0 52px;
+  width: 52px;
+  min-width: 52px;
+  height: 52px;
+  padding: 0;
   border: 0;
   border-radius: 8px;
   background: #f7f6fa;
@@ -555,37 +558,51 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
 
 #zpos-root.zpos-root--figma .zpos-cart-image-fallback {
   position: absolute;
-  width: 20px;
-  height: 20px;
-  color: #a5a0b8;
+  width: auto;
+  height: auto;
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-item-main {
   flex: 1;
-  min-height: 72px;
+  min-height: 76px;
   justify-content: flex-start;
-  gap: 5px;
-  padding-top: 3px;
+  gap: 0;
+  padding-top: 0;
+}
+
+#zpos-root.zpos-root--figma .zpos-cart-item-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+#zpos-root.zpos-root--figma .zpos-cart-item-copy {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 4px;
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-item h3 {
   min-height: 0;
   color: #24212e;
-  font-size: 13px;
-  line-height: 1.35;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-item-sub {
   color: #898595;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-remove {
   display: grid;
-  flex: 0 0 26px;
+  flex: 0 0 20px;
   place-items: center;
-  width: 26px;
-  height: 26px;
+  width: 20px;
+  height: 20px;
   border-radius: 6px;
   background: transparent;
   color: #a09ba9;
@@ -607,6 +624,7 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
 #zpos-root.zpos-root--figma .zpos-cart-item-footer {
   justify-content: space-between;
   overflow: visible;
+  margin-top: 8px;
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-item-actions {
@@ -614,7 +632,7 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
 }
 
 #zpos-root.zpos-root--figma .zpos-qty {
-  width: 102px;
+  width: 108px;
   height: 32px;
   border: 1px solid #e3dfeb;
   border-radius: 8px;
@@ -634,7 +652,7 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-item-price {
-  font-size: 16px;
+  font-size: 18px;
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-service-row {
@@ -642,11 +660,23 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding-top: 10px;
+  min-height: 42px;
+  padding: 8px 12px;
   border-top: 1px solid #eeeaf3;
   color: #554d66;
-  font-size: 11px;
+  font-size: 12px;
   cursor: pointer;
+}
+
+#zpos-root.zpos-root--figma .zpos-cart-service-icon {
+  display: grid;
+  flex: 0 0 26px;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid #eae7f2;
+  border-radius: 8px;
+  background: #fff;
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-service-row svg {
@@ -667,11 +697,8 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-service-row.is-active {
-  margin: 0 -12px -12px;
-  width: calc(100% + 24px);
-  padding: 10px 12px;
+  width: 100%;
   border-top-color: #e4dbfe;
-  border-radius: 0 0 11px 11px;
   background: #f1edff;
 }
 

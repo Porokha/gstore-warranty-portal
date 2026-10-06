@@ -1470,30 +1470,28 @@ const ShopPage = () => {
                 <div className="zpos-cart-line-main">
                   <div className={`zpos-cart-item-thumb ${loadedImages[`cart:${item.id}`] ? 'is-loaded' : ''}`}>
                     {item.image_url && !loadedImages[`cart:${item.id}`] && <div className="zpos-skeleton zpos-image-skeleton" />}
-                    <PhoneIphoneOutlined className="zpos-cart-image-fallback" aria-hidden="true" />
+                    <img className="zpos-cart-image-fallback" src="/figma-shop-cart-placeholder.svg" alt="" aria-hidden="true" />
                     {item.image_url && <img src={item.image_url} alt={t('shop.imageAlt.thumbnail', { title: item.title })} loading="lazy" onLoad={() => handleImageReady(`cart:${item.id}`)} onError={(event) => { event.currentTarget.hidden = true; handleImageReady(`cart:${item.id}`); }} />}
                   </div>
                   <div className="zpos-cart-item-main">
-                    <h3 title={item.title}>{item.title}</h3>
-                    <p className="zpos-cart-item-sub">{item.subtitle}</p>
-                  </div>
-                  <button type="button" className="zpos-cart-remove" onClick={() => updateCart(item.id, 'remove')} aria-label={t('common.delete')}><DeleteOutline aria-hidden="true" /></button>
-                </div>
-                <div className="zpos-cart-item-footer">
-                  <div className="zpos-cart-item-actions">
-                    <div className="zpos-qty">
-                      <button type="button" disabled={item.qty <= 1} aria-label={i18n.language === 'ka' ? 'რაოდენობის შემცირება' : 'Decrease quantity'} onClick={() => updateCart(item.id, 'decrease')}>
-                        -
-                      </button>
-                      <span>{item.qty}</span>
-                      <button type="button" aria-label={i18n.language === 'ka' ? 'რაოდენობის გაზრდა' : 'Increase quantity'} onClick={() => updateCart(item.id, 'increase')}>
-                        +
-                      </button>
+                    <div className="zpos-cart-item-head">
+                      <div className="zpos-cart-item-copy">
+                        <h3 title={item.title}>{item.title}</h3>
+                        <p className="zpos-cart-item-sub">{item.subtitle}</p>
+                      </div>
+                      <button type="button" className="zpos-cart-remove" onClick={() => updateCart(item.id, 'remove')} aria-label={t('common.delete')}><DeleteOutline aria-hidden="true" /></button>
+                    </div>
+                    <div className="zpos-cart-item-footer">
+                      <div className="zpos-qty">
+                        <button type="button" disabled={item.qty <= 1} aria-label={i18n.language === 'ka' ? 'რაოდენობის შემცირება' : 'Decrease quantity'} onClick={() => updateCart(item.id, 'decrease')}>-</button>
+                        <span>{item.qty}</span>
+                        <button type="button" aria-label={i18n.language === 'ka' ? 'რაოდენობის გაზრდა' : 'Increase quantity'} onClick={() => updateCart(item.id, 'increase')}>+</button>
+                      </div>
+                      <div className="zpos-cart-item-price">{formatMoney(item.price)}</div>
                     </div>
                   </div>
-                  <div className="zpos-cart-item-price">{formatMoney(item.price)}</div>
                 </div>
-                {item.canService && <label className={`zpos-cart-service-row ${item.mode === 'service' ? 'is-active' : ''}`}><BuildOutlined aria-hidden="true" /><span>{i18n.language === 'ka' ? 'დაყენების სერვისი' : 'Installation service'} · {item.canProductOnly ? `+${formatMoney(Math.max(0, (item.servicePrice || 0) - item.basePrice))}` : (i18n.language === 'ka' ? 'შედის ფასში' : 'Included')}</span><input type="checkbox" checked={item.mode === 'service'} disabled={!item.canProductOnly} onChange={() => toggleCartService(item)} /></label>}
+                {item.canService && <label className={`zpos-cart-service-row ${item.mode === 'service' ? 'is-active' : ''}`}><span className="zpos-cart-service-icon"><BuildOutlined aria-hidden="true" /></span><span>{i18n.language === 'ka' ? 'დაყენების სერვისი' : 'Installation service'} · {item.canProductOnly ? `+${formatMoney(Math.max(0, (item.servicePrice || 0) - item.basePrice))}` : (i18n.language === 'ka' ? 'შედის ფასში' : 'Included')}</span><input type="checkbox" checked={item.mode === 'service'} disabled={!item.canProductOnly} onChange={() => toggleCartService(item)} /></label>}
               </div>
             ))}
           </div>
@@ -1526,7 +1524,7 @@ const ShopPage = () => {
         )}
       </div>
 
-      {!shopIntroOpen && cartSummary.count > 0 && <div className="zpos-figma-cart-bar"><div><small>{i18n.language === 'ka' ? 'კალათა' : 'Cart'} · {cartSummary.count} {i18n.language === 'ka' ? 'ნივთი' : 'items'}</small><strong>{formatMoney(cartSummary.total)}</strong></div><button type="button" onClick={() => setCartViewOpen(true)}>{i18n.language === 'ka' ? 'ნახვა' : 'View'}</button></div>}
+      {!shopIntroOpen && !cartViewOpen && cartSummary.count > 0 && <div className="zpos-figma-cart-bar"><div><small>{i18n.language === 'ka' ? 'კალათა' : 'Cart'} · {cartSummary.count} {i18n.language === 'ka' ? 'ნივთი' : 'items'}</small><strong>{formatMoney(cartSummary.total)}</strong></div><button type="button" onClick={() => setCartViewOpen(true)}>{i18n.language === 'ka' ? 'ნახვა' : 'View'}</button></div>}
 
       {modalProduct && (
         <div
