@@ -1277,6 +1277,7 @@ const ShopPage = () => {
               </div>
             </div>
             <div className="zpos-figma-categories" aria-label={t('shop.filters.partTypeTitle')}>
+              <button type="button" className={parts.length === 0 ? 'is-active' : ''} aria-pressed={parts.length === 0} onClick={() => setParts([])}><span><CategoryOutlined aria-hidden="true" /></span><small>{t('common.all')}</small></button>
               {partOptions.filter(([value]) => value !== 'all').map(([value, labelKey]) => {
                 const PartIcon = iconForPart[value] || CategoryOutlined;
                 return <button key={value} type="button" className={parts.includes(value) ? 'is-active' : ''} aria-pressed={parts.includes(value)} onClick={() => setParts([value])}><span><PartIcon aria-hidden="true" /></span><small>{t(labelKey)}</small></button>;
