@@ -9,6 +9,7 @@ import StaffRoleRoute from './components/common/StaffRoleRoute';
 import ShopAdminRoute from './components/common/ShopAdminRoute';
 import { useQuery } from 'react-query';
 import { shopService } from './services/shopService';
+import { isStagingShopEnabled } from './utils/publicShopAvailability';
 
 const StaffLayout = lazy(() => import('./components/common/StaffLayout'));
 const PublicLayout = lazy(() => import('./components/common/PublicLayout'));
@@ -157,7 +158,7 @@ function AppRoutes() {
             ) : (
               <Route path="/" element={<PublicLayout />}>
                 <Route index element={<LandingPage />} />
-                <Route path="shop" element={<ShopComingSoonPage />} />
+                <Route path="shop" element={isStagingShopEnabled() ? <ShopPage /> : <ShopComingSoonPage />} />
                 <Route path="warranty-service" element={<PublicHomePage />} />
                 <Route path="trade-in" element={<TradeInPage />} />
                 <Route path="terms" element={<TermsPage />} />

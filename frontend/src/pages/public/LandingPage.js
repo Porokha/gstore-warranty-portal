@@ -4,6 +4,7 @@ import { AddRounded, ExpandMoreRounded, RemoveRounded } from '@mui/icons-materia
 import { useQuery } from 'react-query';
 import { tradeInService } from '../../services/tradeInService';
 import { socialLinks } from './publicLinks';
+import { isStagingShopEnabled } from '../../utils/publicShopAvailability';
 
 const asset = (name) => `/figma-home/${name}`;
 
@@ -122,6 +123,7 @@ function StepCard({ step }) {
 
 function LandingPage() {
   const navigate = useNavigate();
+  const shopEnabled = isStagingShopEnabled();
   const [lookupTab, setLookupTab] = useState('warranty');
   const [lookupCode, setLookupCode] = useState('');
   const [lookupPhone, setLookupPhone] = useState('');
@@ -275,12 +277,21 @@ function LandingPage() {
               <small>მაქსიმალური შეფასება</small>
               <img src={asset('imgImage350.png')} alt="" />
             </Link>
-            <div className="zzv-figma-mini-card zzv-figma-shop-disabled" aria-disabled="true">
-              <span>მაღაზია</span>
-              <strong>მალე</strong>
-              <small>მაღაზია მზადდება</small>
-              <img src={asset('imgShop1.png')} alt="" />
-            </div>
+            {shopEnabled ? (
+              <Link className="zzv-figma-mini-card" to="/shop">
+                <span>მაღაზია</span>
+                <strong>ნაწილები</strong>
+                <small>გახსენი კატალოგი</small>
+                <img src={asset('imgShop1.png')} alt="" />
+              </Link>
+            ) : (
+              <div className="zzv-figma-mini-card zzv-figma-shop-disabled" aria-disabled="true">
+                <span>მაღაზია</span>
+                <strong>მალე</strong>
+                <small>მაღაზია მზადდება</small>
+                <img src={asset('imgShop1.png')} alt="" />
+              </div>
+            )}
             <Link className="zzv-figma-mini-card" to="/warranty-service?tab=warranty">
               <span>გარანტია</span>
               <strong>12 თვე</strong>
@@ -337,22 +348,34 @@ function LandingPage() {
         <div className="zzv-figma-wrap">
           <div className="zzv-figma-shop-head">
             <h2 className="zzv-figma-heading">მაღაზია</h2>
-            <span className="zzv-figma-shop-all zzv-figma-shop-disabled" aria-disabled="true">მალე</span>
+            {shopEnabled ? <Link className="zzv-figma-shop-all" to="/shop">ყველა ნაწილი</Link> : <span className="zzv-figma-shop-all zzv-figma-shop-disabled" aria-disabled="true">მალე</span>}
           </div>
           <div className="zzv-figma-category-row">
-            <div className="zzv-figma-shop-feature">
-              <strong>მალე</strong>
-              <span>მაღაზია მზადდება</span>
-              <small>ნაწილები მალე ხელმისაწვდომი იქნება</small>
-            </div>
-            {partIcons.map(([label, icon, count]) => (
-              <div className="zzv-figma-part-card zzv-figma-shop-disabled" key={label} aria-disabled="true">
-                <div>
-                  <img src={asset(icon)} alt="" />
-                  <strong>{count}</strong>
-                </div>
-                <span>{label}</span>
+            {shopEnabled ? (
+              <Link className="zzv-figma-shop-feature" to="/shop">
+                <strong>ნაწილები</strong>
+                <span>შეარჩიე შენი მოწყობილობისთვის</span>
+                <small>გახსენი კატალოგი და იპოვე ნაწილი</small>
+              </Link>
+            ) : (
+              <div className="zzv-figma-shop-feature">
+                <strong>მალე</strong>
+                <span>მაღაზია მზადდება</span>
+                <small>ნაწილები მალე ხელმისაწვდომი იქნება</small>
               </div>
+            )}
+            {partIcons.map(([label, icon, count]) => (
+              shopEnabled ? (
+                <Link className="zzv-figma-part-card" to="/shop" key={label}>
+                  <div><img src={asset(icon)} alt="" /><strong aria-hidden="true">↗</strong></div>
+                  <span>{label}</span>
+                </Link>
+              ) : (
+                <div className="zzv-figma-part-card zzv-figma-shop-disabled" key={label} aria-disabled="true">
+                  <div><img src={asset(icon)} alt="" /><strong>{count}</strong></div>
+                  <span>{label}</span>
+                </div>
+              )
             ))}
           </div>
         </div>
@@ -498,7 +521,7 @@ function LandingPage() {
             <img src={asset('imgBrandMark.svg')} alt="ZEZVA" />
             <nav>
               {footerLinks.map(([label, to]) => (
-                to === '/shop' ? <span key={label} aria-disabled="true">{label} · მალე</span> : <Link key={label} to={to}>{label}</Link>
+                to === '/shop' && !shopEnabled ? <span key={label} aria-disabled="true">{label} · მალე</span> : <Link key={label} to={to}>{label}</Link>
               ))}
             </nav>
             <span>© 2026 ZEZVA</span>
@@ -517,7 +540,7 @@ function LandingPage() {
             </div>
           </div>
           <div className="zzv-figma-footer-mobile-links">
-            <nav aria-label="სერვისები"><strong>სერვისები</strong><Link to="/trade-in">Trade-in</Link><Link to="/warranty-service?tab=case">შეკეთება</Link><span aria-disabled="true">მაღაზია · მალე</span><Link to="/warranty-service?tab=warranty">გარანტია</Link></nav>
+            <nav aria-label="სერვისები"><strong>სერვისები</strong><Link to="/trade-in">Trade-in</Link><Link to="/warranty-service?tab=case">შეკეთება</Link>{shopEnabled ? <Link to="/shop">მაღაზია</Link> : <span aria-disabled="true">მაღაზია · მალე</span>}<Link to="/warranty-service?tab=warranty">გარანტია</Link></nav>
             <nav aria-label="კომპანია"><strong>კომპანია</strong><Link to="/about">ჩვენ შესახებ</Link><Link to="/contact">კონტაქტი</Link><Link to="/reviews">შეფასებები</Link><a href="https://gstore.ge" target="_blank" rel="noreferrer">Gstore</a></nav>
             <div className="zzv-figma-footer-mobile-contact"><strong>კონტაქტი</strong><span>ცოტნე დადიანის ქ. 7 · ქარვასლა, III სართული, B308/1</span><span>ორშ–პარ 10:00–20:00 · შაბ–კვი დაკეტილია</span><a href="tel:+995511533522">+995 511 533 522</a><a href="mailto:contact@zezva.ge">contact@zezva.ge</a></div>
           </div>

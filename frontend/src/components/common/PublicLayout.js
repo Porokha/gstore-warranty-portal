@@ -4,6 +4,7 @@ import { Box, Drawer, IconButton } from '@mui/material';
 import { ChatBubbleRounded as ChatBubbleRoundedIcon, ExpandMoreRounded } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import CookieConsentBanner, { readCookieConsent } from './CookieConsentBanner';
+import { isStagingShopEnabled } from '../../utils/publicShopAvailability';
 
 const CLARITY_PROJECT_ID = 'wf9ncn570j';
 const GTM_CONTAINER_ID = 'GTM-567T4CBG';
@@ -16,6 +17,7 @@ const PublicLayout = () => {
   const [desktopMenu, setDesktopMenu] = useState(null);
   const desktopNavRef = useRef(null);
   const [cookieConsent, setCookieConsent] = useState(readCookieConsent);
+  const shopEnabled = isStagingShopEnabled();
 
   useEffect(() => {
     const updateConsent = (event) => setCookieConsent(event.detail);
@@ -25,7 +27,7 @@ const PublicLayout = () => {
 
   const menuItems = [
     { label: t('public.menuTradeIn'), path: '/trade-in' },
-    { label: t('public.menuShop'), path: '/shop', disabled: true },
+    { label: t('public.menuShop'), path: '/shop', disabled: !shopEnabled },
     { label: t('public.menuService'), path: '/warranty-service' },
     { label: t('public.menuAbout'), path: '/about' },
     { label: t('public.menuTerms'), path: '/terms' },
@@ -272,7 +274,7 @@ const PublicLayout = () => {
             <nav className="zzv-public-mobile-menu-tiles" aria-label={t('common.menu')}>
               {[
                 { path: '/trade-in', icon: 'menu-repeat.svg', label: t('public.menuTradeIn'), detail: '2 წუთი' },
-                { path: '/shop', icon: 'menu-shop.svg', label: t('public.menuShop'), detail: i18n.language === 'ka' ? 'მალე' : 'Soon', disabled: true },
+                { path: '/shop', icon: 'menu-shop.svg', label: t('public.menuShop'), detail: shopEnabled ? (i18n.language === 'ka' ? 'ნაწილები' : 'Parts') : (i18n.language === 'ka' ? 'მალე' : 'Soon'), disabled: !shopEnabled },
                 { path: '/warranty-service?tab=case', icon: 'menu-service.svg', label: i18n.language === 'ka' ? 'შეკეთება' : 'Service', detail: '1,200+' },
                 { path: '/warranty-service?tab=warranty', icon: 'menu-warranty.svg', label: i18n.language === 'ka' ? 'გარანტია' : 'Warranty', detail: '12 თვე' },
               ].map((item) => (
