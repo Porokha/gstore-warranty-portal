@@ -1278,18 +1278,18 @@
       "accessories": "აქსესუარები"
     },
     "partLabels": {
-      "board": "Board",
+      "board": "დედაპლატა",
       "screen": "ეკრანი",
       "sensor": "სენსორი",
       "battery": "ელემენტი",
       "camera": "კამერა",
-      "speaker": "Speaker",
-      "charging": "Charging",
+      "speaker": "დინამიკი",
+      "charging": "დამტენი",
       "accessory": "აქსესუარი"
     },
     "sourceLabels": {
       "oem": "OEM",
-      "thirdParty": "Third Party"
+      "thirdParty": "მესამე მხარე"
     },
     "filters": {
       "kicker": "ფილტრი",
@@ -1315,7 +1315,8 @@
       "max": "მაქს.",
       "minPlaceholder": "0",
       "maxPlaceholder": "900",
-      "open": "ფილტრების გახსნა"
+      "open": "ფილტრების გახსნა",
+      "close": "ფილტრების დახურვა"
     },
     "scope": {
       "kicker": "Checkout სტატუსი",
