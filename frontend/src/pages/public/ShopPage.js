@@ -281,7 +281,7 @@ const ShopPage = () => {
   const [tab, setTab] = useState('smartphones');
   const [brands, setBrands] = useState([]);
   const [models, setModels] = useState([]);
-  const [parts, setParts] = useState(['board']);
+  const [parts, setParts] = useState([]);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [priceMin, setPriceMin] = useState('');
@@ -732,7 +732,7 @@ const ShopPage = () => {
     setTab('smartphones');
     setBrands([]);
     setModels([]);
-    setParts(['board']);
+    setParts([]);
     setSearch('');
     setPriceMin('');
     setPriceMax('');
@@ -1040,6 +1040,7 @@ const ShopPage = () => {
             {['smartphones', 'laptops'].map((value) => <button key={value} type="button" role="tab" aria-selected={tab === value} className={tab === value ? 'is-active' : ''} onClick={() => setTab(value)}>{t(labelForDevice[value])}</button>)}
           </div>
           <div className="zpos-figma-category-rail" aria-label={t('shop.filters.partTypeTitle')}>
+            <button type="button" className={parts.length === 0 ? 'is-active' : ''} aria-pressed={parts.length === 0} onClick={() => setParts([])}><CategoryOutlined aria-hidden="true" /><span>{t('common.all')}</span></button>
             {partOptions.filter(([value]) => value !== 'all').map(([value, labelKey]) => {
               const PartIcon = iconForPart[value] || CategoryOutlined;
               return <button key={value} type="button" className={parts.includes(value) ? 'is-active' : ''} aria-pressed={parts.includes(value)} onClick={() => setParts([value])}><PartIcon aria-hidden="true" /><span>{t(labelKey)}</span></button>;
