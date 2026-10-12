@@ -72,6 +72,11 @@ const WarrantyResultView = ({ warranty, onBack, onDownload, onPrint, onOpenCase 
                 <button type="button" onClick={onDownload} aria-label={ka ? 'PDF ჩამოტვირთვა' : 'Download PDF'}><DownloadOutlined aria-hidden="true" /></button>
                 <button type="button" onClick={onPrint} aria-label={ka ? 'დაბეჭდვა' : 'Print'}><PrintOutlined aria-hidden="true" /></button>
               </div>
+              <div className="zzv-warranty-document">
+                <DescriptionOutlined aria-hidden="true" />
+                <div><strong>{ka ? 'საგარანტიო მომსახურების პირობები' : 'Warranty service terms'}</strong><small>{ka ? 'ქართული · PDF · ვერსია 1.1' : 'Georgian · PDF · version 1.1'}</small></div>
+                <a href="/Zezva_Warranty_Policy_KA.pdf" download="Zezva_Warranty_Policy_KA.pdf" aria-label={ka ? 'საგარანტიო პირობების ჩამოტვირთვა' : 'Download warranty terms'}><DownloadOutlined aria-hidden="true" /></a>
+              </div>
             </section>
 
             {cases.length > 0 && <section className="zzv-warranty-result-group">
