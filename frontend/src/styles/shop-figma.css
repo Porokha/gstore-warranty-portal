@@ -23,8 +23,8 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
 
 #zpos-root.zpos-root--figma .zpos-shell {
   display: grid;
-  grid-template-columns: 272px minmax(0, 1fr);
-  gap: 28px;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 24px;
   min-height: 0;
   margin: 0;
   overflow: hidden;
@@ -73,12 +73,12 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
 
 #zpos-root.zpos-root--figma .zpos-figma-category-rail {
   display: grid;
-  gap: 2px;
+  gap: 4px;
   max-height: none;
   margin-bottom: 16px;
-  padding: 8px;
+  padding: 10px;
   border: 1px solid #eae7f2;
-  border-radius: 12px;
+  border-radius: 16px;
   background: #fff;
   overflow: visible;
 }
@@ -89,7 +89,7 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   gap: 11px;
   width: 100%;
   min-height: 36px;
-  padding: 6px 10px;
+  padding: 5px 12px;
   border: 0;
   border-radius: 8px;
   background: transparent;
@@ -101,8 +101,11 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
 }
 
 #zpos-root.zpos-root--figma .zpos-figma-category-rail button svg {
-  width: 19px;
-  height: 19px;
+  width: 26px;
+  height: 26px;
+  padding: 5px;
+  border-radius: 8px;
+  background: #f6f4fb;
 }
 
 #zpos-root.zpos-root--figma .zpos-figma-category-rail button.is-active {
@@ -111,10 +114,14 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   font-weight: 700;
 }
 
+#zpos-root.zpos-root--figma .zpos-figma-category-rail button.is-active svg {
+  background: #fff;
+}
+
 #zpos-root.zpos-root--figma .zpos-figma-desktop-filters {
-  padding: 16px;
+  padding: 18px;
   border: 1px solid #eae7f2;
-  border-radius: 12px;
+  border-radius: 16px;
   background: #fff;
   font-size: 12px;
 }
@@ -176,6 +183,12 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   color: #9c97ae;
 }
 
+#zpos-root.zpos-root--figma .zpos-figma-filter-empty {
+  margin: 0;
+  color: #9c97ae;
+  line-height: 1.4;
+}
+
 #zpos-root.zpos-root--figma .zpos-figma-filter-group input[type="checkbox"] {
   width: 15px;
   height: 15px;
@@ -227,6 +240,11 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
 }
 
 #zpos-root.zpos-root--figma .zpos-sidebar-scroll {
+  display: none;
+}
+
+#zpos-root.zpos-root--figma .zpos-figma-filter-close,
+#zpos-root.zpos-root--figma .zpos-figma-filter-actions {
   display: none;
 }
 
@@ -287,7 +305,7 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
 
 #zpos-root.zpos-root--figma .zpos-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
+  gap: 16px;
   padding: 0 0 20px;
 }
 
@@ -311,6 +329,41 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   padding: 0;
   border-radius: 8px;
   background: #f6f4fb;
+}
+
+#zpos-root.zpos-root--figma .zpos-figma-image-fallback {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 28px;
+  height: 28px;
+  color: #a5a0b8;
+  transform: translate(-50%, -50%);
+}
+
+#zpos-root.zpos-root--figma .zpos-figma-stock-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: #fff9e9;
+  color: #b17306;
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+#zpos-root.zpos-root--figma .zpos-badge {
+  top: 8px;
+  right: 8px;
+  left: auto;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: #fff2f2;
+  color: #ec5858;
+  font-size: 10px;
+  letter-spacing: 0;
 }
 
 #zpos-root.zpos-root--figma .zpos-thumb img {
@@ -357,6 +410,23 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   font-weight: 500;
 }
 
+#zpos-root.zpos-root--figma .zpos-price {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+}
+
+#zpos-root.zpos-root--figma .zpos-old-price {
+  order: 2;
+  color: #9c97ae;
+  font-size: 12px;
+}
+
+#zpos-root.zpos-root--figma .zpos-price-note {
+  flex-basis: 100%;
+}
+
 #zpos-root.zpos-root--figma .zpos-card-footer {
   align-items: center;
 }
@@ -382,10 +452,10 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   width: min(440px, 100%);
   height: 100dvh;
   max-height: none;
-  padding: 24px 20px max(20px, env(safe-area-inset-bottom));
+  padding: 0 0 max(20px, env(safe-area-inset-bottom));
   border-left: 1px solid #e7e1f3;
   background: #fff;
-  box-shadow: -18px 0 48px rgba(26, 22, 46, .12);
+  box-shadow: -8px 0 32px rgba(20, 18, 28, .1);
   opacity: 0;
   pointer-events: none;
   transform: translateX(100%);
@@ -401,15 +471,16 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
 #zpos-root.zpos-root--figma .zpos-figma-cart-close {
   align-self: flex-end;
   position: absolute;
-  top: 22px;
+  top: 20px;
   right: 20px;
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
-  border: 0;
-  background: transparent;
-  font-size: 25px;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #d6d2e2;
+  border-radius: 50%;
+  background: #fff;
+  font-size: 19px;
   cursor: pointer;
 }
 
@@ -418,94 +489,164 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-head {
-  min-height: 56px;
-  margin: 0 0 14px;
-  padding: 0 42px 15px 0;
+  min-height: 72px;
+  margin: 0;
+  padding: 20px 52px 20px 20px;
   border-bottom: 1px solid #e8e5ee;
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-head p {
-  color: #8b8798;
-  font-size: 11px;
+  display: none;
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-head h2 {
   color: #211d2b;
-  font-size: 22px;
+  font-size: 18px;
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-count {
-  border: 0;
-  border-radius: 7px;
-  background: #f0ebff;
-  color: #7045df;
+  display: none;
+}
+
+#zpos-root.zpos-root--figma .zpos-cart-head-side {
+  display: none;
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-items {
-  gap: 12px;
+  gap: 8px;
   min-height: 0;
   margin: 0;
-  padding: 0 2px 16px 0;
+  padding: 20px;
   scrollbar-width: thin;
+}
+
+#zpos-root.zpos-root--figma .zpos-cart-items.is-empty {
+  justify-content: center;
+}
+
+#zpos-root.zpos-root--figma .zpos-cart-items .zpos-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  min-height: 0;
+  padding: 0 0 48px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  text-align: center;
+}
+
+#zpos-root.zpos-root--figma .zpos-cart-items .zpos-empty strong {
+  color: #14121c;
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+#zpos-root.zpos-root--figma .zpos-cart-items .zpos-empty p {
+  max-width: 340px;
+  color: #5b5670;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+#zpos-root.zpos-root--figma .zpos-cart-items .zpos-empty button {
+  width: 100%;
+  min-height: 56px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 16px;
+  background: #7c4df5;
+  color: #fff;
+  font: 600 16px var(--font-platform);
+  cursor: pointer;
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-item {
   display: flex;
   flex: 0 0 auto;
   flex-direction: column;
-  gap: 12px;
+  gap: 0;
   width: 100%;
   min-width: 0;
-  padding: 12px;
+  padding: 0;
   border: 1px solid #e7e4ed;
   border-radius: 12px;
   background: #fff;
+  overflow: hidden;
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-line-main {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
   min-width: 0;
+  padding: 12px;
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-item-thumb {
-  flex: 0 0 72px;
-  width: 72px;
-  height: 72px;
-  padding: 6px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: 0 0 52px;
+  width: 52px;
+  min-width: 52px;
+  height: 52px;
+  padding: 0;
   border: 0;
   border-radius: 8px;
   background: #f7f6fa;
 }
 
+#zpos-root.zpos-root--figma .zpos-cart-image-fallback {
+  position: absolute;
+  width: auto;
+  height: auto;
+}
+
 #zpos-root.zpos-root--figma .zpos-cart-item-main {
   flex: 1;
-  min-height: 72px;
+  min-height: 76px;
   justify-content: flex-start;
-  gap: 5px;
-  padding-top: 3px;
+  gap: 0;
+  padding-top: 0;
+}
+
+#zpos-root.zpos-root--figma .zpos-cart-item-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+#zpos-root.zpos-root--figma .zpos-cart-item-copy {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 4px;
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-item h3 {
   min-height: 0;
   color: #24212e;
-  font-size: 13px;
-  line-height: 1.35;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-item-sub {
   color: #898595;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-remove {
   display: grid;
-  flex: 0 0 26px;
+  flex: 0 0 20px;
   place-items: center;
-  width: 26px;
-  height: 26px;
+  width: 20px;
+  height: 20px;
   border-radius: 6px;
   background: transparent;
   color: #a09ba9;
@@ -527,6 +668,7 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
 #zpos-root.zpos-root--figma .zpos-cart-item-footer {
   justify-content: space-between;
   overflow: visible;
+  margin-top: 8px;
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-item-actions {
@@ -534,22 +676,28 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
 }
 
 #zpos-root.zpos-root--figma .zpos-qty {
-  width: 102px;
-  height: 32px;
-  border: 1px solid #e3dfeb;
-  border-radius: 8px;
+  width: 84px;
+  height: 28px;
+  border: 0;
+  border-radius: 7px;
+  background: #f6f4fb;
   box-shadow: none;
 }
 
 #zpos-root.zpos-root--figma .zpos-qty button {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   border-radius: 5px;
   font-size: 16px;
 }
 
+#zpos-root.zpos-root--figma .zpos-qty button:disabled {
+  color: #bcb7c8;
+  cursor: default;
+}
+
 #zpos-root.zpos-root--figma .zpos-cart-item-price {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-service-row {
@@ -557,11 +705,23 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding-top: 10px;
+  min-height: 42px;
+  padding: 8px 12px;
   border-top: 1px solid #eeeaf3;
   color: #554d66;
-  font-size: 11px;
+  font-size: 12px;
   cursor: pointer;
+}
+
+#zpos-root.zpos-root--figma .zpos-cart-service-icon {
+  display: grid;
+  flex: 0 0 26px;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid #eae7f2;
+  border-radius: 8px;
+  background: #fff;
 }
 
 #zpos-root.zpos-root--figma .zpos-cart-service-row svg {
@@ -581,8 +741,14 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   accent-color: #7c4df5;
 }
 
+#zpos-root.zpos-root--figma .zpos-cart-service-row.is-active {
+  width: 100%;
+  border-top-color: #e4dbfe;
+  background: #f1edff;
+}
+
 #zpos-root.zpos-root--figma .zpos-summary {
-  padding-top: 14px;
+  padding: 12px 20px max(20px, env(safe-area-inset-bottom));
   border-color: #e8e5ee;
   background: #fff;
 }
@@ -599,16 +765,16 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
 
 #zpos-root.zpos-root--figma .zpos-summary-row.is-total strong {
   color: #24212e;
-  font-size: 22px;
+  font-size: 18px;
 }
 
 #zpos-root.zpos-root--figma .zpos-checkout {
-  min-height: 48px;
+  min-height: 56px;
   margin-top: 16px;
-  border-radius: 8px;
+  border-radius: 16px;
   background: #7c4df5;
   box-shadow: none;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 #zpos-root.zpos-root--figma .zpos-figma-cart-backdrop {
@@ -691,13 +857,36 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   background: #fbfafe;
 }
 
-#zpos-root.zpos-root--figma .zpos-modal--figma-product .zpos-modal-visual img {
+#zpos-root.zpos-root--figma .zpos-modal-image-frame {
+  position: relative;
+  display: grid;
+  place-items: center;
   width: min(336px, 100%);
   height: 336px;
-  padding: 5%;
   border: 1px solid #eae7f2;
   border-radius: 12px;
   background: #f6f4fb;
+  overflow: hidden;
+}
+
+#zpos-root.zpos-root--figma .zpos-modal--figma-product .zpos-modal-visual .zpos-modal-image-placeholder {
+  position: absolute;
+  width: auto;
+  height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  opacity: 1;
+}
+
+#zpos-root.zpos-root--figma .zpos-modal--figma-product .zpos-modal-visual .zpos-modal-product-image {
+  width: 100%;
+  height: 100%;
+  padding: 5%;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
   object-fit: contain;
 }
 
@@ -781,12 +970,18 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   text-align: right;
 }
 
+#zpos-root.zpos-root--figma .zpos-product-purchase {
+  display: grid;
+  gap: 16px;
+  margin-top: auto;
+}
+
 #zpos-root.zpos-root--figma .zpos-product-service {
   display: flex;
   align-items: center;
   gap: 12px;
   min-height: 74px;
-  margin-top: 16px;
+  margin-top: 0;
   padding: 12px 16px;
   border-radius: 12px;
   background: #f1edff;
@@ -843,8 +1038,8 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-top: auto;
-  padding-top: 16px;
+  margin-top: 0;
+  padding-top: 0;
 }
 
 #zpos-root.zpos-root--figma .zpos-product-bottom > div {
@@ -878,12 +1073,566 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   cursor: not-allowed;
 }
 
+#zpos-root.zpos-root--figma .zpos-modal-backdrop:has(.zpos-order-modal.is-success),
+#zpos-root.zpos-root--figma .zpos-modal-backdrop:has(.zpos-order-modal.is-checkout) {
+  inset: 72px 0 0;
+  display: block;
+  padding: 0;
+  background: #fbfafe;
+  overflow-y: auto;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-modal.is-success,
+#zpos-root.zpos-root--figma .zpos-order-modal.is-checkout {
+  display: block;
+  width: 100%;
+  max-width: none;
+  min-height: calc(100dvh - 72px);
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: #fbfafe;
+  box-shadow: none;
+  overflow: visible;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-modal.is-success .zpos-order-modal-body,
+#zpos-root.zpos-root--figma .zpos-order-modal.is-checkout .zpos-order-modal-body {
+  display: block;
+  width: 100%;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-modal.is-checkout > .zpos-modal-close {
+  display: none;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-page {
+  min-height: calc(100dvh - 72px);
+  color: #171321;
+  font-family: var(--font-platform);
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(1200px, calc(100% - 40px));
+  min-height: 64px;
+  margin: 0 auto;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-bar button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0 0 3px;
+  border: 1px solid #ddd8e9;
+  border-radius: 50%;
+  background: #fff;
+  color: #171321;
+  font: 24px/1 var(--font-platform);
+  cursor: pointer;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 440px;
+  align-items: start;
+  gap: 16px;
+  width: min(1200px, calc(100% - 40px));
+  margin: 12px auto 48px;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-main {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-card,
+#zpos-root.zpos-root--figma .zpos-checkout-summary {
+  min-width: 0;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-card h3 {
+  margin: 0 0 8px;
+  color: #5b5670;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-person-type {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  min-height: 48px;
+  margin-bottom: 12px;
+  padding: 4px;
+  border-radius: 12px;
+  background: #f6f4fb;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-person-type span,
+#zpos-root.zpos-root--figma .zpos-checkout-person-type button {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-person-type [aria-current="true"] {
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(20, 18, 28, .04);
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-person-type button:disabled {
+  color: #9c97ae;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-field {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  margin-bottom: 12px;
+  color: #5b5670;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-fields .zpos-checkout-field {
+  margin-bottom: 0;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-field input,
+#zpos-root.zpos-root--figma .zpos-checkout-field select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px solid #dcd8e7;
+  border-radius: 12px;
+  background: #fff;
+  color: #171321;
+  font: 400 16px var(--font-platform);
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-field select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23625b72' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-field :is(input, select):focus-visible {
+  outline: 2px solid #7c4df5;
+  outline-offset: 2px;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-field [aria-invalid="true"] {
+  border-color: #c34250;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-field small,
+#zpos-root.zpos-root--figma .zpos-checkout-warranty small {
+  color: #b53646;
+  font-size: 12px;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 68px;
+  padding: 12px 16px;
+  border: 1px solid #7c4df5;
+  border-radius: 12px;
+  background: #f1edff;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-radio {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  margin-left: auto;
+  border: 4px solid #7c4df5;
+  border-radius: 50%;
+  background: #fff;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-option div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-option strong {
+  font-size: 14px;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-option small {
+  color: #686276;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-option b {
+  margin-left: auto;
+  color: #1b9e6b;
+  white-space: nowrap;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-warranty {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-warranty img {
+  max-width: 72px;
+  max-height: 26px;
+  object-fit: contain;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-toggle {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-toggle button {
+  min-width: 56px;
+  min-height: 34px;
+  border: 1px solid #dfd9ed;
+  border-radius: 8px;
+  background: #fff;
+  color: #514b5f;
+  font: 600 13px var(--font-platform);
+  cursor: pointer;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-toggle button.is-selected {
+  border-color: #7c4df5;
+  background: #f0eafe;
+  color: #5f32d4;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-summary {
+  position: sticky;
+  top: 88px;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-breakdown {
+  padding: 0 12px;
+  border: 1px solid #eae7f2;
+  border-radius: 12px;
+  background: #fff;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-breakdown > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  align-items: center;
+  border-bottom: 1px solid #eae7f2;
+  font-size: 14px;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-breakdown > div:last-child {
+  border-bottom: 0;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-breakdown span {
+  color: #5b5670;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-breakdown strong {
+  font-weight: 600;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-breakdown .is-total strong {
+  font-size: 18px;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-submit {
+  width: 100%;
+  min-height: 56px;
+  margin-top: 12px;
+  border: 0;
+  border-radius: 16px;
+  background: #7c4df5;
+  color: #fff;
+  font: 700 15px var(--font-platform);
+  cursor: pointer;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-submit:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-note {
+  margin: 12px 0 0;
+  color: #5b5670;
+  font-size: 12px;
+  line-height: 1.55;
+  text-align: center;
+}
+
+#zpos-root.zpos-root--figma .zpos-checkout-mobile-action {
+  display: none;
+}
+
 @media (max-width: 920px) {
+  #zpos-root.zpos-root--figma .zpos-checkout-bar {
+    width: 100%;
+    min-height: 52px;
+    padding: 0 20px;
+    border-bottom: 1px solid #eae7f2;
+    background: #fff;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-checkout-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+    width: 100%;
+    margin: 0;
+    padding: 20px 20px calc(100px + env(safe-area-inset-bottom));
+  }
+
+  #zpos-root.zpos-root--figma .zpos-checkout-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #zpos-root.zpos-root--figma .zpos-checkout-summary {
+    position: static;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-checkout-summary .zpos-checkout-submit {
+    display: none;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-checkout-mobile-action {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 2;
+    display: grid;
+    gap: 6px;
+    padding: 10px 16px max(10px, env(safe-area-inset-bottom));
+    border-top: 1px solid #eae7f2;
+    background: #fff;
+    box-shadow: 0 -8px 24px rgba(34, 20, 66, .08);
+  }
+
+  #zpos-root.zpos-root--figma .zpos-checkout-mobile-action button {
+    min-height: 52px;
+    border: 0;
+    border-radius: 10px;
+    background: #7c4df5;
+    color: #fff;
+    font: 700 15px var(--font-platform);
+  }
+
+  #zpos-root.zpos-root--figma .zpos-checkout-mobile-action button:disabled {
+    opacity: .6;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-checkout-mobile-action small {
+    color: #b53646;
+  }
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-page {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - 72px);
+  color: #14121c;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(1200px, calc(100% - 40px));
+  min-height: 64px;
+  margin: 0 auto;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-bar button {
+  display: grid;
+  place-items: center;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  padding: 0 0 3px;
+  border: 1px solid #d6d2e2;
+  border-radius: 50%;
+  background: #fff;
+  color: #14121c;
+  font: 24px/1 var(--font-platform);
+  cursor: pointer;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(500px, calc(100% - 40px));
+  margin: 36px auto 0;
+  padding-bottom: 24px;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-mark {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #eefaf5;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-mark img {
+  display: block;
+  width: auto;
+  height: auto;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-content h2 {
+  margin: 16px 0 4px;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: center;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-copy {
+  max-width: 410px;
+  margin: 0;
+  color: #5b5670;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-facts {
+  width: 100%;
+  margin: 24px 0 0;
+  padding: 8px 16px;
+  border: 1px solid #eae7f2;
+  border-radius: 12px;
+  background: #fff;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-facts > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 48px;
+  padding: 10px 0;
+  border-bottom: 1px solid #eae7f2;
+  font-size: 14px;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-facts > div:last-child {
+  border-bottom: 0;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-facts dt {
+  color: #5b5670;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-facts dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-actions {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  margin-top: 16px;
+  text-align: center;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-actions a {
+  display: grid;
+  place-items: center;
+  min-height: 56px;
+  border-radius: 12px;
+  background: #7c4df5;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+#zpos-root.zpos-root--figma .zpos-order-success-actions button {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: #5f32d4;
+  font: 600 14px var(--font-platform);
+  cursor: pointer;
+}
+
+@media (max-width: 920px) {
+  #zpos-root.zpos-root--figma .zpos-order-success-bar {
+    width: 100%;
+    min-height: 52px;
+    padding: 0 20px;
+    border-bottom: 1px solid #eae7f2;
+    background: #fff;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-order-success-content {
+    flex: 1;
+    width: 100%;
+    margin: 0;
+    padding: 24px 16px max(16px, env(safe-area-inset-bottom));
+  }
+
+  #zpos-root.zpos-root--figma .zpos-order-success-facts {
+    margin-top: 20px;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-order-success-actions {
+    margin-top: auto;
+    padding-top: 24px;
+  }
+
   #zpos-root.zpos-root--figma .zpos-cart {
     top: 72px;
     width: 100%;
     height: calc(100dvh - 72px);
-    padding: 0 20px max(12px, env(safe-area-inset-bottom));
+    padding: 0 0 max(12px, env(safe-area-inset-bottom));
     border: 0;
     background: #fbfafe;
     box-shadow: none;
@@ -913,7 +1662,7 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
     flex: 0 0 52px;
     align-items: center;
     min-height: 52px;
-    margin: 0 -20px 16px;
+    margin: 0 0 16px;
     padding: 0 20px 0 60px;
     background: #fff;
   }
@@ -929,16 +1678,33 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   }
 
   #zpos-root.zpos-root--figma .zpos-cart-items {
+    display: flex;
     flex-direction: column;
     gap: 10px;
     overflow-x: hidden;
     overflow-y: auto;
     align-items: stretch;
+    padding: 0 20px 16px;
   }
 
   #zpos-root.zpos-root--figma .zpos-summary {
-    margin: 0 -20px;
+    margin: 0;
     padding: 14px 20px max(12px, env(safe-area-inset-bottom));
+  }
+
+  #zpos-root.zpos-root--figma .zpos-cart.is-figma-open.zpos-cart--compact:not(.is-expanded) .zpos-cart-items,
+  #zpos-root.zpos-root--figma .zpos-cart.is-figma-open.zpos-cart--compact:not(.is-expanded) .zpos-summary-row.is-total {
+    display: flex;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-cart.is-figma-open.zpos-cart--compact:not(.is-expanded) .zpos-summary {
+    margin-top: auto;
+    padding: 14px 20px max(12px, env(safe-area-inset-bottom));
+    border-top: 1px solid #e8e5ee;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-cart.is-figma-open.zpos-cart--compact:not(.is-expanded) .zpos-checkout {
+    margin-top: 16px;
   }
 
   #zpos-root.zpos-root--figma .zpos-figma-cart-backdrop {
@@ -1224,13 +1990,16 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
     overflow: hidden;
   }
 
-  #zpos-root.zpos-root--figma .zpos-modal--figma-product .zpos-modal-visual img {
+  #zpos-root.zpos-root--figma .zpos-modal-image-frame {
     width: 100%;
     height: 100%;
-    max-height: 100%;
-    padding: 6%;
     border: 0;
+    border-radius: 0;
     background: transparent;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-modal--figma-product .zpos-modal-visual .zpos-modal-product-image {
+    padding: 6%;
   }
 
   #zpos-root.zpos-root--figma .zpos-modal--figma-product .zpos-modal-content {
@@ -1251,17 +2020,51 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
     margin-top: 24px;
   }
 
-  #zpos-root.zpos-root--figma .zpos-product-service {
-    margin-top: 24px;
+  #zpos-root.zpos-root--figma .zpos-product-purchase {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    gap: 12px;
+    margin: auto -20px 0;
+    padding: 16px 16px max(12px, env(safe-area-inset-bottom));
+    border-top: 1px solid #eae7f2;
+    background: #fff;
   }
 
   #zpos-root.zpos-root--figma .zpos-product-bottom {
-    position: sticky;
-    bottom: 0;
-    margin: 24px -20px 0;
-    padding: 12px 16px max(12px, env(safe-area-inset-bottom));
-    border-top: 1px solid #eae7f2;
-    background: #fff;
+    position: static;
+    padding: 0;
+    border: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  #zpos-root.zpos-root--figma .zpos-cart .zpos-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(160px, 1.6fr);
+    align-items: center;
+    gap: 12px;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-cart.is-figma-open .zpos-summary-row.is-total,
+  #zpos-root.zpos-root--figma .zpos-cart.is-figma-open.zpos-cart--compact:not(.is-expanded) .zpos-summary-row.is-total {
+    display: grid;
+    gap: 2px;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-cart .zpos-summary-row.is-total span {
+    font-size: 12px;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-cart .zpos-summary-row.is-total strong {
+    font-size: 18px;
+    white-space: nowrap;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-cart .zpos-checkout {
+    min-width: 0;
+    min-height: 52px;
+    margin: 0;
   }
 }
 
@@ -1280,5 +2083,152 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
 
   #zpos-root.zpos-root--figma .zpos-thumb {
     height: 100px;
+  }
+}
+
+@media (max-width: 920px) {
+  #zpos-root.zpos-root--figma .zpos-filter-overlay {
+    z-index: 1109;
+    background: rgba(20, 18, 28, .48);
+  }
+
+  #zpos-root.zpos-root--figma .zpos-sidebar,
+  #zpos-root.zpos-root--figma.zpos-filters-open .zpos-sidebar,
+  #zpos-root.zpos-root--figma.zpos-filters-closing .zpos-sidebar {
+    position: fixed;
+    display: flex;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1110;
+    width: 100%;
+    max-width: none;
+    height: min(76dvh, 720px);
+    padding: 0 16px;
+    border: 0;
+    border-radius: 24px 24px 0 0;
+    box-shadow: 0 -20px 50px rgba(20, 18, 28, .15);
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(102%);
+    transition: transform .22s cubic-bezier(.22, 1, .36, 1), visibility .22s;
+  }
+
+  #zpos-root.zpos-root--figma.zpos-filters-open .zpos-sidebar,
+  #zpos-root.zpos-root--figma.zpos-filters-closing .zpos-sidebar {
+    visibility: visible;
+  }
+
+  #zpos-root.zpos-root--figma.zpos-filters-open .zpos-sidebar {
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  #zpos-root.zpos-root--figma .zpos-sidebar-head {
+    position: relative;
+    flex: 0 0 90px;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin: 0 -16px;
+    padding: 36px 16px 15px;
+    border-bottom: 1px solid #eae7f2;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-sidebar-head::before {
+    position: absolute;
+    top: 19px;
+    left: 50%;
+    width: 36px;
+    height: 4px;
+    border-radius: 4px;
+    background: #9c97ae;
+    content: '';
+    transform: translateX(-50%);
+  }
+
+  #zpos-root.zpos-root--figma .zpos-sidebar-head p,
+  #zpos-root.zpos-root--figma .zpos-reset-btn {
+    display: none;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-sidebar-head h2 {
+    margin: 0;
+    color: #14121c;
+    font-size: 18px;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-figma-filter-close {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #5b5670;
+    font-size: 25px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-sidebar-scroll {
+    display: block;
+    padding: 16px 0;
+    scrollbar-gutter: auto;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-filter-section {
+    padding: 14px 0;
+    border-bottom: 1px solid #eae7f2;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-filter-section:first-of-type {
+    padding-top: 0;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-section-head p {
+    display: none;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-section-head h3 {
+    margin: 0 0 10px;
+    color: #5b5670;
+    font-size: 12px;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-filter-list {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-figma-filter-actions {
+    display: grid;
+    flex: 0 0 auto;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 0 -16px;
+    padding: 12px 16px max(16px, env(safe-area-inset-bottom));
+    border-top: 1px solid #eae7f2;
+    background: #fff;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-figma-filter-actions button {
+    min-height: 52px;
+    border: 0;
+    border-radius: 12px;
+    background: #f6f4fb;
+    color: #5b5670;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  #zpos-root.zpos-root--figma .zpos-figma-filter-actions button:last-child {
+    background: #7c4df5;
+    color: #fff;
   }
 }

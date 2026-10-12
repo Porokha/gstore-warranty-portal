@@ -1315,7 +1315,8 @@
       "max": "Max",
       "minPlaceholder": "0",
       "maxPlaceholder": "900",
-      "open": "Open filters"
+      "open": "Open filters",
+      "close": "Close filters"
     },
     "scope": {
       "kicker": "Checkout Status",
@@ -1355,8 +1356,10 @@
     "cart": {
       "kicker": "Cart",
       "title": "Repair order",
+      "total": "Total",
       "emptyTitle": "No parts added yet",
-      "emptyDescription": "Add a part or open quick view for  service pricing"
+      "emptyDescription": "Choose a part from the catalog or search by model.",
+      "backToCatalog": "Back to catalog"
     },
     "choiceLabels": {
       "productOnly": "Buy only product",
@@ -1375,6 +1378,23 @@
       "checkoutDisabled": "Order"
     },
     "orderFlow": {
+      "checkout": {
+        "title": "Checkout",
+        "contact": "Contact details",
+        "individual": "Individual",
+        "business": "Business",
+        "businessUnavailable": "Business checkout is not available yet",
+        "pickup": "Pickup",
+        "pickupStore": "Collect from Zezva Service",
+        "pickupAddress": "7 Tsotne Dadiani Street, Karvasla, Floor III, B308/1",
+        "free": "Free",
+        "payment": "Payment method",
+        "additional": "Additional details",
+        "summary": "Your order",
+        "parts": "Parts",
+        "placeOrder": "Place order",
+        "pickupNote": "We will contact you within one business day to confirm pickup."
+      },
       "stepLabels": {
         "1": "Who are you",
         "2": "A few details",
@@ -1418,7 +1438,7 @@
         "payOnline": "Pay Online",
         "payOnsite": "Pay On-site",
         "onlineDisabled": "Available after payment integration.",
-        "payOnsiteDescription": "Creates your order with processing status.",
+        "payOnsiteDescription": "Pay by cash or card when collecting your order.",
         "processing": "Creating order..."
       },
     "success": {
@@ -1426,7 +1446,16 @@
       "title": "{{customer_name}}, Your order has been received",
       "orderNumber": "Your Order number is {{order_number}}",
       "contact": "For further details our representative will contact you on {{customer_phone_number}} within 1 business day.",
-      "thankYou": "Thank you for Choosing Us"
+      "thankYou": "Thank you for Choosing Us",
+      "orderHeading": "Order",
+      "shortTitle": "Order received",
+      "pickupConfirmation": "We will contact you within one business day to confirm pickup at 7 Tsotne Dadiani Street, Karvasla, floor 3, B308/1.",
+      "orderNumberLabel": "Order number",
+      "customerLabel": "Name and surname",
+      "itemCountLabel": "Items",
+      "amountDueLabel": "Amount due on pickup",
+      "backHome": "Back to home",
+      "continueShopping": "Continue shopping"
     },
     "summaryLine": "{{count}} products ready for checkout.",
     "summaryCount": "{{count}} selected"

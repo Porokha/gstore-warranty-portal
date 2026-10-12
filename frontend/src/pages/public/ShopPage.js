@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery } from 'react-query';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   BatteryChargingFullOutlined,
@@ -10,6 +11,7 @@ import {
   CropPortraitOutlined,
   DeveloperBoardOutlined,
   DeleteOutline,
+  PhoneIphoneOutlined,
   SensorsOutlined,
   VolumeUpOutlined,
 } from '@mui/icons-material';
@@ -78,6 +80,13 @@ const formatMoney = (value) => `₾${Number(value || 0).toFixed(2)}`;
 const getProductOnlyPrice = (product) => product.sale_price ?? product.price;
 const getServicePrice = (product) => product.service_price;
 const getDisplayPrice = (product) => getProductOnlyPrice(product) ?? getServicePrice(product);
+const getDiscountPercentage = (product) => {
+  const regular = Number(product.price);
+  const sale = Number(product.sale_price);
+  return regular > 0 && product.sale_price != null && sale < regular
+    ? Math.round((1 - sale / regular) * 100)
+    : 0;
+};
 const canBuyProductOnly = (product) => getProductOnlyPrice(product) != null;
 const canBuyWithService = (product) => getServicePrice(product) != null;
 const MODAL_CLOSE_MS = 260;
@@ -95,7 +104,7 @@ const createInitialOrderForm = () => ({
   customer_phone: '',
   customer_email: '',
   heard_about: '',
-  has_partner_warranty: null,
+  has_partner_warranty: false,
   partner_warranty_id: '',
   payment_method: 'onsite',
 });
@@ -272,7 +281,7 @@ const ShopPage = () => {
   const [tab, setTab] = useState('smartphones');
   const [brands, setBrands] = useState([]);
   const [models, setModels] = useState([]);
-  const [parts, setParts] = useState(['board']);
+  const [parts, setParts] = useState([]);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [priceMin, setPriceMin] = useState('');
@@ -371,8 +380,12 @@ const ShopPage = () => {
   );
   const shouldShowFilterLoader = isFacetsFetching && showSlowFilterLoader;
   const orderMutation = useMutation((payload) => shopService.createPublicOrder(payload), {
-    onSuccess: (result) => {
-      setCreatedOrder(result);
+    onSuccess: (result, variables) => {
+      setCreatedOrder({
+        ...result,
+        customer_last_name: variables.customer_last_name,
+        item_count: variables.items.reduce((count, item) => count + item.quantity, 0),
+      });
       setOrderStep(4);
       setOrderErrors({});
       setCart([]);
@@ -544,37 +557,6 @@ const ShopPage = () => {
     () => ['facebook', 'instagram', 'tiktok', 'friend', 'google', 'ai'],
     [],
   );
-  const orderStepMeta = useMemo(
-    () => [
-      {
-        id: 1,
-        label: t('shop.orderFlow.stepLabels.1'),
-        title: t('shop.orderFlow.stepOne.title'),
-      },
-      {
-        id: 2,
-        label: t('shop.orderFlow.stepLabels.2'),
-        title: t('shop.orderFlow.stepTwo.title'),
-      },
-      {
-        id: 3,
-        label: t('shop.orderFlow.stepLabels.3'),
-        title: t('shop.orderFlow.stepThree.title'),
-      },
-    ],
-    [t],
-  );
-
-  const stepOneValid =
-    orderForm.customer_name.trim() &&
-    orderForm.customer_last_name.trim() &&
-    orderForm.customer_phone.trim() &&
-    EMAIL_RE.test(orderForm.customer_email.trim());
-
-  const stepTwoValid =
-    orderForm.heard_about &&
-    orderForm.has_partner_warranty !== null &&
-    (!orderForm.has_partner_warranty || orderForm.partner_warranty_id.trim());
 
   const visibleProducts = products;
 
@@ -602,6 +584,15 @@ const ShopPage = () => {
     },
     [models, productFacets.models],
   );
+  const visibleDesktopBrands = showAllDesktopBrands
+    ? brandOptions
+    : brandOptions.filter((brand, index) => index < 4 || brands.includes(brand));
+  const matchingDesktopModels = modelOptions.filter((model) =>
+    model.toLocaleLowerCase().includes(desktopModelSearch.trim().toLocaleLowerCase()),
+  );
+  const visibleDesktopModels = desktopModelSearch.trim() || showAllDesktopModels
+    ? matchingDesktopModels
+    : matchingDesktopModels.filter((model, index) => index < 4 || models.includes(model));
   const dynamicPartOptions = useMemo(() => {
     const availableParts = new Set((productFacets.parts || []).map((item) => item.value));
     const filtered = partOptions.filter(([value]) => value === 'all' || availableParts.has(value));
@@ -741,7 +732,7 @@ const ShopPage = () => {
     setTab('smartphones');
     setBrands([]);
     setModels([]);
-    setParts(['board']);
+    setParts([]);
     setSearch('');
     setPriceMin('');
     setPriceMax('');
@@ -799,7 +790,10 @@ const ShopPage = () => {
           canProductOnly: canBuyProductOnly(product),
           canService: canBuyWithService(product),
           image_url: product.image_url,
-          subtitle: `${t(labelForDevice[product.device_category])} • ${t(labelForPart[product.part_category])}`,
+          subtitle: [
+            t(labelForSource[product.inventory_source] || product.inventory_source),
+            product.quality_line && product.quality_line !== 'N/A' ? product.quality_line : null,
+          ].filter(Boolean).join(' · '),
         },
       ];
     });
@@ -890,11 +884,12 @@ const ShopPage = () => {
   }
 
   const updateOrderForm = (field, value) => {
-    setOrderForm((current) => ({ ...current, [field]: value }));
-    setOrderErrors((current) => ({ ...current, [field]: '', submit: '' }));
+    const clearPartnerId = field === 'has_partner_warranty' && value === false;
+    setOrderForm((current) => ({ ...current, [field]: value, ...(clearPartnerId ? { partner_warranty_id: '' } : {}) }));
+    setOrderErrors((current) => ({ ...current, [field]: '', submit: '', ...(clearPartnerId ? { partner_warranty_id: '' } : {}) }));
   };
 
-  const goToStepTwo = () => {
+  const validateCheckout = () => {
     const nextErrors = {};
     if (!orderForm.customer_name.trim()) nextErrors.customer_name = t('shop.orderFlow.errors.required');
     if (!orderForm.customer_last_name.trim()) nextErrors.customer_last_name = t('shop.orderFlow.errors.required');
@@ -904,25 +899,18 @@ const ShopPage = () => {
     } else if (!EMAIL_RE.test(orderForm.customer_email.trim())) {
       nextErrors.customer_email = t('shop.orderFlow.errors.email');
     }
-    setOrderErrors((current) => ({ ...current, ...nextErrors }));
-    if (Object.keys(nextErrors).length === 0) {
-      setOrderStep(2);
-    }
-  };
-
-  const goToStepThree = () => {
-    const nextErrors = {};
     if (!orderForm.heard_about) nextErrors.heard_about = t('shop.orderFlow.errors.required');
-    if (orderForm.has_partner_warranty === null) {
-      nextErrors.has_partner_warranty = t('shop.orderFlow.errors.required');
-    }
     if (orderForm.has_partner_warranty && !orderForm.partner_warranty_id.trim()) {
       nextErrors.partner_warranty_id = t('shop.orderFlow.errors.required');
     }
-    setOrderErrors((current) => ({ ...current, ...nextErrors }));
-    if (Object.keys(nextErrors).length === 0) {
-      setOrderStep(3);
+    setOrderErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      window.requestAnimationFrame(() => {
+        const firstInvalid = document.querySelector('.zpos-order-modal.is-checkout [aria-invalid="true"]');
+        firstInvalid?.focus();
+      });
     }
+    return Object.keys(nextErrors).length === 0;
   };
 
   const submitOnsiteOrder = () => {
@@ -930,7 +918,10 @@ const ShopPage = () => {
       return;
     }
 
-    setOrderErrors({});
+    if (!validateCheckout()) {
+      return;
+    }
+
     orderMutation.mutate({
       ...orderForm,
       payment_method: 'onsite',
@@ -968,7 +959,6 @@ const ShopPage = () => {
     }
 
     if (action === 'decrease' && currentItem.qty === 1) {
-      removeCartItem(itemId);
       return;
     }
 
@@ -978,7 +968,7 @@ const ShopPage = () => {
           return item;
         }
 
-        return { ...item, qty: action === 'increase' ? item.qty + 1 : item.qty - 1 };
+        return { ...item, qty: action === 'increase' ? item.qty + 1 : Math.max(1, item.qty - 1) };
       });
     });
   };
@@ -1050,6 +1040,7 @@ const ShopPage = () => {
             {['smartphones', 'laptops'].map((value) => <button key={value} type="button" role="tab" aria-selected={tab === value} className={tab === value ? 'is-active' : ''} onClick={() => setTab(value)}>{t(labelForDevice[value])}</button>)}
           </div>
           <div className="zpos-figma-category-rail" aria-label={t('shop.filters.partTypeTitle')}>
+            <button type="button" className={parts.length === 0 ? 'is-active' : ''} aria-pressed={parts.length === 0} onClick={() => setParts([])}><CategoryOutlined aria-hidden="true" /><span>{t('common.all')}</span></button>
             {partOptions.filter(([value]) => value !== 'all').map(([value, labelKey]) => {
               const PartIcon = iconForPart[value] || CategoryOutlined;
               return <button key={value} type="button" className={parts.includes(value) ? 'is-active' : ''} aria-pressed={parts.includes(value)} onClick={() => setParts([value])}><PartIcon aria-hidden="true" /><span>{t(labelKey)}</span></button>;
@@ -1059,14 +1050,15 @@ const ShopPage = () => {
             <div className="zpos-figma-filter-heading"><strong>{i18n.language === 'ka' ? 'ფილტრი' : 'Filters'}</strong><button type="button" onClick={resetFilters}>{i18n.language === 'ka' ? 'გასუფთავება' : 'Clear'}</button></div>
             <div className="zpos-figma-filter-group">
               <strong>{t('shop.filters.brandTitle')}</strong>
-              {(showAllDesktopBrands ? brandOptions : brandOptions.slice(0, 4)).map((brand) => <label key={brand}><input type="checkbox" checked={brands.includes(brand)} onChange={() => toggleBrand(brand)} /><span>{brand}</span></label>)}
+              {visibleDesktopBrands.map((brand) => <label key={brand}><input type="checkbox" checked={brands.includes(brand)} onChange={() => toggleBrand(brand)} /><span>{brand}</span></label>)}
               {brandOptions.length > 4 && <button type="button" onClick={() => setShowAllDesktopBrands((current) => !current)}>{showAllDesktopBrands ? t('shop.filters.showLess') : t('shop.filters.showMore', { count: brandOptions.length - 4 })}</button>}
             </div>
             <div className="zpos-figma-filter-group">
               <strong>{t('shop.filters.modelTitle')}</strong>
               <input className="zpos-figma-model-search" type="search" value={desktopModelSearch} onChange={(event) => setDesktopModelSearch(event.target.value)} placeholder={t('shop.filters.searchOptions')} />
-              {(showAllDesktopModels ? modelOptions : modelOptions.slice(0, 4)).filter((model) => model.toLocaleLowerCase().includes(desktopModelSearch.toLocaleLowerCase())).map((model) => <label key={model}><input type="checkbox" checked={models.includes(model)} onChange={() => toggleModel(model)} /><span>{model}</span><small>{productFacets.models?.find((item) => item.value === model)?.count || ''}</small></label>)}
-              {modelOptions.length > 4 && <button type="button" onClick={() => setShowAllDesktopModels((current) => !current)}>{showAllDesktopModels ? t('shop.filters.showLess') : t('shop.filters.showMore', { count: modelOptions.length - 4 })}</button>}
+              {visibleDesktopModels.map((model) => <label key={model}><input type="checkbox" checked={models.includes(model)} onChange={() => toggleModel(model)} /><span>{model}</span><small>{productFacets.models?.find((item) => item.value === model)?.count || ''}</small></label>)}
+              {matchingDesktopModels.length === 0 && <p className="zpos-figma-filter-empty">{t('shop.empty.title')}</p>}
+              {!desktopModelSearch.trim() && modelOptions.length > 4 && <button type="button" onClick={() => setShowAllDesktopModels((current) => !current)}>{showAllDesktopModels ? t('shop.filters.showLess') : t('shop.filters.showMore', { count: modelOptions.length - 4 })}</button>}
             </div>
             <div className="zpos-figma-filter-group">
               <strong>{t('shop.filters.sourceTitle')}</strong>
@@ -1085,6 +1077,7 @@ const ShopPage = () => {
             <button className="zpos-reset-btn" type="button" onClick={resetFilters}>
               {t('shop.filters.reset')}
             </button>
+            <button className="zpos-figma-filter-close" type="button" onClick={closeFilters} aria-label={t('shop.filters.close')}>×</button>
           </div>
 
           <div className={`zpos-sidebar-scroll ${isFacetsFetching ? 'is-refetching' : ''}`}>
@@ -1220,6 +1213,10 @@ const ShopPage = () => {
               </div>
             </section>
           </div>
+          <div className="zpos-figma-filter-actions">
+            <button type="button" onClick={resetFilters}>{t('shop.filters.reset')}</button>
+            <button type="button" onClick={closeFilters}>{isInitialProductsLoading ? '...' : productsTotal.toLocaleString(i18n.language === 'ka' ? 'ka-GE' : 'en-US')} {i18n.language === 'ka' ? 'ნაწილი' : 'parts'}</button>
+          </div>
         </aside>
 
         <main className="zpos-main">
@@ -1280,6 +1277,7 @@ const ShopPage = () => {
               </div>
             </div>
             <div className="zpos-figma-categories" aria-label={t('shop.filters.partTypeTitle')}>
+              <button type="button" className={parts.length === 0 ? 'is-active' : ''} aria-pressed={parts.length === 0} onClick={() => setParts([])}><span><CategoryOutlined aria-hidden="true" /></span><small>{t('common.all')}</small></button>
               {partOptions.filter(([value]) => value !== 'all').map(([value, labelKey]) => {
                 const PartIcon = iconForPart[value] || CategoryOutlined;
                 return <button key={value} type="button" className={parts.includes(value) ? 'is-active' : ''} aria-pressed={parts.includes(value)} onClick={() => setParts([value])}><span><PartIcon aria-hidden="true" /></span><small>{t(labelKey)}</small></button>;
@@ -1333,19 +1331,21 @@ const ShopPage = () => {
                     }}
                   >
                     <div className={`zpos-thumb ${loadedImages[`product:${product.id}`] ? 'is-loaded' : ''}`}>
-                      {product.sale_price != null && product.price != null && (
-                        <span className="zpos-badge">{t('shop.badges.sale')}</span>
+                      {product.stock_quantity <= 0 && <span className="zpos-figma-stock-badge">{i18n.language === 'ka' ? 'შეკვეთით' : 'On order'}</span>}
+                      {getDiscountPercentage(product) > 0 && (
+                        <span className="zpos-badge">-{getDiscountPercentage(product)}%</span>
                       )}
-                      {!loadedImages[`product:${product.id}`] && (
+                      {product.image_url && !loadedImages[`product:${product.id}`] && (
                         <div className="zpos-skeleton zpos-skeleton--thumb zpos-image-skeleton" />
                       )}
-                      <img
+                      <PhoneIphoneOutlined className="zpos-figma-image-fallback" aria-hidden="true" />
+                      {product.image_url && <img
                         src={product.image_url}
                         alt={t('shop.imageAlt.thumbnail', { title: product.title })}
                         loading="lazy"
                         onLoad={() => handleImageReady(`product:${product.id}`)}
-                        onError={() => handleImageReady(`product:${product.id}`)}
-                      />
+                        onError={(event) => { event.currentTarget.hidden = true; handleImageReady(`product:${product.id}`); }}
+                      />}
                     </div>
                     <div className="zpos-card-body">
                       <p className="zpos-meta">
@@ -1427,11 +1427,13 @@ const ShopPage = () => {
             )}
           </div>
 
-          <div id="zpos-cart-items" className="zpos-cart-items">
+          <div id="zpos-cart-items" className={`zpos-cart-items ${cart.length === 0 ? 'is-empty' : ''}`}>
             {cart.length === 0 && (
               <div className="zpos-empty">
+                <img src="/figma-shop-empty-cart.svg" alt="" aria-hidden="true" />
                 <strong>{t('shop.cart.emptyTitle')}</strong>
                 <p>{t('shop.cart.emptyDescription')}</p>
+                <button type="button" onClick={() => setCartViewOpen(false)}>{t('shop.cart.backToCatalog')}</button>
               </div>
             )}
 
@@ -1442,35 +1444,34 @@ const ShopPage = () => {
               >
                 <div className="zpos-cart-line-main">
                   <div className={`zpos-cart-item-thumb ${loadedImages[`cart:${item.id}`] ? 'is-loaded' : ''}`}>
-                    {!loadedImages[`cart:${item.id}`] && <div className="zpos-skeleton zpos-image-skeleton" />}
-                    <img src={item.image_url} alt={t('shop.imageAlt.thumbnail', { title: item.title })} loading="lazy" onLoad={() => handleImageReady(`cart:${item.id}`)} onError={() => handleImageReady(`cart:${item.id}`)} />
+                    {item.image_url && !loadedImages[`cart:${item.id}`] && <div className="zpos-skeleton zpos-image-skeleton" />}
+                    <img className="zpos-cart-image-fallback" src="/figma-shop-cart-placeholder.svg" alt="" aria-hidden="true" />
+                    {item.image_url && <img src={item.image_url} alt={t('shop.imageAlt.thumbnail', { title: item.title })} loading="lazy" onLoad={() => handleImageReady(`cart:${item.id}`)} onError={(event) => { event.currentTarget.hidden = true; handleImageReady(`cart:${item.id}`); }} />}
                   </div>
                   <div className="zpos-cart-item-main">
-                    <h3 title={item.title}>{item.title}</h3>
-                    <p className="zpos-cart-item-sub">{item.subtitle}</p>
-                  </div>
-                  <button type="button" className="zpos-cart-remove" onClick={() => updateCart(item.id, 'remove')} aria-label={t('common.delete')}><DeleteOutline aria-hidden="true" /></button>
-                </div>
-                <div className="zpos-cart-item-footer">
-                  <div className="zpos-cart-item-actions">
-                    <div className="zpos-qty">
-                      <button type="button" onClick={() => updateCart(item.id, 'decrease')}>
-                        -
-                      </button>
-                      <span>{item.qty}</span>
-                      <button type="button" onClick={() => updateCart(item.id, 'increase')}>
-                        +
-                      </button>
+                    <div className="zpos-cart-item-head">
+                      <div className="zpos-cart-item-copy">
+                        <h3 title={item.title}>{item.title}</h3>
+                        <p className="zpos-cart-item-sub">{item.subtitle}</p>
+                      </div>
+                      <button type="button" className="zpos-cart-remove" onClick={() => updateCart(item.id, 'remove')} aria-label={t('common.delete')}><DeleteOutline aria-hidden="true" /></button>
+                    </div>
+                    <div className="zpos-cart-item-footer">
+                      <div className="zpos-qty">
+                        <button type="button" disabled={item.qty <= 1} aria-label={i18n.language === 'ka' ? 'რაოდენობის შემცირება' : 'Decrease quantity'} onClick={() => updateCart(item.id, 'decrease')}>-</button>
+                        <span>{item.qty}</span>
+                        <button type="button" aria-label={i18n.language === 'ka' ? 'რაოდენობის გაზრდა' : 'Increase quantity'} onClick={() => updateCart(item.id, 'increase')}>+</button>
+                      </div>
+                      <div className="zpos-cart-item-price">{formatMoney((item.canProductOnly ? item.basePrice : item.price) * item.qty)}</div>
                     </div>
                   </div>
-                  <div className="zpos-cart-item-price">{formatMoney(item.price)}</div>
                 </div>
-                {item.canService && <label className="zpos-cart-service-row"><BuildOutlined aria-hidden="true" /><span>{i18n.language === 'ka' ? 'დაყენების სერვისი' : 'Installation service'} · +{formatMoney(Math.max(0, (item.servicePrice || 0) - item.basePrice))}</span><input type="checkbox" checked={item.mode === 'service'} disabled={!item.canProductOnly} onChange={() => toggleCartService(item)} /></label>}
+                {item.canService && <label className={`zpos-cart-service-row ${item.mode === 'service' ? 'is-active' : ''}`}><span className="zpos-cart-service-icon"><BuildOutlined aria-hidden="true" /></span><span>{i18n.language === 'ka' ? 'დაყენების სერვისი' : 'Installation service'} · {item.canProductOnly ? `+${formatMoney(Math.max(0, (item.servicePrice || 0) - item.basePrice) * item.qty)}` : (i18n.language === 'ka' ? 'შედის ფასში' : 'Included')}</span><input type="checkbox" checked={item.mode === 'service'} disabled={!item.canProductOnly} onChange={() => toggleCartService(item)} /></label>}
               </div>
             ))}
           </div>
 
-          <div className="zpos-summary">
+          {cart.length > 0 && <div className="zpos-summary">
             <div className="zpos-summary-row">
               <span>{t('shop.summary.subtotal')}</span>
               <strong id="zpos-subtotal">{formatMoney(cartSummary.subtotal)}</strong>
@@ -1487,18 +1488,18 @@ const ShopPage = () => {
               className="zpos-checkout"
               type="button"
               onClick={() => { setCartViewOpen(false); openOrderModal(); }}
-              disabled={cart.length === 0}
+              disabled={cart.length === 0 || removingCartIds.length > 0}
             >
               {t('shop.summary.checkoutDisabled')}
             </button>
-          </div>
+          </div>}
         </aside>
         {cartViewOpen && <button type="button" className="zpos-figma-cart-backdrop" aria-label={t('common.close')} onClick={() => setCartViewOpen(false)} />}
           </>
         )}
       </div>
 
-      {!shopIntroOpen && cartSummary.count > 0 && <div className="zpos-figma-cart-bar"><div><small>{i18n.language === 'ka' ? 'კალათა' : 'Cart'} · {cartSummary.count} {i18n.language === 'ka' ? 'ნივთი' : 'items'}</small><strong>{formatMoney(cartSummary.total)}</strong></div><button type="button" onClick={() => setCartViewOpen(true)}>{i18n.language === 'ka' ? 'ნახვა' : 'View'}</button></div>}
+      {!shopIntroOpen && !cartViewOpen && cartSummary.count > 0 && <div className="zpos-figma-cart-bar"><div><small>{i18n.language === 'ka' ? 'კალათა' : 'Cart'} · {cartSummary.count} {i18n.language === 'ka' ? 'ნივთი' : 'items'}</small><strong>{formatMoney(cartSummary.total)}</strong></div><button type="button" onClick={() => setCartViewOpen(true)}>{i18n.language === 'ka' ? 'ნახვა' : 'View'}</button></div>}
 
       {modalProduct && (
         <div
@@ -1531,15 +1532,19 @@ const ShopPage = () => {
               id="zpos-modal-visual"
               className={`zpos-modal-visual ${loadedImages[`modal:${modalProduct.id}`] ? 'is-loaded' : ''}`}
             >
-              {!loadedImages[`modal:${modalProduct.id}`] && (
+              {modalProduct.image_url && !loadedImages[`modal:${modalProduct.id}`] && (
                 <div className="zpos-skeleton zpos-image-skeleton" />
               )}
-              <img
-                src={modalProduct.image_url}
-                alt={t('shop.imageAlt.preview', { title: modalProduct.title })}
-                onLoad={() => handleImageReady(`modal:${modalProduct.id}`)}
-                onError={() => handleImageReady(`modal:${modalProduct.id}`)}
-              />
+              <span className="zpos-modal-image-frame">
+                <img className="zpos-modal-image-placeholder" src="/figma-shop-product-placeholder.svg" alt="" aria-hidden="true" />
+                {modalProduct.image_url && <img
+                  className="zpos-modal-product-image"
+                  src={modalProduct.image_url}
+                  alt={t('shop.imageAlt.preview', { title: modalProduct.title })}
+                  onLoad={() => handleImageReady(`modal:${modalProduct.id}`)}
+                  onError={(event) => { event.currentTarget.hidden = true; handleImageReady(`modal:${modalProduct.id}`); }}
+                />}
+              </span>
             </div>
 
             <div className="zpos-modal-content">
@@ -1547,7 +1552,7 @@ const ShopPage = () => {
               <div className="zpos-product-badges">
                 <span>{t(labelForSource[modalProduct.inventory_source] || modalProduct.inventory_source)}</span>
                 {modalProduct.quality_line && modalProduct.quality_line !== 'N/A' && <span>{modalProduct.quality_line}</span>}
-                {modalProduct.stock_quantity > 0 && <span>{i18n.language === 'ka' ? 'მარაგშია' : 'In stock'}</span>}
+                <span>{modalProduct.stock_quantity > 0 ? (i18n.language === 'ka' ? 'მარაგშია' : 'In stock') : (i18n.language === 'ka' ? 'შეკვეთით' : 'On order')}</span>
               </div>
 
               <div className="zpos-product-details">
@@ -1557,18 +1562,20 @@ const ShopPage = () => {
                 <div><span>{i18n.language === 'ka' ? 'ტიპი' : 'Type'}</span><strong>{modalProduct.quality_line && modalProduct.quality_line !== 'N/A' ? modalProduct.quality_line : t(labelForPart[modalProduct.part_category] || modalProduct.part_category)}</strong></div>
               </div>
 
-              {canBuyWithService(modalProduct) && (
-                <label className="zpos-product-service">
-                  <span className="zpos-product-service-icon"><BuildOutlined aria-hidden="true" /></span>
-                  <span className="zpos-product-service-copy"><strong>{i18n.language === 'ka' ? 'სერვისიც გჭირდება?' : 'Need installation service?'}</strong><small>{i18n.language === 'ka' ? 'შეაკეთეთ ადგილზე' : 'Repair with our team'}</small></span>
-                  <span className="zpos-product-service-price">+{formatMoney(Math.max(0, (getServicePrice(modalProduct) || 0) - (getProductOnlyPrice(modalProduct) || 0)))}</span>
-                  <input type="checkbox" checked={modalWithService} disabled={!canBuyProductOnly(modalProduct)} onChange={(event) => setModalWithService(event.target.checked)} />
-                </label>
-              )}
+              <div className="zpos-product-purchase">
+                {canBuyWithService(modalProduct) && (
+                  <label className="zpos-product-service">
+                    <span className="zpos-product-service-icon"><BuildOutlined aria-hidden="true" /></span>
+                    <span className="zpos-product-service-copy"><strong>{canBuyProductOnly(modalProduct) ? (i18n.language === 'ka' ? 'სერვისიც გჭირდება?' : 'Need installation service?') : (i18n.language === 'ka' ? 'სერვისი შედის' : 'Service included')}</strong><small>{i18n.language === 'ka' ? 'შეაკეთეთ ადგილზე' : 'Repair with our team'}</small></span>
+                    <span className="zpos-product-service-price">{canBuyProductOnly(modalProduct) ? `+${formatMoney(Math.max(0, (getServicePrice(modalProduct) || 0) - (getProductOnlyPrice(modalProduct) || 0)))}` : (i18n.language === 'ka' ? 'შედის ფასში' : 'Included')}</span>
+                    <input type="checkbox" checked={modalWithService} disabled={!canBuyProductOnly(modalProduct)} onChange={(event) => setModalWithService(event.target.checked)} />
+                  </label>
+                )}
 
-              <div className="zpos-product-bottom">
-                <div><small>{i18n.language === 'ka' ? 'სულ' : 'Total'}</small><strong>{formatMoney(modalWithService ? getServicePrice(modalProduct) : getProductOnlyPrice(modalProduct))}</strong></div>
-                <button type="button" onClick={() => addToCart(modalProduct, modalWithService ? 'service' : 'product')} disabled={!(modalWithService ? canBuyWithService(modalProduct) : canBuyProductOnly(modalProduct))}>{i18n.language === 'ka' ? 'კალათაში' : 'Add to cart'}</button>
+                <div className="zpos-product-bottom">
+                  <div><small>{i18n.language === 'ka' ? 'სულ' : 'Total'}</small><strong>{formatMoney(modalWithService ? getServicePrice(modalProduct) : getProductOnlyPrice(modalProduct))}</strong></div>
+                  <button type="button" onClick={() => addToCart(modalProduct, modalWithService ? 'service' : 'product')} disabled={!(modalWithService ? canBuyWithService(modalProduct) : canBuyProductOnly(modalProduct))}>{i18n.language === 'ka' ? 'კალათაში' : 'Add to cart'}</button>
+                </div>
               </div>
             </div>
           </div>
@@ -1584,8 +1591,8 @@ const ShopPage = () => {
             }
           }}
         >
-          <div className="zpos-modal zpos-order-modal" role="dialog" aria-modal="true" aria-labelledby="zpos-order-title">
-            <button
+          <div className={`zpos-modal zpos-order-modal ${orderStep === 4 ? 'is-success' : 'is-checkout'}`} role="dialog" aria-modal="true" aria-labelledby="zpos-order-title">
+            {orderStep !== 4 && <button
               type="button"
               className="zpos-modal-close"
               onClick={closeOrderModal}
@@ -1595,263 +1602,105 @@ const ShopPage = () => {
                 <path d="M6 6l12 12"></path>
                 <path d="M18 6L6 18"></path>
               </svg>
-            </button>
+            </button>}
 
             <div className="zpos-order-modal-body">
               {orderStep !== 4 ? (
-                <>
-                  <div className="zpos-order-hero">
-                    <div className="zpos-order-hero-copy">
-                      <p className="zpos-modal-kicker">{orderStepMeta[orderStep - 1]?.label}</p>
-                      <h2 id="zpos-order-title">{orderStepMeta[orderStep - 1]?.title}</h2>
-                      <p className="zpos-order-hero-text">
-                        {t('shop.orderFlow.summaryLine', { count: cartSummary.count })}
-                      </p>
-                    </div>
-                    <div className="zpos-order-hero-stats" aria-label="Order summary">
-                      <div className="zpos-order-hero-stat">
-                        <span>{t('shop.cart.title')}</span>
-                        <strong>{cartSummary.count}</strong>
-                      </div>
-                      <div className="zpos-order-hero-stat">
-                        <span>{t('shop.cart.total')}</span>
-                        <strong>{formatMoney(cartSummary.total)}</strong>
-                      </div>
-                    </div>
+                <div className="zpos-checkout-page">
+                  <div className="zpos-checkout-bar">
+                    <button type="button" onClick={closeOrderModal} aria-label={t('common.back')}>‹</button>
+                    <span id="zpos-order-title">{t('shop.orderFlow.checkout.title')}</span>
                   </div>
-
-                  <div className="zpos-order-progress">
-                    <div className="zpos-order-progress-bar">
-                      <span
-                        style={{
-                          width: `${((orderStep - 1) / (orderStepMeta.length - 1)) * 100}%`,
-                        }}
-                      />
-                    </div>
-                    <div className="zpos-order-steps">
-                      {orderStepMeta.map((step) => (
-                        <div
-                          key={step.id}
-                          className={`zpos-order-step ${orderStep > step.id ? 'is-complete' : ''} ${orderStep === step.id ? 'is-current' : ''}`}
-                        >
-                          <span className="zpos-order-step-index">{step.id}</span>
-                          <div className="zpos-order-step-copy">
-                            <small>{step.title}</small>
-                          </div>
+                  <form id="zpos-checkout-form" className="zpos-checkout-layout" onSubmit={(event) => { event.preventDefault(); submitOnsiteOrder(); }} noValidate>
+                    <div className="zpos-checkout-main">
+                      <section className="zpos-checkout-card">
+                        <h3>{t('shop.orderFlow.checkout.contact')}</h3>
+                        <div className="zpos-checkout-person-type" aria-label={t('shop.orderFlow.checkout.contact')}>
+                          <span aria-current="true">{t('shop.orderFlow.checkout.individual')}</span>
+                          <button type="button" disabled title={t('shop.orderFlow.checkout.businessUnavailable')}>{t('shop.orderFlow.checkout.business')}</button>
                         </div>
-                      ))}
+                        <div className="zpos-checkout-fields">
+                          {[
+                            ['customer_name', 'firstName', 'text'],
+                            ['customer_last_name', 'lastName', 'text'],
+                            ['customer_phone', 'phone', 'tel'],
+                            ['customer_email', 'email', 'email'],
+                          ].map(([field, label, type]) => (
+                            <label key={field} className="zpos-checkout-field">
+                              <span>{t(`shop.orderFlow.stepOne.fields.${label}`)}</span>
+                              <input type={type} value={orderForm[field]} onChange={(event) => updateOrderForm(field, event.target.value)} aria-invalid={Boolean(orderErrors[field])} />
+                              {orderErrors[field] && <small role="alert">{orderErrors[field]}</small>}
+                            </label>
+                          ))}
+                        </div>
+                      </section>
+                      <section className="zpos-checkout-card">
+                        <h3>{t('shop.orderFlow.checkout.pickup')}</h3>
+                        <div className="zpos-checkout-option is-selected"><div><strong>{t('shop.orderFlow.checkout.pickupStore')}</strong><small>{t('shop.orderFlow.checkout.pickupAddress')}</small></div><b>{t('shop.orderFlow.checkout.free')}</b><span className="zpos-checkout-radio" aria-hidden="true" /></div>
+                      </section>
+                      <section className="zpos-checkout-card">
+                        <h3>{t('shop.orderFlow.checkout.payment')}</h3>
+                        <div className="zpos-checkout-option is-selected"><div><strong>{t('shop.orderFlow.stepThree.payOnsite')}</strong><small>{t('shop.orderFlow.stepThree.payOnsiteDescription')}</small></div><span className="zpos-checkout-radio" aria-hidden="true" /></div>
+                      </section>
+                      <section className="zpos-checkout-card">
+                        <h3>{t('shop.orderFlow.checkout.additional')}</h3>
+                        <label className="zpos-checkout-field">
+                          <span>{t('shop.orderFlow.stepTwo.heardAbout')}</span>
+                          <select value={orderForm.heard_about} onChange={(event) => updateOrderForm('heard_about', event.target.value)} aria-invalid={Boolean(orderErrors.heard_about)}>
+                            <option value="">{t('shop.orderFlow.stepTwo.selectPlaceholder')}</option>
+                            {heardAboutOptions.map((value) => <option key={value} value={value}>{t(`shop.orderFlow.heardAbout.${value}`)}</option>)}
+                          </select>
+                          {orderErrors.heard_about && <small role="alert">{orderErrors.heard_about}</small>}
+                        </label>
+                        <div className="zpos-checkout-warranty">
+                          <span>{t('shop.orderFlow.stepTwo.partnerWarranty')}</span>
+                          {gstoreLogo && <img src={gstoreLogo} alt="Gstore" />}
+                          <div className="zpos-checkout-toggle">
+                            <button type="button" aria-pressed={orderForm.has_partner_warranty === true} aria-invalid={Boolean(orderErrors.has_partner_warranty)} className={orderForm.has_partner_warranty === true ? 'is-selected' : ''} onClick={() => updateOrderForm('has_partner_warranty', true)}>{t('shop.orderFlow.common.yes')}</button>
+                            <button type="button" aria-pressed={orderForm.has_partner_warranty === false} className={orderForm.has_partner_warranty === false ? 'is-selected' : ''} onClick={() => updateOrderForm('has_partner_warranty', false)}>{t('shop.orderFlow.common.no')}</button>
+                          </div>
+                          {orderErrors.has_partner_warranty && <small role="alert">{orderErrors.has_partner_warranty}</small>}
+                        </div>
+                        {orderForm.has_partner_warranty && <label className="zpos-checkout-field"><span>{t('shop.orderFlow.stepTwo.warrantyId')}</span><input type="text" value={orderForm.partner_warranty_id} onChange={(event) => updateOrderForm('partner_warranty_id', event.target.value)} aria-invalid={Boolean(orderErrors.partner_warranty_id)} />{orderErrors.partner_warranty_id && <small role="alert">{orderErrors.partner_warranty_id}</small>}</label>}
+                      </section>
                     </div>
-                  </div>
-
-                  <div className="zpos-order-layout">
-                    <div className="zpos-order-panel">
-                      {orderStep === 1 && (
-                        <>
-                          <div className="zpos-order-panel-head">
-                            <h3>{t('shop.orderFlow.stepOne.title')}</h3>
-                          </div>
-                          <div className="zpos-order-grid">
-                            <label className={`zpos-order-field zpos-order-field--floating ${orderForm.customer_name ? 'has-value' : ''}`}>
-                              <span>{t('shop.orderFlow.stepOne.fields.firstName')}</span>
-                              <input
-                                type="text"
-                                placeholder=" "
-                                value={orderForm.customer_name}
-                                onChange={(event) => updateOrderForm('customer_name', event.target.value)}
-                              />
-                              {orderErrors.customer_name ? <small>{orderErrors.customer_name}</small> : null}
-                            </label>
-                            <label className={`zpos-order-field zpos-order-field--floating ${orderForm.customer_last_name ? 'has-value' : ''}`}>
-                              <span>{t('shop.orderFlow.stepOne.fields.lastName')}</span>
-                              <input
-                                type="text"
-                                placeholder=" "
-                                value={orderForm.customer_last_name}
-                                onChange={(event) => updateOrderForm('customer_last_name', event.target.value)}
-                              />
-                              {orderErrors.customer_last_name ? <small>{orderErrors.customer_last_name}</small> : null}
-                            </label>
-                            <label className={`zpos-order-field zpos-order-field--floating ${orderForm.customer_phone ? 'has-value' : ''}`}>
-                              <span>{t('shop.orderFlow.stepOne.fields.phone')}</span>
-                              <input
-                                type="tel"
-                                placeholder=" "
-                                value={orderForm.customer_phone}
-                                onChange={(event) => updateOrderForm('customer_phone', event.target.value)}
-                              />
-                              {orderErrors.customer_phone ? <small>{orderErrors.customer_phone}</small> : null}
-                            </label>
-                            <label className={`zpos-order-field zpos-order-field--floating ${orderForm.customer_email ? 'has-value' : ''}`}>
-                              <span>{t('shop.orderFlow.stepOne.fields.email')}</span>
-                              <input
-                                type="email"
-                                placeholder=" "
-                                value={orderForm.customer_email}
-                                onChange={(event) => updateOrderForm('customer_email', event.target.value)}
-                              />
-                              {orderErrors.customer_email ? <small>{orderErrors.customer_email}</small> : null}
-                            </label>
-                          </div>
-                          <div className="zpos-order-actions">
-                            <button type="button" className="zpos-order-next" disabled={!stepOneValid} onClick={goToStepTwo}>
-                              {t('common.next')}
-                            </button>
-                          </div>
-                        </>
-                      )}
-
-                      {orderStep === 2 && (
-                        <>
-                          <div className="zpos-order-panel-head">
-                            <h3>{t('shop.orderFlow.stepTwo.title')}</h3>
-                          </div>
-                          <label className="zpos-order-field">
-                            <span>{t('shop.orderFlow.stepTwo.heardAbout')}</span>
-                            <select
-                              value={orderForm.heard_about}
-                              onChange={(event) => updateOrderForm('heard_about', event.target.value)}
-                            >
-                              <option value="">{t('shop.orderFlow.stepTwo.selectPlaceholder')}</option>
-                              {heardAboutOptions.map((value) => (
-                                <option key={value} value={value}>
-                                  {t(`shop.orderFlow.heardAbout.${value}`)}
-                                </option>
-                              ))}
-                            </select>
-                            {orderErrors.heard_about ? <small>{orderErrors.heard_about}</small> : null}
-                          </label>
-
-                          <div className="zpos-order-warranty-block">
-                            <span className="zpos-order-block-title">{t('shop.orderFlow.stepTwo.partnerWarranty')}</span>
-                            <div className="zpos-order-choice-row">
-                              <button
-                                type="button"
-                                className={`zpos-order-choice ${orderForm.has_partner_warranty === true ? 'is-active' : ''}`}
-                                onClick={() => updateOrderForm('has_partner_warranty', true)}
-                              >
-                                {t('shop.orderFlow.common.yes')}
-                              </button>
-                              <button
-                                type="button"
-                                className={`zpos-order-choice ${orderForm.has_partner_warranty === false ? 'is-active' : ''}`}
-                                onClick={() => updateOrderForm('has_partner_warranty', false)}
-                              >
-                                {t('shop.orderFlow.common.no')}
-                              </button>
-                            </div>
-                            {orderErrors.has_partner_warranty ? <small className="zpos-order-error-inline">{orderErrors.has_partner_warranty}</small> : null}
-                            {gstoreLogo ? (
-                              <div className="zpos-order-partners">
-                                <div className="zpos-order-partner">
-                                  <img src={gstoreLogo} alt="Gstore" />
-                                </div>
-                              </div>
-                            ) : null}
-                          </div>
-
-                          {orderForm.has_partner_warranty && (
-                            <label className="zpos-order-field">
-                              <span>{t('shop.orderFlow.stepTwo.warrantyId')}</span>
-                              <input
-                                type="text"
-                                value={orderForm.partner_warranty_id}
-                                onChange={(event) => updateOrderForm('partner_warranty_id', event.target.value)}
-                              />
-                              {orderErrors.partner_warranty_id ? <small>{orderErrors.partner_warranty_id}</small> : null}
-                            </label>
-                          )}
-
-                          <div className="zpos-order-actions">
-                            <button type="button" className="zpos-order-back" onClick={() => setOrderStep(1)}>
-                              {t('common.back')}
-                            </button>
-                            <button type="button" className="zpos-order-next" disabled={!stepTwoValid} onClick={goToStepThree}>
-                              {t('common.next')}
-                            </button>
-                          </div>
-                        </>
-                      )}
-
-                      {orderStep === 3 && (
-                        <>
-                          <div className="zpos-order-panel-head">
-                            <h3>{t('shop.orderFlow.stepThree.title')}</h3>
-                          </div>
-                          <div className="zpos-order-payment-grid">
-                            <button type="button" className="zpos-choice is-disabled" disabled>
-                              <span className="zpos-choice-label">{t('shop.orderFlow.stepThree.payOnline')}</span>
-                              <small>{t('shop.orderFlow.stepThree.onlineDisabled')}</small>
-                            </button>
-                            <button
-                              type="button"
-                              className="zpos-choice is-primary"
-                              onClick={submitOnsiteOrder}
-                              disabled={orderMutation.isLoading}
-                            >
-                              <span className="zpos-choice-label">{t('shop.orderFlow.stepThree.payOnsite')}</span>
-                              <small>
-                                {orderMutation.isLoading
-                                  ? t('shop.orderFlow.stepThree.processing')
-                                  : t('shop.orderFlow.stepThree.payOnsiteDescription')}
-                              </small>
-                            </button>
-                          </div>
-                          {orderErrors.submit ? <p className="zpos-order-submit-error">{orderErrors.submit}</p> : null}
-                          <div className="zpos-order-actions">
-                            <button type="button" className="zpos-order-back" onClick={() => setOrderStep(2)} disabled={orderMutation.isLoading}>
-                              {t('common.back')}
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    <aside className="zpos-order-sidebar">
-                      <div className="zpos-order-sidebar-block">
-                        <p>{t('shop.cart.title')}</p>
-                        <strong>{formatMoney(cartSummary.total)}</strong>
-                        <span>{t('shop.orderFlow.summaryCount', { count: cartSummary.count })}</span>
+                    <aside className="zpos-checkout-summary">
+                      <div className="zpos-checkout-breakdown">
+                        <div><span>{t('shop.orderFlow.checkout.parts')}</span><strong>{formatMoney(cartSummary.subtotal)}</strong></div>
+                        <div><span>{t('shop.summary.serviceUplift')}</span><strong>{formatMoney(cartSummary.serviceTotal)}</strong></div>
+                        <div className="is-total"><span>{t('shop.cart.total')}</span><strong>{formatMoney(cartSummary.total)}</strong></div>
                       </div>
-                      <div className="zpos-order-sidebar-list">
-                        {cart.map((item) => (
-                          <div key={`order-summary-${item.id}`} className="zpos-order-sidebar-item">
-                            <div>
-                              <strong>{item.title}</strong>
-                              <small>{item.mode === 'service' ? t('shop.choiceLabels.withService') : t('shop.choiceLabels.productOnly')}</small>
-                            </div>
-                            <span>{formatMoney(item.price * item.qty)}</span>
-                          </div>
-                        ))}
-                      </div>
+                      {orderErrors.submit && <p className="zpos-order-submit-error" role="alert">{orderErrors.submit}</p>}
+                      <button type="submit" className="zpos-checkout-submit" disabled={orderMutation.isLoading}>{orderMutation.isLoading ? t('shop.orderFlow.stepThree.processing') : `${t('shop.orderFlow.checkout.placeOrder')} · ${formatMoney(cartSummary.total)}`}</button>
+                      <p className="zpos-checkout-note">{t('shop.orderFlow.checkout.pickupNote')}</p>
                     </aside>
+                  </form>
+                  <div className="zpos-checkout-mobile-action">
+                    {orderErrors.submit && <small role="alert">{orderErrors.submit}</small>}
+                    <button type="submit" form="zpos-checkout-form" disabled={orderMutation.isLoading}>{orderMutation.isLoading ? t('shop.orderFlow.stepThree.processing') : `${t('shop.orderFlow.checkout.placeOrder')} · ${formatMoney(cartSummary.total)}`}</button>
                   </div>
-                </>
+                </div>
               ) : (
                 createdOrder && (
-                  <div className="zpos-order-panel zpos-order-success">
-                    <div className="zpos-order-success-head">
-                      <p className="zpos-order-success-kicker">{t('shop.orderFlow.success.kicker')}</p>
-                      <h2 id="zpos-order-title">
-                        {t('shop.orderFlow.success.title', { customer_name: createdOrder.customer_name })}
-                      </h2>
+                  <div className="zpos-order-success-page">
+                    <div className="zpos-order-success-bar">
+                      <button type="button" onClick={closeOrderModal} aria-label={t('common.back')}>‹</button>
+                      <span>{t('shop.orderFlow.success.orderHeading')}</span>
                     </div>
-                    <div className="zpos-order-success-grid">
-                      <div className="zpos-order-success-card">
-                        <span>{t('shop.orderFlow.success.kicker')}</span>
-                        <strong>{t('shop.orderFlow.success.orderNumber', { order_number: createdOrder.order_number })}</strong>
+                    <div className="zpos-order-success-content">
+                      <div className="zpos-order-success-mark"><img src="/figma-shop-success-check.svg" alt="" aria-hidden="true" /></div>
+                      <h2 id="zpos-order-title">{t('shop.orderFlow.success.shortTitle')}</h2>
+                      <p className="zpos-order-success-copy">{t('shop.orderFlow.success.pickupConfirmation')}</p>
+                      <dl className="zpos-order-success-facts">
+                        <div><dt>{t('shop.orderFlow.success.orderNumberLabel')}</dt><dd>#{createdOrder.order_number}</dd></div>
+                        <div><dt>{t('shop.orderFlow.success.customerLabel')}</dt><dd>{[createdOrder.customer_name, createdOrder.customer_last_name].filter(Boolean).join(' ')}</dd></div>
+                        <div><dt>{t('shop.orderFlow.success.itemCountLabel')}</dt><dd>{createdOrder.item_count}</dd></div>
+                        <div><dt>{t('shop.orderFlow.success.amountDueLabel')}</dt><dd>{formatMoney(createdOrder.total_amount)}</dd></div>
+                      </dl>
+                      <div className="zpos-order-success-actions">
+                        <Link to="/">{t('shop.orderFlow.success.backHome')}</Link>
+                        <button type="button" onClick={closeOrderModal}>{t('shop.orderFlow.success.continueShopping')}</button>
                       </div>
-                      <div className="zpos-order-success-card">
-                        <span>{t('shop.orderFlow.stepOne.fields.phone')}</span>
-                        <strong>{createdOrder.customer_phone}</strong>
-                      </div>
-                    </div>
-                    <p className="zpos-order-success-copy">
-                      {t('shop.orderFlow.success.contact', {
-                        customer_phone_number: createdOrder.customer_phone,
-                      })}
-                    </p>
-                    <div className="zpos-order-success-foot">
-                      <strong>{t('shop.orderFlow.success.thankYou')}</strong>
                     </div>
                   </div>
                 )

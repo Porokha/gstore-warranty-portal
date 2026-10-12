@@ -1278,18 +1278,18 @@
       "accessories": "აქსესუარები"
     },
     "partLabels": {
-      "board": "Board",
+      "board": "დედაპლატა",
       "screen": "ეკრანი",
       "sensor": "სენსორი",
       "battery": "ელემენტი",
       "camera": "კამერა",
-      "speaker": "Speaker",
-      "charging": "Charging",
+      "speaker": "დინამიკი",
+      "charging": "დამტენი",
       "accessory": "აქსესუარი"
     },
     "sourceLabels": {
       "oem": "OEM",
-      "thirdParty": "Third Party"
+      "thirdParty": "მესამე მხარე"
     },
     "filters": {
       "kicker": "ფილტრი",
@@ -1315,7 +1315,8 @@
       "max": "მაქს.",
       "minPlaceholder": "0",
       "maxPlaceholder": "900",
-      "open": "ფილტრების გახსნა"
+      "open": "ფილტრების გახსნა",
+      "close": "ფილტრების დახურვა"
     },
     "scope": {
       "kicker": "Checkout სტატუსი",
@@ -1355,8 +1356,10 @@
     "cart": {
       "kicker": "კალათი",
       "title": "შეკვეთა",
+      "total": "სულ",
       "emptyTitle": "კალათი ცარიელია",
-      "emptyDescription": "დაამატეთ სასურველი ნაწილი"
+      "emptyDescription": "აირჩიე ნაწილი კატალოგიდან ან მოძებნე მოდელის მიხედვით.",
+      "backToCatalog": "კატალოგში დაბრუნება"
     },
     "choiceLabels": {
       "productOnly": "მხოლოდ პროდუქტის ყიდვა",
@@ -1375,6 +1378,23 @@
       "checkoutDisabled": "შეკვეთა"
     },
     "orderFlow": {
+      "checkout": {
+        "title": "შეკვეთა",
+        "contact": "საკონტაქტო ინფორმაცია",
+        "individual": "ფიზიკური პირი",
+        "business": "იურიდიული პირი",
+        "businessUnavailable": "იურიდიული პირის შეკვეთა ჯერ მიუწვდომელია",
+        "pickup": "მიღება",
+        "pickupStore": "ZEZVA სერვისცენტრიდან მიღება",
+        "pickupAddress": "ცოტნე დადიანის ქ. 7, ქარვასლა, III სართული, B308/1",
+        "free": "უფასო",
+        "payment": "გადახდის მეთოდი",
+        "additional": "დამატებითი ინფორმაცია",
+        "summary": "შენი შეკვეთა",
+        "parts": "ნაწილები",
+        "placeOrder": "შეკვეთის გაფორმება",
+        "pickupNote": "შეკვეთის მიღების შესათანხმებლად ერთ სამუშაო დღეში დაგიკავშირდებით."
+      },
       "stepLabels": {
         "1": "გაგვეცანი",
         "2": "დეტალები",
@@ -1418,7 +1438,7 @@
         "payOnline": "გადაიხადე ონლაინ",
         "payOnsite": "გადაიხადე ადგილზე",
         "onlineDisabled": "გააქტიურდება გადახდის ინტეგრაციის შემდეგ.",
-        "payOnsiteDescription": "შეკვეთა შეიქმნება processing სტატუსით.",
+        "payOnsiteDescription": "გადაიხადე ნაღდით ან ბარათით შეკვეთის მიღებისას.",
         "processing": "შეკვეთა იქმნება..."
       },
     "success": {
@@ -1426,7 +1446,16 @@
       "title": "{{customer_name}}, შენი შეკვეთა მიღებულია",
       "orderNumber": "შეკვეთის ნომერია {{order_number}}",
       "contact": "დამატებითი დეტალებისთვის ჩვენი წარმომადგენელი დაგიკავშირდება მითითებულ ნომერზე - {{customer_phone_number}} 1 დღის მანძილზე.",
-      "thankYou": "მადლობა, რომ აგვირჩიე!"
+      "thankYou": "მადლობა, რომ აგვირჩიე!",
+      "orderHeading": "შეკვეთა",
+      "shortTitle": "შეკვეთა მიღებულია",
+      "pickupConfirmation": "ერთი სამუშაო დღის განმავლობაში დაგიკავშირდებით და შეგითანხმებთ შეკვეთის მიღებას მისამართზე: ცოტნე დადიანის ქ. 7, ქარვასლა, III სართული, B308/1.",
+      "orderNumberLabel": "შეკვეთის ნომერი",
+      "customerLabel": "სახელი და გვარი",
+      "itemCountLabel": "ნაწილები",
+      "amountDueLabel": "გადასახდელი თანხა",
+      "backHome": "მთავარზე დაბრუნება",
+      "continueShopping": "მაღაზიაში დაბრუნება"
     },
     "summaryLine": "{{count}} პროდუქტი მზად არის შეკვეთისთვის.",
     "summaryCount": "არჩეულია {{count}}"

@@ -109,6 +109,10 @@
 .zzv-warranty-document small, .zzv-warranty-related-copy small { color: var(--zzv-text-secondary, #5b5670); font-size: 12px; }
 .zzv-warranty-document button { display: grid; flex: 0 0 36px; place-items: center; width: 36px; height: 36px; padding: 0; border: 1px solid var(--zzv-border-default, #d6d2e2); border-radius: 10px; background: #fff; cursor: pointer; }
 .zzv-warranty-document button svg { width: 18px; height: 18px; }
+.zzv-warranty-document + .zzv-warranty-document { margin-top: 8px; }
+.zzv-warranty-document a { display: grid; flex: 0 0 36px; place-items: center; width: 36px; height: 36px; border: 1px solid var(--zzv-border-default, #d6d2e2); border-radius: 10px; color: inherit; text-decoration: none; }
+.zzv-warranty-document a:hover, .zzv-warranty-document a:focus-visible { border-color: var(--zzv-purple-500, #7c4df5); color: var(--zzv-purple-500, #7c4df5); }
+.zzv-warranty-document a svg { width: 18px; height: 18px; }
 .zzv-warranty-related-list { display: grid; gap: 8px; }
 .zzv-warranty-related { width: 100%; text-align: left; cursor: pointer; }
 .zzv-warranty-related-icon { display: grid; flex: 0 0 36px; place-items: center; width: 36px; height: 42px; border-radius: 8px; background: var(--zzv-bg-subtle, #f6f4fb); }

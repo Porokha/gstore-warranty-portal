@@ -9,6 +9,7 @@ import StaffRoleRoute from './components/common/StaffRoleRoute';
 import ShopAdminRoute from './components/common/ShopAdminRoute';
 import { useQuery } from 'react-query';
 import { shopService } from './services/shopService';
+import { isPublicShopEnabled } from './utils/publicShopAvailability';
 
 const StaffLayout = lazy(() => import('./components/common/StaffLayout'));
 const PublicLayout = lazy(() => import('./components/common/PublicLayout'));
@@ -34,6 +35,7 @@ const PublicHomePage = lazy(() => import('./pages/public/PublicHomePage'));
 const WarrantySearchPage = lazy(() => import('./pages/public/WarrantySearchPage'));
 const CaseSearchPage = lazy(() => import('./pages/public/CaseSearchPage'));
 const ShopComingSoonPage = lazy(() => import('./pages/public/ShopComingSoonPage'));
+const ShopPage = lazy(() => import('./pages/public/ShopPage'));
 const TermsPage = lazy(() => import('./pages/public/TermsPage'));
 const PrivacyPage = lazy(() => import('./pages/public/PrivacyPage'));
 const ReviewsPage = lazy(() => import('./pages/public/ReviewsPage'));
@@ -156,7 +158,7 @@ function AppRoutes() {
             ) : (
               <Route path="/" element={<PublicLayout />}>
                 <Route index element={<LandingPage />} />
-                <Route path="shop" element={<ShopComingSoonPage />} />
+                <Route path="shop" element={isPublicShopEnabled() ? <ShopPage /> : <ShopComingSoonPage />} />
                 <Route path="warranty-service" element={<PublicHomePage />} />
                 <Route path="trade-in" element={<TradeInPage />} />
                 <Route path="terms" element={<TermsPage />} />
@@ -172,7 +174,7 @@ function AppRoutes() {
             <Route path="/preview" element={<PrivateRoute />}>
               <Route element={<PublicLayout />}>
                 <Route index element={<LandingPage />} />
-                <Route path="shop" element={<ShopComingSoonPage />} />
+                <Route path="shop" element={<ShopPage />} />
                 <Route path="warranty-service" element={<PublicHomePage />} />
                 <Route path="trade-in" element={<TradeInPage />} />
                 <Route path="terms" element={<TermsPage />} />
