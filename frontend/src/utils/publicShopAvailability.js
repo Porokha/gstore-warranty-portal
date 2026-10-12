@@ -1,3 +1,3 @@
-export const isStagingShopEnabled = (
+export const isPublicShopEnabled = (
   hostname = typeof window !== 'undefined' ? window.location.hostname : '',
-) => hostname === 'staging.zezva.ge';
+) => ['staging.zezva.ge', 'zezva.ge', 'www.zezva.ge'].includes(hostname);

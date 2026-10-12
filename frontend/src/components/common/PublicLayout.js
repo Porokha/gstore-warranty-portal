@@ -4,7 +4,7 @@ import { Box, Drawer, IconButton } from '@mui/material';
 import { ChatBubbleRounded as ChatBubbleRoundedIcon, ExpandMoreRounded } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import CookieConsentBanner, { readCookieConsent } from './CookieConsentBanner';
-import { isStagingShopEnabled } from '../../utils/publicShopAvailability';
+import { isPublicShopEnabled } from '../../utils/publicShopAvailability';
 
 const CLARITY_PROJECT_ID = 'wf9ncn570j';
 const GTM_CONTAINER_ID = 'GTM-567T4CBG';
@@ -17,7 +17,7 @@ const PublicLayout = () => {
   const [desktopMenu, setDesktopMenu] = useState(null);
   const desktopNavRef = useRef(null);
   const [cookieConsent, setCookieConsent] = useState(readCookieConsent);
-  const shopEnabled = isStagingShopEnabled();
+  const shopEnabled = isPublicShopEnabled();
 
   useEffect(() => {
     const updateConsent = (event) => setCookieConsent(event.detail);

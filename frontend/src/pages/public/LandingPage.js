@@ -4,7 +4,7 @@ import { AddRounded, ExpandMoreRounded, RemoveRounded } from '@mui/icons-materia
 import { useQuery } from 'react-query';
 import { tradeInService } from '../../services/tradeInService';
 import { socialLinks } from './publicLinks';
-import { isStagingShopEnabled } from '../../utils/publicShopAvailability';
+import { isPublicShopEnabled } from '../../utils/publicShopAvailability';
 
 const asset = (name) => `/figma-home/${name}`;
 
@@ -123,7 +123,7 @@ function StepCard({ step }) {
 
 function LandingPage() {
   const navigate = useNavigate();
-  const shopEnabled = isStagingShopEnabled();
+  const shopEnabled = isPublicShopEnabled();
   const [lookupTab, setLookupTab] = useState('warranty');
   const [lookupCode, setLookupCode] = useState('');
   const [lookupPhone, setLookupPhone] = useState('');
