@@ -257,7 +257,7 @@ export class ShopService {
     }
     if (updateDto.issue_label !== undefined) product.issue_label = updateDto.issue_label;
     if (updateDto.description !== undefined) product.description = updateDto.description;
-    if (updateDto.image_url !== undefined) {
+    if (updateDto.image_url !== undefined && updateDto.image_url !== product.image_url) {
       product.image_url = await this.prepareImageUrl(updateDto.image_url);
     }
     if (updateDto.price !== undefined) product.price = this.toNullableMoney(updateDto.price);

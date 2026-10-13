@@ -358,8 +358,9 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
   }
 
   async getLatestMobileSentrixSyncJob() {
-    const job = await this.mobileSentrixSyncJobsRepository.findOne({
+    const [job] = await this.mobileSentrixSyncJobsRepository.find({
       order: { created_at: 'DESC' },
+      take: 1,
     });
 
     return {
