@@ -43,6 +43,12 @@ export class ShopController {
     @Query('supplier') supplier?: 'manual' | 'mobilesentrix' | 'all',
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('stock') stock?: string,
+    @Query('visibility') visibility?: string,
+    @Query('sync') sync?: string,
+    @Query('device') device?: string,
+    @Query('part') part?: string,
   ) {
     const resolvedSupplier = ['manual', 'mobilesentrix', 'all'].includes(String(supplier))
       ? supplier
@@ -52,6 +58,7 @@ export class ShopController {
       resolvedSupplier as 'manual' | 'mobilesentrix' | 'all',
       Number(page || 1),
       Number(limit || 100),
+      { search, stock, visibility, sync, device, part },
     );
   }
 
