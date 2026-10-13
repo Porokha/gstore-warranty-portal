@@ -74,6 +74,7 @@ describe('ShopService admin product filters', () => {
       price: null,
       sale_price: null,
       service_price: null,
+      device_model: 'iPhone 15',
       gallery_images: [],
       compatibility_tags: [],
       search_tags: [],
@@ -85,11 +86,12 @@ describe('ShopService admin product filters', () => {
     const service = new ShopService(productsRepository as any, {} as any);
     const prepareImage = jest.spyOn(service as any, 'prepareImageUrl');
 
-    await service.updateProduct(product.id, { image_url: product.image_url, is_active: true, quality_line: 'Zezva Premium' });
+    await service.updateProduct(product.id, { image_url: product.image_url, is_active: true, quality_line: 'Zezva Premium', device_model: 'iPhone 15 Pro' });
 
     expect(prepareImage).not.toHaveBeenCalled();
     expect(productsRepository.save).toHaveBeenCalledWith(expect.objectContaining({ is_active: true }));
     expect(productsRepository.save).toHaveBeenCalledWith(expect.objectContaining({ quality_line: 'Zezva Premium' }));
+    expect(productsRepository.save).toHaveBeenCalledWith(expect.objectContaining({ device_model: 'iPhone 15 Pro' }));
   });
 
   it('saves a service sale price only when it is below a regular service price', async () => {
