@@ -73,6 +73,11 @@ export class CreateShopProductDto {
   service_price?: number | null;
 
   @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  service_sale_price?: number | null;
+
+  @IsOptional()
   @IsInt()
   @Min(0)
   stock_quantity?: number;

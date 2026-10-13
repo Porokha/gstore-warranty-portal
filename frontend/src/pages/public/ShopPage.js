@@ -79,7 +79,7 @@ const labelForSource = {
 const formatMoney = (value) => `₾${Number(value || 0).toFixed(2)}`;
 
 const getProductOnlyPrice = (product) => product.sale_price ?? product.price;
-const getServicePrice = (product) => product.service_price;
+const getServicePrice = (product) => product.service_price == null ? null : product.service_sale_price ?? product.service_price;
 const getDisplayPrice = (product) => getProductOnlyPrice(product) ?? getServicePrice(product);
 const getDiscountPercentage = (product) => {
   const regular = Number(product.price);
@@ -89,7 +89,7 @@ const getDiscountPercentage = (product) => {
     : 0;
 };
 const canBuyProductOnly = (product) => getProductOnlyPrice(product) != null;
-const canBuyWithService = (product) => getServicePrice(product) != null;
+const canBuyWithService = (product) => product.service_price != null;
 const MODAL_CLOSE_MS = 260;
 const CART_REMOVE_MS = 220;
 const ORDER_MODAL_CLOSE_MS = 260;
@@ -788,6 +788,7 @@ const ShopPage = () => {
           price: activePrice,
           basePrice,
           servicePrice: getServicePrice(product),
+          serviceRegularPrice: product.service_price,
           canProductOnly: canBuyProductOnly(product),
           canService: canBuyWithService(product),
           image_url: product.image_url,
@@ -1359,9 +1360,8 @@ const ShopPage = () => {
                       <p className="zpos-issue">{product.issue_label}</p>
                       <div className="zpos-card-footer">
                         <div className="zpos-price">
-                          {product.sale_price != null && product.price != null && (
-                            <span className="zpos-old-price">{formatMoney(product.price)}</span>
-                          )}
+                          {product.sale_price != null && product.price != null && <span className="zpos-old-price">{formatMoney(product.price)}</span>}
+                          {!productOnlyAvailable && product.service_sale_price != null && product.service_price != null && <span className="zpos-old-price">{formatMoney(product.service_price)}</span>}
                           {displayPrice != null ? (
                             <strong>{formatMoney(displayPrice)}</strong>
                           ) : (
@@ -1568,13 +1568,13 @@ const ShopPage = () => {
                   <label className="zpos-product-service">
                     <span className="zpos-product-service-icon"><BuildOutlined aria-hidden="true" /></span>
                     <span className="zpos-product-service-copy"><strong>{canBuyProductOnly(modalProduct) ? (i18n.language === 'ka' ? 'სერვისიც გჭირდება?' : 'Need installation service?') : (i18n.language === 'ka' ? 'სერვისი შედის' : 'Service included')}</strong><small>{i18n.language === 'ka' ? 'შეაკეთეთ ადგილზე' : 'Repair with our team'}</small></span>
-                    <span className="zpos-product-service-price">{canBuyProductOnly(modalProduct) ? `+${formatMoney(Math.max(0, (getServicePrice(modalProduct) || 0) - (getProductOnlyPrice(modalProduct) || 0)))}` : (i18n.language === 'ka' ? 'შედის ფასში' : 'Included')}</span>
+                    <span className="zpos-product-service-price">{modalProduct.service_sale_price != null && canBuyProductOnly(modalProduct) && <del>{`+${formatMoney(Math.max(0, modalProduct.service_price - getProductOnlyPrice(modalProduct)))}`}</del>}{canBuyProductOnly(modalProduct) ? `+${formatMoney(Math.max(0, (getServicePrice(modalProduct) || 0) - (getProductOnlyPrice(modalProduct) || 0)))}` : (i18n.language === 'ka' ? 'შედის ფასში' : 'Included')}</span>
                     <input type="checkbox" checked={modalWithService} disabled={!canBuyProductOnly(modalProduct)} onChange={(event) => setModalWithService(event.target.checked)} />
                   </label>
                 )}
 
                 <div className="zpos-product-bottom">
-                  <div><small>{i18n.language === 'ka' ? 'სულ' : 'Total'}</small><strong>{formatMoney(modalWithService ? getServicePrice(modalProduct) : getProductOnlyPrice(modalProduct))}</strong></div>
+                  <div><small>{i18n.language === 'ka' ? 'სულ' : 'Total'}</small>{modalWithService && modalProduct.service_sale_price != null && <del className="zpos-service-old-total">{formatMoney(modalProduct.service_price)}</del>}<strong>{formatMoney(modalWithService ? getServicePrice(modalProduct) : getProductOnlyPrice(modalProduct))}</strong></div>
                   <button type="button" onClick={() => addToCart(modalProduct, modalWithService ? 'service' : 'product')} disabled={!(modalWithService ? canBuyWithService(modalProduct) : canBuyProductOnly(modalProduct))}>{i18n.language === 'ka' ? 'კალათაში' : 'Add to cart'}</button>
                 </div>
               </div>

@@ -81,13 +81,13 @@ export class ShopService {
     this.applyPublicSearch(qb, filters.search);
 
     if (filters.price_min !== undefined) {
-      qb.andWhere('COALESCE(product.sale_price, product.price, product.service_price) >= :priceMin', {
+      qb.andWhere('COALESCE(product.sale_price, product.price, product.service_sale_price, product.service_price) >= :priceMin', {
         priceMin: filters.price_min,
       });
     }
 
     if (filters.price_max !== undefined) {
-      qb.andWhere('COALESCE(product.sale_price, product.price, product.service_price) <= :priceMax', {
+      qb.andWhere('COALESCE(product.sale_price, product.price, product.service_sale_price, product.service_price) <= :priceMax', {
         priceMax: filters.price_max,
       });
     }
@@ -217,6 +217,7 @@ export class ShopService {
   }
 
   async createProduct(createDto: CreateShopProductDto) {
+    this.validateServiceSalePrice(createDto.service_price, createDto.service_sale_price);
     const imageUrl = await this.prepareImageUrl(createDto.image_url);
     const product = this.shopProductsRepository.create({
       ...createDto,
@@ -226,6 +227,7 @@ export class ShopService {
       price: this.toNullableMoney(createDto.price),
       sale_price: this.toNullableMoney(createDto.sale_price),
       service_price: this.toNullableMoney(createDto.service_price),
+      service_sale_price: this.toNullableMoney(createDto.service_sale_price),
       stock_quantity: createDto.stock_quantity ?? 0,
       sort_order: createDto.sort_order ?? 0,
       is_active: createDto.is_active ?? true,
@@ -266,6 +268,10 @@ export class ShopService {
     if (updateDto.service_price !== undefined) {
       product.service_price = this.toNullableMoney(updateDto.service_price);
     }
+    if (updateDto.service_sale_price !== undefined) {
+      product.service_sale_price = this.toNullableMoney(updateDto.service_sale_price);
+    }
+    this.validateServiceSalePrice(product.service_price, product.service_sale_price);
     if (updateDto.stock_quantity !== undefined) product.stock_quantity = updateDto.stock_quantity;
     if (updateDto.sort_order !== undefined) product.sort_order = updateDto.sort_order;
     if (updateDto.is_active !== undefined) product.is_active = updateDto.is_active;
@@ -324,6 +330,7 @@ export class ShopService {
 
       try {
         const parsed = this.parseProductCsvRow(row);
+        this.validateServiceSalePrice(parsed.service_price, parsed.service_sale_price);
         const canonicalSlug = this.slugify(parsed.slug || parsed.title);
         const existing = await this.shopProductsRepository.findOne({
           where: { slug: canonicalSlug },
@@ -343,6 +350,10 @@ export class ShopService {
           existing.price = this.toNullableMoney(parsed.price);
           existing.sale_price = this.toNullableMoney(parsed.sale_price);
           existing.service_price = this.toNullableMoney(parsed.service_price);
+          if (row.service_sale_price !== undefined) {
+            existing.service_sale_price = this.toNullableMoney(parsed.service_sale_price);
+          }
+          this.validateServiceSalePrice(existing.service_price, existing.service_sale_price);
           existing.stock_quantity = parsed.stock_quantity ?? 0;
           existing.sort_order = parsed.sort_order ?? existing.sort_order;
           existing.is_active = parsed.is_active ?? true;
@@ -359,6 +370,7 @@ export class ShopService {
           price: this.toNullableMoney(parsed.price),
           sale_price: this.toNullableMoney(parsed.sale_price),
           service_price: this.toNullableMoney(parsed.service_price),
+          service_sale_price: this.toNullableMoney(parsed.service_sale_price),
           stock_quantity: parsed.stock_quantity ?? 0,
       sort_order: parsed.sort_order ?? nextAutoSortOrder,
       is_active: parsed.is_active ?? true,
@@ -424,7 +436,7 @@ export class ShopService {
 
       const unitPrice =
         item.mode === ShopOrderItemMode.SERVICE
-          ? this.toNullableNumber(product.service_price)
+          ? this.toNullableNumber(product.service_price == null ? null : product.service_sale_price ?? product.service_price)
           : this.toNullableNumber(product.sale_price ?? product.price);
 
       if (unitPrice == null) {
@@ -447,7 +459,7 @@ export class ShopService {
       }
 
       const product = productMap.get(item.product_id);
-      const productOnlyPrice = this.toNullableNumber(product?.sale_price ?? product?.price) ?? 0;
+      const productOnlyPrice = Math.min(item.unit_price, this.toNullableNumber(product?.sale_price ?? product?.price) ?? 0);
       return sum + Number((productOnlyPrice * item.quantity).toFixed(2));
     }, 0);
 
@@ -511,6 +523,7 @@ export class ShopService {
       'price',
       'sale_price',
       'service_price',
+      'service_sale_price',
       'stock_quantity',
       'sort_order',
       'is_active',
@@ -530,6 +543,7 @@ export class ShopService {
         '699',
         '649',
         '759',
+        '',
         '12',
         '10',
         'true',
@@ -547,6 +561,7 @@ export class ShopService {
         '299',
         '',
         '349',
+        '',
         '5',
         '20',
         'true',
@@ -564,6 +579,7 @@ export class ShopService {
         '',
         '',
         '189',
+        '',
         '4',
         '30',
         'true',
@@ -725,13 +741,13 @@ export class ShopService {
     this.applyPublicSearch(qb, filters.search);
 
     if (filters.price_min !== undefined) {
-      qb.andWhere('COALESCE(product.sale_price, product.price, product.service_price) >= :priceMin', {
+      qb.andWhere('COALESCE(product.sale_price, product.price, product.service_sale_price, product.service_price) >= :priceMin', {
         priceMin: filters.price_min,
       });
     }
 
     if (filters.price_max !== undefined) {
-      qb.andWhere('COALESCE(product.sale_price, product.price, product.service_price) <= :priceMax', {
+      qb.andWhere('COALESCE(product.sale_price, product.price, product.service_sale_price, product.service_price) <= :priceMax', {
         priceMax: filters.price_max,
       });
     }
@@ -803,6 +819,7 @@ export class ShopService {
       price: product.price !== null ? Number(product.price) : null,
       sale_price: product.sale_price !== null ? Number(product.sale_price) : null,
       service_price: product.service_price !== null ? Number(product.service_price) : null,
+      service_sale_price: product.service_sale_price != null ? Number(product.service_sale_price) : null,
       stock_quantity: product.stock_quantity,
       sort_order: product.sort_order,
       is_active: product.is_active,
@@ -891,6 +908,13 @@ export class ShopService {
         .replace(/^-+|-+$/g, '')
         .slice(0, 120) || 'product'
     );
+  }
+
+  private validateServiceSalePrice(servicePrice?: string | number | null, salePrice?: string | number | null) {
+    if (salePrice == null) return;
+    if (servicePrice == null || Number(salePrice) >= Number(servicePrice)) {
+      throw new BadRequestException('Service sale price must be lower than the regular service price.');
+    }
   }
 
   private toNullableMoney(value?: number | null) {
@@ -1008,6 +1032,7 @@ export class ShopService {
       price: this.parseOptionalNumber(row.price),
       sale_price: this.parseOptionalNumber(row.sale_price),
       service_price: this.parseOptionalNumber(row.service_price),
+      service_sale_price: this.parseOptionalNumber(row.service_sale_price),
       stock_quantity: this.parseOptionalInteger(row.stock_quantity) ?? 0,
       sort_order: this.parseOptionalInteger(row.sort_order) ?? undefined,
       is_active: this.parseOptionalBoolean(row.is_active) ?? true,

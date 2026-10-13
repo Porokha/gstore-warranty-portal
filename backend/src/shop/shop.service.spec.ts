@@ -1,4 +1,5 @@
 import { ShopService } from './shop.service';
+import { ShopOrderHeardAbout, ShopOrderItemMode, ShopOrderPaymentChoice } from './dto/create-public-shop-order.dto';
 
 describe('ShopService admin product filters', () => {
   const createQuery = (state: { clauses: string[]; params: Record<string, unknown>; skip: number; take: number }) => {
@@ -89,5 +90,38 @@ describe('ShopService admin product filters', () => {
     expect(prepareImage).not.toHaveBeenCalled();
     expect(productsRepository.save).toHaveBeenCalledWith(expect.objectContaining({ is_active: true }));
     expect(productsRepository.save).toHaveBeenCalledWith(expect.objectContaining({ quality_line: 'Zezva Premium' }));
+  });
+
+  it('saves a service sale price only when it is below a regular service price', async () => {
+    const product = { id: 1, title: 'Battery replacement', slug: 'battery', price: '80.00', sale_price: null, service_price: '120.00', service_sale_price: null };
+    const productsRepository = { findOne: jest.fn(async () => product), save: jest.fn(async () => product) };
+    const service = new ShopService(productsRepository as any, {} as any);
+
+    await service.updateProduct(1, { service_sale_price: 105 });
+    expect(productsRepository.save).toHaveBeenCalledWith(expect.objectContaining({ service_sale_price: '105.00' }));
+
+    await expect(service.updateProduct(1, { service_sale_price: 125 })).rejects.toThrow('Service sale price must be lower');
+    expect(productsRepository.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('charges the service sale price rather than the regular service price at checkout', async () => {
+    const product = { id: 1, title: 'Battery replacement', is_active: true, deleted_at: null, price: '80.00', sale_price: null, service_price: '120.00', service_sale_price: '105.00' };
+    const productsRepository = { find: jest.fn(async () => [product]) };
+    const ordersRepository = { create: jest.fn((payload) => payload), save: jest.fn(async (payload) => ({ ...payload, id: 1 })) };
+    const service = new ShopService(productsRepository as any, ordersRepository as any);
+    jest.spyOn(service as any, 'purgeExpiredTrash').mockResolvedValue(undefined);
+    jest.spyOn(service as any, 'generateOrderNumber').mockResolvedValue('TEST-1');
+
+    await service.createPublicOrder({
+      customer_name: 'Test', customer_last_name: 'Customer', customer_phone: '555123456',
+      customer_email: 'test@example.com', heard_about: ShopOrderHeardAbout.GOOGLE,
+      has_partner_warranty: false, payment_method: ShopOrderPaymentChoice.ONSITE,
+      items: [{ product_id: 1, mode: ShopOrderItemMode.SERVICE, quantity: 1 }],
+    });
+
+    expect(ordersRepository.save).toHaveBeenCalledWith(expect.objectContaining({
+      total_amount: '105.00', subtotal_amount: '80.00', service_amount: '25.00',
+      items_json: [expect.objectContaining({ unit_price: 105 })],
+    }));
   });
 });

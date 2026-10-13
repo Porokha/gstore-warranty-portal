@@ -443,6 +443,7 @@
 .zzv-shop-catalog__cell-copy strong { font-size: 11px; font-weight: 600; }
 .zzv-shop-catalog__cell-copy small { color: #898391; font-size: 10px; }
 .zzv-shop-catalog__money { font-weight: 700; white-space: nowrap; }
+.zzv-shop-catalog__old-price { display: block; color: #898391; font-size: 10px; font-weight: 400; text-decoration: line-through; }
 .zzv-shop-catalog__stock { display: inline-block; min-width: 24px; padding: 3px 7px; border-radius: 5px; font-size: 10px; font-weight: 700; text-align: center; }
 .zzv-shop-catalog__stock--available { color: #158455; background: #e8f8ee; }
 .zzv-shop-catalog__stock--low { color: #ad7213; background: #fff3d9; }
