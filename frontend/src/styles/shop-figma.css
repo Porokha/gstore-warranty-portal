@@ -383,9 +383,9 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  min-height: 40px;
+  min-height: 28px;
   color: #14121c;
-  font-size: 14px;
+  font-size: 10px;
   font-weight: 600;
   line-height: 1.4;
 }
@@ -1912,8 +1912,8 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   }
 
   #zpos-root.zpos-root--figma .zpos-card-body h3 {
-    min-height: 40px;
-    font-size: 14px;
+    min-height: 28px;
+    font-size: 10px;
   }
 
   #zpos-root.zpos-root--figma .zpos-figma-cart-bar {
