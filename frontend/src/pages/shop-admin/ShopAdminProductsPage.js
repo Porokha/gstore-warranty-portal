@@ -469,6 +469,9 @@ const ShopAdminProductsPage = () => {
     displayedProducts.every((product) => selectedIds.includes(product.id));
 
   const applyProductToForm = (product, openModal = true) => {
+    if (openModal && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     if (!product) {
       setSelectedId(null);
       setForm(emptyForm);
