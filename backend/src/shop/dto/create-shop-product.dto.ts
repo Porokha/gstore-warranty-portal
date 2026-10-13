@@ -45,6 +45,11 @@ export class CreateShopProductDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(255)
+  quality_line?: string | null;
+
+  @IsOptional()
+  @IsString()
   description?: string;
 
   @IsOptional()

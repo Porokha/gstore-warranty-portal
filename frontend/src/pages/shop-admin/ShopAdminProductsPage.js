@@ -56,6 +56,7 @@ const emptyForm = {
   part_category: 'screen',
   inventory_source: 'oem',
   issue_label: '',
+  quality_line: '',
   description: '',
   image_url: '',
   price: '',
@@ -490,6 +491,7 @@ const ShopAdminProductsPage = () => {
       part_category: product.part_category || 'screen',
       inventory_source: product.inventory_source || 'oem',
       issue_label: product.issue_label || '',
+      quality_line: product.quality_line || '',
       description: product.description || '',
       image_url: product.image_url || '',
       price: product.price == null ? '' : String(product.price),
@@ -739,6 +741,7 @@ const ShopAdminProductsPage = () => {
         <div className="zzv-shop-product-modal__fields zzv-shop-product-modal__grid">
           <div><label htmlFor="shop-product-device">{t('shopProducts.device', 'Device')}</label><TextField id="shop-product-device" select size="small" fullWidth value={form.device_category} onChange={(event) => setForm((prev) => ({ ...prev, device_category: event.target.value }))}><MenuItem value="smartphones">{t('shopProducts.smartphones', 'Smartphones')}</MenuItem><MenuItem value="laptops">{t('shopProducts.laptops', 'Laptops')}</MenuItem><MenuItem value="accessories">{t('shopProducts.accessories', 'Accessories')}</MenuItem></TextField></div>
           <div><label htmlFor="shop-product-issue">{t('shopProducts.issueLabel', 'Issue label')}</label><TextField id="shop-product-issue" size="small" fullWidth value={form.issue_label} onChange={(event) => setForm((prev) => ({ ...prev, issue_label: event.target.value }))} /></div>
+          <div><label htmlFor="shop-product-quality">{t('shopProducts.quality')}</label><TextField id="shop-product-quality" size="small" fullWidth value={form.quality_line} onChange={(event) => setForm((prev) => ({ ...prev, quality_line: event.target.value }))} /></div>
           <div><label htmlFor="shop-product-part">{t('shopProducts.part', 'Part')}</label><TextField id="shop-product-part" select size="small" fullWidth value={form.part_category} onChange={(event) => setForm((prev) => ({ ...prev, part_category: event.target.value }))}>{['board', 'screen', 'sensor', 'battery', 'camera', 'speaker', 'charging', 'accessory'].map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}</TextField></div>
           <div><label htmlFor="shop-product-sort">{t('shopProducts.sortOrder', 'Sort order')}</label><TextField id="shop-product-sort" size="small" fullWidth type="number" value={form.sort_order} onChange={(event) => setForm((prev) => ({ ...prev, sort_order: event.target.value }))} /></div>
         </div>
