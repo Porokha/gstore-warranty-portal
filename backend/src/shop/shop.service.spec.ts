@@ -65,4 +65,28 @@ describe('ShopService admin product filters', () => {
     expect(result.facets.devices).toEqual(['smartphones']);
     expect(result.facets.parts).toEqual(['smartphones']);
   });
+
+  it('does not re-download an unchanged supplier image when editing a product', async () => {
+    const product = {
+      id: 33297,
+      image_url: 'https://supplier.example/product.jpg',
+      price: null,
+      sale_price: null,
+      service_price: null,
+      gallery_images: [],
+      compatibility_tags: [],
+      search_tags: [],
+    };
+    const productsRepository = {
+      findOne: jest.fn(async () => product),
+      save: jest.fn(async () => product),
+    };
+    const service = new ShopService(productsRepository as any, {} as any);
+    const prepareImage = jest.spyOn(service as any, 'prepareImageUrl');
+
+    await service.updateProduct(product.id, { image_url: product.image_url, is_active: true });
+
+    expect(prepareImage).not.toHaveBeenCalled();
+    expect(productsRepository.save).toHaveBeenCalledWith(expect.objectContaining({ is_active: true }));
+  });
 });
