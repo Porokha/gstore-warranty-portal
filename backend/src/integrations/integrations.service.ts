@@ -646,6 +646,15 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
       },
     });
 
+    const previousSupplierQuality = existing
+      ? this.truncateText(
+          this.normalizeTextValue(
+            existing.supplier_payload?.brand_text || existing.supplier_payload?.product_badges_text,
+          ),
+          255,
+        )
+      : null;
+
     const payload = {
       title: mapped.title,
       brand: mapped.brand,
@@ -655,7 +664,9 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
       inventory_source: mapped.inventory_source,
       issue_label: mapped.issue_label,
       device_model: mapped.device_model,
-      quality_line: mapped.quality_line,
+      quality_line: existing && existing.quality_line !== previousSupplierQuality
+        ? existing.quality_line
+        : mapped.quality_line,
       quality_badge: mapped.quality_badge,
       warranty_line: mapped.warranty_line,
       description: mapped.description,

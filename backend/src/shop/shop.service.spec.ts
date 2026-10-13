@@ -84,9 +84,10 @@ describe('ShopService admin product filters', () => {
     const service = new ShopService(productsRepository as any, {} as any);
     const prepareImage = jest.spyOn(service as any, 'prepareImageUrl');
 
-    await service.updateProduct(product.id, { image_url: product.image_url, is_active: true });
+    await service.updateProduct(product.id, { image_url: product.image_url, is_active: true, quality_line: 'Zezva Premium' });
 
     expect(prepareImage).not.toHaveBeenCalled();
     expect(productsRepository.save).toHaveBeenCalledWith(expect.objectContaining({ is_active: true }));
+    expect(productsRepository.save).toHaveBeenCalledWith(expect.objectContaining({ quality_line: 'Zezva Premium' }));
   });
 });

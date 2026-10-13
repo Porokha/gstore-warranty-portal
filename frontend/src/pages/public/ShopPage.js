@@ -19,6 +19,7 @@ import '../../styles/shop.css';
 import '../../styles/shop-figma.css';
 import gstoreLogo from '../../assets/gstore-logo.svg';
 import { shopService } from '../../services/shopService';
+import { formatShopWarranty } from '../../utils/shopWarranty';
 
 const partOptions = [
   ['all', 'common.all'],
@@ -1557,7 +1558,7 @@ const ShopPage = () => {
 
               <div className="zpos-product-details">
                 <div><span>{i18n.language === 'ka' ? 'თავსებადობა' : 'Compatibility'}</span><strong>{modalProduct.device_model || modalProduct.title}</strong></div>
-                <div><span>{i18n.language === 'ka' ? 'გარანტია' : 'Warranty'}</span><strong>{modalProduct.warranty_line || (i18n.language === 'ka' ? '1 წელი' : '1 year')}</strong></div>
+                <div><span>{i18n.language === 'ka' ? 'გარანტია' : 'Warranty'}</span><strong>{formatShopWarranty(modalProduct.warranty_line, i18n.language)}</strong></div>
                 <div><span>{i18n.language === 'ka' ? 'წარმომავლობა' : 'Source'}</span><strong>{t(labelForSource[modalProduct.inventory_source] || modalProduct.inventory_source)}</strong></div>
                 <div><span>{i18n.language === 'ka' ? 'ტიპი' : 'Type'}</span><strong>{modalProduct.quality_line && modalProduct.quality_line !== 'N/A' ? modalProduct.quality_line : t(labelForPart[modalProduct.part_category] || modalProduct.part_category)}</strong></div>
               </div>

@@ -256,6 +256,7 @@ export class ShopService {
       product.inventory_source = updateDto.inventory_source;
     }
     if (updateDto.issue_label !== undefined) product.issue_label = updateDto.issue_label;
+    if (updateDto.quality_line !== undefined) product.quality_line = updateDto.quality_line?.trim() || null;
     if (updateDto.description !== undefined) product.description = updateDto.description;
     if (updateDto.image_url !== undefined && updateDto.image_url !== product.image_url) {
       product.image_url = await this.prepareImageUrl(updateDto.image_url);
