@@ -223,6 +223,7 @@ export class ShopService {
       ...createDto,
       image_url: imageUrl,
       brand: createDto.brand?.trim() || null,
+      device_model: createDto.device_model?.trim() || null,
       slug: await this.ensureUniqueSlug(createDto.slug || createDto.title),
       price: this.toNullableMoney(createDto.price),
       sale_price: this.toNullableMoney(createDto.sale_price),
@@ -252,6 +253,7 @@ export class ShopService {
 
     if (updateDto.title !== undefined) product.title = updateDto.title;
     if (updateDto.brand !== undefined) product.brand = updateDto.brand?.trim() || null;
+    if (updateDto.device_model !== undefined) product.device_model = updateDto.device_model?.trim() || null;
     if (updateDto.device_category !== undefined) product.device_category = updateDto.device_category;
     if (updateDto.part_category !== undefined) product.part_category = updateDto.part_category;
     if (updateDto.inventory_source !== undefined) {

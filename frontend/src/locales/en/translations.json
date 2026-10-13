@@ -84,6 +84,7 @@
     "productSaveFailed": "Product could not be saved.",
     "basicDetails": "Basic details",
     "productName": "Product name",
+    "model": "Model",
     "productAddress": "Address",
     "imageAddress": "Image address",
     "classification": "Classification",

@@ -51,6 +51,7 @@ import ConfirmDialog from '../../components/common/ConfirmDialog';
 const emptyForm = {
   title: '',
   brand: '',
+  device_model: '',
   slug: '',
   device_category: 'smartphones',
   part_category: 'screen',
@@ -487,6 +488,7 @@ const ShopAdminProductsPage = () => {
     setForm({
       title: product.title || '',
       brand: product.brand || '',
+      device_model: product.device_model || '',
       slug: product.slug || '',
       device_category: product.device_category || 'smartphones',
       part_category: product.part_category || 'screen',
@@ -582,7 +584,7 @@ const ShopAdminProductsPage = () => {
       const safe = /^[=+\-@]/.test(raw) ? `'${raw}` : raw;
       return `"${safe.replace(/"/g, '""')}"`;
     };
-    const fields = ['id', 'title', 'brand', 'slug', 'device_category', 'part_category', 'price', 'sale_price', 'service_price', 'service_sale_price', 'stock_quantity', 'is_active'];
+    const fields = ['id', 'title', 'brand', 'device_model', 'slug', 'device_category', 'part_category', 'price', 'sale_price', 'service_price', 'service_sale_price', 'stock_quantity', 'is_active'];
     const csv = [fields.join(','), ...selected.map((product) => fields.map((field) => cell(product[field])).join(','))].join('\r\n');
     const url = URL.createObjectURL(new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8' }));
     const anchor = document.createElement('a');
@@ -733,6 +735,7 @@ const ShopAdminProductsPage = () => {
           <TextField id="shop-product-slug" size="small" fullWidth value={form.slug} onChange={(event) => setForm((prev) => ({ ...prev, slug: event.target.value }))} helperText={t('shopProducts.slugHint', 'Leave blank to generate automatically.')} />
           <div className="zzv-shop-product-modal__grid">
             <div><label htmlFor="shop-product-brand">{t('shopProducts.manufacturer', 'Manufacturer')}</label><TextField id="shop-product-brand" size="small" fullWidth value={form.brand} onChange={(event) => setForm((prev) => ({ ...prev, brand: event.target.value }))} /></div>
+            <div><label htmlFor="shop-product-model">{t('shopProducts.model', 'Model')}</label><TextField id="shop-product-model" size="small" fullWidth value={form.device_model} onChange={(event) => setForm((prev) => ({ ...prev, device_model: event.target.value }))} /></div>
             <div><label htmlFor="shop-product-source">{t('shopProducts.type', 'Type')}</label><TextField id="shop-product-source" select size="small" fullWidth value={form.inventory_source} onChange={(event) => setForm((prev) => ({ ...prev, inventory_source: event.target.value }))}><MenuItem value="oem">OEM</MenuItem><MenuItem value="third-party">Third party</MenuItem></TextField></div>
           </div>
           <div className="zzv-shop-product-modal__upload" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); const file = event.dataTransfer.files?.[0]; if (file?.type.startsWith('image/') && !uploadImageMutation.isLoading) uploadImageMutation.mutate(file); }}>

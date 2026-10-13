@@ -27,6 +27,11 @@ export class CreateShopProductDto {
   @IsOptional()
   @IsString()
   @MaxLength(255)
+  device_model?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
   slug?: string;
 
   @IsEnum(ShopDeviceCategory)

@@ -84,6 +84,7 @@
     "productSaveFailed": "პროდუქტის შენახვა ვერ მოხერხდა.",
     "basicDetails": "ძირითადი",
     "productName": "დასახელება",
+    "model": "მოდელი",
     "productAddress": "მისამართი",
     "imageAddress": "სურათის მისამართი",
     "classification": "კლასიფიკაცია",

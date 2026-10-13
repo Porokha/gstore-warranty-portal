@@ -655,6 +655,13 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
         )
       : null;
 
+    const previousSupplierModel = existing
+      ? this.truncateText(
+          this.normalizeTextValue(existing.supplier_payload?.model_text || existing.supplier_payload?.device_model_text),
+          255,
+        )
+      : null;
+
     const payload = {
       title: mapped.title,
       brand: mapped.brand,
@@ -663,7 +670,9 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
       part_category: mapped.part_category,
       inventory_source: mapped.inventory_source,
       issue_label: mapped.issue_label,
-      device_model: mapped.device_model,
+      device_model: existing && existing.device_model !== previousSupplierModel
+        ? existing.device_model
+        : mapped.device_model,
       quality_line: existing && existing.quality_line !== previousSupplierQuality
         ? existing.quality_line
         : mapped.quality_line,
