@@ -120,6 +120,7 @@ const ShopAdminProductsPage = () => {
   const [manualDeviceFilter, setManualDeviceFilter] = useState('all');
   const [manualPartFilter, setManualPartFilter] = useState('all');
   const [adminProductPage, setAdminProductPage] = useState(1);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [confirmState, setConfirmState] = useState({
@@ -134,15 +135,37 @@ const ShopAdminProductsPage = () => {
 
   const productSupplier = productSource === 'mobilesentrix' ? 'mobilesentrix' : 'manual';
   const adminProductLimit = productSource === 'mobilesentrix' ? 100 : 200;
-  const { data: productsResult, isLoading } = useQuery(['shop-admin-products', scope, productSupplier, adminProductPage, adminProductLimit], () =>
+  const currentSearch = productSource === 'mobilesentrix' ? mobileSentrixSearch : manualSearch;
+  useEffect(() => {
+    const timeout = setTimeout(() => setDebouncedSearch(currentSearch.trim()), 300);
+    return () => clearTimeout(timeout);
+  }, [currentSearch]);
+  const productFilters = productSource === 'mobilesentrix'
+    ? { search: debouncedSearch, stock: mobileSentrixStockFilter, visibility: mobileSentrixQuickFilter, sync: mobileSentrixSyncFilter }
+    : { search: debouncedSearch, stock: manualStockFilter, device: manualDeviceFilter, part: manualPartFilter };
+  useEffect(() => {
+    setAdminProductPage(1);
+    setSelectedIds([]);
+  }, [debouncedSearch, mobileSentrixStockFilter, mobileSentrixQuickFilter, mobileSentrixSyncFilter,
+    manualStockFilter, manualDeviceFilter, manualPartFilter]);
+  const { data: productsResult, isLoading } = useQuery(['shop-admin-products', scope, productSupplier, adminProductPage, adminProductLimit, productFilters], () =>
     shopService.getAdminProducts(scope, productSupplier, {
       page: adminProductPage,
       limit: adminProductLimit,
+      ...productFilters,
     }),
   );
   const products = productsResult?.items || [];
-  const productsTotal = productsResult?.total || products.length;
+  const productsTotal = productsResult?.total ?? products.length;
   const productsTotalPages = productsResult?.total_pages || 1;
+  const productFacets = productsResult?.facets || {};
+  const productCounts = productFacets.counts || {};
+  useEffect(() => {
+    if (productsResult && adminProductPage > productsTotalPages) {
+      setSelectedIds([]);
+      setAdminProductPage(productsTotalPages);
+    }
+  }, [adminProductPage, productsResult, productsTotalPages]);
   const { data: latestMobileSentrixJobResult } = useQuery(
     ['mobilesentrix-sync-latest'],
     () => shopService.getLatestMobileSentrixSyncJob(),
@@ -435,66 +458,11 @@ const ShopAdminProductsPage = () => {
     () => products.find((product) => product.id === selectedId) || null,
     [products, selectedId],
   );
-  const displayedProducts = useMemo(() => {
-    if (productSource !== 'mobilesentrix') {
-      const search = manualSearch.trim().toLocaleLowerCase();
-      return products.filter((product) => {
-        const quantity = Number(product.stock_quantity || 0);
-        const matchesSearch = !search || [product.title, product.slug, product.brand, product.device_model, product.part_category]
-          .filter(Boolean).some((value) => String(value).toLocaleLowerCase().includes(search));
-        const matchesStock = manualStockFilter === 'all'
-          || (manualStockFilter === 'available' && quantity >= 10)
-          || (manualStockFilter === 'low' && quantity > 0 && quantity < 10)
-          || (manualStockFilter === 'none' && quantity <= 0);
-        return matchesSearch && matchesStock
-          && (manualDeviceFilter === 'all' || product.device_category === manualDeviceFilter)
-          && (manualPartFilter === 'all' || product.part_category === manualPartFilter);
-      });
-    }
-
-    const search = mobileSentrixSearch.trim().toLowerCase();
-    return products.filter((product) => {
-      const matchesSearch =
-        !search ||
-        [
-          product.title,
-          product.brand,
-          product.device_model,
-          product.supplier_sku,
-          product.supplier_product_id,
-          product.part_category,
-          product.device_category,
-        ]
-          .filter(Boolean)
-          .some((value) => String(value).toLowerCase().includes(search));
-      const matchesStock =
-        mobileSentrixStockFilter === 'all' ||
-        (mobileSentrixStockFilter === 'in_stock' && Number(product.stock_quantity || 0) > 0) ||
-        (mobileSentrixStockFilter === 'out_of_stock' && Number(product.stock_quantity || 0) <= 0);
-      const matchesQuick = mobileSentrixQuickFilter === 'all'
-        || (mobileSentrixQuickFilter === 'visible' && product.is_active)
-        || (mobileSentrixQuickFilter === 'hidden' && !product.is_active)
-        || (mobileSentrixQuickFilter === 'low' && Number(product.stock_quantity || 0) > 0 && Number(product.stock_quantity || 0) < 10);
-      const matchesSync = mobileSentrixSyncFilter === 'all'
-        || (mobileSentrixSyncFilter === 'synced' && Boolean(product.supplier_synced_at))
-        || (mobileSentrixSyncFilter === 'not_synced' && !product.supplier_synced_at);
-
-      return matchesSearch && matchesStock && matchesQuick && matchesSync;
-    });
-  }, [manualSearch, manualStockFilter, manualDeviceFilter, manualPartFilter, mobileSentrixSearch, mobileSentrixStockFilter, mobileSentrixQuickFilter, mobileSentrixSyncFilter, productSource, products]);
-  const manualCounts = useMemo(() => products.reduce((counts, product) => {
-    const quantity = Number(product.stock_quantity || 0);
-    counts[quantity <= 0 ? 'none' : quantity < 10 ? 'low' : 'available'] += 1;
-    return counts;
-  }, { available: 0, low: 0, none: 0 }), [products]);
-  const manualDevices = useMemo(() => [...new Set(products.map((product) => product.device_category).filter(Boolean))].sort(), [products]);
-  const manualParts = useMemo(() => [...new Set(products.map((product) => product.part_category).filter(Boolean))].sort(), [products]);
-  const manualHasFilters = Boolean(manualSearch.trim() || manualStockFilter !== 'all' || manualDeviceFilter !== 'all' || manualPartFilter !== 'all');
-  const mobileSentrixCounts = useMemo(() => ({
-    visible: products.filter((product) => product.is_active).length,
-    hidden: products.filter((product) => !product.is_active).length,
-    low: products.filter((product) => Number(product.stock_quantity || 0) > 0 && Number(product.stock_quantity || 0) < 10).length,
-  }), [products]);
+  const displayedProducts = products;
+  const manualCounts = productCounts;
+  const manualDevices = productFacets.devices || [];
+  const manualParts = productFacets.parts || [];
+  const mobileSentrixCounts = productCounts;
   const allSelected =
     displayedProducts.length > 0 &&
     displayedProducts.every((product) => selectedIds.includes(product.id));
@@ -916,7 +884,7 @@ const ShopAdminProductsPage = () => {
               <div className="zzv-shop-catalog__filter-row">
                 <div className="zzv-shop-catalog__stock-tabs" role="group" aria-label={t('shopProducts.stockFilter')}>
                   {[
-                    ['all', t('shopProducts.all'), products.length],
+                    ['all', t('shopProducts.all'), productCounts.all],
                     ['available', t('shopProducts.inStock'), manualCounts.available],
                     ['low', t('shopProducts.lowStock'), manualCounts.low],
                     ['none', t('shopProducts.outOfStock'), manualCounts.none],
@@ -936,7 +904,6 @@ const ShopAdminProductsPage = () => {
                   </TextField>
                 </div>
               </div>
-              {productsTotal > products.length && manualHasFilters && <p className="zzv-shop-catalog__page-note">{t('shopProducts.pageOnly')}</p>}
             </div>}
             {productSource === 'mobilesentrix' && mobileSentrixResult && <section className="zzv-shop-sentrix__result" aria-label={t('shopProducts.previewComplete')}>
               <div className="zzv-shop-sentrix__result-head">
@@ -1181,7 +1148,7 @@ const ShopAdminProductsPage = () => {
               <div className="zzv-shop-sentrix__filter-row">
                 <div className="zzv-shop-catalog__stock-tabs" role="group" aria-label={t('shopProducts.catalogFilter')}>
                   {[
-                    ['all', t('shopProducts.all'), products.length],
+                    ['all', t('shopProducts.all'), productCounts.all],
                     ['visible', t('shopProducts.inCatalog'), mobileSentrixCounts.visible],
                     ['hidden', t('shopProducts.hidden'), mobileSentrixCounts.hidden],
                     ['low', t('shopProducts.lowStock'), mobileSentrixCounts.low],
@@ -1203,7 +1170,6 @@ const ShopAdminProductsPage = () => {
                   </TextField>
                 </div>
               </div>
-              {productsTotal > products.length && (mobileSentrixSearch || mobileSentrixQuickFilter !== 'all' || mobileSentrixStockFilter !== 'all' || mobileSentrixSyncFilter !== 'all') && <p className="zzv-shop-catalog__page-note">{t('shopProducts.pageOnly')}</p>}
             </div>
             <Box className="zzv-shop-sentrix__table-wrap" sx={{ overflowX: 'auto' }}>
               <Table

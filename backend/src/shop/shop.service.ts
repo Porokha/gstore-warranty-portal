@@ -148,6 +148,14 @@ export class ShopService {
     supplier: ShopSupplierScope = 'manual',
     pageInput = 1,
     limitInput = 100,
+    filters: {
+      search?: string;
+      stock?: string;
+      visibility?: string;
+      sync?: string;
+      device?: string;
+      part?: string;
+    } = {},
   ) {
     await this.purgeExpiredTrash();
     const page = Math.max(Number(pageInput) || 1, 1);
@@ -158,16 +166,53 @@ export class ShopService {
     if (supplier !== 'all') {
       qb.andWhere('product.supplier = :supplier', { supplier });
     }
+    const facetsQuery = qb.clone();
+    const search = String(filters.search || '').trim().slice(0, 100);
+    if (search) {
+      const pattern = `%${search.replace(/[\\%_]/g, '\\$&')}%`;
+      const columns = supplier === 'mobilesentrix'
+        ? ['title', 'brand', 'device_model', 'supplier_sku', 'supplier_product_id', 'part_category', 'device_category']
+        : ['title', 'slug', 'brand', 'device_model', 'part_category'];
+      qb.andWhere(`(${columns.map((column) => `product.${column} LIKE :search`).join(' OR ')})`, { search: pattern });
+    }
+    if (filters.stock === 'available') qb.andWhere('product.stock_quantity >= 10');
+    if (filters.stock === 'low') qb.andWhere('product.stock_quantity > 0 AND product.stock_quantity < 10');
+    if (filters.stock === 'none' || filters.stock === 'out_of_stock') qb.andWhere('product.stock_quantity <= 0');
+    if (filters.stock === 'in_stock') qb.andWhere('product.stock_quantity > 0');
+    if (filters.visibility === 'visible') qb.andWhere('product.is_active = :visible', { visible: true });
+    if (filters.visibility === 'hidden') qb.andWhere('product.is_active = :hidden', { hidden: false });
+    if (filters.visibility === 'low') qb.andWhere('product.stock_quantity > 0 AND product.stock_quantity < 10');
+    if (filters.sync === 'synced') qb.andWhere('product.supplier_synced_at IS NOT NULL');
+    if (filters.sync === 'not_synced') qb.andWhere('product.supplier_synced_at IS NULL');
+    if (filters.device && filters.device !== 'all') qb.andWhere('product.device_category = :device', { device: filters.device });
+    if (filters.part && filters.part !== 'all') qb.andWhere('product.part_category = :part', { part: filters.part });
     qb.orderBy('product.sort_order', 'ASC').addOrderBy('product.id', 'ASC');
     qb.skip((page - 1) * limit).take(limit);
 
     const [products, total] = await qb.getManyAndCount();
+    const counts = await facetsQuery.clone()
+      .select('COUNT(*)', 'all')
+      .addSelect('SUM(CASE WHEN product.stock_quantity >= 10 THEN 1 ELSE 0 END)', 'available')
+      .addSelect('SUM(CASE WHEN product.stock_quantity > 0 AND product.stock_quantity < 10 THEN 1 ELSE 0 END)', 'low')
+      .addSelect('SUM(CASE WHEN product.stock_quantity <= 0 THEN 1 ELSE 0 END)', 'none')
+      .addSelect('SUM(CASE WHEN product.is_active = 1 THEN 1 ELSE 0 END)', 'visible')
+      .addSelect('SUM(CASE WHEN product.is_active = 0 THEN 1 ELSE 0 END)', 'hidden')
+      .getRawOne();
+    const categories = supplier === 'manual' ? await Promise.all([
+      facetsQuery.clone().select('DISTINCT product.device_category', 'value').getRawMany(),
+      facetsQuery.clone().select('DISTINCT product.part_category', 'value').getRawMany(),
+    ]) : [[], []];
     return {
       items: products.map((product) => this.serializeProduct(product, true)),
       total,
       page,
       limit,
       total_pages: Math.ceil(total / limit),
+      facets: {
+        counts: Object.fromEntries(Object.entries(counts || {}).map(([key, value]) => [key, Number(value || 0)])),
+        devices: categories[0].map((row) => row.value).filter(Boolean).sort(),
+        parts: categories[1].map((row) => row.value).filter(Boolean).sort(),
+      },
     };
   }
 
