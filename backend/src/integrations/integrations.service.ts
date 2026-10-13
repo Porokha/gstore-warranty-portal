@@ -34,6 +34,7 @@ import {
   MobileSentrixSyncJob,
   MobileSentrixSyncJobStatus,
 } from './entities/mobilesentrix-sync-job.entity';
+import { getMobileSentrixVisibility } from './mobilesentrix-visibility';
 
 type PosOrderUpsertAction = 'created' | 'updated' | 'ignored' | 'deferred';
 type MobileSentrixCredentials = {
@@ -666,7 +667,7 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
       service_price: null,
       stock_quantity: mapped.stock_quantity,
       sort_order: existing?.sort_order ?? (await this.getNextShopProductSortOrder()),
-      is_active: mapped.stock_quantity > 0,
+      is_active: getMobileSentrixVisibility(existing),
       supplier: ShopProductSupplier.MOBILESENTRIX,
       supplier_product_id: mapped.supplier_product_id,
       supplier_sku: mapped.supplier_sku,
@@ -720,7 +721,7 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
     const nextPayload = {
       price: calculatedPrice,
       stock_quantity: stockQuantity,
-      is_active: stockQuantity > 0,
+      is_active: getMobileSentrixVisibility(product),
       supplier_sku: supplierSku,
       supplier_price_usd: supplierPriceValue,
       supplier_currency: currency,
