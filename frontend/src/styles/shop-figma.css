@@ -383,9 +383,9 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  min-height: 28px;
+  min-height: 40px;
   color: #14121c;
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 600;
   line-height: 1.4;
 }
@@ -1025,6 +1025,14 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   font-size: 14px;
   font-weight: 600;
   white-space: nowrap;
+}
+
+#zpos-root.zpos-root--figma .zpos-product-service-price del,
+#zpos-root.zpos-root--figma .zpos-service-old-total {
+  display: block;
+  color: #9c97ae;
+  font-size: 11px;
+  font-weight: 400;
 }
 
 #zpos-root.zpos-root--figma .zpos-product-service input {
@@ -1912,8 +1920,8 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   }
 
   #zpos-root.zpos-root--figma .zpos-card-body h3 {
-    min-height: 28px;
-    font-size: 10px;
+    min-height: 40px;
+    font-size: 14px;
   }
 
   #zpos-root.zpos-root--figma .zpos-figma-cart-bar {

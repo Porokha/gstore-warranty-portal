@@ -62,6 +62,7 @@ const emptyForm = {
   price: '',
   sale_price: '',
   service_price: '',
+  service_sale_price: '',
   stock_quantity: '0',
   sort_order: '0',
   is_active: true,
@@ -497,6 +498,7 @@ const ShopAdminProductsPage = () => {
       price: product.price == null ? '' : String(product.price),
       sale_price: product.sale_price == null ? '' : String(product.sale_price),
       service_price: product.service_price == null ? '' : String(product.service_price),
+      service_sale_price: product.service_sale_price == null ? '' : String(product.service_sale_price),
       stock_quantity: String(product.stock_quantity ?? 0),
       sort_order: String(product.sort_order ?? 0),
       is_active: Boolean(product.is_active),
@@ -511,6 +513,7 @@ const ShopAdminProductsPage = () => {
     price: form.price === '' ? null : Number(form.price),
     sale_price: form.sale_price === '' ? null : Number(form.sale_price),
     service_price: form.service_price === '' ? null : Number(form.service_price),
+    service_sale_price: form.service_sale_price === '' ? null : Number(form.service_sale_price),
     stock_quantity: Number(form.stock_quantity || 0),
     sort_order: Number(form.sort_order || 0),
     is_active: Boolean(form.is_active),
@@ -520,6 +523,11 @@ const ShopAdminProductsPage = () => {
     event.preventDefault();
     setMessage('');
     setError('');
+
+    if (form.service_sale_price !== '' && (form.service_price === '' || Number(form.service_sale_price) >= Number(form.service_price))) {
+      setError(t('shopProducts.serviceSalePriceError', 'Service sale price must be lower than the regular service price.'));
+      return;
+    }
 
     if (selectedProduct) {
       updateMutation.mutate({ id: selectedProduct.id, payload: buildPayload() });
@@ -574,7 +582,7 @@ const ShopAdminProductsPage = () => {
       const safe = /^[=+\-@]/.test(raw) ? `'${raw}` : raw;
       return `"${safe.replace(/"/g, '""')}"`;
     };
-    const fields = ['id', 'title', 'brand', 'slug', 'device_category', 'part_category', 'price', 'service_price', 'stock_quantity', 'is_active'];
+    const fields = ['id', 'title', 'brand', 'slug', 'device_category', 'part_category', 'price', 'sale_price', 'service_price', 'service_sale_price', 'stock_quantity', 'is_active'];
     const csv = [fields.join(','), ...selected.map((product) => fields.map((field) => cell(product[field])).join(','))].join('\r\n');
     const url = URL.createObjectURL(new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8' }));
     const anchor = document.createElement('a');
@@ -752,6 +760,7 @@ const ShopAdminProductsPage = () => {
         <div className="zzv-shop-product-modal__fields zzv-shop-product-modal__grid">
           <div><label htmlFor="shop-product-price">{t('shopProducts.priceGel', 'Price ₾')}</label><TextField id="shop-product-price" size="small" fullWidth type="number" value={form.price} onChange={(event) => setForm((prev) => ({ ...prev, price: event.target.value }))} helperText={form.price === '' && form.service_price !== '' ? productOnlyStatusLabelKa : t('shopProducts.priceHint', 'Leave empty for service only.')} /></div>
           <div><label htmlFor="shop-product-service-price">{t('shopProducts.servicePriceGel', 'Service price ₾')}</label><TextField id="shop-product-service-price" size="small" fullWidth type="number" value={form.service_price} onChange={(event) => setForm((prev) => ({ ...prev, service_price: event.target.value }))} helperText={form.service_price === '' ? serviceUnavailableLabelKa : t('shopProducts.servicePriceHint', 'Leave empty to disable service bundle.')} /></div>
+          <div><label htmlFor="shop-product-service-sale-price">{t('shopProducts.serviceSalePriceGel', 'Service sale price ₾')}</label><TextField id="shop-product-service-sale-price" size="small" fullWidth type="number" inputProps={{ min: 0, step: '0.01' }} value={form.service_sale_price} onChange={(event) => setForm((prev) => ({ ...prev, service_sale_price: event.target.value }))} error={form.service_sale_price !== '' && (form.service_price === '' || Number(form.service_sale_price) >= Number(form.service_price))} helperText={t('shopProducts.serviceSalePriceHint', 'Discounted total for the service bundle; leave empty for no discount.')} /></div>
           <div><label htmlFor="shop-product-stock">{t('shopProducts.stock', 'Stock')}</label><TextField id="shop-product-stock" size="small" fullWidth type="number" value={form.stock_quantity} onChange={(event) => setForm((prev) => ({ ...prev, stock_quantity: event.target.value }))} inputProps={{ min: 0 }} /></div>
           <div className="zzv-shop-product-modal__visibility"><span>{t('shopProducts.visibility', 'Visibility')}</span><Switch className="zzv-tradein-edit__switch" checked={Boolean(form.is_active)} onChange={(event) => setForm((prev) => ({ ...prev, is_active: event.target.checked }))} inputProps={{ 'aria-label': t('shopProducts.visibility', 'Visibility') }} /></div>
         </div>
@@ -1069,7 +1078,7 @@ const ShopAdminProductsPage = () => {
                       <TableCell><span className="zzv-shop-catalog__cell-copy"><strong>{product.device_model || product.device_category || '—'}</strong><small>{product.device_model ? product.device_category : product.slug}</small></span></TableCell>
                       <TableCell><span className="zzv-shop-catalog__cell-copy"><strong>{product.part_category || '—'}</strong><small>{product.issue_label || '—'}</small></span></TableCell>
                       <TableCell className="zzv-shop-catalog__money">{formatAdminProductPrice(product, t('shopProducts.unavailable'))}</TableCell>
-                      <TableCell className="zzv-shop-catalog__money">{product.service_price == null ? '—' : `₾${Number(product.service_price).toFixed(2)}`}</TableCell>
+                      <TableCell className="zzv-shop-catalog__money">{product.service_price == null ? '—' : <>{`₾${Number(product.service_sale_price ?? product.service_price).toFixed(2)}`}{product.service_sale_price != null && <small className="zzv-shop-catalog__old-price">{`₾${Number(product.service_price).toFixed(2)}`}</small>}</>}</TableCell>
                       <TableCell>{scope === 'trash'
                         ? <span className="zzv-shop-catalog__deleted-date">{product.deleted_at ? new Date(product.deleted_at).toLocaleDateString() : '—'}</span>
                         : <span className={`zzv-shop-catalog__stock zzv-shop-catalog__stock--${Number(product.stock_quantity || 0) <= 0 ? 'none' : Number(product.stock_quantity || 0) < 10 ? 'low' : 'available'}`}>{product.stock_quantity ?? 0}</span>}

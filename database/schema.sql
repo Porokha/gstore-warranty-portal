@@ -222,6 +222,7 @@ CREATE TABLE IF NOT EXISTS shop_products (
     price DECIMAL(10, 2) NOT NULL,
     sale_price DECIMAL(10, 2),
     service_price DECIMAL(10, 2),
+    service_sale_price DECIMAL(10, 2),
     stock_quantity INT DEFAULT 0,
     sort_order INT DEFAULT 0,
     is_active BOOLEAN DEFAULT TRUE,

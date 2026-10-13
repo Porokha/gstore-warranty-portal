@@ -107,6 +107,9 @@ export class ShopProduct {
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   service_price: string | null;
 
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  service_sale_price: string | null;
+
   @Column({ type: 'int', default: 0 })
   stock_quantity: number;
 
