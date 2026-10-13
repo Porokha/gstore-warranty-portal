@@ -462,6 +462,7 @@ const ShopAdminProductsPage = () => {
   const manualCounts = productCounts;
   const manualDevices = productFacets.devices || [];
   const manualParts = productFacets.parts || [];
+  const manualHasFilters = Boolean(manualSearch.trim() || manualStockFilter !== 'all' || manualDeviceFilter !== 'all' || manualPartFilter !== 'all');
   const mobileSentrixCounts = productCounts;
   const allSelected =
     displayedProducts.length > 0 &&
