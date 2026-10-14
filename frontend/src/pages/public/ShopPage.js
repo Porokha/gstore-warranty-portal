@@ -358,7 +358,7 @@ const ShopPage = () => {
     }),
     [brands, debouncedSearch, models, parts, priceMax, priceMin, sources, tab],
   );
-  const { data: productsResult, isLoading: isProductsLoading, isFetching: isProductsFetching } = useQuery(
+  const { data: productsResult, isLoading: isProductsLoading, isFetching: isProductsFetching, isPreviousData } = useQuery(
     ['shop-public-products', publicProductParams],
     () => shopService.getPublicProducts(publicProductParams),
     { keepPreviousData: true, staleTime: 60 * 1000 },
@@ -614,14 +614,23 @@ const ShopPage = () => {
   }, [cart]);
 
   useEffect(() => {
-    if (isProductsFetching || !productsResult) {
+    setProductPage(1);
+    setGridProducts([]);
+    loadingNextPageRef.current = false;
+    if (gridScrollRef.current) {
+      gridScrollRef.current.scrollTop = 0;
+    }
+  }, [brands, models, parts, priceMax, priceMin, search, sources, tab]);
+
+  useEffect(() => {
+    if (isProductsFetching || isPreviousData || !productsResult) {
       return;
     }
 
     setGridProducts((current) =>
       productPage === 1 ? visibleProducts : [...current, ...visibleProducts],
     );
-  }, [isProductsFetching, productPage, productsResult, visibleProducts]);
+  }, [isProductsFetching, isPreviousData, productPage, productsResult, visibleProducts]);
 
   useEffect(() => {
     if (!isFacetsFetching) {
@@ -670,15 +679,6 @@ const ShopPage = () => {
       scrollNode.removeEventListener('scroll', handleScroll);
     };
   }, [gridProducts.length, hasMoreProducts, isProductsFetching]);
-
-  useEffect(() => {
-    setProductPage(1);
-    setGridProducts([]);
-    loadingNextPageRef.current = false;
-    if (gridScrollRef.current) {
-      gridScrollRef.current.scrollTop = 0;
-    }
-  }, [brands, models, parts, priceMax, priceMin, search, sources, tab]);
 
   const handleImageReady = (key) => {
     setLoadedImages((current) => (current[key] ? current : { ...current, [key]: true }));
