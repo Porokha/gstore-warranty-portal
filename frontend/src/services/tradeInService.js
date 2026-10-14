@@ -97,6 +97,11 @@ export const tradeInService = {
     return response.data;
   },
 
+  getAdminAgreementPreviewPdf: async (id) => {
+    const response = await api.get(`/shop/admin/trade-in/quotes/${id}/agreement/preview`, { responseType: 'blob' });
+    return response.data;
+  },
+
   getOwnTradeInSignature: async () => {
     const response = await api.get('/shop/admin/trade-in/signature');
     return response.data;

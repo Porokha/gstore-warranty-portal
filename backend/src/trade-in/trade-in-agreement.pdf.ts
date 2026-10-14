@@ -38,8 +38,9 @@ export const makeAgreementPdf = (input: {
   number: string;
   date: Date;
   details: AgreementDetails;
-  customerSignature: Buffer;
-  representativeSignature: Buffer;
+  customerSignature?: Buffer | null;
+  representativeSignature?: Buffer | null;
+  preview?: boolean;
 }): Promise<Buffer> => new Promise((resolve, reject) => {
   const doc = new PDFDocument({ size: 'A4', margins: { top: 35, right: 42, bottom: 35, left: 42 }, autoFirstPage: true });
   const chunks: Buffer[] = [];
@@ -63,6 +64,7 @@ export const makeAgreementPdf = (input: {
   };
   doc.fontSize(12).fillColor('#7544dc').text('GSTORE', { align: 'center' });
   doc.fontSize(8).fillColor('#687086').text('შპს „ჯისთორ ლლტ“  |  ს/კ 405566463  |  თბილისი, ცოტნე დადიანის ქ. N7, სავაჭრო ცენტრი „ქარვასლა“  |  gstore.ge', { align: 'center' });
+  if (input.preview) doc.moveDown(0.4).fontSize(9).fillColor('#7544dc').text('მონახაზი · წინასწარი ნახვა · არ არის საბოლოო ხელშეკრულება', { align: 'center' });
   doc.moveDown(0.8).fontSize(13).fillColor('#151a2c').text('მეორადი/დაზიანებული მობილური მოწყობილობის\nნასყიდობისა და მიღება-ჩაბარების ხელშეკრულება', { align: 'center' });
   doc.moveDown(0.5);
   line('ხელშეკრულების №', input.number);
@@ -101,9 +103,10 @@ export const makeAgreementPdf = (input: {
   const signatureY = doc.y + 5;
   doc.fontSize(8).fillColor('#667085').text('გამყიდველი', left, signatureY).text('მყიდველი - შპს „ჯისთორ ლლტ“', 307, signatureY);
   doc.fontSize(9).fillColor('#151a2c').text(input.details.seller_name, left, signatureY + 18).text(input.details.representative_name, 307, signatureY + 18);
-  doc.image(input.customerSignature, left, signatureY + 35, { fit: [205, 55] });
-  doc.image(input.representativeSignature, 307, signatureY + 35, { fit: [205, 55] });
+  if (input.customerSignature) doc.image(input.customerSignature, left, signatureY + 35, { fit: [205, 55] });
+  if (input.representativeSignature) doc.image(input.representativeSignature, 307, signatureY + 35, { fit: [205, 55] });
   doc.moveTo(left, signatureY + 95).lineTo(260, signatureY + 95).moveTo(307, signatureY + 95).lineTo(525, signatureY + 95).strokeColor('#aab2c2').stroke();
-  doc.fontSize(7).fillColor('#687086').text('ელექტრონული ხელმოწერა', left, signatureY + 99).text('ელექტრონული ხელმოწერა', 307, signatureY + 99);
+  doc.fontSize(7).fillColor('#687086').text(input.customerSignature ? 'ელექტრონული ხელმოწერა' : 'ხელმოწერის ადგილი', left, signatureY + 99)
+    .text(input.representativeSignature ? 'ელექტრონული ხელმოწერა' : 'ხელმოწერის ადგილი', 307, signatureY + 99);
   doc.end();
 });

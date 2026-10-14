@@ -299,4 +299,18 @@ export class TradeInAgreementService {
     const quote = await this.quote(quoteId);
     return { bytes: agreement.pdf_data, filename: `trade-in-${quote.quote_number}.pdf` };
   }
+
+  async getPreviewPdf(quoteId: number) {
+    const agreement = await this.agreement(quoteId);
+    if (!agreement) throw new NotFoundException('Open the agreement first.');
+    if (agreement.finalized_at) return this.getPdf(quoteId);
+    const quote = await this.quote(quoteId);
+    if (quote.status === TradeInQuoteStatus.CANCELLED) throw new BadRequestException('Cancelled requests cannot be previewed.');
+    const bytes = await makeAgreementPdf({
+      number: `TI-${quote.quote_number}`, date: new Date(), details: agreement.details as AgreementDetails,
+      customerSignature: agreement.customer_signature, representativeSignature: agreement.representative_signature,
+      preview: true,
+    });
+    return { bytes, filename: `trade-in-${quote.quote_number}-preview.pdf` };
+  }
 }
