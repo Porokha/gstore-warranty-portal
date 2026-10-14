@@ -101,7 +101,7 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
       <Dialog open onClose={busy ? undefined : onClose} className="zzv-agreement-dialog" maxWidth={false} fullWidth>
         <DialogTitle className="zzv-agreement-dialog__title"><Box><Typography sx={{ color: '#7856c6', fontSize: 11, fontWeight: 800 }}>GSTORE · TRADE-IN · {quote.quote_number}</Typography><h2>{finalized ? 'გაფორმებული ხელშეკრულება' : 'Trade-in-ის გაფორმება'}</h2></Box><Button onClick={onClose}>დახურვა</Button></DialogTitle>
         <DialogContent sx={{ p: '0 !important' }}>
-          {agreementQuery.isLoading ? <Typography sx={{ p: 3 }}>იტვირთება...</Typography> : agreementQuery.isError ? <Alert severity="error">ხელშეკრულება ვერ გაიხსნა.</Alert> : details && (
+          {agreementQuery.isLoading ? <Typography sx={{ p: 3 }}>იტვირთება...</Typography> : agreementQuery.isError ? <Alert severity="error">{agreementQuery.error?.response?.data?.message || 'ხელშეკრულება ვერ გაიხსნა.'}</Alert> : details && (
             <div className="zzv-agreement-dialog__body">
               {error && <Alert severity="error">{String(error)}</Alert>}
               {message && <Alert severity="success">{message}</Alert>}

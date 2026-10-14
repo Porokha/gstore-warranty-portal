@@ -530,6 +530,19 @@ const ShopAdminTradeInPage = () => {
     if (!quote.viewed_at) markQuoteViewedMutation.mutate(quote.id);
   };
 
+  const openFinalization = async (quote) => {
+    setQuotePdfError('');
+    try {
+      if (quote.status === 'cancelled') {
+        await quoteMutation.mutateAsync({ id: quote.id, payload: { status: 'accepted' } });
+      }
+      setFinalizingQuote({ ...quote, status: quote.status === 'cancelled' ? 'accepted' : quote.status });
+      setViewingQuote(null);
+    } catch (error) {
+      setQuotePdfError(error.response?.data?.message || 'განაცხადის განახლება ვერ მოხერხდა.');
+    }
+  };
+
   const saveQuote = () => {
     if (!editingQuote) return;
     quoteMutation.mutate({
@@ -1194,6 +1207,7 @@ const ShopAdminTradeInPage = () => {
         </DialogTitle>
         <DialogContent className="zzv-tradein-quote-edit__content">
           {quotePdfError && <Alert severity="error">{quotePdfError}</Alert>}
+          {viewingQuote?.status === 'cancelled' && <Alert severity="warning">განაცხადი გაუქმებულია. გაფორმებამდე საჭიროა მისი ხელახლა გააქტიურება.</Alert>}
           <section className="zzv-tradein-quote-edit__group">
             <h3>{t('shopTradeIn.customer')}</h3>
             <div className="zzv-tradein-quote-view__facts">
@@ -1231,7 +1245,7 @@ const ShopAdminTradeInPage = () => {
         </DialogContent>
         <DialogActions className="zzv-tradein-quote-edit__footer">
           <Button onClick={() => setViewingQuote(null)}>{t('shopTradeIn.close')}</Button>
-          {viewingQuote?.agreement_finalized_at ? <Button variant="contained" onClick={() => printTradeInAgreement(viewingQuote.id).catch(() => setQuotePdfError('PDF-ის გახსნა ვერ მოხერხდა.'))}>ხელშეკრულების ხელახლა ბეჭდვა</Button> : <><Button variant="outlined" onClick={() => { setFinalizingQuote(viewingQuote); setViewingQuote(null); }}>გაფორმება</Button>{!viewingQuote?.agreement_exists && <Button variant="contained" startIcon={<EditRounded />} onClick={() => { const quote = viewingQuote; setViewingQuote(null); openQuoteEditor(quote); }}>{t('shopTradeIn.editQuote')}</Button>}</>}
+          {viewingQuote?.agreement_finalized_at ? <Button variant="contained" onClick={() => printTradeInAgreement(viewingQuote.id).catch(() => setQuotePdfError('PDF-ის გახსნა ვერ მოხერხდა.'))}>ხელშეკრულების ხელახლა ბეჭდვა</Button> : <><Button variant="outlined" disabled={quoteMutation.isLoading} onClick={() => openFinalization(viewingQuote)}>{viewingQuote?.status === 'cancelled' ? 'განაახლე და გააფორმე' : 'გაფორმება'}</Button>{!viewingQuote?.agreement_exists && <Button variant="contained" startIcon={<EditRounded />} onClick={() => { const quote = viewingQuote; setViewingQuote(null); openQuoteEditor(quote); }}>{t('shopTradeIn.editQuote')}</Button>}</>}
         </DialogActions>
       </Dialog>
 
