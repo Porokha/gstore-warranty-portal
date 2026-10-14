@@ -132,7 +132,7 @@ const SelectionCard = ({ title, subtitle, image, icon, onClick, disabled }) => (
       />
     ) : (
       <Box
-        className="zzv-trade-content-wrap"
+        className="zzv-trade-category-icon"
         sx={{
           width: 54,
           height: 54,
@@ -190,23 +190,28 @@ const TradeBrandOption = ({ item, selected, onClick, t, category }) => (
   </button>
 );
 
-const TradeModelOption = ({ item, selected, onClick, t, language, category }) => (
-  <button
-    type="button"
-    className={`zzv-trade-model-option${selected ? ' is-selected' : ''}`}
-    onClick={onClick}
-    aria-pressed={selected}
-  >
-    <span className="zzv-trade-model-image">
-      <img src={imageUrl(item.image_src)} alt="" loading="lazy" />
-      {category === 'laptop' ? <LaptopOutlined className="zzv-trade-model-mobile-icon" aria-hidden="true" /> : <SmartphoneOutlined className="zzv-trade-model-mobile-icon" aria-hidden="true" />}
-    </span>
-    <span className="zzv-trade-model-name">{item.name}</span>
-    <span className="zzv-trade-model-price">{Number(item.max_price) > 0 ? <><span className="zzv-trade-model-price-prefix">{t('public.tradeIn.upTo')} </span>₾{Math.round(item.max_price).toLocaleString()}</> : language === 'ka' ? 'ინდივიდუალური შეფასება' : 'Manual assessment'}</span>
-    <ArrowForwardRounded className="zzv-trade-option-arrow" aria-hidden="true" />
-    <span className="zzv-trade-option-radio" aria-hidden="true" />
-  </button>
-);
+const TradeModelOption = ({ item, selected, onClick, t, language, category }) => {
+  const [imageFailed, setImageFailed] = useState(false);
+  const hasImage = Boolean(item.image_src) && !String(item.image_src).includes('image-not-found') && !imageFailed;
+
+  return (
+    <button
+      type="button"
+      className={`zzv-trade-model-option${selected ? ' is-selected' : ''}`}
+      onClick={onClick}
+      aria-pressed={selected}
+    >
+      <span className={`zzv-trade-model-image${hasImage ? '' : ' is-fallback'}`}>
+        {hasImage && <img src={imageUrl(item.image_src)} alt="" loading="lazy" onError={() => setImageFailed(true)} />}
+        {!hasImage && (category === 'laptop' ? <LaptopOutlined className="zzv-trade-model-mobile-icon" aria-hidden="true" /> : <SmartphoneOutlined className="zzv-trade-model-mobile-icon" aria-hidden="true" />)}
+      </span>
+      <span className="zzv-trade-model-name">{item.name}</span>
+      <span className="zzv-trade-model-price">{Number(item.max_price) > 0 ? <><span className="zzv-trade-model-price-prefix">{t('public.tradeIn.upTo')} </span>₾{Math.round(item.max_price).toLocaleString()}</> : language === 'ka' ? 'ინდივიდუალური შეფასება' : 'Manual assessment'}</span>
+      <ArrowForwardRounded className="zzv-trade-option-arrow" aria-hidden="true" />
+      <span className="zzv-trade-option-radio" aria-hidden="true" />
+    </button>
+  );
+};
 
 const TradeInValuation = ({ product, t, onProgressChange }) => {
   const [pointer, setPointer] = useState({ setIndex: 0, questionIndex: 0 });
