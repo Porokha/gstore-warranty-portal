@@ -2920,8 +2920,10 @@ button.zzv-public-header-action { cursor: pointer; }
 .zzv-trade-offer-option--gstore { background: #1e1633; color: #fff; }
 .zzv-trade-offer-option--gstore img { display: block; max-width: 100px; max-height: 26px; object-fit: contain; }
 .zzv-trade-offer-option--gstore small { color: #bdaaff; }
-.zzv-trade-contact-total { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 24px; padding: 18px; border-radius: 12px; background: #f6f2ff; }
-.zzv-trade-contact-total strong { font-size: 20px; }
+.zzv-trade-contact-total { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 24px; padding: 18px; border-radius: 12px; background: #f6f2ff; }
+.zzv-trade-contact-total > div { display: grid; align-content: start; gap: 6px; min-width: 0; }
+.zzv-trade-contact-total span { color: var(--zzv-text-secondary); font-size: 12px; }
+.zzv-trade-contact-total strong { overflow-wrap: anywhere; font-size: 18px; line-height: 1.35; }
 .zzv-trade-contact-fields { display: grid; gap: 18px; margin-bottom: 24px; }
 .zzv-trade-contact-fields label { display: grid; gap: 8px; font-size: 14px; font-weight: 700; }
 .zzv-trade-contact-fields input { width: 100%; height: 52px; padding: 0 14px; border: 1px solid var(--zzv-border-default); border-radius: 10px; background: #fff; color: var(--zzv-text-primary); font: inherit; }
