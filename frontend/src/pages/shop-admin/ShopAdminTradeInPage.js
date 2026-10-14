@@ -46,6 +46,7 @@ import { tradeInService } from '../../services/tradeInService';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import GstoreOfferProducts from './GstoreOfferProducts';
 import TradeInFinalizeDialog, { printTradeInAgreement } from './TradeInFinalizeDialog';
+import { isManualTradeInQuote, tradeInAnswerKa, tradeInQuestionKa } from '../../utils/tradeInQuoteLabels';
 
 const headerCell = {
   color: '#667085',
@@ -723,7 +724,8 @@ const ShopAdminTradeInPage = () => {
                       </Box>
                       <Typography sx={{ fontSize: 13 }}>{quote.customer_phone}</Typography>
                       <Box>
-                        <Typography sx={{ fontSize: 14, fontWeight: 900 }}>₾{Number(quote.final_price).toFixed(0)}</Typography>
+                        <Typography sx={{ fontSize: 14, fontWeight: 900 }}>{isManualTradeInQuote(quote) && Number(quote.final_price) <= 0 ? (i18n.language === 'ka' ? 'შეფასების შემდეგ' : 'After inspection') : `₾${Number(quote.final_price).toFixed(0)}`}</Typography>
+                        {isManualTradeInQuote(quote) && Number(quote.final_price) > 0 && <Typography sx={{ fontSize: 11, color: '#667085' }}>{i18n.language === 'ka' ? 'საორიენტაციო მინიმუმი' : 'Estimated minimum'}</Typography>}
                         <Typography sx={{ fontSize: 11, color: '#667085' }}>
                           {quote.pricing_path?.find((entry) => entry.label === 'fulfillment_method')?.answers?.[0]?.text === 'gstore'
                             ? `Gstore credit: ₾${Math.round(Number(quote.final_price) + Number(quote.pricing_path.find((entry) => entry.label === 'fulfillment_method').answers[0].value || 0))}`
@@ -1224,8 +1226,8 @@ const ShopAdminTradeInPage = () => {
               <div className="zzv-tradein-quote-view__conditions">
                 {quoteConditionEntries(viewingQuote).map((entry, index) => (
                   <div className="zzv-tradein-quote-view__condition" key={`${entry.label || entry.question}-${index}`}>
-                    <span>{i18n.language === 'ka' && entry.question_ka ? entry.question_ka : entry.question || entry.label || `${index + 1}`}</span>
-                    <strong>{entry.answers.map((answer) => i18n.language === 'ka' && answer.text_ka ? answer.text_ka : answer.text).filter(Boolean).join(', ') || '—'}</strong>
+                    <span>{i18n.language === 'ka' ? tradeInQuestionKa(entry) : entry.question || entry.label || `${index + 1}`}</span>
+                    <strong>{entry.answers.map((answer) => i18n.language === 'ka' ? tradeInAnswerKa(entry, answer) : answer.text).filter(Boolean).join(', ') || '—'}</strong>
                   </div>
                 ))}
               </div>
@@ -1235,7 +1237,7 @@ const ShopAdminTradeInPage = () => {
             <h3>{t('shopTradeIn.deviceAndOffer')}</h3>
             <div className="zzv-tradein-quote-view__facts">
               <div><span>{t('shopTradeIn.product')}</span><strong>{viewingQuote?.product_name || '—'}</strong></div>
-              <div><span>{t('shopTradeIn.finalOfferGel')}</span><strong>₾{Number(viewingQuote?.final_price || 0).toFixed(0)}</strong></div>
+              <div><span>{isManualTradeInQuote(viewingQuote) ? (i18n.language === 'ka' ? 'საორიენტაციო მინიმუმი' : 'Estimated minimum') : t('shopTradeIn.finalOfferGel')}</span><strong>{isManualTradeInQuote(viewingQuote) && Number(viewingQuote?.final_price) <= 0 ? (i18n.language === 'ka' ? 'შეფასების შემდეგ' : 'After inspection') : `₾${Number(viewingQuote?.final_price || 0).toFixed(0)}`}</strong></div>
               <div><span>{t('shopTradeIn.offerMethod')}</span><strong>{viewingQuote?.pricing_path?.find((entry) => entry.label === 'fulfillment_method')?.answers?.[0]?.text === 'gstore' ? t('shopTradeIn.gstoreCredit') : viewingQuote?.pricing_path?.find((entry) => entry.label === 'fulfillment_method')?.answers?.[0]?.text === 'bank' ? 'საბანკო გადარიცხვა' : t('shopTradeIn.cash')}</strong></div>
               {viewingQuote?.pricing_path?.find((entry) => entry.label === 'fulfillment_method')?.answers?.[0]?.text === 'gstore' && <div><span>{t('shopTradeIn.gstoreCredit')}</span><strong>₾{Math.round(Number(viewingQuote.final_price || 0) + Number(viewingQuote.pricing_path.find((entry) => entry.label === 'fulfillment_method').answers[0].value || 0))}</strong></div>}
               {viewingQuote?.pricing_path?.find((entry) => entry.label === 'gstore_product')?.answers?.[0]?.text && <div><span>{t('shopTradeIn.gstoreProduct')}</span><strong>{viewingQuote.pricing_path.find((entry) => entry.label === 'gstore_product').answers[0].text}</strong></div>}

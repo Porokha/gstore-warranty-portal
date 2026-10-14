@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
 import { Link } from 'react-router-dom';
 import { tradeInService } from '../../services/tradeInService';
+import { tradeInAnswerKa, tradeInQuestionKa } from '../../utils/tradeInQuoteLabels';
 
 const imageUrl = (value) => {
   if (!value || String(value).includes('image-not-found')) return null;
@@ -28,9 +29,9 @@ const available = (answer) => answer && ![0, false, '0'].includes(answer.value_e
 const money = (value) => `₾${Math.max(0, Math.round(value)).toLocaleString()}`;
 const pathEntry = (question, answers, extras = {}) => ({
   question: question?.text,
-  question_ka: question?.text_ka,
+  question_ka: tradeInQuestionKa({ label: question?.label, question: question?.text, question_ka: question?.text_ka }),
   label: question?.label,
-  answers: answers.map((answer) => ({ text: answer.text, text_ka: answer.text_ka, value: amount(answer), attributes: answer.attributes || [] })),
+  answers: answers.map((answer) => ({ text: answer.text, text_ka: tradeInAnswerKa(question, answer), value: amount(answer), attributes: answer.attributes || [] })),
   ...extras,
 });
 
@@ -321,11 +322,11 @@ export default function TradeInValuation({ product, t, language, initialStorage 
       if (storage && !pricingPath.some((step) => step.label === 'storage_size')) {
         pricingPath.push({ question: 'Storage selected for manual review', label: 'storage_size', answers: [{ text: storage, value: 0, attributes: [] }] });
       }
-      if (noExactPrice) pricingPath.push({ question: 'Manual assessment required', label: 'manual_assessment', answers: faults.map((key) => ({ text: key, value: 0, attributes: [] })) });
+      if (noExactPrice) pricingPath.push({ question: 'Manual assessment required', question_ka: 'საჭიროა ადგილზე შემოწმება', label: 'manual_assessment', answers: faults.map((key) => ({ text: key, text_ka: tradeInAnswerKa(null, { text: key }), value: 0, attributes: [] })), range_min: rangeMinimum, range_max: rangeMaximum });
       pricingPath.push({ question: 'Fulfillment', label: 'fulfillment_method', answers: [{ text: method, value: method === 'gstore' ? gstoreBonus : 0, attributes: [] }] });
       const result = await tradeInService.createQuote({
         product_slug: detail.slug,
-        final_price: noExactPrice ? 0 : cashPrice,
+        final_price: noExactPrice ? rangeMinimum : cashPrice,
         gstore_product_id: method === 'gstore' ? selectedGstoreProduct?.id : undefined,
         customer_name: name,
         customer_phone: phone,

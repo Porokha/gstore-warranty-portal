@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, TextField, Typography } from '@mui/material';
 import CloseRounded from '@mui/icons-material/CloseRounded';
+import KeyboardArrowDownRounded from '@mui/icons-material/KeyboardArrowDownRounded';
 import { useMutation, useQuery } from 'react-query';
 import QRCode from 'qrcode';
 import SignaturePad from '../../components/trade-in/SignaturePad';
@@ -55,6 +56,10 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
     enabled: Boolean(quote), retry: false, refetchInterval: qr ? 3000 : false,
   });
   const savedSignatureQuery = useQuery(['trade-in-own-signature'], tradeInService.getOwnTradeInSignature, { enabled: Boolean(quote), retry: false });
+
+  useEffect(() => {
+    if (savedSignatureQuery.data && !savedSignatureQuery.data.signature) setRepMode('draw');
+  }, [savedSignatureQuery.data]);
   const saveMutation = useMutation(() => tradeInService.saveAdminAgreement(quote.id, details));
   const linkMutation = useMutation(() => tradeInService.createAgreementSigningLink(quote.id));
   const repMutation = useMutation((payload) => tradeInService.setAgreementRepresentativeSignature(quote.id, payload));
@@ -136,7 +141,32 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
               <section className="zzv-agreement-dialog__section"><h3><span>01</span> გამყიდველი</h3><div className="zzv-agreement-dialog__grid">{fields.slice(0, 4).map(([key, label]) => <div className="zzv-agreement-dialog__field" key={key}><label htmlFor={`agreement-${key}`}>{label} *</label><TextField id={`agreement-${key}`} size="small" fullWidth value={details[key] || ''} disabled={finalized} error={attemptedQr && missing.includes(key)} onChange={(event) => update(key, event.target.value)} inputProps={{ maxLength: key === 'personal_id' ? 11 : 1000 }} /></div>)}</div></section>
               <section className="zzv-agreement-dialog__section"><h3><span>02</span> მოწყობილობა და ინსპექტირება</h3><div className="zzv-agreement-dialog__grid">{fields.slice(4).map(([key, label]) => <div className="zzv-agreement-dialog__field" key={key}><label htmlFor={`agreement-${key}`}>{label}{['brand_model', 'color', 'included_items', 'defects'].includes(key) ? ' *' : ''}{key === 'imei' || key === 'serial' ? ' (ერთ-ერთი *)' : ''}</label><TextField id={`agreement-${key}`} size="small" fullWidth value={details[key] || ''} disabled={finalized} error={attemptedQr && (missing.includes(key) || (key === 'serial' && missing.includes('imei')))} onChange={(event) => update(key, event.target.value)} multiline={key === 'defects'} minRows={key === 'defects' ? 2 : undefined} /></div>)}</div><p className="zzv-agreement-dialog__hint">IMEI ან Serial Number-დან ერთ-ერთი სავალდებულოა. თუ დეფექტი არ არის, ჩაწერეთ „არ აქვს“.</p></section>
               <section className="zzv-agreement-dialog__section"><h3><span>03</span> შეთანხმებული ფასი და ანგარიშსწორება</h3><div className="zzv-agreement-dialog__grid"><div className="zzv-agreement-dialog__field"><label htmlFor="agreement-price">ნასყიდობის ფასი (₾) *</label><TextField id="agreement-price" size="small" fullWidth type="number" value={details.final_price ?? ''} disabled={finalized} error={attemptedQr && missing.includes('final_price')} onChange={(event) => update('final_price', event.target.value)} inputProps={{ min: 0, step: 0.01 }} /></div><div className="zzv-agreement-dialog__field"><label htmlFor="agreement-method">ანგარიშსწორება *</label><TextField id="agreement-method" size="small" fullWidth select value={details.settlement_method || 'cash'} disabled={finalized} onChange={(event) => update('settlement_method', event.target.value)}><MenuItem value="cash">ნაღდი</MenuItem><MenuItem value="bank">საბანკო გადარიცხვა</MenuItem><MenuItem value="gstore_credit">Gstore კრედიტი</MenuItem></TextField></div></div>{details.settlement_method === 'gstore_credit' && <p className="zzv-agreement-dialog__hint">ბონუსი: ₾{Number(details.credit_bonus || 0).toFixed(2)} · ჯამური კრედიტი: ₾{(Number(details.final_price || 0) + Number(details.credit_bonus || 0)).toFixed(2)}. ახალი თანხის ბონუსი შენახვისას გადაითვლება.</p>}</section>
-              <section className="zzv-agreement-dialog__section"><h3><span>04</span> ხელმოწერები</h3><div className="zzv-agreement-dialog__signatures"><div className="zzv-agreement-dialog__sign-box"><h4>მომხმარებელი</h4><p>{agreement?.customer_signed_at ? `ხელმოწერილია · ${new Date(agreement.customer_signed_at).toLocaleString('ka-GE')}` : 'მომხმარებლის ხელმოწერა ჯერ არ არის.'}</p>{!finalized && <Button variant="outlined" onClick={issueLink} disabled={busy}>{agreement?.customer_signed_at || qr ? 'ახალი QR · ხელახლა ხელმოწერა' : 'QR კოდის გენერირება'}</Button>}</div><div className="zzv-agreement-dialog__sign-box"><h4>წარმომადგენელი</h4><p>{agreement?.representative_signed ? 'ხელმოწერა გამოყენებულია.' : 'წარმომადგენლის ხელმოწერა ჯერ არ არის.'}</p>{!finalized && <><TextField fullWidth size="small" select label="ხელმოწერის წყარო" value={repMode} onChange={(event) => { setRepMode(event.target.value); setDrawnSignature(''); }}><MenuItem value="saved" disabled={!savedSignatureQuery.data?.signature}>ჩემი შენახული ხელმოწერა</MenuItem><MenuItem value="draw">ახლავე დახატვა</MenuItem></TextField>{repMode === 'draw' && <Box sx={{ mt: 1 }}><SignaturePad onChange={setDrawnSignature} clearLabel="წაშლა" /></Box>}<Button sx={{ mt: 1 }} variant="outlined" onClick={applyRepresentative} disabled={busy || (repMode === 'draw' && !drawnSignature) || (repMode === 'saved' && !savedSignatureQuery.data?.signature)}>გამოყენება / შეცვლა</Button>{!savedSignatureQuery.data?.signature && <Typography sx={{ fontSize: 11, color: '#667085' }}>შეგიძლიათ ხელმოწერა შეინახოთ Shop Admin → Settings-ში.</Typography>}</>}</div></div></section>
+              <section className="zzv-agreement-dialog__section">
+                <h3><span>04</span> ხელმოწერები</h3>
+                <div className="zzv-agreement-dialog__signatures">
+                  <div className="zzv-agreement-dialog__sign-box">
+                    <h4>მომხმარებელი</h4>
+                    <p>{agreement?.customer_signed_at ? `ხელმოწერილია · ${new Date(agreement.customer_signed_at).toLocaleString('ka-GE')}` : 'მომხმარებლის ხელმოწერა ჯერ არ არის.'}</p>
+                    {!finalized && <Button variant="outlined" onClick={issueLink} disabled={busy}>{agreement?.customer_signed_at || qr ? 'ახალი QR · ხელახლა ხელმოწერა' : 'QR კოდის გენერირება'}</Button>}
+                  </div>
+                  <div className="zzv-agreement-dialog__sign-box">
+                    <h4>წარმომადგენელი</h4>
+                    <p>{agreement?.representative_signed ? 'ხელმოწერა გამოყენებულია.' : 'წარმომადგენლის ხელმოწერა ჯერ არ არის.'}</p>
+                    {!finalized && <>
+                      <div className="zzv-agreement-dialog__field">
+                        <label htmlFor="agreement-signature-source">ხელმოწერის წყარო</label>
+                        <TextField id="agreement-signature-source" fullWidth size="small" select value={repMode} onChange={(event) => { setRepMode(event.target.value); setDrawnSignature(''); }} SelectProps={{ IconComponent: KeyboardArrowDownRounded, MenuProps: { PaperProps: { className: 'zzv-agreement-dialog__menu' } } }}>
+                          <MenuItem value="saved" disabled={!savedSignatureQuery.data?.signature}>ჩემი შენახული ხელმოწერა</MenuItem>
+                          <MenuItem value="draw">ახლავე დახატვა</MenuItem>
+                        </TextField>
+                      </div>
+                      {repMode === 'draw' && <Box sx={{ mt: 1 }}><SignaturePad onChange={setDrawnSignature} clearLabel="წაშლა" /></Box>}
+                      <Button sx={{ mt: 1 }} variant="outlined" onClick={applyRepresentative} disabled={busy || (repMode === 'draw' && !drawnSignature) || (repMode === 'saved' && !savedSignatureQuery.data?.signature)}>გამოყენება / შეცვლა</Button>
+                      {!savedSignatureQuery.data?.signature && <Typography sx={{ fontSize: 11, color: '#667085' }}>შეგიძლიათ ხელმოწერა შეინახოთ Shop Admin → Settings-ში.</Typography>}
+                    </>}
+                  </div>
+                </div>
+              </section>
               <p className="zzv-agreement-dialog__footnote">ფასის ან სხვა მონაცემების შეცვლა აუქმებს უკვე შესრულებულ ხელმოწერებს.</p>
             </div>
           )}

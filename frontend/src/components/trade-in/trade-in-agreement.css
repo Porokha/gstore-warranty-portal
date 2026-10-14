@@ -51,6 +51,11 @@
 .zzv-agreement-dialog__sign-box h4 { margin: 0 0 5px; font: 700 12px/1.4 var(--zzv-font); }
 .zzv-agreement-dialog__sign-box p { min-height: 20px; margin: 0 0 10px; color: var(--zzv-text-secondary); font: 400 11px/1.5 var(--zzv-font); }
 .zzv-agreement-dialog__sign-box .MuiOutlinedInput-root { border-radius: 8px; background: #fff; }
+.zzv-agreement-dialog__sign-box .MuiSelect-select { padding: 9px 34px 9px 11px; font: 500 12px/1.4 var(--zzv-font); }
+.zzv-agreement-dialog__sign-box .MuiSelect-icon { right: 9px; color: var(--zzv-text-secondary); }
+.zzv-agreement-dialog__menu.MuiPaper-root { margin-top: 4px; border: 1px solid var(--zzv-border-subtle); border-radius: 9px; box-shadow: 0 14px 34px #14121c1a; }
+.zzv-agreement-dialog__menu .MuiMenuItem-root { min-height: 38px; font: 500 12px/1.4 var(--zzv-font); }
+.zzv-agreement-dialog__menu .MuiMenuItem-root.Mui-selected { background: var(--zzv-bg-subtle); color: var(--zzv-purple-700); }
 .zzv-agreement-dialog__qr-modal .MuiDialog-paper { border: 1px solid var(--zzv-border-subtle); border-radius: 12px; font-family: var(--zzv-font); }
 .zzv-agreement-dialog__qr-modal .MuiDialogTitle-root { padding: 17px 20px; border-bottom: 1px solid var(--zzv-border-subtle); font: 700 17px/1.4 var(--zzv-font); }
 .zzv-agreement-dialog__qr-modal .MuiDialogActions-root { padding: 12px 20px; border-top: 1px solid var(--zzv-border-subtle); }
