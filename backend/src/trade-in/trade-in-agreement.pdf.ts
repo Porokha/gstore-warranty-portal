@@ -47,9 +47,11 @@ export const makeAgreementPdf = (input: {
   doc.on('data', (chunk: Buffer) => chunks.push(chunk));
   doc.on('end', () => resolve(Buffer.concat(chunks)));
   doc.on('error', reject);
-  const fontPath = path.join(process.cwd(), 'assets/fonts/NotoSansGeorgian-Regular.ttf');
-  if (!fs.existsSync(fontPath)) return reject(new Error('Agreement font is missing.'));
-  doc.registerFont('georgian', fontPath).font('georgian');
+  const fontDirectory = path.join(process.cwd(), 'assets/fonts');
+  const fontPath = path.join(fontDirectory, 'DejaVuSans.ttf');
+  const lariFontPath = path.join(fontDirectory, 'NotoSansGeorgian-Regular.ttf');
+  if (!fs.existsSync(fontPath) || !fs.existsSync(lariFontPath)) return reject(new Error('Agreement font is missing.'));
+  doc.registerFont('agreement', fontPath).registerFont('lari', lariFontPath).font('agreement');
   const left = 42;
   const width = 511;
   const section = (title: string) => {
@@ -58,8 +60,13 @@ export const makeAgreementPdf = (input: {
     doc.moveDown(0.35);
   };
   const line = (label: string, value: string) => {
-    doc.fontSize(8.5).fillColor('#667085').text(label, left, doc.y, { continued: true })
-      .fillColor('#151a2c').text(`  ${value || '—'}`);
+    doc.fontSize(8.5).fillColor('#667085').text(label, left, doc.y, { continued: true });
+    const parts = `  ${value || '—'}`.split(/(₾)/).filter(Boolean);
+    doc.fillColor('#151a2c');
+    parts.forEach((part, index) => {
+      doc.font(part === '₾' ? 'lari' : 'agreement').text(part, { continued: index < parts.length - 1 });
+    });
+    doc.font('agreement');
     doc.moveDown(0.15);
   };
   doc.fontSize(12).fillColor('#7544dc').text('GSTORE', { align: 'center' });
