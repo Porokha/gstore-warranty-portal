@@ -27,6 +27,7 @@ COPY dist/.build-timestamp ./build-timestamp
 # Copy pre-built application (assumes dist/ folder exists)
 # The timestamp file above ensures this layer is rebuilt when dist changes
 COPY dist ./dist
+COPY assets ./assets
 
 # Copy any other necessary files
 COPY .env* ./

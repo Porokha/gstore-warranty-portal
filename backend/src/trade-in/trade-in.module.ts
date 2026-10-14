@@ -8,6 +8,10 @@ import { TradeInSetting } from './entities/trade-in-setting.entity';
 import { TradeInAdminController } from './trade-in-admin.controller';
 import { TradeInPublicController } from './trade-in-public.controller';
 import { TradeInService } from './trade-in.service';
+import { TradeInAgreement } from './entities/trade-in-agreement.entity';
+import { TradeInStaffSignature } from './entities/trade-in-staff-signature.entity';
+import { User } from '../users/entities/user.entity';
+import { TradeInAgreementService } from './trade-in-agreement.service';
 
 @Module({
   imports: [
@@ -17,9 +21,12 @@ import { TradeInService } from './trade-in.service';
       TradeInPricingTree,
       TradeInQuote,
       TradeInSetting,
+      TradeInAgreement,
+      TradeInStaffSignature,
+      User,
     ]),
   ],
   controllers: [TradeInPublicController, TradeInAdminController],
-  providers: [TradeInService],
+  providers: [TradeInService, TradeInAgreementService],
 })
 export class TradeInModule {}

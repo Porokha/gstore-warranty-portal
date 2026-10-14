@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Box, Paper, Switch, Typography } from '@mui/material';
+import { Alert, Box, Button, Paper, Switch, Typography } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { useTranslation } from 'react-i18next';
 import { shopService } from '../../services/shopService';
+import { tradeInService } from '../../services/tradeInService';
+import SignaturePad from '../../components/trade-in/SignaturePad';
 
 const ShopAdminSettingsPage = () => {
   const { t } = useTranslation();
@@ -10,6 +12,16 @@ const ShopAdminSettingsPage = () => {
   const [publicMaintenanceEnabled, setPublicMaintenanceEnabled] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [signatureDraft, setSignatureDraft] = useState('');
+  const [signatureSaved, setSignatureSaved] = useState(false);
+  const signatureQuery = useQuery(['trade-in-own-signature'], tradeInService.getOwnTradeInSignature, { retry: false });
+  const signatureMutation = useMutation(() => tradeInService.saveOwnTradeInSignature(signatureDraft), {
+    onSuccess: (value) => {
+      queryClient.setQueryData(['trade-in-own-signature'], value);
+      setSignatureDraft('');
+      setSignatureSaved(true);
+    },
+  });
 
   const { data, isLoading } = useQuery(['shop-admin-settings'], () => shopService.getAdminSettings(), {
     refetchOnWindowFocus: true,
@@ -76,6 +88,15 @@ const ShopAdminSettingsPage = () => {
             disabled={isLoading || updateMutation.isLoading}
           />
         </Box>
+      </Paper>
+      <Paper className="zzv-shop-settings__panel" elevation={0} sx={{ mt: 2, p: 2.5, maxWidth: 680 }}>
+        <h2>Trade-in · ჩემი ხელმოწერა</h2>
+        <Typography sx={{ mb: 2, color: '#667085', fontSize: 13 }}>აქ შენახული ხელმოწერა შეგიძლიათ გამოიყენოთ მხოლოდ თქვენს მიერ გაფორმებულ Trade-in ხელშეკრულებაზე. შეცვლისას ძველი ხელმოწერა ჩანაცვლდება, უკვე გაფორმებული PDF კი უცვლელი დარჩება.</Typography>
+        {signatureQuery.data?.signature && <Box sx={{ mb: 2, p: 1, border: '1px solid #e5e1ed', borderRadius: 2 }}><Typography sx={{ fontSize: 11, color: '#667085' }}>შენახული ხელმოწერა</Typography><img src={signatureQuery.data.signature} alt="შენახული ხელმოწერა" style={{ maxWidth: '100%', height: 80, objectFit: 'contain' }} /></Box>}
+        <SignaturePad onChange={(value) => { setSignatureDraft(value); setSignatureSaved(false); }} clearLabel="წაშლა და ხელახლა დახატვა" />
+        {signatureSaved && <Alert severity="success" sx={{ mt: 1 }}>ხელმოწერა შენახულია.</Alert>}
+        {signatureMutation.isError && <Alert severity="error" sx={{ mt: 1 }}>ხელმოწერის შენახვა ვერ მოხერხდა.</Alert>}
+        <Button sx={{ mt: 1.5 }} variant="contained" disabled={!signatureDraft || signatureMutation.isLoading} onClick={() => signatureMutation.mutate()}>ხელმოწერის შენახვა</Button>
       </Paper>
     </Box>
   );

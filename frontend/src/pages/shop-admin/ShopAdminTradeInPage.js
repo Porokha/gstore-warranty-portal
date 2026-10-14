@@ -45,6 +45,7 @@ import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { tradeInService } from '../../services/tradeInService';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import GstoreOfferProducts from './GstoreOfferProducts';
+import TradeInFinalizeDialog, { printTradeInAgreement } from './TradeInFinalizeDialog';
 
 const headerCell = {
   color: '#667085',
@@ -130,6 +131,8 @@ const ShopAdminTradeInPage = () => {
   const [activePricingSection, setActivePricingSection] = useState(0);
   const [editingQuote, setEditingQuote] = useState(null);
   const [viewingQuote, setViewingQuote] = useState(null);
+  const [quotePdfError, setQuotePdfError] = useState('');
+  const [finalizingQuote, setFinalizingQuote] = useState(null);
   const [quoteForm, setQuoteForm] = useState({
     status: 'pending',
     customer_name: '',
@@ -523,6 +526,7 @@ const ShopAdminTradeInPage = () => {
 
   const openQuoteView = (quote) => {
     setViewingQuote(quote);
+    setQuotePdfError('');
     if (!quote.viewed_at) markQuoteViewedMutation.mutate(quote.id);
   };
 
@@ -710,7 +714,7 @@ const ShopAdminTradeInPage = () => {
                         <Typography sx={{ fontSize: 11, color: '#667085' }}>
                           {quote.pricing_path?.find((entry) => entry.label === 'fulfillment_method')?.answers?.[0]?.text === 'gstore'
                             ? `Gstore credit: ₾${Math.round(Number(quote.final_price) + Number(quote.pricing_path.find((entry) => entry.label === 'fulfillment_method').answers[0].value || 0))}`
-                            : 'Cash'}
+                            : quote.pricing_path?.find((entry) => entry.label === 'fulfillment_method')?.answers?.[0]?.text === 'bank' ? 'Bank transfer' : 'Cash'}
                         </Typography>
                       </Box>
                       <Typography sx={{ fontSize: 12, color: '#667085' }}>{new Date(quote.created_at).toLocaleDateString()}</Typography>
@@ -718,10 +722,11 @@ const ShopAdminTradeInPage = () => {
                         className={`zzv-shop-tradein__status zzv-shop-tradein__status--${quote.status}`}
                         size="small"
                         value={quote.status}
+                        disabled={Boolean(quote.agreement_finalized_at)}
                         onChange={(event) => quoteMutation.mutate({ id: quote.id, payload: { status: event.target.value } })}
                         sx={{ borderRadius: '7px !important', fontSize: 12 }}
                       >
-                        {['pending', 'contacted', 'accepted', 'completed', 'cancelled'].map((status) => <MenuItem key={status} value={status}>{t(`shopTradeIn.statuses.${status}`)}</MenuItem>)}
+                        {['pending', 'contacted', 'accepted', 'completed', 'cancelled'].map((status) => <MenuItem key={status} value={status} disabled={status === 'completed' && quote.status !== 'completed'}>{t(`shopTradeIn.statuses.${status}`)}</MenuItem>)}
                       </Select>
                       <Stack direction="row" spacing={0.5}>
                         <Tooltip title={t('shopTradeIn.viewRequest')}>
@@ -730,14 +735,15 @@ const ShopAdminTradeInPage = () => {
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Edit quote">
-                          <IconButton size="small" onClick={() => openQuoteEditor(quote)}>
+                          <span><IconButton size="small" disabled={Boolean(quote.agreement_exists)} onClick={() => openQuoteEditor(quote)}>
                             <EditRounded fontSize="small" />
-                          </IconButton>
+                          </IconButton></span>
                         </Tooltip>
                         <Tooltip title="Delete quote">
                           <IconButton
                             size="small"
                             color="error"
+                            disabled={Boolean(quote.agreement_finalized_at)}
                             onClick={() => confirmDeleteQuote(quote)}
                           >
                             <DeleteOutlineRounded fontSize="small" />
@@ -1151,7 +1157,7 @@ const ShopAdminTradeInPage = () => {
             <div className="zzv-tradein-quote-edit__fields">
               <div><label htmlFor="tradein-quote-product">{t('shopTradeIn.product')}</label><TextField id="tradein-quote-product" size="small" fullWidth value={quoteForm.product_name} onChange={(event) => setQuoteForm((prev) => ({ ...prev, product_name: event.target.value }))} /></div>
               <div><label htmlFor="tradein-quote-offer">{t('shopTradeIn.finalOfferGel')}</label><TextField id="tradein-quote-offer" size="small" fullWidth type="number" inputProps={{ min: 0, step: 0.01 }} value={quoteForm.final_price} onChange={(event) => setQuoteForm((prev) => ({ ...prev, final_price: event.target.value }))} /></div>
-              <div><label htmlFor="tradein-quote-status">{t('shopTradeIn.status')}</label><TextField id="tradein-quote-status" select size="small" fullWidth value={quoteForm.status} onChange={(event) => setQuoteForm((prev) => ({ ...prev, status: event.target.value }))}>{['pending', 'contacted', 'accepted', 'completed', 'cancelled'].map((status) => <MenuItem key={status} value={status}>{t(`shopTradeIn.statuses.${status}`)}</MenuItem>)}</TextField></div>
+              <div><label htmlFor="tradein-quote-status">{t('shopTradeIn.status')}</label><TextField id="tradein-quote-status" select size="small" fullWidth value={quoteForm.status} onChange={(event) => setQuoteForm((prev) => ({ ...prev, status: event.target.value }))}>{['pending', 'contacted', 'accepted', 'completed', 'cancelled'].map((status) => <MenuItem key={status} value={status} disabled={status === 'completed' && quoteForm.status !== 'completed'}>{t(`shopTradeIn.statuses.${status}`)}</MenuItem>)}</TextField></div>
               <div><label htmlFor="tradein-quote-date">{t('shopTradeIn.created')}</label><TextField id="tradein-quote-date" size="small" fullWidth value={editingQuote?.created_at ? new Date(editingQuote.created_at).toLocaleDateString(i18n.language === 'ka' ? 'ka-GE' : 'en-GB') : ''} InputProps={{ readOnly: true }} /></div>
             </div>
           </section>
@@ -1187,6 +1193,7 @@ const ShopAdminTradeInPage = () => {
           <IconButton aria-label={t('shopTradeIn.close')} size="small" onClick={() => setViewingQuote(null)}><CloseRounded fontSize="small" /></IconButton>
         </DialogTitle>
         <DialogContent className="zzv-tradein-quote-edit__content">
+          {quotePdfError && <Alert severity="error">{quotePdfError}</Alert>}
           <section className="zzv-tradein-quote-edit__group">
             <h3>{t('shopTradeIn.customer')}</h3>
             <div className="zzv-tradein-quote-view__facts">
@@ -1215,7 +1222,7 @@ const ShopAdminTradeInPage = () => {
             <div className="zzv-tradein-quote-view__facts">
               <div><span>{t('shopTradeIn.product')}</span><strong>{viewingQuote?.product_name || '—'}</strong></div>
               <div><span>{t('shopTradeIn.finalOfferGel')}</span><strong>₾{Number(viewingQuote?.final_price || 0).toFixed(0)}</strong></div>
-              <div><span>{t('shopTradeIn.offerMethod')}</span><strong>{viewingQuote?.pricing_path?.find((entry) => entry.label === 'fulfillment_method')?.answers?.[0]?.text === 'gstore' ? t('shopTradeIn.gstoreCredit') : t('shopTradeIn.cash')}</strong></div>
+              <div><span>{t('shopTradeIn.offerMethod')}</span><strong>{viewingQuote?.pricing_path?.find((entry) => entry.label === 'fulfillment_method')?.answers?.[0]?.text === 'gstore' ? t('shopTradeIn.gstoreCredit') : viewingQuote?.pricing_path?.find((entry) => entry.label === 'fulfillment_method')?.answers?.[0]?.text === 'bank' ? 'საბანკო გადარიცხვა' : t('shopTradeIn.cash')}</strong></div>
               {viewingQuote?.pricing_path?.find((entry) => entry.label === 'fulfillment_method')?.answers?.[0]?.text === 'gstore' && <div><span>{t('shopTradeIn.gstoreCredit')}</span><strong>₾{Math.round(Number(viewingQuote.final_price || 0) + Number(viewingQuote.pricing_path.find((entry) => entry.label === 'fulfillment_method').answers[0].value || 0))}</strong></div>}
               {viewingQuote?.pricing_path?.find((entry) => entry.label === 'gstore_product')?.answers?.[0]?.text && <div><span>{t('shopTradeIn.gstoreProduct')}</span><strong>{viewingQuote.pricing_path.find((entry) => entry.label === 'gstore_product').answers[0].text}</strong></div>}
             </div>
@@ -1224,9 +1231,11 @@ const ShopAdminTradeInPage = () => {
         </DialogContent>
         <DialogActions className="zzv-tradein-quote-edit__footer">
           <Button onClick={() => setViewingQuote(null)}>{t('shopTradeIn.close')}</Button>
-          <Button variant="contained" startIcon={<EditRounded />} onClick={() => { const quote = viewingQuote; setViewingQuote(null); openQuoteEditor(quote); }}>{t('shopTradeIn.editQuote')}</Button>
+          {viewingQuote?.agreement_finalized_at ? <Button variant="contained" onClick={() => printTradeInAgreement(viewingQuote.id).catch(() => setQuotePdfError('PDF-ის გახსნა ვერ მოხერხდა.'))}>ხელშეკრულების ხელახლა ბეჭდვა</Button> : <><Button variant="outlined" onClick={() => { setFinalizingQuote(viewingQuote); setViewingQuote(null); }}>გაფორმება</Button>{!viewingQuote?.agreement_exists && <Button variant="contained" startIcon={<EditRounded />} onClick={() => { const quote = viewingQuote; setViewingQuote(null); openQuoteEditor(quote); }}>{t('shopTradeIn.editQuote')}</Button>}</>}
         </DialogActions>
       </Dialog>
+
+      {finalizingQuote && <TradeInFinalizeDialog quote={finalizingQuote} onClose={() => setFinalizingQuote(null)} onFinalized={() => queryClient.invalidateQueries('trade-in-admin-quotes')} />}
 
       <ConfirmDialog
         open={confirmState.open}
