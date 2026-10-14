@@ -156,6 +156,11 @@ export class TradeInAdminController {
     return this.tradeInService.getQuoteCounts();
   }
 
+  @Patch('quotes/:id/viewed')
+  markQuoteViewed(@Param('id', ParseIntPipe) id: number) {
+    return this.tradeInService.markQuoteViewed(id);
+  }
+
   @Patch('quotes/:id')
   updateQuote(
     @Param('id', ParseIntPipe) id: number,

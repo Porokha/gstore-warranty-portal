@@ -31,6 +31,7 @@ import {
   CloseRounded,
   DownloadRounded,
   EditRounded,
+  VisibilityOutlined,
   ExpandMoreRounded,
   PriceChangeRounded,
   RefreshRounded,
@@ -82,6 +83,8 @@ const isManualReviewTree = (tree) => tree?.[0]?.questions?.[0]?.label === 'prici
   && tree[0].questions[0].answers?.some((answer) => answer.attributes?.some((attribute) => attribute.key === 'pricing_status' && attribute.value === '[manual-review]'));
 
 const sectionLabel = (section, index) => section?.name || section?.breadcrumb || `Section ${index + 1}`;
+const quoteConditionEntries = (quote) => (Array.isArray(quote?.pricing_path) ? quote.pricing_path : [])
+  .filter((entry) => !['fulfillment_method', 'gstore_product'].includes(entry?.label) && Array.isArray(entry?.answers) && entry.answers.length);
 
 const ShopAdminTradeInPage = () => {
   const { t, i18n } = useTranslation();
@@ -120,6 +123,7 @@ const ShopAdminTradeInPage = () => {
   const [pricingError, setPricingError] = useState('');
   const [activePricingSection, setActivePricingSection] = useState(0);
   const [editingQuote, setEditingQuote] = useState(null);
+  const [viewingQuote, setViewingQuote] = useState(null);
   const [quoteForm, setQuoteForm] = useState({
     status: 'pending',
     customer_name: '',
@@ -196,6 +200,12 @@ const ShopAdminTradeInPage = () => {
       },
     },
   );
+  const markQuoteViewedMutation = useMutation(tradeInService.markAdminQuoteViewed, {
+    onSuccess: () => {
+      queryClient.invalidateQueries('trade-in-admin-quotes');
+      queryClient.invalidateQueries('shop-admin-trade-in-badge');
+    },
+  });
   const deleteQuoteMutation = useMutation(
     (id) => tradeInService.deleteAdminQuote(id),
     {
@@ -470,6 +480,7 @@ const ShopAdminTradeInPage = () => {
   };
 
   const openQuoteEditor = (quote) => {
+    if (!quote.viewed_at) markQuoteViewedMutation.mutate(quote.id);
     setEditingQuote(quote);
     setQuoteForm({
       status: quote.status || 'pending',
@@ -480,6 +491,11 @@ const ShopAdminTradeInPage = () => {
       final_price: quote.final_price || '',
       notes: quote.notes || '',
     });
+  };
+
+  const openQuoteView = (quote) => {
+    setViewingQuote(quote);
+    if (!quote.viewed_at) markQuoteViewedMutation.mutate(quote.id);
   };
 
   const saveQuote = () => {
@@ -646,12 +662,15 @@ const ShopAdminTradeInPage = () => {
               <>
               <Box className="zzv-shop-tradein__quotes-scroll">
                 <Box sx={{ minWidth: 900 }}>
-                  <Box className="zzv-shop-tradein__quote-row zzv-shop-tradein__quote-row--head" sx={{ display: 'grid', gridTemplateColumns: '140px 1.4fr 1fr 120px 140px 170px 96px', gap: 2, px: 2, py: 1.25, bgcolor: '#f8f9fc' }}>
+                  <Box className="zzv-shop-tradein__quote-row zzv-shop-tradein__quote-row--head" sx={{ display: 'grid', gridTemplateColumns: '140px 1.4fr 1fr 120px 140px 170px 128px', gap: 2, px: 2, py: 1.25, bgcolor: '#f8f9fc' }}>
                     {[t('shopTradeIn.number'), t('shopTradeIn.deviceCustomer'), t('shopTradeIn.phone'), t('shopTradeIn.offer'), t('shopTradeIn.created'), t('shopTradeIn.status'), t('shopTradeIn.actions')].map((label) => <Typography key={label} sx={headerCell}>{label}</Typography>)}
                   </Box>
                   {visibleQuotes.map((quote) => (
-                    <Box key={quote.id} className="zzv-shop-tradein__quote-row" sx={{ display: 'grid', gridTemplateColumns: '140px 1.4fr 1fr 120px 140px 170px 96px', gap: 2, alignItems: 'center', px: 2, py: 1.4, borderTop: '1px solid #edf0f5' }}>
-                      <Typography sx={{ fontSize: 13, fontWeight: 800 }}>{quote.quote_number}</Typography>
+                    <Box key={quote.id} className={`zzv-shop-tradein__quote-row${quote.viewed_at ? '' : ' is-unread'}`} sx={{ display: 'grid', gridTemplateColumns: '140px 1.4fr 1fr 120px 140px 170px 128px', gap: 2, alignItems: 'center', px: 2, py: 1.4, borderTop: '1px solid #edf0f5' }}>
+                      <Box className="zzv-shop-tradein__quote-number">
+                        <Button size="small" onClick={() => openQuoteView(quote)}>{quote.quote_number}</Button>
+                        {!quote.viewed_at && <span className="zzv-shop-tradein__new">{t('shopTradeIn.newRequest')}</span>}
+                      </Box>
                       <Box>
                         <Typography sx={{ fontSize: 13, fontWeight: 800 }}>{quote.product_name}</Typography>
                         <Typography sx={{ fontSize: 12, color: '#667085' }}>{quote.customer_name}</Typography>
@@ -677,6 +696,11 @@ const ShopAdminTradeInPage = () => {
                         {['pending', 'contacted', 'accepted', 'completed', 'cancelled'].map((status) => <MenuItem key={status} value={status}>{t(`shopTradeIn.statuses.${status}`)}</MenuItem>)}
                       </Select>
                       <Stack direction="row" spacing={0.5}>
+                        <Tooltip title={t('shopTradeIn.viewRequest')}>
+                          <IconButton size="small" aria-label={t('shopTradeIn.viewRequest')} onClick={() => openQuoteView(quote)}>
+                            <VisibilityOutlined fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
                         <Tooltip title="Edit quote">
                           <IconButton size="small" onClick={() => openQuoteEditor(quote)}>
                             <EditRounded fontSize="small" />
@@ -1091,6 +1115,62 @@ const ShopAdminTradeInPage = () => {
           <span className="zzv-tradein-quote-edit__footer-spacer" />
           <Button onClick={() => setEditingQuote(null)}>{t('shopTradeIn.cancel')}</Button>
           <Button variant="contained" onClick={saveQuote} disabled={quoteMutation.isLoading || !Number.isFinite(Number(quoteForm.final_price)) || Number(quoteForm.final_price) < 0}>{t('shopTradeIn.save')}</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        className="zzv-tradein-quote-edit zzv-tradein-quote-view"
+        open={Boolean(viewingQuote)}
+        onClose={() => setViewingQuote(null)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle className="zzv-tradein-quote-edit__header">
+          <Box className="zzv-tradein-quote-edit__heading">
+            <Typography component="h2">{t('shopTradeIn.viewRequest')}</Typography>
+            <Typography>{viewingQuote?.quote_number} · {viewingQuote?.product_name}</Typography>
+          </Box>
+          <IconButton aria-label={t('shopTradeIn.close')} size="small" onClick={() => setViewingQuote(null)}><CloseRounded fontSize="small" /></IconButton>
+        </DialogTitle>
+        <DialogContent className="zzv-tradein-quote-edit__content">
+          <section className="zzv-tradein-quote-edit__group">
+            <h3>{t('shopTradeIn.customer')}</h3>
+            <div className="zzv-tradein-quote-view__facts">
+              <div><span>{t('shopTradeIn.customerName')}</span><strong>{viewingQuote?.customer_name || '—'}</strong></div>
+              <div><span>{t('shopTradeIn.phone')}</span><strong>{viewingQuote?.customer_phone || '—'}</strong></div>
+              {viewingQuote?.customer_email && <div><span>{t('shopTradeIn.customerEmail')}</span><strong>{viewingQuote.customer_email}</strong></div>}
+              <div><span>{t('shopTradeIn.created')}</span><strong>{viewingQuote?.created_at ? new Date(viewingQuote.created_at).toLocaleString(i18n.language === 'ka' ? 'ka-GE' : 'en-GB') : '—'}</strong></div>
+              <div><span>{t('shopTradeIn.status')}</span><strong>{viewingQuote?.status ? t(`shopTradeIn.statuses.${viewingQuote.status}`) : '—'}</strong></div>
+            </div>
+          </section>
+          <section className="zzv-tradein-quote-edit__group">
+            <h3>{t('shopTradeIn.selectedConditions')}</h3>
+            {quoteConditionEntries(viewingQuote).length ? (
+              <div className="zzv-tradein-quote-view__conditions">
+                {quoteConditionEntries(viewingQuote).map((entry, index) => (
+                  <div className="zzv-tradein-quote-view__condition" key={`${entry.label || entry.question}-${index}`}>
+                    <span>{i18n.language === 'ka' && entry.question_ka ? entry.question_ka : entry.question || entry.label || `${index + 1}`}</span>
+                    <strong>{entry.answers.map((answer) => i18n.language === 'ka' && answer.text_ka ? answer.text_ka : answer.text).filter(Boolean).join(', ') || '—'}</strong>
+                  </div>
+                ))}
+              </div>
+            ) : <Typography className="zzv-tradein-quote-view__empty">{t('shopTradeIn.noSelectedConditions')}</Typography>}
+          </section>
+          <section className="zzv-tradein-quote-edit__group">
+            <h3>{t('shopTradeIn.deviceAndOffer')}</h3>
+            <div className="zzv-tradein-quote-view__facts">
+              <div><span>{t('shopTradeIn.product')}</span><strong>{viewingQuote?.product_name || '—'}</strong></div>
+              <div><span>{t('shopTradeIn.finalOfferGel')}</span><strong>₾{Number(viewingQuote?.final_price || 0).toFixed(0)}</strong></div>
+              <div><span>{t('shopTradeIn.offerMethod')}</span><strong>{viewingQuote?.pricing_path?.find((entry) => entry.label === 'fulfillment_method')?.answers?.[0]?.text === 'gstore' ? t('shopTradeIn.gstoreCredit') : t('shopTradeIn.cash')}</strong></div>
+              {viewingQuote?.pricing_path?.find((entry) => entry.label === 'fulfillment_method')?.answers?.[0]?.text === 'gstore' && <div><span>{t('shopTradeIn.gstoreCredit')}</span><strong>₾{Math.round(Number(viewingQuote.final_price || 0) + Number(viewingQuote.pricing_path.find((entry) => entry.label === 'fulfillment_method').answers[0].value || 0))}</strong></div>}
+              {viewingQuote?.pricing_path?.find((entry) => entry.label === 'gstore_product')?.answers?.[0]?.text && <div><span>{t('shopTradeIn.gstoreProduct')}</span><strong>{viewingQuote.pricing_path.find((entry) => entry.label === 'gstore_product').answers[0].text}</strong></div>}
+            </div>
+          </section>
+          {viewingQuote?.notes && <section className="zzv-tradein-quote-edit__group"><h3>{t('shopTradeIn.notes')}</h3><Typography className="zzv-tradein-quote-view__notes">{viewingQuote.notes}</Typography></section>}
+        </DialogContent>
+        <DialogActions className="zzv-tradein-quote-edit__footer">
+          <Button onClick={() => setViewingQuote(null)}>{t('shopTradeIn.close')}</Button>
+          <Button variant="contained" startIcon={<EditRounded />} onClick={() => { const quote = viewingQuote; setViewingQuote(null); openQuoteEditor(quote); }}>{t('shopTradeIn.editQuote')}</Button>
         </DialogActions>
       </Dialog>
 

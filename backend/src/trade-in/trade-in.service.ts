@@ -328,6 +328,7 @@ export class TradeInService {
       customer_email: dto.customer_email?.trim() || null,
       customer_phone: dto.customer_phone.trim(),
       status: TradeInQuoteStatus.PENDING,
+      viewed_at: null,
     });
 
     const saved = await this.quoteRepository.save(quote);
@@ -618,18 +619,31 @@ export class TradeInService {
     const next = {
       ...dto,
       customer_name: dto.customer_name?.trim(),
-      customer_email: dto.customer_email?.trim() || null,
+      customer_email: dto.customer_email !== undefined ? dto.customer_email.trim() || null : undefined,
       customer_phone: dto.customer_phone?.trim(),
       product_name: dto.product_name?.trim(),
       final_price: dto.final_price !== undefined ? Number(dto.final_price).toFixed(2) : undefined,
-      notes: dto.notes?.trim() || null,
+      notes: dto.notes !== undefined ? dto.notes.trim() || null : undefined,
     };
     Object.entries(next).forEach(([key, value]) => {
       if (value !== undefined) {
         (quote as any)[key] = value;
       }
     });
+    quote.viewed_at ||= new Date();
     return this.quoteRepository.save(quote);
+  }
+
+  async markQuoteViewed(id: number) {
+    const quote = await this.quoteRepository.findOne({ where: { id } });
+    if (!quote) {
+      throw new NotFoundException('Trade-in quote not found.');
+    }
+    if (!quote.viewed_at) {
+      quote.viewed_at = new Date();
+      await this.quoteRepository.save(quote);
+    }
+    return { id: quote.id, viewed_at: quote.viewed_at };
   }
 
   async deleteQuote(id: number) {
@@ -641,6 +655,10 @@ export class TradeInService {
   }
 
   async getQuoteCounts() {
+    const unread = await this.quoteRepository
+      .createQueryBuilder('quote')
+      .where('quote.viewed_at IS NULL')
+      .getCount();
     const rows = await this.quoteRepository
       .createQueryBuilder('quote')
       .select('quote.status', 'status')
@@ -656,6 +674,7 @@ export class TradeInService {
     const counts = Object.values(byStatus) as number[];
 
     return {
+      unread,
       pending: byStatus[TradeInQuoteStatus.PENDING] || 0,
       total: counts.reduce((sum, count) => sum + count, 0),
       by_status: byStatus,
