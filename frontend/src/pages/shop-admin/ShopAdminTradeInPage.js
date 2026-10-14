@@ -56,7 +56,7 @@ const headerCell = {
   textTransform: 'uppercase',
 };
 
-const quoteGridColumns = '125px minmax(210px, 1.3fr) 140px minmax(220px, 1fr) 110px 150px 116px';
+const quoteGridColumns = '125px minmax(210px, 1.3fr) 130px minmax(300px, 1.2fr) 105px 145px 116px';
 
 const imageUrl = (value) => {
   if (!value || String(value).includes('image-not-found')) return '/brand-logotype-original.svg';
@@ -709,7 +709,7 @@ const ShopAdminTradeInPage = () => {
             {tab === 0 && (
               <>
               <Box className="zzv-shop-tradein__quotes-scroll">
-                <Box sx={{ minWidth: 1200 }}>
+                <Box sx={{ minWidth: 1260 }}>
                   <Box className="zzv-shop-tradein__quote-row zzv-shop-tradein__quote-row--head" sx={{ display: 'grid', gridTemplateColumns: quoteGridColumns, gap: 2, px: 2, py: 1.25, bgcolor: '#f8f9fc' }}>
                     {[t('shopTradeIn.number'), t('shopTradeIn.deviceCustomer'), t('shopTradeIn.phone'), t('shopTradeIn.offer'), t('shopTradeIn.created'), t('shopTradeIn.status'), t('shopTradeIn.actions')].map((label) => <Typography key={label} sx={headerCell}>{label}</Typography>)}
                   </Box>
@@ -727,10 +727,10 @@ const ShopAdminTradeInPage = () => {
                         {quote.pricing_path?.find((entry) => entry.label === 'gstore_product')?.answers?.[0]?.text && <Typography sx={{ fontSize: 11, color: '#5d3bd0' }}>Gstore: {quote.pricing_path.find((entry) => entry.label === 'gstore_product').answers[0].text}</Typography>}
                       </Box>
                       <Typography sx={{ fontSize: 13 }}>{quote.customer_phone}</Typography>
-                      <Box>
+                      <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.75, whiteSpace: 'nowrap' }}>
                         <Typography sx={{ fontSize: 14, fontWeight: 900 }}>{isManualTradeInQuote(quote) && Number(quote.final_price) <= 0 ? (i18n.language === 'ka' ? 'შეფასების შემდეგ' : 'After inspection') : `₾${Number(quote.final_price).toFixed(0)}`}</Typography>
                         {isManualTradeInQuote(quote) && Number(quote.final_price) > 0 && <Typography sx={{ fontSize: 11, color: '#667085' }}>{i18n.language === 'ka' ? 'საორიენტაციო მინიმუმი' : 'Estimated minimum'}</Typography>}
-                        <Typography sx={{ fontSize: 11, color: '#667085' }}>
+                        <Typography sx={{ fontSize: 11, color: '#667085', whiteSpace: 'nowrap' }}>
                           {quote.pricing_path?.find((entry) => entry.label === 'fulfillment_method')?.answers?.[0]?.text === 'gstore'
                             ? `Gstore credit: ₾${Math.round(Number(quote.final_price) + Number(quote.pricing_path.find((entry) => entry.label === 'fulfillment_method').answers[0].value || 0))}`
                             : quote.pricing_path?.find((entry) => entry.label === 'fulfillment_method')?.answers?.[0]?.text === 'bank' ? 'Bank transfer' : 'Cash'}
