@@ -18,19 +18,43 @@
 .zzv-signature-pad { border: 1px solid #cfcbdc; border-radius: 12px; overflow: hidden; background: #fff; }
 .zzv-signature-pad canvas { display: block; width: 100%; height: 165px; touch-action: none; cursor: crosshair; }
 .zzv-signature-pad__footer { display: flex; align-items: center; justify-content: space-between; padding: 4px 10px; border-top: 1px dashed #e4e0ec; color: #9d9baa; font-size: 10px; }
-.zzv-agreement-dialog .MuiDialog-paper { width: min(940px, calc(100vw - 24px)); max-width: 940px; max-height: calc(100dvh - 24px); border-radius: 16px; }
-.zzv-agreement-dialog__title { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 24px; border-bottom: 1px solid #e8e5ef; }
-.zzv-agreement-dialog__title h2 { margin: 0; font-size: 22px; }
-.zzv-agreement-dialog__body { display: grid; gap: 22px; padding: 20px 24px 26px; }
-.zzv-agreement-dialog__section { display: grid; gap: 13px; padding: 18px; border: 1px solid #e8e5ef; border-radius: 12px; background: #fff; }
-.zzv-agreement-dialog__section h3 { margin: 0; color: #1a2340; font-size: 15px; }
-.zzv-agreement-dialog__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.zzv-agreement-dialog__actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 14px 24px; border-top: 1px solid #e8e5ef; }
-.zzv-agreement-dialog__signatures { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; }
-.zzv-agreement-dialog__sign-box { min-width: 0; padding: 14px; border: 1px solid #e8e5ef; border-radius: 10px; }
-.zzv-agreement-dialog__sign-box h4 { margin: 0 0 10px; font-size: 13px; }
-.zzv-agreement-dialog__sign-box p { min-height: 37px; margin: 0 0 10px; color: #626e84; font-size: 12px; }
-.zzv-agreement-dialog__qr { display: grid; place-items: center; gap: 12px; padding: 20px; text-align: center; }
-.zzv-agreement-dialog__qr img { width: min(270px, 75vw); height: auto; }
-.zzv-agreement-dialog__qr code { max-width: 100%; overflow-wrap: anywhere; font-size: 11px; }
-@media (max-width: 650px) { .zzv-agreement-dialog__grid, .zzv-agreement-dialog__signatures { grid-template-columns: 1fr; } .zzv-agreement-dialog__title, .zzv-agreement-dialog__body, .zzv-agreement-dialog__actions { padding-left: 16px; padding-right: 16px; } }
+.zzv-agreement-dialog .MuiDialog-paper { width: min(900px, calc(100vw - 24px)); max-width: 900px; max-height: min(92dvh, 820px); margin: 12px; overflow: hidden; border: 1px solid var(--zzv-border-subtle); border-radius: 14px; background: #fff; color: var(--zzv-text-primary); font-family: var(--zzv-font); box-shadow: 0 24px 70px #14121c26; }
+.zzv-agreement-dialog .MuiTypography-root, .zzv-agreement-dialog .MuiButton-root, .zzv-agreement-dialog .MuiInputBase-root, .zzv-agreement-dialog__qr-modal .MuiTypography-root, .zzv-agreement-dialog__qr-modal .MuiButton-root { font-family: var(--zzv-font); }
+.zzv-agreement-dialog__title.MuiDialogTitle-root { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 18px 22px; border-bottom: 1px solid var(--zzv-border-subtle); background: #fff; }
+.zzv-agreement-dialog__eyebrow.MuiTypography-root { margin-bottom: 4px; color: var(--zzv-purple-700); font-size: 10px; font-weight: 700; letter-spacing: .08em; }
+.zzv-agreement-dialog__title h2 { margin: 0; font: 700 20px/1.35 var(--zzv-font); }
+.zzv-agreement-dialog__title p { margin: 4px 0 0; color: var(--zzv-text-secondary); font: 400 12px/1.5 var(--zzv-font); }
+.zzv-agreement-dialog__title .MuiIconButton-root { flex: none; width: 34px; height: 34px; border: 1px solid var(--zzv-border-default); border-radius: 8px; }
+.zzv-agreement-dialog__content.MuiDialogContent-root { overflow-y: auto; padding: 0; background: var(--zzv-bg-page); }
+.zzv-agreement-dialog__body { display: grid; gap: 12px; padding: 16px 22px 22px; }
+.zzv-agreement-dialog__readiness { display: grid; gap: 3px; padding: 11px 14px; border: 1px solid #b8e8d1; border-radius: 9px; background: #f2fbf6; color: #16734c; font: 500 12px/1.45 var(--zzv-font); }
+.zzv-agreement-dialog__readiness.is-incomplete { border-color: #f2d5a5; background: #fffaf1; color: #8b5a15; }
+.zzv-agreement-dialog__readiness strong { font-weight: 700; }
+.zzv-agreement-dialog__readiness span { opacity: .9; }
+.zzv-agreement-dialog__section { overflow: hidden; border: 1px solid var(--zzv-border-subtle); border-radius: 10px; background: #fff; }
+.zzv-agreement-dialog__section h3 { display: flex; align-items: center; gap: 10px; margin: 0; padding: 11px 15px; border-bottom: 1px solid var(--zzv-border-subtle); color: var(--zzv-text-primary); font: 700 13px/1.4 var(--zzv-font); }
+.zzv-agreement-dialog__section h3 span { display: inline-grid; place-items: center; width: 25px; height: 25px; border-radius: 7px; background: var(--zzv-bg-subtle); color: var(--zzv-purple-700); font: 700 10px/1 var(--zzv-font); }
+.zzv-agreement-dialog__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 14px 15px; }
+.zzv-agreement-dialog__field { min-width: 0; }
+.zzv-agreement-dialog__field label { display: block; margin-bottom: 5px; color: var(--zzv-text-secondary); font: 600 11px/1.4 var(--zzv-font); }
+.zzv-agreement-dialog__field .MuiOutlinedInput-root { min-height: 38px; border-radius: 8px; background: #fff; }
+.zzv-agreement-dialog__field .MuiOutlinedInput-notchedOutline { border-color: var(--zzv-border-default); }
+.zzv-agreement-dialog__field .MuiInputBase-input { padding: 9px 11px; font-size: 12px; }
+.zzv-agreement-dialog__hint { margin: -3px 15px 14px; color: var(--zzv-text-secondary); font: 400 11px/1.5 var(--zzv-font); }
+.zzv-agreement-dialog__footnote { margin: 0; color: var(--zzv-text-secondary); font: 400 11px/1.5 var(--zzv-font); }
+.zzv-agreement-dialog__actions.MuiDialogActions-root { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 12px 22px; border-top: 1px solid var(--zzv-border-subtle); background: #fff; }
+.zzv-agreement-dialog .MuiButton-root, .zzv-agreement-dialog__qr-modal .MuiButton-root { min-height: 36px; border-radius: 8px; font-size: 12px; font-weight: 600; text-transform: none; }
+.zzv-agreement-dialog .MuiButton-contained, .zzv-agreement-dialog__qr-modal .MuiButton-contained { background: var(--zzv-purple-500); }
+.zzv-agreement-dialog .MuiButton-outlined, .zzv-agreement-dialog__qr-modal .MuiButton-outlined { border-color: var(--zzv-border-default); color: var(--zzv-purple-700); }
+.zzv-agreement-dialog__signatures { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 14px 15px; }
+.zzv-agreement-dialog__sign-box { min-width: 0; padding: 13px; border: 1px solid var(--zzv-border-subtle); border-radius: 8px; background: var(--zzv-bg-page); }
+.zzv-agreement-dialog__sign-box h4 { margin: 0 0 5px; font: 700 12px/1.4 var(--zzv-font); }
+.zzv-agreement-dialog__sign-box p { min-height: 20px; margin: 0 0 10px; color: var(--zzv-text-secondary); font: 400 11px/1.5 var(--zzv-font); }
+.zzv-agreement-dialog__sign-box .MuiOutlinedInput-root { border-radius: 8px; background: #fff; }
+.zzv-agreement-dialog__qr-modal .MuiDialog-paper { border: 1px solid var(--zzv-border-subtle); border-radius: 12px; font-family: var(--zzv-font); }
+.zzv-agreement-dialog__qr-modal .MuiDialogTitle-root { padding: 17px 20px; border-bottom: 1px solid var(--zzv-border-subtle); font: 700 17px/1.4 var(--zzv-font); }
+.zzv-agreement-dialog__qr-modal .MuiDialogActions-root { padding: 12px 20px; border-top: 1px solid var(--zzv-border-subtle); }
+.zzv-agreement-dialog__qr { display: grid; place-items: center; gap: 12px; padding: 22px; text-align: center; }
+.zzv-agreement-dialog__qr img { width: min(250px, 75vw); height: auto; padding: 10px; border: 1px solid var(--zzv-border-subtle); border-radius: 10px; background: #fff; }
+.zzv-agreement-dialog__qr code { max-width: 100%; overflow-wrap: anywhere; color: var(--zzv-text-secondary); font-size: 11px; }
+@media (max-width: 650px) { .zzv-agreement-dialog__grid, .zzv-agreement-dialog__signatures { grid-template-columns: 1fr; } .zzv-agreement-dialog__title.MuiDialogTitle-root, .zzv-agreement-dialog__actions.MuiDialogActions-root { padding-inline: 14px; } .zzv-agreement-dialog__body { padding-inline: 12px; } .zzv-agreement-dialog__actions.MuiDialogActions-root > .MuiBox-root { flex-wrap: wrap; } }
