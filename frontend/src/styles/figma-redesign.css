@@ -121,7 +121,7 @@
 .zzv-shop-tradein__quote-row.is-unread:hover { background: #dff0ff; }
 .zzv-shop-tradein__quote-number { display: flex; align-items: center; gap: 7px; min-width: 0; }
 .zzv-shop-tradein__quote-number .MuiButton-root { min-width: 0; padding: 0; color: var(--zzv-text-primary); font-size: 12px; font-weight: 700; text-transform: none; }
-.zzv-shop-tradein__new { padding: 2px 6px; border-radius: 5px; background: #d4eaff; color: #1260a0; font: 700 10px/1.2 var(--zzv-font); }
+.zzv-shop-tradein__new { flex-shrink: 0; padding: 2px 6px; border-radius: 5px; background: #d4eaff; color: #1260a0; font: 700 10px/1.2 var(--zzv-font); white-space: nowrap; }
 .zzv-shop-tradein__quote-row--head { min-height: 36px; background: var(--zzv-bg-subtle); }
 .zzv-shop-tradein__quote-row .MuiTypography-root { font-size: 12px; line-height: 1.4; }
 .zzv-shop-tradein__quote-row--head .MuiTypography-root { color: var(--zzv-text-secondary); font-size: 11px; font-weight: 600; letter-spacing: 0; text-transform: none; }

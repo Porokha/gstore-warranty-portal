@@ -56,6 +56,8 @@ const headerCell = {
   textTransform: 'uppercase',
 };
 
+const quoteGridColumns = '125px minmax(210px, 1.3fr) 140px minmax(220px, 1fr) 110px 150px 116px';
+
 const imageUrl = (value) => {
   if (!value || String(value).includes('image-not-found')) return '/brand-logotype-original.svg';
   if (/^https?:\/\//i.test(value)) return value;
@@ -707,19 +709,21 @@ const ShopAdminTradeInPage = () => {
             {tab === 0 && (
               <>
               <Box className="zzv-shop-tradein__quotes-scroll">
-                <Box sx={{ minWidth: 900 }}>
-                  <Box className="zzv-shop-tradein__quote-row zzv-shop-tradein__quote-row--head" sx={{ display: 'grid', gridTemplateColumns: '140px 1.4fr 1fr 120px 140px 170px 128px', gap: 2, px: 2, py: 1.25, bgcolor: '#f8f9fc' }}>
+                <Box sx={{ minWidth: 1200 }}>
+                  <Box className="zzv-shop-tradein__quote-row zzv-shop-tradein__quote-row--head" sx={{ display: 'grid', gridTemplateColumns: quoteGridColumns, gap: 2, px: 2, py: 1.25, bgcolor: '#f8f9fc' }}>
                     {[t('shopTradeIn.number'), t('shopTradeIn.deviceCustomer'), t('shopTradeIn.phone'), t('shopTradeIn.offer'), t('shopTradeIn.created'), t('shopTradeIn.status'), t('shopTradeIn.actions')].map((label) => <Typography key={label} sx={headerCell}>{label}</Typography>)}
                   </Box>
                   {visibleQuotes.map((quote) => (
-                    <Box key={quote.id} className={`zzv-shop-tradein__quote-row${quote.viewed_at ? '' : ' is-unread'}`} sx={{ display: 'grid', gridTemplateColumns: '140px 1.4fr 1fr 120px 140px 170px 128px', gap: 2, alignItems: 'center', px: 2, py: 1.4, borderTop: '1px solid #edf0f5' }}>
+                    <Box key={quote.id} className={`zzv-shop-tradein__quote-row${quote.viewed_at ? '' : ' is-unread'}`} sx={{ display: 'grid', gridTemplateColumns: quoteGridColumns, gap: 2, alignItems: 'center', px: 2, py: 1.4, borderTop: '1px solid #edf0f5' }}>
                       <Box className="zzv-shop-tradein__quote-number">
                         <Button size="small" onClick={() => openQuoteView(quote)}>{quote.quote_number}</Button>
-                        {!quote.viewed_at && <span className="zzv-shop-tradein__new">{t('shopTradeIn.newRequest')}</span>}
                       </Box>
                       <Box>
                         <Typography sx={{ fontSize: 13, fontWeight: 800 }}>{quote.product_name}</Typography>
-                        <Typography sx={{ fontSize: 12, color: '#667085' }}>{quote.customer_name}</Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+                          <Typography sx={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12, color: '#667085' }}>{quote.customer_name}</Typography>
+                          {!quote.viewed_at && <span className="zzv-shop-tradein__new">{t('shopTradeIn.newRequest')}</span>}
+                        </Box>
                         {quote.pricing_path?.find((entry) => entry.label === 'gstore_product')?.answers?.[0]?.text && <Typography sx={{ fontSize: 11, color: '#5d3bd0' }}>Gstore: {quote.pricing_path.find((entry) => entry.label === 'gstore_product').answers[0].text}</Typography>}
                       </Box>
                       <Typography sx={{ fontSize: 13 }}>{quote.customer_phone}</Typography>
