@@ -374,6 +374,20 @@ export class TradeInService {
     return this.categoryRepository.find({ order: { sort_order: 'ASC', label: 'ASC' } });
   }
 
+  async reorderCategories(categoryIds: number[]) {
+    return this.categoryRepository.manager.transaction(async (manager) => {
+      const categories = await manager.find(TradeInCategory, { lock: { mode: 'pessimistic_write' } });
+      const existingIds = new Set(categories.map((category) => category.id));
+      if (categoryIds.length !== existingIds.size || new Set(categoryIds).size !== existingIds.size || categoryIds.some((id) => !existingIds.has(id))) {
+        throw new BadRequestException('Category order must include every category exactly once.');
+      }
+      for (const [sortOrder, id] of categoryIds.entries()) {
+        await manager.update(TradeInCategory, id, { sort_order: sortOrder });
+      }
+      return manager.find(TradeInCategory, { order: { sort_order: 'ASC', label: 'ASC' } });
+    });
+  }
+
   async listAdminBrands() {
     const categories = await this.listAdminCategories();
     return Promise.all(categories.map(async (category) => ({

@@ -102,6 +102,10 @@
     "availability": "Availability",
     "brandSubcategories": "Show brands",
     "categoryUpdateFailed": "Could not update category",
+    "categoryOrderFailed": "Could not save category order. Please try again.",
+    "moveCategory": "Move {{category}}. Use up or down arrow keys.",
+    "moveCategoryUp": "Move {{category}} up",
+    "moveCategoryDown": "Move {{category}} down",
     "availabilityStates": { "hidden": "Hidden", "soon": "Soon", "active": "Active" },
     "statuses": { "pending": "Pending", "contacted": "Contacted", "accepted": "Accepted", "completed": "Completed", "cancelled": "Cancelled" }
   },

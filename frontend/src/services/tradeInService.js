@@ -92,6 +92,11 @@ export const tradeInService = {
     return response.data;
   },
 
+  reorderAdminCategories: async (categoryIds) => {
+    const response = await api.patch('/shop/admin/trade-in/categories/order', { category_ids: categoryIds });
+    return response.data;
+  },
+
   getAdminProducts: async (params = {}) => {
     const response = await api.get('/shop/admin/trade-in/products', { params });
     return response.data;
