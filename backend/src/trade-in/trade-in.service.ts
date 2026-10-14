@@ -15,6 +15,7 @@ import { TradeInProduct } from './entities/trade-in-product.entity';
 import { TradeInQuote, TradeInQuoteStatus } from './entities/trade-in-quote.entity';
 import { TradeInSetting } from './entities/trade-in-setting.entity';
 import { validatePricingTree } from './pricing-tree.validation';
+import { isMacBook, macBookDisplay, macBookFamily } from './macbook-catalog';
 
 const PRODUCT_CATEGORY_MATCH = `(
   LOWER(product.category) = LOWER(:category)
@@ -123,7 +124,7 @@ export class TradeInService {
   }
 
   async listBrands(category: string) {
-    const rows = await this.productRepository
+    const query = this.productRepository
       .createQueryBuilder('product')
       .select('product.brand', 'brand')
       .addSelect('COUNT(product.id)', 'product_count')
@@ -132,8 +133,11 @@ export class TradeInService {
       .andWhere("product.brand IS NOT NULL AND product.brand <> ''")
       .groupBy('product.brand')
       .orderBy('product_count', 'DESC')
-      .addOrderBy('product.brand', 'ASC')
-      .getRawMany();
+      .addOrderBy('product.brand', 'ASC');
+    if (category?.toLowerCase() === 'laptop') {
+      query.andWhere("NOT (LOWER(product.brand) = 'apple' AND EXISTS (SELECT 1 FROM trade_in_products child WHERE child.enabled = true AND child.slug LIKE CONCAT(product.slug, '/%')))");
+    }
+    const rows = await query.getRawMany();
 
     const availability = await this.getBrandAvailability();
     const categoryFlags = availability[this.availabilityKey(category)] || {};
@@ -154,6 +158,9 @@ export class TradeInService {
       .where('product.enabled = :enabled', { enabled: true })
       .andWhere(PRODUCT_CATEGORY_MATCH, { category })
       .andWhere('LOWER(product.brand) = LOWER(:brand)', { brand })
+      .andWhere(category.toLowerCase() === 'laptop' && brand.toLowerCase() === 'apple'
+        ? "NOT EXISTS (SELECT 1 FROM trade_in_products child WHERE child.enabled = true AND child.slug LIKE CONCAT(product.slug, '/%'))"
+        : '1 = 1')
       .orderBy('pricing.max_price', 'DESC')
       .addOrderBy('product.name', 'ASC')
       .getRawAndEntities();
@@ -166,7 +173,7 @@ export class TradeInService {
 
     result.entities.forEach((product, index) => {
       const secondaryCategory = product.category2?.trim();
-      const series = secondaryCategory && !this.equals(secondaryCategory, category)
+      const series = isMacBook(product) ? macBookFamily(product.slug) : secondaryCategory && !this.equals(secondaryCategory, category)
         ? secondaryCategory
         : this.inferSeries(product.name, brand);
       if (series) {
@@ -209,6 +216,12 @@ export class TradeInService {
       .addSelect('pricing.max_price', 'pricing_max_price')
       .where('product.enabled = :enabled', { enabled: true });
 
+    const macBookCatalog = params.category?.toLowerCase() === 'laptop' && params.brand?.toLowerCase() === 'apple';
+    if (macBookCatalog) {
+      query.addSelect('pricing.tree_json', 'pricing_tree_json')
+        .andWhere("NOT EXISTS (SELECT 1 FROM trade_in_products child WHERE child.enabled = true AND child.slug LIKE CONCAT(product.slug, '/%'))");
+    }
+
     if (params.category) {
       query.andWhere(PRODUCT_CATEGORY_MATCH, {
         category: params.category,
@@ -218,16 +231,23 @@ export class TradeInService {
       query.andWhere('LOWER(product.brand) = LOWER(:brand)', { brand: params.brand });
     }
     if (params.series) {
-      query.andWhere('(LOWER(product.category2) = LOWER(:series) OR product.name LIKE :seriesLike)', {
-        series: params.series,
-        seriesLike: `%${params.series}%`,
-      });
+      if (macBookCatalog && ['MacBook Air', 'MacBook Pro', 'MacBook Neo', 'MacBook'].includes(params.series)) {
+        const prefix = params.series.toLowerCase().replace(/\s+/g, '-');
+        query.andWhere(params.series === 'MacBook'
+          ? "product.slug LIKE 'macbook-%' AND product.slug NOT LIKE 'macbook-air-%' AND product.slug NOT LIKE 'macbook-pro-%' AND product.slug NOT LIKE 'macbook-neo%'"
+          : 'product.slug LIKE :familyPrefix', { familyPrefix: `${prefix}%` });
+      } else {
+        query.andWhere('(LOWER(product.category2) = LOWER(:series) OR product.name LIKE :seriesLike)', {
+          series: params.series,
+          seriesLike: `%${params.series}%`,
+        });
+      }
     }
     if (params.q?.trim()) {
       const terms = params.q.trim().split(/\s+/).filter(Boolean);
       terms.forEach((term, index) => {
         query.andWhere(
-          `(product.name LIKE :term${index} OR product.brand LIKE :term${index} OR product.search_tags LIKE :term${index})`,
+          `(product.name LIKE :term${index} OR product.brand LIKE :term${index} OR product.slug LIKE :term${index} OR product.search_tags LIKE :term${index})`,
           { [`term${index}`]: `%${term}%` },
         );
       });
@@ -239,7 +259,7 @@ export class TradeInService {
 
     return {
       items: result.entities.map((product, index) =>
-        this.toPublicProduct(product, result.raw[index]?.pricing_max_price),
+        this.toPublicProduct(product, result.raw[index]?.pricing_max_price, result.raw[index]?.pricing_tree_json),
       ),
       total,
       page,
@@ -284,6 +304,7 @@ export class TradeInService {
   async createQuote(dto: CreateTradeInQuoteDto) {
     const product = await this.productRepository.findOne({
       where: { slug: dto.product_slug, enabled: true },
+      relations: ['pricing_tree'],
     });
     if (!product) {
       throw new NotFoundException('Trade-in product not found.');
@@ -328,7 +349,7 @@ export class TradeInService {
     const quote = this.quoteRepository.create({
       quote_number: await this.nextQuoteNumber(),
       product_id: product.id,
-      product_name: product.name,
+      product_name: isMacBook(product) ? macBookDisplay(product, product.pricing_tree?.tree_json).name : product.name,
       pricing_path: pricingPath.length ? pricingPath : null,
       final_price: dto.final_price.toFixed(2),
       customer_name: dto.customer_name.trim(),
@@ -688,11 +709,14 @@ export class TradeInService {
     };
   }
 
-  private toPublicProduct(product: TradeInProduct, selectedMaxPrice?: string | number) {
+  private toPublicProduct(product: TradeInProduct, selectedMaxPrice?: string | number, tree?: unknown) {
+    const macBook = isMacBook(product) ? macBookDisplay(product, tree ?? product.pricing_tree?.tree_json) : null;
     return {
       id: product.id,
       slug: product.slug,
-      name: product.name,
+      name: macBook?.name || product.name,
+      release_year: macBook?.release_year || null,
+      chip: macBook?.chip || null,
       brand: product.brand,
       category: product.category,
       series: product.category2,
