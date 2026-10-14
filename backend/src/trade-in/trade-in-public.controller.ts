@@ -2,7 +2,7 @@ import { Body, Controller, Get, Header, Param, Post, Query } from '@nestjs/commo
 import { CreateTradeInQuoteDto } from './dto/create-trade-in-quote.dto';
 import { TradeInService } from './trade-in.service';
 import { TradeInAgreementService } from './trade-in-agreement.service';
-import { CustomerTradeInSignatureDto } from './dto/save-trade-in-agreement.dto';
+import { SubmitTradeInSignatureDto } from './dto/save-trade-in-agreement.dto';
 
 @Controller('trade-in')
 export class TradeInPublicController {
@@ -16,7 +16,7 @@ export class TradeInPublicController {
 
   @Post('sign/:token')
   @Header('Cache-Control', 'no-store')
-  sign(@Param('token') token: string, @Body() dto: CustomerTradeInSignatureDto) {
+  sign(@Param('token') token: string, @Body() dto: SubmitTradeInSignatureDto) {
     return this.agreements.submitCustomerSignature(token, dto.signature);
   }
 

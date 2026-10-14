@@ -38,10 +38,11 @@ describe('Trade-in agreement', () => {
     expect(saved.signing_token_hash).not.toBe(result.token);
   });
 
-  it('does not issue a signing link for incomplete agreement details', async () => {
+  it('issues a signature-only link before agreement details are complete', async () => {
     agreementQuery.getOne.mockResolvedValue({ ...agreement, details: { ...fullDetails, personal_id: '' } });
-    await expect(service.startSigning(5)).rejects.toThrow(BadRequestException);
-    expect(manager.save).not.toHaveBeenCalled();
+    const link = await service.startSigning(5);
+    expect(link.token).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(manager.save).toHaveBeenCalledTimes(1);
   });
 
   it('keeps signatures when saved details have the same values in a different JSON key order', async () => {
@@ -53,6 +54,28 @@ describe('Trade-in agreement', () => {
     jest.spyOn(service as any, 'normalizeDetails').mockResolvedValue({ ...fullDetails });
     await service.saveDraft(5, 1, {});
     expect(manager.save.mock.calls[0][0].customer_signature).toBe(oldSignature);
+  });
+
+  it('keeps captured signatures and an active link when draft details change', async () => {
+    const customerSignature = Buffer.from('customer');
+    const representativeSignature = Buffer.from('representative');
+    agreementQuery.getOne.mockResolvedValue({
+      ...agreement, customer_signature: customerSignature, representative_signature: representativeSignature,
+      signing_token_hash: 'pending-token', details: { ...fullDetails, representative_name: 'Original signer' },
+    });
+    jest.spyOn(service as any, 'normalizeDetails').mockResolvedValue({ ...fullDetails, final_price: 650, representative_name: 'Different editor' });
+    await service.saveDraft(5, 1, {});
+    const saved = manager.save.mock.calls[0][0];
+    expect(saved.customer_signature).toBe(customerSignature);
+    expect(saved.representative_signature).toBe(representativeSignature);
+    expect(saved.signing_token_hash).toBe('pending-token');
+    expect(saved.details.final_price).toBe(650);
+    expect(saved.details.representative_name).toBe('Original signer');
+  });
+
+  it('only exposes the quote number to the signature pad', async () => {
+    jest.spyOn(service as any, 'validToken').mockResolvedValue({ quote_id: 5 });
+    expect(await service.signingPreview('a'.repeat(43))).toEqual({ quote_number: 'TI-5' });
   });
 
   it('rejects reused or unknown signing tokens', async () => {

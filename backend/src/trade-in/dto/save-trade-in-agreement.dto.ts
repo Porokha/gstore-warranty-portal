@@ -1,4 +1,4 @@
-import { Equals, IsBoolean, IsObject, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsBoolean, IsObject, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class SaveTradeInAgreementDto {
   @IsObject()
@@ -9,11 +9,6 @@ export class SubmitTradeInSignatureDto {
   @IsString()
   @MaxLength(500000)
   signature: string;
-}
-
-export class CustomerTradeInSignatureDto extends SubmitTradeInSignatureDto {
-  @Equals(true)
-  accepted: boolean;
 }
 
 export class SetRepresentativeSignatureDto {
