@@ -52,6 +52,8 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [attemptedQr, setAttemptedQr] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [previewBusy, setPreviewBusy] = useState(false);
   const agreementQuery = useQuery(['trade-in-agreement', quote?.id], () => tradeInService.openAdminAgreement(quote.id), {
     enabled: Boolean(quote), retry: false, refetchInterval: qr ? 3000 : false,
   });
@@ -75,10 +77,12 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
       .then(setQrImage).catch(() => setQrImage(''));
   }, [qr]);
 
+  useEffect(() => () => { if (previewUrl) URL.revokeObjectURL(previewUrl); }, [previewUrl]);
+
   if (!quote) return null;
   const agreement = agreementQuery.data;
   const finalized = Boolean(agreement?.finalized_at);
-  const busy = saveMutation.isLoading || linkMutation.isLoading || repMutation.isLoading || finalizeMutation.isLoading;
+  const busy = saveMutation.isLoading || linkMutation.isLoading || repMutation.isLoading || finalizeMutation.isLoading || previewBusy;
   const missing = missingAgreementFields(details);
   const update = (key, value) => { setDirty(true); setMessage(''); setDetails((current) => ({ ...current, [key]: value })); };
   const save = async () => {
@@ -92,15 +96,28 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
     setAttemptedQr(true);
     if (missing.length) {
       setError(`QR-ის შექმნამდე შეავსეთ: ${missing.map((key) => fieldLabels[key]).join(', ')}.`);
+      const firstField = document.getElementById(`agreement-${missing[0] === 'final_price' ? 'price' : missing[0]}`);
+      firstField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      firstField?.focus({ preventScroll: true });
       return;
     }
     try {
-      if (dirty) await save();
+      await save();
       const link = await linkMutation.mutateAsync();
       setQrImage('');
       setQr(link);
       await agreementQuery.refetch();
     } catch (failure) { setError(failure.response?.data?.message || 'QR-ის გენერირება ვერ მოხერხდა.'); }
+  };
+  const preview = async () => {
+    setError('');
+    setPreviewBusy(true);
+    try {
+      if (dirty) await save();
+      const blob = await tradeInService.getAdminAgreementPreviewPdf(quote.id);
+      setPreviewUrl(URL.createObjectURL(blob));
+    } catch (failure) { setError(failure.response?.data?.message || 'PDF-ის წინასწარი ნახვა ვერ გაიხსნა.'); }
+    finally { setPreviewBusy(false); }
   };
   const applyRepresentative = async () => {
     setError('');
@@ -137,7 +154,7 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
             <div className="zzv-agreement-dialog__body">
               {error && <Alert severity="error">{String(error)}</Alert>}
               {message && <Alert severity="success">{message}</Alert>}
-              {!finalized && <div className={`zzv-agreement-dialog__readiness${missing.length ? ' is-incomplete' : ''}`}><strong>{missing.length ? `QR-ის შექმნამდე შესავსებია ${missing.length} ველი` : 'ყველა აუცილებელი ველი შევსებულია'}</strong><span>{missing.length ? missing.map((key) => fieldLabels[key]).join(' · ') : 'შეგიძლიათ შექმნათ ხელმოწერის QR კოდი.'}</span></div>}
+              {!finalized && <div className={`zzv-agreement-dialog__readiness${missing.length ? ' is-incomplete' : ''}`}><strong>{missing.length ? `QR-ის შექმნამდე შესავსებია ${missing.length} ველი` : 'ყველა აუცილებელი ველი შევსებულია'}</strong><span>{missing.length ? missing.map((key) => fieldLabels[key]).join(' · ') : 'შეგიძლიათ შექმნათ ხელმოწერის QR კოდი.'}</span><span>PDF-ის წინასწარი ნახვა ხელმისაწვდომია ხელმოწერამდე.</span></div>}
               <section className="zzv-agreement-dialog__section"><h3><span>01</span> გამყიდველი</h3><div className="zzv-agreement-dialog__grid">{fields.slice(0, 4).map(([key, label]) => <div className="zzv-agreement-dialog__field" key={key}><label htmlFor={`agreement-${key}`}>{label} *</label><TextField id={`agreement-${key}`} size="small" fullWidth value={details[key] || ''} disabled={finalized} error={attemptedQr && missing.includes(key)} onChange={(event) => update(key, event.target.value)} inputProps={{ maxLength: key === 'personal_id' ? 11 : 1000 }} /></div>)}</div></section>
               <section className="zzv-agreement-dialog__section"><h3><span>02</span> მოწყობილობა და ინსპექტირება</h3><div className="zzv-agreement-dialog__grid">{fields.slice(4).map(([key, label]) => <div className="zzv-agreement-dialog__field" key={key}><label htmlFor={`agreement-${key}`}>{label}{['brand_model', 'color', 'included_items', 'defects'].includes(key) ? ' *' : ''}{key === 'imei' || key === 'serial' ? ' (ერთ-ერთი *)' : ''}</label><TextField id={`agreement-${key}`} size="small" fullWidth value={details[key] || ''} disabled={finalized} error={attemptedQr && (missing.includes(key) || (key === 'serial' && missing.includes('imei')))} onChange={(event) => update(key, event.target.value)} multiline={key === 'defects'} minRows={key === 'defects' ? 2 : undefined} /></div>)}</div><p className="zzv-agreement-dialog__hint">IMEI ან Serial Number-დან ერთ-ერთი სავალდებულოა. თუ დეფექტი არ არის, ჩაწერეთ „არ აქვს“.</p></section>
               <section className="zzv-agreement-dialog__section"><h3><span>03</span> შეთანხმებული ფასი და ანგარიშსწორება</h3><div className="zzv-agreement-dialog__grid"><div className="zzv-agreement-dialog__field"><label htmlFor="agreement-price">ნასყიდობის ფასი (₾) *</label><TextField id="agreement-price" size="small" fullWidth type="number" value={details.final_price ?? ''} disabled={finalized} error={attemptedQr && missing.includes('final_price')} onChange={(event) => update('final_price', event.target.value)} inputProps={{ min: 0, step: 0.01 }} /></div><div className="zzv-agreement-dialog__field"><label htmlFor="agreement-method">ანგარიშსწორება *</label><TextField id="agreement-method" size="small" fullWidth select value={details.settlement_method || 'cash'} disabled={finalized} onChange={(event) => update('settlement_method', event.target.value)}><MenuItem value="cash">ნაღდი</MenuItem><MenuItem value="bank">საბანკო გადარიცხვა</MenuItem><MenuItem value="gstore_credit">Gstore კრედიტი</MenuItem></TextField></div></div>{details.settlement_method === 'gstore_credit' && <p className="zzv-agreement-dialog__hint">ბონუსი: ₾{Number(details.credit_bonus || 0).toFixed(2)} · ჯამური კრედიტი: ₾{(Number(details.final_price || 0) + Number(details.credit_bonus || 0)).toFixed(2)}. ახალი თანხის ბონუსი შენახვისას გადაითვლება.</p>}</section>
@@ -171,7 +188,12 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
             </div>
           )}
         </DialogContent>
-        <DialogActions className="zzv-agreement-dialog__actions"><Box sx={{ display: 'flex', gap: 1 }}><Button onClick={onClose}>დახურვა</Button>{finalized && <Button onClick={() => printTradeInAgreement(quote.id).catch(() => setError('PDF-ის გახსნა ვერ მოხერხდა.'))}>ხელახლა ბეჭდვა</Button>}</Box>{!finalized && <Box sx={{ display: 'flex', gap: 1 }}><Button variant="outlined" disabled={busy || !details} onClick={() => save().then(() => setMessage('მონახაზი შენახულია.')).catch((failure) => setError(failure.response?.data?.message || 'შენახვა ვერ მოხერხდა.'))}>მონახაზის შენახვა</Button><Button variant="contained" disabled={busy || !details} onClick={finalize}>გაფორმების დასრულება</Button></Box>}</DialogActions>
+        <DialogActions className="zzv-agreement-dialog__actions"><Box sx={{ display: 'flex', gap: 1 }}><Button onClick={onClose}>დახურვა</Button>{finalized && <Button onClick={() => printTradeInAgreement(quote.id).catch(() => setError('PDF-ის გახსნა ვერ მოხერხდა.'))}>ხელახლა ბეჭდვა</Button>}</Box>{!finalized && <Box sx={{ display: 'flex', gap: 1 }}><Button variant="outlined" disabled={busy || !details} onClick={() => save().then(() => setMessage('მონახაზი შენახულია.')).catch((failure) => setError(failure.response?.data?.message || 'შენახვა ვერ მოხერხდა.'))}>მონახაზის შენახვა</Button><Button variant="outlined" disabled={busy || !details} onClick={preview}>PDF-ის ნახვა</Button><Button variant="contained" disabled={busy || !details} onClick={finalize}>გაფორმების დასრულება</Button></Box>}</DialogActions>
+      </Dialog>
+      <Dialog open={Boolean(previewUrl)} onClose={() => setPreviewUrl('')} maxWidth="lg" fullWidth className="zzv-agreement-dialog__preview-modal">
+        <DialogTitle>ხელშეკრულების წინასწარი ნახვა</DialogTitle>
+        <DialogContent>{previewUrl && <iframe title="ხელშეკრულების მონახაზი" src={previewUrl} />}</DialogContent>
+        <DialogActions><Button onClick={() => setPreviewUrl('')}>დახურვა</Button></DialogActions>
       </Dialog>
       <Dialog open={Boolean(qr)} onClose={() => setQr(null)} maxWidth="xs" fullWidth className="zzv-agreement-dialog__qr-modal"><DialogTitle>მომხმარებლის ხელმოწერა</DialogTitle><DialogContent className="zzv-agreement-dialog__qr">{qrImage && <img src={qrImage} alt="ხელმოწერის QR კოდი" />}<Typography sx={{ fontSize: 13 }}>მომხმარებელმა დაასკანეროს QR და მოაწეროს ხელი საკუთარ ტელეფონზე. ბმული მოქმედებს 15 წუთი, ერთხელ.</Typography><code>{qr && `${window.location.origin}/trade-in/sign/${qr.token}`}</code>{agreement?.customer_signed_at && <Alert severity="success">ხელმოწერა მიღებულია.</Alert>}</DialogContent><DialogActions><Button onClick={() => setQr(null)}>დახურვა</Button><Button onClick={issueLink} disabled={busy}>ახალი QR</Button></DialogActions></Dialog>
     </>

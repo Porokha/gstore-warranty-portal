@@ -89,4 +89,15 @@ describe('Trade-in agreement', () => {
     expect(pdf.subarray(0, 4).toString()).toBe('%PDF');
     expect(pdf.length).toBeGreaterThan(5000);
   });
+
+  it('previews an incomplete unsigned draft without finalizing it', async () => {
+    agreementQuery.getOne.mockResolvedValue({
+      ...agreement, finalized_at: null, customer_signature: null, representative_signature: null,
+      details: { ...fullDetails, personal_id: '', address: '', final_price: 0 },
+    });
+    const preview = await service.getPreviewPdf(5);
+    expect(preview.filename).toBe('trade-in-TI-5-preview.pdf');
+    expect(preview.bytes.subarray(0, 4).toString()).toBe('%PDF');
+    expect(manager.save).not.toHaveBeenCalled();
+  });
 });

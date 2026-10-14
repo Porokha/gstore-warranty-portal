@@ -68,6 +68,15 @@ export class TradeInAdminController {
     response.send(file.bytes);
   }
 
+  @Get('quotes/:id/agreement/preview')
+  async agreementPreview(@Param('id', ParseIntPipe) id: number, @Res() response: Response) {
+    const file = await this.agreements.getPreviewPdf(id);
+    response.setHeader('Content-Type', 'application/pdf');
+    response.setHeader('Content-Disposition', `inline; filename="${file.filename}"`);
+    response.setHeader('Cache-Control', 'private, no-store');
+    response.send(file.bytes);
+  }
+
   @Get('offer-policy')
   getOfferPolicy() {
     return this.tradeInService.getOfferPolicy();
