@@ -114,6 +114,18 @@ describe('Trade-in agreement', () => {
     expect(pdf.length).toBeGreaterThan(5000);
   });
 
+  it.each(['cash', 'gstore_credit'] as const)('keeps a typical %s agreement on one A4 page', async (settlement_method) => {
+    const pdf = await makeAgreementPdf({
+      number: 'TI-TEST', date: new Date(), preview: true,
+      details: {
+        ...fullDetails, settlement_method,
+        gstore_product: settlement_method === 'gstore_credit' ? 'iPhone 18 Pro 256GB Physical SIM' : '',
+        credit_bonus: settlement_method === 'gstore_credit' ? 150 : 0,
+      },
+    });
+    expect(pdf.toString('latin1').match(/\/Type \/Page\b/g)).toHaveLength(1);
+  });
+
   it('bundles fonts for Georgian, Latin, numbers, punctuation, and the lari sign', () => {
     const fontkit = require('fontkit');
     const fontDirectory = path.join(process.cwd(), 'assets/fonts');
