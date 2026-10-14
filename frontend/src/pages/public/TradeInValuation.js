@@ -83,11 +83,14 @@ export default function TradeInValuation({ product, t, language, initialStorage 
   const gstoreProductsQuery = useQuery('trade-in-gstore-products', tradeInService.getGstoreProducts);
   const detail = productQuery.data || product;
   const tree = Array.isArray(detail.tree) ? detail.tree : [];
+  const isLaptop = /^laptop$/i.test(String(detail.category || ''))
+    || /^macbook/i.test(String(detail.category || ''))
+    || /^macbook/i.test(String(detail.series || ''));
   const isManualReviewProduct = tree[0]?.questions?.[0]?.label === 'pricing_status'
     && tree[0].questions[0].answers?.some((answer) => answer.attributes?.some((attribute) => attribute.key === 'pricing_status' && attribute.value === '[manual-review]'));
   const storageQuestions = tree.filter((set) => set.enabled !== false).flatMap((set) => set.questions || []).filter((question) => question.enabled !== false && question.label === 'storage_size');
   const storageOptions = [...new Set(storageQuestions.flatMap((question) => (question.answers || []).filter(available).map((answer) => answer.text)))];
-  const [phase, setPhase] = useState(initialStorage ? 'question' : 'storage');
+  const [phase, setPhase] = useState(initialStorage || isLaptop ? 'question' : 'storage');
   const [storage, setStorage] = useState(initialStorage);
   const [pointer, setPointer] = useState({ setIndex: 0, questionIndex: 0 });
   const [selectedIndexes, setSelectedIndexes] = useState([]);
@@ -119,6 +122,7 @@ export default function TradeInValuation({ product, t, language, initialStorage 
   const remainingPrice = selectedGstoreProduct ? Math.max(0, Number(selectedGstoreProduct.price_gel) - gstorePrice) : 0;
   const noExactPrice = manualAssessment;
   const conditionPreview = (answer) => {
+    if (isLaptop) return Math.max(0, price + amount(answer));
     const branchQuestions = (tree[getPointer(answer?.go_to)?.setIndex]?.questions || []).filter((item) => item.enabled !== false);
     const storageAnswer = branchQuestions.find((item) => item.label === 'storage_size')?.answers?.find((item) => item.text === storage);
     return amount(answer) + amount(storageAnswer);
@@ -203,6 +207,7 @@ export default function TradeInValuation({ product, t, language, initialStorage 
   const possibleConditionPrices = (tree.filter((set) => set.enabled !== false).flatMap((set) => set.questions || []).find((item) => item.enabled !== false && item.label === 'condition')?.answers || [])
     .filter(available)
     .map((answer) => {
+      if (isLaptop) return price + amount(answer);
       const branchQuestions = (tree[getPointer(answer.go_to)?.setIndex]?.questions || []).filter((item) => item.enabled !== false);
       const storageAnswer = branchQuestions.find((item) => item.label === 'storage_size')?.answers?.find((item) => item.text === storage);
       return amount(answer) + amount(storageAnswer);
@@ -264,11 +269,11 @@ export default function TradeInValuation({ product, t, language, initialStorage 
     if (phase === 'range') return setPhase('faults');
     if (phase === 'faults') return setPhase('question');
     if (phase === 'storage') return;
-    if (!steps.length) return setPhase(storageOptions.length ? 'storage' : 'question');
+    if (!steps.length) return setPhase(storageOptions.length && !isLaptop ? 'storage' : 'question');
     let lastVisibleIndex = steps.length - 1;
     while (lastVisibleIndex >= 0 && steps[lastVisibleIndex].auto) lastVisibleIndex -= 1;
     const last = steps[lastVisibleIndex];
-    if (!last) return setPhase(storageOptions.length ? 'storage' : 'question');
+    if (!last) return setPhase(storageOptions.length && !isLaptop ? 'storage' : 'question');
     setSteps(steps.slice(0, lastVisibleIndex));
     setPointer(last.pointer);
     setSelectedIndexes(last.indexes);
@@ -278,7 +283,7 @@ export default function TradeInValuation({ product, t, language, initialStorage 
   };
 
   const restart = () => {
-    setPhase(initialStorage ? 'question' : 'storage');
+    setPhase(initialStorage || isLaptop ? 'question' : 'storage');
     setStorage(initialStorage);
     setPointer({ setIndex: 0, questionIndex: 0 });
     setSelectedIndexes([]);
@@ -405,7 +410,7 @@ export default function TradeInValuation({ product, t, language, initialStorage 
         </>}
 
         {phase === 'range' && <>
-          <h1>{language === 'ka' ? 'შენი ტელეფონი ღირს' : 'Your phone could be worth'}</h1>
+          <h1>{language === 'ka' ? 'შენი მოწყობილობა ღირს' : 'Your device could be worth'}</h1>
           {rangeMaximum > 0 && <div className="zzv-trade-range"><strong>{money(rangeMinimum)}</strong><strong>{money(rangeMaximum)}</strong><span className="zzv-trade-range-bar" /><small>{language === 'ka' ? 'მინიმუმი' : 'Minimum'}</small><small>{language === 'ka' ? 'მაქსიმუმი' : 'Maximum'}</small></div>}
           <p className="zzv-trade-flow-hint">{language === 'ka' ? 'ეს მხოლოდ სავარაუდო დიაპაზონია. ზუსტ თანხას მოწყობილობის დათვალიერების შემდეგ დაგიდასტურებთ.' : 'This is only an indicative range. We confirm the amount after inspecting the device.'}</p>
           <div className="zzv-trade-range-actions"><button className="zzv-trade-primary" type="button" onClick={() => setPhase('contact')}>{language === 'ka' ? 'მიიღე შეთავაზება' : 'Request an offer'}</button><button className="zzv-trade-secondary" type="button" onClick={previous}>{t('public.tradeIn.changeAnswers')}</button></div>

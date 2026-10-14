@@ -15,6 +15,7 @@ import {
   LockOutlined,
   SearchRounded,
   SmartphoneOutlined,
+  LaptopOutlined,
 } from '@mui/icons-material';
 import { useInfiniteQuery, useQuery } from 'react-query';
 import { useTranslation } from 'react-i18next';
@@ -168,7 +169,7 @@ const brandFamilyLabels = {
   sony: 'Xperia',
 };
 
-const TradeBrandOption = ({ item, selected, onClick, t }) => (
+const TradeBrandOption = ({ item, selected, onClick, t, category }) => (
   <button
     type="button"
     className={`zzv-trade-brand-option${selected ? ' is-selected' : ''}${item.coming_soon ? ' is-coming-soon' : ''}`}
@@ -178,18 +179,18 @@ const TradeBrandOption = ({ item, selected, onClick, t }) => (
     title={item.coming_soon ? t('public.tradeIn.comingSoon') : undefined}
   >
     <span className={`zzv-trade-brand-logo${item.brand.toLowerCase() === 'samsung' ? ' zzv-trade-brand-logo--samsung' : ''}`}>
-      <img src={brandMarks[item.brand.toLowerCase()] || imageUrl(item.image_src)} alt="" />
+      <img src={(category === 'phone' && brandMarks[item.brand.toLowerCase()]) || imageUrl(item.image_src)} alt="" />
     </span>
     <span className="zzv-trade-brand-name">{item.brand}</span>
-    {brandFamilyLabels[item.brand.toLowerCase()] && (
-      <span className="zzv-trade-brand-family">{brandFamilyLabels[item.brand.toLowerCase()]}</span>
+    {(category === 'laptop' && item.brand.toLowerCase() === 'apple' ? 'MacBook' : category === 'phone' ? brandFamilyLabels[item.brand.toLowerCase()] : null) && (
+      <span className="zzv-trade-brand-family">{category === 'laptop' ? 'MacBook' : brandFamilyLabels[item.brand.toLowerCase()]}</span>
     )}
     <span className="zzv-trade-brand-count">{item.product_count} {t('public.tradeIn.models')}</span>
     {item.coming_soon ? <LockOutlined className="zzv-trade-brand-unavailable" aria-label={t('public.tradeIn.comingSoon')} /> : <><ArrowForwardRounded className="zzv-trade-option-arrow" aria-hidden="true" /><span className="zzv-trade-option-radio" aria-hidden="true" /></>}
   </button>
 );
 
-const TradeModelOption = ({ item, selected, onClick, t, language }) => (
+const TradeModelOption = ({ item, selected, onClick, t, language, category }) => (
   <button
     type="button"
     className={`zzv-trade-model-option${selected ? ' is-selected' : ''}`}
@@ -198,7 +199,7 @@ const TradeModelOption = ({ item, selected, onClick, t, language }) => (
   >
     <span className="zzv-trade-model-image">
       <img src={imageUrl(item.image_src)} alt="" loading="lazy" />
-      <SmartphoneOutlined className="zzv-trade-model-mobile-icon" aria-hidden="true" />
+      {category === 'laptop' ? <LaptopOutlined className="zzv-trade-model-mobile-icon" aria-hidden="true" /> : <SmartphoneOutlined className="zzv-trade-model-mobile-icon" aria-hidden="true" />}
     </span>
     <span className="zzv-trade-model-name">{item.name}</span>
     <span className="zzv-trade-model-price">{Number(item.max_price) > 0 ? <><span className="zzv-trade-model-price-prefix">{t('public.tradeIn.upTo')} </span>₾{Math.round(item.max_price).toLocaleString()}</> : language === 'ka' ? 'ინდივიდუალური შეფასება' : 'Manual assessment'}</span>
@@ -830,12 +831,12 @@ const TradeInPage = () => {
   const productPages = productsQuery.data?.pages || [];
   const listedProducts = productPages.flatMap((page) => page.items || []);
   useEffect(() => {
-    if (stage !== 'products' || brand.toLowerCase() !== 'apple' || series || search || !listedProducts.length) return;
+    if (stage !== 'products' || category?.slug !== 'phone' || brand.toLowerCase() !== 'apple' || series || search || !listedProducts.length) return;
     const generations = [...new Set(listedProducts.map((item) => item.name.match(/iPhone\s+(\d+|SE|XS|XR|X|Air)/i)?.[1]).filter(Boolean))];
     generations.sort((a, b) => (Number(b) || -1) - (Number(a) || -1) || a.localeCompare(b));
     setModelSeries(generations);
-  }, [stage, brand, series, search, listedProducts.length]);
-  const seriesOptions = brand.toLowerCase() === 'apple'
+  }, [stage, category?.slug, brand, series, search, listedProducts.length]);
+  const seriesOptions = category?.slug === 'phone' && brand.toLowerCase() === 'apple'
     ? modelSeries
     : (seriesQuery.data || []).map((item) => item.series).filter((item) => item.toLowerCase() !== brand.toLowerCase());
 
@@ -1015,6 +1016,7 @@ const TradeInPage = () => {
                   onClick={() => chooseBrand(item.brand)}
                   t={t}
                   language={i18n.language}
+                  category={category?.slug}
                 />
               ))}
             </div>
@@ -1056,6 +1058,8 @@ const TradeInPage = () => {
                     else chooseProduct(item);
                   }}
                   t={t}
+                  language={i18n.language}
+                  category={category?.slug}
                 />
               ))}
             </div>
