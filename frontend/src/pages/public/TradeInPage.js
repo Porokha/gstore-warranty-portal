@@ -756,6 +756,8 @@ const TradeInPage = () => {
   const [category, setCategory] = useState(null);
   const [brand, setBrand] = useState('');
   const [series, setSeries] = useState('');
+  const [macBookYear, setMacBookYear] = useState('');
+  const [macBookChip, setMacBookChip] = useState('');
   const [modelSeries, setModelSeries] = useState([]);
   const [search, setSearch] = useState('');
   const [product, setProduct] = useState(null);
@@ -830,6 +832,12 @@ const TradeInPage = () => {
   );
   const productPages = productsQuery.data?.pages || [];
   const listedProducts = productPages.flatMap((page) => page.items || []);
+  const isMacBookCatalog = category?.slug === 'laptop' && brand.toLowerCase() === 'apple';
+  const macBookYears = [...new Set(listedProducts.filter((item) => !macBookChip || item.chip === macBookChip).map((item) => item.release_year).filter(Boolean))].sort().reverse();
+  const macBookChips = [...new Set(listedProducts.filter((item) => !macBookYear || item.release_year === macBookYear).map((item) => item.chip).filter(Boolean))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  const visibleProducts = isMacBookCatalog
+    ? listedProducts.filter((item) => (!macBookYear || item.release_year === macBookYear) && (!macBookChip || item.chip === macBookChip))
+    : listedProducts;
   useEffect(() => {
     if (stage !== 'products' || category?.slug !== 'phone' || brand.toLowerCase() !== 'apple' || series || search || !listedProducts.length) return;
     const generations = [...new Set(listedProducts.map((item) => item.name.match(/iPhone\s+(\d+|SE|XS|XR|X|Air)/i)?.[1]).filter(Boolean))];
@@ -861,6 +869,8 @@ const TradeInPage = () => {
     setCategory(selected);
     setBrand('');
     setSeries('');
+    setMacBookYear('');
+    setMacBookChip('');
     setModelSeries([]);
     setSearch('');
     setStage(selected.coming_soon ? 'categories' : 'brands');
@@ -878,6 +888,8 @@ const TradeInPage = () => {
     setSelectedProduct(null);
     setBrand('');
     setSeries('');
+    setMacBookYear('');
+    setMacBookChip('');
     setSearch('');
     setCategory(null);
     setStage('categories');
@@ -887,6 +899,8 @@ const TradeInPage = () => {
     if (orderedBrands.find((item) => item.brand === selected)?.coming_soon) return;
     setBrand(selected);
     setSeries('');
+    setMacBookYear('');
+    setMacBookChip('');
     setModelSeries([]);
     setSearch('');
     if (!window.matchMedia('(max-width: 920px)').matches) setStage('products');
@@ -1032,23 +1046,35 @@ const TradeInPage = () => {
             <p className="zzv-trade-step-context">{brand}</p>
             <div className="zzv-trade-search">
               <SearchRounded aria-hidden="true" />
-              <input value={search} onChange={(event) => { setSearch(event.target.value); setSelectedProduct(null); }} placeholder={t('public.tradeIn.searchModel')} aria-label={t('public.tradeIn.searchModel')} />
+              <input value={search} onChange={(event) => { setSearch(event.target.value); setMacBookYear(''); setMacBookChip(''); setSelectedProduct(null); }} placeholder={t('public.tradeIn.searchModel')} aria-label={t('public.tradeIn.searchModel')} />
             </div>
             {seriesOptions.length > 0 && (
               <div ref={seriesRef} className="zzv-trade-series" aria-label={t('public.tradeIn.chooseSeries')}>
-                <button type="button" className={!series ? 'is-selected' : ''} onClick={() => { setSeries(''); setSelectedProduct(null); }}>{t('public.tradeIn.allModels')}</button>
+                <button type="button" className={!series ? 'is-selected' : ''} onClick={() => { setSeries(''); setMacBookYear(''); setMacBookChip(''); setSelectedProduct(null); }}>{t('public.tradeIn.allModels')}</button>
                 {seriesOptions.map((item) => (
-                  <button key={item} type="button" className={series === item ? 'is-selected' : ''} onClick={() => { setSeries(item); setSelectedProduct(null); }}>{item}</button>
+                  <button key={item} type="button" className={series === item ? 'is-selected' : ''} onClick={() => { setSeries(item); setMacBookYear(''); setMacBookChip(''); setSelectedProduct(null); }}>{item}</button>
                 ))}
               </div>
             )}
+            {isMacBookCatalog && (macBookYears.length > 1 || macBookYear) && (
+              <div className="zzv-trade-series" aria-label={i18n.language === 'ka' ? 'გამოშვების წელი' : 'Release year'}>
+                <button type="button" className={!macBookYear ? 'is-selected' : ''} onClick={() => { setMacBookYear(''); setSelectedProduct(null); }}>{i18n.language === 'ka' ? 'ყველა წელი' : 'All years'}</button>
+                {macBookYears.map((year) => <button key={year} type="button" className={macBookYear === year ? 'is-selected' : ''} onClick={() => { setMacBookYear(year); setSelectedProduct(null); }}>{year}</button>)}
+              </div>
+            )}
+            {isMacBookCatalog && (macBookChips.length > 1 || macBookChip) && (
+              <div className="zzv-trade-series" aria-label={i18n.language === 'ka' ? 'პროცესორი' : 'Processor'}>
+                <button type="button" className={!macBookChip ? 'is-selected' : ''} onClick={() => { setMacBookChip(''); setSelectedProduct(null); }}>{i18n.language === 'ka' ? 'ყველა ჩიპი' : 'All chips'}</button>
+                {macBookChips.map((chip) => <button key={chip} type="button" className={macBookChip === chip ? 'is-selected' : ''} onClick={() => { setMacBookChip(chip); setSelectedProduct(null); }}>{chip}</button>)}
+              </div>
+            )}
             <p className="zzv-trade-result-count">
-              {productsQuery.isLoading ? t('public.tradeIn.loadingMore') : `${productPages[0]?.total || 0} ${t('public.tradeIn.models')}`}
+              {productsQuery.isLoading ? t('public.tradeIn.loadingMore') : `${isMacBookCatalog ? visibleProducts.length : productPages[0]?.total || 0} ${t('public.tradeIn.models')}`}
             </p>
             <div className="zzv-trade-model-grid">
               {productsQuery.isLoading ? Array.from({ length: 4 }).map((_, index) => (
                 <Skeleton key={index} className="zzv-trade-model-skeleton" variant="rounded" height={220} sx={{ borderRadius: '16px' }} />
-              )) : listedProducts.map((item) => (
+              )) : visibleProducts.map((item) => (
                 <TradeModelOption
                   key={item.id}
                   item={item}
@@ -1063,7 +1089,7 @@ const TradeInPage = () => {
                 />
               ))}
             </div>
-            {!productsQuery.isLoading && !listedProducts.length && <p className="zzv-trade-empty">{t('public.tradeIn.noModels')}</p>}
+            {!productsQuery.isLoading && !visibleProducts.length && <p className="zzv-trade-empty">{t('public.tradeIn.noModels')}</p>}
             {!productsQuery.isLoading && productsQuery.hasNextPage && <div ref={loadMoreRef} className="zzv-trade-load-more" aria-label={t('public.tradeIn.loadingMore')}><CircularProgress size={22} /></div>}
             <button type="button" className="zzv-trade-continue" disabled={!selectedProduct} onClick={() => chooseProduct(selectedProduct)}>
               {t('public.tradeIn.continue')}
