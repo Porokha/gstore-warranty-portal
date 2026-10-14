@@ -50,7 +50,7 @@ const ShopAdminLayout = () => {
       refetchOnWindowFocus: true,
     },
   );
-  const pendingTradeInCount = tradeInCounts?.pending || 0;
+  const pendingTradeInCount = tradeInCounts?.unread || 0;
 
   return (
     <Box

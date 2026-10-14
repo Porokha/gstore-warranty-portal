@@ -28,8 +28,9 @@ const available = (answer) => answer && ![0, false, '0'].includes(answer.value_e
 const money = (value) => `₾${Math.max(0, Math.round(value)).toLocaleString()}`;
 const pathEntry = (question, answers, extras = {}) => ({
   question: question?.text,
+  question_ka: question?.text_ka,
   label: question?.label,
-  answers: answers.map((answer) => ({ text: answer.text, value: amount(answer), attributes: answer.attributes || [] })),
+  answers: answers.map((answer) => ({ text: answer.text, text_ka: answer.text_ka, value: amount(answer), attributes: answer.attributes || [] })),
   ...extras,
 });
 

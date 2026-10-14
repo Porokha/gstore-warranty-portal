@@ -57,6 +57,9 @@ export class TradeInQuote {
   })
   status: TradeInQuoteStatus;
 
+  @Column({ type: 'datetime', nullable: true })
+  viewed_at: Date | null;
+
   @Column({ type: 'text', nullable: true })
   notes: string | null;
 

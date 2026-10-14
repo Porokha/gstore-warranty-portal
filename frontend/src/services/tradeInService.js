@@ -161,6 +161,11 @@ export const tradeInService = {
     return response.data;
   },
 
+  markAdminQuoteViewed: async (id) => {
+    const response = await api.patch(`/shop/admin/trade-in/quotes/${id}/viewed`);
+    return response.data;
+  },
+
   deleteAdminQuote: async (id) => {
     const response = await api.delete(`/shop/admin/trade-in/quotes/${id}`);
     return response.data;
