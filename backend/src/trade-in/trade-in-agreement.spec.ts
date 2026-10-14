@@ -1,5 +1,6 @@
 import { BadRequestException, GoneException } from '@nestjs/common';
 import { createHash } from 'crypto';
+import * as path from 'path';
 import { TradeInAgreementService } from './trade-in-agreement.service';
 import { agreementTerms, makeAgreementPdf } from './trade-in-agreement.pdf';
 
@@ -111,6 +112,17 @@ describe('Trade-in agreement', () => {
     const pdf = await makeAgreementPdf({ number: 'TI-TEST', date: new Date(), details: fullDetails, customerSignature: image, representativeSignature: image });
     expect(pdf.subarray(0, 4).toString()).toBe('%PDF');
     expect(pdf.length).toBeGreaterThan(5000);
+  });
+
+  it('bundles fonts for Georgian, Latin, numbers, punctuation, and the lari sign', () => {
+    const fontkit = require('fontkit');
+    const fontDirectory = path.join(process.cwd(), 'assets/fonts');
+    const agreementFont = fontkit.openSync(path.join(fontDirectory, 'DejaVuSans.ttf'));
+    const lariFont = fontkit.openSync(path.join(fontDirectory, 'NotoSansGeorgian-Regular.ttf'));
+    for (const character of 'GSTORE iPhone 0123456789 № — „“ თბილისი') {
+      expect(agreementFont.hasGlyphForCodePoint(character.codePointAt(0))).toBe(true);
+    }
+    expect(lariFont.hasGlyphForCodePoint('₾'.codePointAt(0))).toBe(true);
   });
 
   it('previews an incomplete unsigned draft without finalizing it', async () => {
