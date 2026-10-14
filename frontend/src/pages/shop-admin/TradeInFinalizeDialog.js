@@ -51,7 +51,7 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
   const [drawnSignature, setDrawnSignature] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const [attemptedQr, setAttemptedQr] = useState(false);
+  const [attemptedFinish, setAttemptedFinish] = useState(false);
   const [previewUrl, setPreviewUrl] = useState('');
   const [previewBusy, setPreviewBusy] = useState(false);
   const agreementQuery = useQuery(['trade-in-agreement', quote?.id], () => tradeInService.openAdminAgreement(quote.id), {
@@ -93,16 +93,7 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
   };
   const issueLink = async () => {
     setError('');
-    setAttemptedQr(true);
-    if (missing.length) {
-      setError(`QR-ის შექმნამდე შეავსეთ: ${missing.map((key) => fieldLabels[key]).join(', ')}.`);
-      const firstField = document.getElementById(`agreement-${missing[0] === 'final_price' ? 'price' : missing[0]}`);
-      firstField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      firstField?.focus({ preventScroll: true });
-      return;
-    }
     try {
-      await save();
       const link = await linkMutation.mutateAsync();
       setQrImage('');
       setQr(link);
@@ -131,7 +122,7 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
   const finalize = async () => {
     setError('');
     if (missing.length) {
-      setAttemptedQr(true);
+      setAttemptedFinish(true);
       setError(`გაფორმებამდე შეავსეთ: ${missing.map((key) => fieldLabels[key]).join(', ')}.`);
       return;
     }
@@ -154,10 +145,10 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
             <div className="zzv-agreement-dialog__body">
               {error && <Alert severity="error">{String(error)}</Alert>}
               {message && <Alert severity="success">{message}</Alert>}
-              {!finalized && <div className={`zzv-agreement-dialog__readiness${missing.length ? ' is-incomplete' : ''}`}><strong>{missing.length ? `QR-ის შექმნამდე შესავსებია ${missing.length} ველი` : 'ყველა აუცილებელი ველი შევსებულია'}</strong><span>{missing.length ? missing.map((key) => fieldLabels[key]).join(' · ') : 'შეგიძლიათ შექმნათ ხელმოწერის QR კოდი.'}</span><span>PDF-ის წინასწარი ნახვა ხელმისაწვდომია ხელმოწერამდე.</span></div>}
-              <section className="zzv-agreement-dialog__section"><h3><span>01</span> გამყიდველი</h3><div className="zzv-agreement-dialog__grid">{fields.slice(0, 4).map(([key, label]) => <div className="zzv-agreement-dialog__field" key={key}><label htmlFor={`agreement-${key}`}>{label} *</label><TextField id={`agreement-${key}`} size="small" fullWidth value={details[key] || ''} disabled={finalized} error={attemptedQr && missing.includes(key)} onChange={(event) => update(key, event.target.value)} inputProps={{ maxLength: key === 'personal_id' ? 11 : 1000 }} /></div>)}</div></section>
-              <section className="zzv-agreement-dialog__section"><h3><span>02</span> მოწყობილობა და ინსპექტირება</h3><div className="zzv-agreement-dialog__grid">{fields.slice(4).map(([key, label]) => <div className="zzv-agreement-dialog__field" key={key}><label htmlFor={`agreement-${key}`}>{label}{['brand_model', 'color', 'included_items', 'defects'].includes(key) ? ' *' : ''}{key === 'imei' || key === 'serial' ? ' (ერთ-ერთი *)' : ''}</label><TextField id={`agreement-${key}`} size="small" fullWidth value={details[key] || ''} disabled={finalized} error={attemptedQr && (missing.includes(key) || (key === 'serial' && missing.includes('imei')))} onChange={(event) => update(key, event.target.value)} multiline={key === 'defects'} minRows={key === 'defects' ? 2 : undefined} /></div>)}</div><p className="zzv-agreement-dialog__hint">IMEI ან Serial Number-დან ერთ-ერთი სავალდებულოა. თუ დეფექტი არ არის, ჩაწერეთ „არ აქვს“.</p></section>
-              <section className="zzv-agreement-dialog__section"><h3><span>03</span> შეთანხმებული ფასი და ანგარიშსწორება</h3><div className="zzv-agreement-dialog__grid"><div className="zzv-agreement-dialog__field"><label htmlFor="agreement-price">ნასყიდობის ფასი (₾) *</label><TextField id="agreement-price" size="small" fullWidth type="number" value={details.final_price ?? ''} disabled={finalized} error={attemptedQr && missing.includes('final_price')} onChange={(event) => update('final_price', event.target.value)} inputProps={{ min: 0, step: 0.01 }} /></div><div className="zzv-agreement-dialog__field"><label htmlFor="agreement-method">ანგარიშსწორება *</label><TextField id="agreement-method" size="small" fullWidth select value={details.settlement_method || 'cash'} disabled={finalized} onChange={(event) => update('settlement_method', event.target.value)}><MenuItem value="cash">ნაღდი</MenuItem><MenuItem value="bank">საბანკო გადარიცხვა</MenuItem><MenuItem value="gstore_credit">Gstore კრედიტი</MenuItem></TextField></div></div>{details.settlement_method === 'gstore_credit' && <p className="zzv-agreement-dialog__hint">ბონუსი: ₾{Number(details.credit_bonus || 0).toFixed(2)} · ჯამური კრედიტი: ₾{(Number(details.final_price || 0) + Number(details.credit_bonus || 0)).toFixed(2)}. ახალი თანხის ბონუსი შენახვისას გადაითვლება.</p>}</section>
+              {!finalized && <div className={`zzv-agreement-dialog__readiness${missing.length ? ' is-incomplete' : ''}`}><strong>{missing.length ? `გაფორმებამდე შესავსებია ${missing.length} ველი` : 'ყველა აუცილებელი ველი შევსებულია'}</strong><span>{missing.length ? missing.map((key) => fieldLabels[key]).join(' · ') : 'შეგიძლიათ დაასრულოთ გაფორმება ხელმოწერების მიღების შემდეგ.'}</span><span>ხელმოწერის QR კოდის შექმნა შეგიძლიათ ამ ველების შევსებამდეც.</span></div>}
+              <section className="zzv-agreement-dialog__section"><h3><span>01</span> გამყიდველი</h3><div className="zzv-agreement-dialog__grid">{fields.slice(0, 4).map(([key, label]) => <div className="zzv-agreement-dialog__field" key={key}><label htmlFor={`agreement-${key}`}>{label} *</label><TextField id={`agreement-${key}`} size="small" fullWidth value={details[key] || ''} disabled={finalized} error={attemptedFinish && missing.includes(key)} onChange={(event) => update(key, event.target.value)} inputProps={{ maxLength: key === 'personal_id' ? 11 : 1000 }} /></div>)}</div></section>
+              <section className="zzv-agreement-dialog__section"><h3><span>02</span> მოწყობილობა და ინსპექტირება</h3><div className="zzv-agreement-dialog__grid">{fields.slice(4).map(([key, label]) => <div className="zzv-agreement-dialog__field" key={key}><label htmlFor={`agreement-${key}`}>{label}{['brand_model', 'color', 'included_items', 'defects'].includes(key) ? ' *' : ''}{key === 'imei' || key === 'serial' ? ' (ერთ-ერთი *)' : ''}</label><TextField id={`agreement-${key}`} size="small" fullWidth value={details[key] || ''} disabled={finalized} error={attemptedFinish && (missing.includes(key) || (key === 'serial' && missing.includes('imei')))} onChange={(event) => update(key, event.target.value)} multiline={key === 'defects'} minRows={key === 'defects' ? 2 : undefined} /></div>)}</div><p className="zzv-agreement-dialog__hint">IMEI ან Serial Number-დან ერთ-ერთი სავალდებულოა. თუ დეფექტი არ არის, ჩაწერეთ „არ აქვს“.</p></section>
+              <section className="zzv-agreement-dialog__section"><h3><span>03</span> შეთანხმებული ფასი და ანგარიშსწორება</h3><div className="zzv-agreement-dialog__grid"><div className="zzv-agreement-dialog__field"><label htmlFor="agreement-price">ნასყიდობის ფასი (₾) *</label><TextField id="agreement-price" size="small" fullWidth type="number" value={details.final_price ?? ''} disabled={finalized} error={attemptedFinish && missing.includes('final_price')} onChange={(event) => update('final_price', event.target.value)} inputProps={{ min: 0, step: 0.01 }} /></div><div className="zzv-agreement-dialog__field"><label htmlFor="agreement-method">ანგარიშსწორება *</label><TextField id="agreement-method" size="small" fullWidth select value={details.settlement_method || 'cash'} disabled={finalized} onChange={(event) => update('settlement_method', event.target.value)}><MenuItem value="cash">ნაღდი</MenuItem><MenuItem value="bank">საბანკო გადარიცხვა</MenuItem><MenuItem value="gstore_credit">Gstore კრედიტი</MenuItem></TextField></div></div>{details.settlement_method === 'gstore_credit' && <p className="zzv-agreement-dialog__hint">ბონუსი: ₾{Number(details.credit_bonus || 0).toFixed(2)} · ჯამური კრედიტი: ₾{(Number(details.final_price || 0) + Number(details.credit_bonus || 0)).toFixed(2)}. ახალი თანხის ბონუსი შენახვისას გადაითვლება.</p>}</section>
               <section className="zzv-agreement-dialog__section">
                 <h3><span>04</span> ხელმოწერები</h3>
                 <div className="zzv-agreement-dialog__signatures">
@@ -184,7 +175,7 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
                   </div>
                 </div>
               </section>
-              <p className="zzv-agreement-dialog__footnote">ფასის ან სხვა მონაცემების შეცვლა აუქმებს უკვე შესრულებულ ხელმოწერებს.</p>
+              <p className="zzv-agreement-dialog__footnote">მიღებული ხელმოწერები შენარჩუნდება მონახაზის ცვლილებისას და დაემატება საბოლოო PDF-ს.</p>
             </div>
           )}
         </DialogContent>

@@ -118,7 +118,7 @@ export const tradeInService = {
   },
 
   submitPublicAgreementSignature: async (token, signature) => {
-    const response = await api.post(`/trade-in/sign/${token}`, { signature, accepted: true });
+    const response = await api.post(`/trade-in/sign/${token}`, { signature });
     return response.data;
   },
 

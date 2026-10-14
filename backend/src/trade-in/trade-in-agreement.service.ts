@@ -137,15 +137,8 @@ export class TradeInAgreementService {
       const agreement = await this.lockedAgreement(manager, quoteId);
       if (!agreement) throw new NotFoundException('Open the agreement first.');
       if (agreement.finalized_at) throw new BadRequestException('Finalized agreements cannot be changed.');
-      const previous = agreement.details as AgreementDetails;
-      const changed = (Object.keys(details) as (keyof AgreementDetails)[]).some((key) => details[key] !== previous?.[key]);
-      if (changed) {
-        agreement.customer_signature = null;
-        agreement.customer_signed_at = null;
-        agreement.representative_signature = null;
-        agreement.representative_user_id = null;
-        agreement.signing_token_hash = null;
-        agreement.signing_token_expires_at = null;
+      if (agreement.representative_signature) {
+        details.representative_name = (agreement.details as AgreementDetails).representative_name;
       }
       agreement.details = details;
       return this.view(await manager.save(agreement));
@@ -159,10 +152,6 @@ export class TradeInAgreementService {
       const agreement = await this.lockedAgreement(manager, quoteId);
       if (!agreement) throw new NotFoundException('Agreement not found.');
       if (agreement.finalized_at) throw new BadRequestException('Agreement is already finalized.');
-      requireCompleteDetails(agreement.details as AgreementDetails);
-      if ((agreement.details as AgreementDetails).terms_hash !== currentTermsHash) {
-        throw new BadRequestException('Agreement terms changed. Save the draft and generate a new QR code.');
-      }
       const token = randomBytes(32).toString('base64url');
       agreement.signing_token_hash = createHash('sha256').update(token).digest('hex');
       agreement.signing_token_expires_at = new Date(Date.now() + 15 * 60 * 1000);
@@ -189,14 +178,8 @@ export class TradeInAgreementService {
 
   async signingPreview(token: string) {
     const agreement = await this.validToken(token);
-    const details = agreement.details as AgreementDetails;
     const quote = await this.quote(agreement.quote_id);
-    return {
-      agreement_number: `TI-${quote.quote_number}`,
-      details,
-      buyer: 'შპს „ჯისთორ ლლტ“ (ს/კ 405566463)',
-      terms: agreementTerms,
-    };
+    return { quote_number: quote.quote_number };
   }
 
   async submitCustomerSignature(token: string, dataUrl: string) {
@@ -242,10 +225,6 @@ export class TradeInAgreementService {
       if (agreement.finalized_at) throw new BadRequestException('Agreement is already finalized.');
       if ((agreement.details as AgreementDetails).representative_name !== representativeName) {
         agreement.details = { ...agreement.details, representative_name: representativeName };
-        agreement.customer_signature = null;
-        agreement.customer_signed_at = null;
-        agreement.signing_token_hash = null;
-        agreement.signing_token_expires_at = null;
       }
       agreement.representative_signature = signature;
       agreement.representative_user_id = userId;
