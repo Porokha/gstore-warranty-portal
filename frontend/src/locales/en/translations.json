@@ -205,6 +205,8 @@
     "serviceSalePriceGel": "Service sale price ₾",
     "serviceSalePriceHint": "Discounted total for the service bundle; leave empty for no discount.",
     "serviceSalePriceError": "Service sale price must be lower than the regular service price.",
+    "manualSyncOnly": "Manual sync only",
+    "refreshOverrideWarning": "Manual refresh replaces supplier prices, including products marked manual sync only.",
     "priceHint": "Leave empty for service only.",
     "servicePriceHint": "Leave empty to disable service bundle.",
     "visibility": "Visibility",

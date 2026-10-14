@@ -147,6 +147,9 @@ export class ShopProduct {
   @Column({ type: 'datetime', nullable: true })
   supplier_synced_at: Date | null;
 
+  @Column({ type: 'boolean', default: false })
+  supplier_auto_sync_disabled: boolean;
+
   @Column({ type: 'datetime', nullable: true })
   deleted_at: Date | null;
 
