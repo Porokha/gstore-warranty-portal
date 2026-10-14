@@ -466,7 +466,7 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
     limit = 100,
     startPage = 1,
     maxPages?: number,
-    options: { importMissing?: boolean; updateExisting?: boolean } = {},
+    options: { importMissing?: boolean; updateExisting?: boolean; skipManualOverrides?: boolean } = {},
     onProgress?: (progress: MobileSentrixSyncProgress) => Promise<void>,
   ) {
     const importMissing = options.importMissing !== false;
@@ -541,11 +541,17 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
           continue;
         }
 
+        if (options.skipManualOverrides && existing.supplier_auto_sync_disabled) {
+          skipped += 1;
+          continue;
+        }
+
         try {
           const result = await this.updateExistingMobileSentrixProductFromCatalog(
             existing,
             item,
             rateCache,
+            options.skipManualOverrides,
           );
           if (result.action === 'updated') {
             updated += 1;
@@ -715,7 +721,11 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
     product: ShopProduct,
     item: MobileSentrixSearchItem,
     rateCache: Map<string, number>,
+    skipManualOverrides = false,
   ) {
+    if (skipManualOverrides && product.supplier_auto_sync_disabled) {
+      return { id: product.id, title: product.title, action: 'skipped' as const };
+    }
     const currency = this.getMobileSentrixCurrency(item);
     if (!rateCache.has(currency)) {
       rateCache.set(currency, await this.getGelExchangeRate(currency));
@@ -766,7 +776,13 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
       return { id: product.id, title: product.title, action: 'skipped' as const };
     }
 
-    await this.shopProductsRepository.update(product.id, nextPayload);
+    const criteria = skipManualOverrides
+      ? { id: product.id, supplier_auto_sync_disabled: false }
+      : { id: product.id };
+    const result = await this.shopProductsRepository.update(criteria, nextPayload);
+    if (!result.affected) {
+      return { id: product.id, title: product.title, action: 'skipped' as const };
+    }
     return { id: product.id, title: product.title, action: 'updated' as const };
   }
 
@@ -780,6 +796,7 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
       return this.syncMobileSentrixProducts(100, 1, undefined, {
         importMissing: false,
         updateExisting: true,
+        skipManualOverrides: true,
       });
     } finally {
       this.mobileSentrixAutoSyncRunning = false;

@@ -278,6 +278,11 @@ export class ShopService {
     if (updateDto.sort_order !== undefined) product.sort_order = updateDto.sort_order;
     if (updateDto.is_active !== undefined) product.is_active = updateDto.is_active;
 
+    if (product.supplier === ShopProductSupplier.MOBILESENTRIX &&
+      Object.keys(updateDto).some((key) => key !== 'is_active')) {
+      product.supplier_auto_sync_disabled = true;
+    }
+
     const updated = await this.shopProductsRepository.save(product);
     return this.serializeProduct(updated, true);
   }
@@ -838,6 +843,7 @@ export class ShopService {
                 ? Number(product.supplier_exchange_rate)
                 : null,
             supplier_synced_at: product.supplier_synced_at,
+            supplier_auto_sync_disabled: product.supplier_auto_sync_disabled,
             deleted_at: product.deleted_at,
             created_at: product.created_at,
             updated_at: product.updated_at,

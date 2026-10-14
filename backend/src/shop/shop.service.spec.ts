@@ -106,6 +106,19 @@ describe('ShopService admin product filters', () => {
     expect(productsRepository.save).toHaveBeenCalledTimes(1);
   });
 
+  it('locks an edited MobileSentrix product out of automatic sync, but not a visibility toggle', async () => {
+    const product = { id: 2, slug: 'supplier-part', supplier: 'mobilesentrix', price: '100.00', service_price: null, service_sale_price: null, supplier_auto_sync_disabled: false };
+    const productsRepository = { findOne: jest.fn(async () => product), save: jest.fn(async () => product) };
+    const service = new ShopService(productsRepository as any, {} as any);
+
+    await service.updateProduct(2, { is_active: false });
+    expect(product.supplier_auto_sync_disabled).toBe(false);
+
+    await service.updateProduct(2, { price: 150 });
+    expect(product.price).toBe('150.00');
+    expect(product.supplier_auto_sync_disabled).toBe(true);
+  });
+
   it('charges the service sale price rather than the regular service price at checkout', async () => {
     const product = { id: 1, title: 'Battery replacement', is_active: true, deleted_at: null, price: '80.00', sale_price: null, service_price: '120.00', service_sale_price: '105.00' };
     const productsRepository = { find: jest.fn(async () => [product]) };

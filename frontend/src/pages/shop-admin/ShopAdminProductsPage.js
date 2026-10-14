@@ -598,11 +598,23 @@ const ShopAdminProductsPage = () => {
     setConfirmState({
       open: true,
       title: 'Sync Fully',
-      message: 'Are you sure? Full MobileSentrix catalog sync may take more than 1 hour to complete.',
+      message: `${t('shopProducts.refreshOverrideWarning', 'Manual refresh replaces supplier prices, including products marked manual sync only.')} Full MobileSentrix catalog sync may take more than 1 hour to complete.`,
       confirmText: 'Continue',
       cancelText: 'Cancel',
       severity: 'warning',
       onConfirm: () => mobileSentrixSyncMutation.mutate(),
+    });
+  };
+
+  const handleRefreshExistingMobileSentrix = () => {
+    setSyncMenuAnchor(null);
+    setConfirmState({
+      open: true,
+      title: t('shopProducts.refreshExisting', 'Refresh existing'),
+      message: t('shopProducts.refreshOverrideWarning', 'Manual refresh replaces supplier prices, including products marked manual sync only.'),
+      confirmText: t('shopProducts.refreshExisting', 'Refresh existing'),
+      severity: 'warning',
+      onConfirm: () => mobileSentrixRefreshMutation.mutate(),
     });
   };
 
@@ -699,10 +711,30 @@ const ShopAdminProductsPage = () => {
       return;
     }
 
-    mobileSentrixSelectedRefreshMutation.mutate(selectedIds);
+    const ids = [...selectedIds];
+    setConfirmState({
+      open: true,
+      title: t('shopProducts.refreshSelected', 'Refresh selected'),
+      message: t('shopProducts.refreshOverrideWarning', 'Manual refresh replaces supplier prices, including products marked manual sync only.'),
+      confirmText: t('shopProducts.refreshSelected', 'Refresh selected'),
+      severity: 'warning',
+      onConfirm: () => mobileSentrixSelectedRefreshMutation.mutate(ids),
+    });
   };
 
   const refreshMobileSentrixProduct = (productId) => {
+    const product = products.find((item) => item.id === productId);
+    if (product?.supplier_auto_sync_disabled) {
+      setConfirmState({
+        open: true,
+        title: t('shopProducts.refreshProduct', 'Refresh product'),
+        message: t('shopProducts.refreshOverrideWarning', 'Manual refresh replaces supplier prices, including products marked manual sync only.'),
+        confirmText: t('shopProducts.refreshProduct', 'Refresh product'),
+        severity: 'warning',
+        onConfirm: () => mobileSentrixSelectedRefreshMutation.mutate([productId]),
+      });
+      return;
+    }
     mobileSentrixSelectedRefreshMutation.mutate([productId]);
   };
 
@@ -848,7 +880,7 @@ const ShopAdminProductsPage = () => {
                     <MenuItem disabled={mobileSentrixSyncMutation.isLoading || mobileSentrixJobRunning} onClick={() => { setSyncMenuAnchor(null); handleFullMobileSentrixSync(); }}>
                       <Sync fontSize="small" /><span><strong>{t('shopProducts.syncFully')}</strong><small>{t('shopProducts.syncFullyHint')}</small></span>
                     </MenuItem>
-                    <MenuItem disabled={mobileSentrixRefreshMutation.isLoading || mobileSentrixJobRunning} onClick={() => { setSyncMenuAnchor(null); mobileSentrixRefreshMutation.mutate(); }}>
+                    <MenuItem disabled={mobileSentrixRefreshMutation.isLoading || mobileSentrixJobRunning} onClick={handleRefreshExistingMobileSentrix}>
                       <RestoreFromTrash fontSize="small" /><span><strong>{t('shopProducts.refreshExisting')}</strong><small>{t('shopProducts.refreshExistingHint')}</small></span>
                     </MenuItem>
                     <MenuItem disabled><Sync fontSize="small" /><span><strong>{t('shopProducts.rerunMapping')}</strong><small>{t('shopProducts.rerunMappingHint')}</small></span></MenuItem>
@@ -1304,7 +1336,7 @@ const ShopAdminProductsPage = () => {
                           ? <span className="zzv-shop-catalog__deleted-date">{product.deleted_at ? new Date(product.deleted_at).toLocaleDateString() : '—'}</span>
                           : renderVisibilitySwitch(product)}</TableCell>
                         <TableCell>
-                          <span className="zzv-shop-catalog__cell-copy"><strong>{product.supplier_synced_at ? new Date(product.supplier_synced_at).toLocaleDateString() : '—'}</strong><small>{product.supplier_synced_at ? t('shopProducts.automatic') : t('shopProducts.notSynced')}</small></span>
+                          <span className="zzv-shop-catalog__cell-copy"><strong>{product.supplier_synced_at ? new Date(product.supplier_synced_at).toLocaleDateString() : '—'}</strong><small>{product.supplier_auto_sync_disabled ? t('shopProducts.manualSyncOnly', 'Manual sync only') : product.supplier_synced_at ? t('shopProducts.automatic') : t('shopProducts.notSynced')}</small></span>
                         </TableCell>
                         <TableCell align="right">
                           <Stack className="zzv-shop-sentrix__actions" direction="row" spacing={0.5} justifyContent="flex-end">
