@@ -16,6 +16,7 @@ import { TradeInQuote, TradeInQuoteStatus } from './entities/trade-in-quote.enti
 import { TradeInSetting } from './entities/trade-in-setting.entity';
 import { validatePricingTree } from './pricing-tree.validation';
 import { isMacBook, macBookDisplay, macBookFamily } from './macbook-catalog';
+import { TradeInAgreement } from './entities/trade-in-agreement.entity';
 
 const PRODUCT_CATEGORY_MATCH = `(
   LOWER(product.category) = LOWER(:category)
@@ -644,8 +645,13 @@ export class TradeInService {
       .skip((resolvedPage - 1) * resolvedLimit)
       .take(resolvedLimit)
       .getManyAndCount();
+    const agreements = items.length ? await this.quoteRepository.manager.getRepository(TradeInAgreement).find({
+      where: { quote_id: In(items.map((item) => item.id)) },
+      select: ['quote_id', 'finalized_at'],
+    }) : [];
+    const agreementByQuote = new Map(agreements.map((agreement) => [agreement.quote_id, agreement]));
     return {
-      items,
+      items: items.map((item) => ({ ...item, agreement_exists: agreementByQuote.has(item.id), agreement_finalized_at: agreementByQuote.get(item.id)?.finalized_at || null })),
       total,
       page: resolvedPage,
       limit: resolvedLimit,
@@ -654,26 +660,41 @@ export class TradeInService {
   }
 
   async updateQuote(id: number, dto: UpdateTradeInQuoteDto) {
-    const quote = await this.quoteRepository.findOne({ where: { id } });
-    if (!quote) {
-      throw new NotFoundException('Trade-in quote not found.');
-    }
-    const next = {
-      ...dto,
-      customer_name: dto.customer_name?.trim(),
-      customer_email: dto.customer_email !== undefined ? dto.customer_email.trim() || null : undefined,
-      customer_phone: dto.customer_phone?.trim(),
-      product_name: dto.product_name?.trim(),
-      final_price: dto.final_price !== undefined ? Number(dto.final_price).toFixed(2) : undefined,
-      notes: dto.notes !== undefined ? dto.notes.trim() || null : undefined,
-    };
-    Object.entries(next).forEach(([key, value]) => {
-      if (value !== undefined) {
-        (quote as any)[key] = value;
+    return this.quoteRepository.manager.transaction(async (manager) => {
+      const agreement = await manager.findOne(TradeInAgreement, {
+        where: { quote_id: id }, select: ['finalized_at'], lock: { mode: 'pessimistic_write' },
+      });
+      if (agreement?.finalized_at) throw new BadRequestException('Finalized trade-in requests cannot be edited.');
+      const quote = await manager.findOne(TradeInQuote, { where: { id }, lock: { mode: 'pessimistic_write' } });
+      if (!quote) throw new NotFoundException('Trade-in quote not found.');
+      if (agreement && (['customer_name', 'customer_phone', 'product_name', 'final_price'] as (keyof UpdateTradeInQuoteDto)[])
+        .some((key) => dto[key] !== undefined)) {
+        throw new BadRequestException('Edit agreement details in the finalization form.');
       }
+      if (dto.status === TradeInQuoteStatus.COMPLETED && quote.status !== TradeInQuoteStatus.COMPLETED) {
+        throw new BadRequestException('Use the agreement finalization flow to complete a trade-in.');
+      }
+      if (dto.status === TradeInQuoteStatus.CANCELLED && agreement) {
+        await manager.update(TradeInAgreement, agreement.id, {
+          customer_signature: null, customer_signed_at: null, representative_signature: null,
+          representative_user_id: null, signing_token_hash: null, signing_token_expires_at: null,
+        });
+      }
+      const next = {
+        ...dto,
+        customer_name: dto.customer_name?.trim(),
+        customer_email: dto.customer_email !== undefined ? dto.customer_email.trim() || null : undefined,
+        customer_phone: dto.customer_phone?.trim(),
+        product_name: dto.product_name?.trim(),
+        final_price: dto.final_price !== undefined ? Number(dto.final_price).toFixed(2) : undefined,
+        notes: dto.notes !== undefined ? dto.notes.trim() || null : undefined,
+      };
+      Object.entries(next).forEach(([key, value]) => {
+        if (value !== undefined) (quote as any)[key] = value;
+      });
+      quote.viewed_at ||= new Date();
+      return manager.save(quote);
     });
-    quote.viewed_at ||= new Date();
-    return this.quoteRepository.save(quote);
   }
 
   async markQuoteViewed(id: number) {
@@ -693,7 +714,12 @@ export class TradeInService {
     if (!quote) {
       throw new NotFoundException('Trade-in quote not found.');
     }
-    await this.quoteRepository.delete(id);
+    await this.quoteRepository.manager.transaction(async (manager) => {
+      const agreement = await manager.findOne(TradeInAgreement, { where: { quote_id: id }, lock: { mode: 'pessimistic_write' } });
+      if (agreement?.finalized_at) throw new BadRequestException('Finalized trade-ins cannot be deleted.');
+      if (agreement) await manager.delete(TradeInAgreement, agreement.id);
+      await manager.delete(TradeInQuote, id);
+    });
   }
 
   async getQuoteCounts() {

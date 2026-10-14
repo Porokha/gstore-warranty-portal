@@ -1,0 +1,36 @@
+.zzv-sign-page { min-height: 100dvh; padding: 32px 16px 70px; background: radial-gradient(circle at 18% 0%, #e9ddff 0, transparent 36%), #f7f5fc; color: #182037; font-family: 'Google Sans', 'Noto Sans Georgian', sans-serif; }
+.zzv-sign-page__card { width: min(100%, 760px); margin: auto; padding: clamp(20px, 5vw, 42px); border: 1px solid #e4e0ed; border-radius: 18px; background: #fff; box-shadow: 0 22px 70px #2d1e5420; }
+.zzv-sign-page__eyebrow { margin-bottom: 12px; color: #7445cf; font-size: 11px; font-weight: 800; letter-spacing: .14em; }
+.zzv-sign-page h1 { margin: 0 0 10px; font-size: clamp(27px, 5vw, 38px); line-height: 1.15; }
+.zzv-sign-page h2 { margin: 25px 0 12px; font-size: 18px; }
+.zzv-sign-page__intro { color: #677187; }
+.zzv-sign-page__summary { display: grid; gap: 0; margin: 22px 0; border: 1px solid #e6e3ed; border-radius: 12px; overflow: hidden; }
+.zzv-sign-page__summary > div { display: flex; justify-content: space-between; gap: 16px; padding: 12px 15px; border-bottom: 1px solid #ece9f2; font-size: 13px; }
+.zzv-sign-page__summary > div:last-child { border: 0; }
+.zzv-sign-page__summary span { color: #687187; }
+.zzv-sign-page__summary strong { text-align: right; }
+.zzv-sign-page__terms { padding: 14px 17px; border: 1px solid #e6e3ed; border-radius: 12px; background: #fbfaff; font-size: 13px; line-height: 1.6; }
+.zzv-sign-page__terms summary { cursor: pointer; font-weight: 800; }
+.zzv-sign-page__terms ol { margin-bottom: 0; padding-left: 22px; }
+.zzv-sign-page__terms li { margin: 0 0 7px; }
+.zzv-sign-page .MuiButton-contained { border-radius: 9px; background: #7749df; font-weight: 700; }
+.zzv-sign-page__success { padding: 60px 0; text-align: center; }
+.zzv-signature-pad { border: 1px solid #cfcbdc; border-radius: 12px; overflow: hidden; background: #fff; }
+.zzv-signature-pad canvas { display: block; width: 100%; height: 165px; touch-action: none; cursor: crosshair; }
+.zzv-signature-pad__footer { display: flex; align-items: center; justify-content: space-between; padding: 4px 10px; border-top: 1px dashed #e4e0ec; color: #9d9baa; font-size: 10px; }
+.zzv-agreement-dialog .MuiDialog-paper { width: min(940px, calc(100vw - 24px)); max-width: 940px; max-height: calc(100dvh - 24px); border-radius: 16px; }
+.zzv-agreement-dialog__title { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 24px; border-bottom: 1px solid #e8e5ef; }
+.zzv-agreement-dialog__title h2 { margin: 0; font-size: 22px; }
+.zzv-agreement-dialog__body { display: grid; gap: 22px; padding: 20px 24px 26px; }
+.zzv-agreement-dialog__section { display: grid; gap: 13px; padding: 18px; border: 1px solid #e8e5ef; border-radius: 12px; background: #fff; }
+.zzv-agreement-dialog__section h3 { margin: 0; color: #1a2340; font-size: 15px; }
+.zzv-agreement-dialog__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.zzv-agreement-dialog__actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 14px 24px; border-top: 1px solid #e8e5ef; }
+.zzv-agreement-dialog__signatures { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; }
+.zzv-agreement-dialog__sign-box { min-width: 0; padding: 14px; border: 1px solid #e8e5ef; border-radius: 10px; }
+.zzv-agreement-dialog__sign-box h4 { margin: 0 0 10px; font-size: 13px; }
+.zzv-agreement-dialog__sign-box p { min-height: 37px; margin: 0 0 10px; color: #626e84; font-size: 12px; }
+.zzv-agreement-dialog__qr { display: grid; place-items: center; gap: 12px; padding: 20px; text-align: center; }
+.zzv-agreement-dialog__qr img { width: min(270px, 75vw); height: auto; }
+.zzv-agreement-dialog__qr code { max-width: 100%; overflow-wrap: anywhere; font-size: 11px; }
+@media (max-width: 650px) { .zzv-agreement-dialog__grid, .zzv-agreement-dialog__signatures { grid-template-columns: 1fr; } .zzv-agreement-dialog__title, .zzv-agreement-dialog__body, .zzv-agreement-dialog__actions { padding-left: 16px; padding-right: 16px; } }

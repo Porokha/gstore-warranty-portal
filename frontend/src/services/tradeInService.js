@@ -67,6 +67,56 @@ export const tradeInService = {
     return response.data;
   },
 
+  openAdminAgreement: async (id) => {
+    const response = await api.post(`/shop/admin/trade-in/quotes/${id}/agreement`);
+    return response.data;
+  },
+
+  saveAdminAgreement: async (id, details) => {
+    const response = await api.put(`/shop/admin/trade-in/quotes/${id}/agreement`, { details });
+    return response.data;
+  },
+
+  createAgreementSigningLink: async (id) => {
+    const response = await api.post(`/shop/admin/trade-in/quotes/${id}/agreement/signing-link`);
+    return response.data;
+  },
+
+  setAgreementRepresentativeSignature: async (id, payload) => {
+    const response = await api.put(`/shop/admin/trade-in/quotes/${id}/agreement/representative-signature`, payload);
+    return response.data;
+  },
+
+  finalizeAdminAgreement: async (id) => {
+    const response = await api.post(`/shop/admin/trade-in/quotes/${id}/agreement/finalize`);
+    return response.data;
+  },
+
+  getAdminAgreementPdf: async (id) => {
+    const response = await api.get(`/shop/admin/trade-in/quotes/${id}/agreement/pdf`, { responseType: 'blob' });
+    return response.data;
+  },
+
+  getOwnTradeInSignature: async () => {
+    const response = await api.get('/shop/admin/trade-in/signature');
+    return response.data;
+  },
+
+  saveOwnTradeInSignature: async (signature) => {
+    const response = await api.put('/shop/admin/trade-in/signature', { signature });
+    return response.data;
+  },
+
+  getPublicAgreementToSign: async (token) => {
+    const response = await api.get(`/trade-in/sign/${token}`);
+    return response.data;
+  },
+
+  submitPublicAgreementSignature: async (token, signature) => {
+    const response = await api.post(`/trade-in/sign/${token}`, { signature, accepted: true });
+    return response.data;
+  },
+
   getAdminBrands: async () => {
     const response = await api.get('/shop/admin/trade-in/brands');
     return response.data;

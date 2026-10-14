@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Put, Query, Request, Res, UseGuards } from '@nestjs/common';
+import { Response } from 'express';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -14,12 +15,58 @@ import { UpdateTradeInOfferPolicyDto } from './dto/update-trade-in-offer-policy.
 import { GstoreOfferProductDto } from './dto/gstore-offer-product.dto';
 import { TradeInQuoteStatus } from './entities/trade-in-quote.entity';
 import { TradeInService } from './trade-in.service';
+import { TradeInAgreementService } from './trade-in-agreement.service';
+import { SaveTradeInAgreementDto, SetRepresentativeSignatureDto, SubmitTradeInSignatureDto } from './dto/save-trade-in-agreement.dto';
 
 @Controller('shop/admin/trade-in')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
 export class TradeInAdminController {
-  constructor(private readonly tradeInService: TradeInService) {}
+  constructor(private readonly tradeInService: TradeInService, private readonly agreements: TradeInAgreementService) {}
+
+  @Get('signature')
+  getOwnSignature(@Request() req) {
+    return this.agreements.getStaffSignature(req.user.id);
+  }
+
+  @Put('signature')
+  saveOwnSignature(@Request() req, @Body() dto: SubmitTradeInSignatureDto) {
+    return this.agreements.saveStaffSignature(req.user.id, dto.signature);
+  }
+
+  @Post('quotes/:id/agreement')
+  getAgreement(@Param('id', ParseIntPipe) id: number, @Request() req) {
+    return this.agreements.getOrCreate(id, req.user.id);
+  }
+
+  @Put('quotes/:id/agreement')
+  saveAgreement(@Param('id', ParseIntPipe) id: number, @Request() req, @Body() dto: SaveTradeInAgreementDto) {
+    return this.agreements.saveDraft(id, req.user.id, dto.details);
+  }
+
+  @Post('quotes/:id/agreement/signing-link')
+  startSigning(@Param('id', ParseIntPipe) id: number) {
+    return this.agreements.startSigning(id);
+  }
+
+  @Put('quotes/:id/agreement/representative-signature')
+  representativeSignature(@Param('id', ParseIntPipe) id: number, @Request() req, @Body() dto: SetRepresentativeSignatureDto) {
+    return this.agreements.setRepresentativeSignature(id, req.user.id, dto);
+  }
+
+  @Post('quotes/:id/agreement/finalize')
+  finalizeAgreement(@Param('id', ParseIntPipe) id: number, @Request() req) {
+    return this.agreements.finalize(id, req.user.id);
+  }
+
+  @Get('quotes/:id/agreement/pdf')
+  async agreementPdf(@Param('id', ParseIntPipe) id: number, @Res() response: Response) {
+    const file = await this.agreements.getPdf(id);
+    response.setHeader('Content-Type', 'application/pdf');
+    response.setHeader('Content-Disposition', `inline; filename="${file.filename}"`);
+    response.setHeader('Cache-Control', 'private, no-store');
+    response.send(file.bytes);
+  }
 
   @Get('offer-policy')
   getOfferPolicy() {
