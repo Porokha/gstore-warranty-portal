@@ -21,6 +21,31 @@ describe('TradeInService brand availability', () => {
     })).resolves.toBe(false);
   });
 
+  it('treats imported MacBook categories as laptops for brand availability', async () => {
+    findOne.mockResolvedValue({ value: JSON.stringify({ laptop: { apple: true } }) });
+    await expect((service as any).isProductBrandComingSoon({
+      brand: 'Apple', category: 'MacBook Pro', category2: 'MacBook Pro (2016 - 2020)', slug: 'macbook-pro-13-2016-2020/macbook-pro-13-2016',
+    })).resolves.toBe(true);
+    await expect((service as any).isProductBrandComingSoon({
+      brand: 'Apple', category: 'Apple', category2: 'MacBook', slug: 'macbook-neo',
+    })).resolves.toBe(true);
+  });
+
+  it('includes MacBook aliases in laptop catalogue queries', async () => {
+    const query = {
+      select: jest.fn().mockReturnThis(), addSelect: jest.fn().mockReturnThis(), where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(), groupBy: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(), addOrderBy: jest.fn().mockReturnThis(),
+      getRawMany: jest.fn().mockResolvedValue([]),
+    };
+    const productRepository = { createQueryBuilder: jest.fn().mockReturnValue(query) };
+    const subject = new TradeInService({} as any, productRepository as any, {} as any, {} as any, { findOne } as any);
+
+    await subject.listBrands('laptop');
+
+    expect(query.andWhere).toHaveBeenCalledWith(expect.stringContaining("LIKE 'macbook%'"), { category: 'laptop' });
+  });
+
   it('updates one brand without replacing the other availability flags', async () => {
     const setting = { value: JSON.stringify({ phone: { apple: true }, tablet: { samsung: true } }) };
     const manager = {

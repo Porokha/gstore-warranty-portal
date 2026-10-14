@@ -16,7 +16,14 @@ import { TradeInQuote, TradeInQuoteStatus } from './entities/trade-in-quote.enti
 import { TradeInSetting } from './entities/trade-in-setting.entity';
 import { validatePricingTree } from './pricing-tree.validation';
 
-const PRODUCT_CATEGORY_MATCH = '(LOWER(product.category) = LOWER(:category) OR LOWER(product.category2) = LOWER(:category))';
+const PRODUCT_CATEGORY_MATCH = `(
+  LOWER(product.category) = LOWER(:category)
+  OR LOWER(product.category2) = LOWER(:category)
+  OR (LOWER(:category) = 'laptop' AND (
+    LOWER(product.category) LIKE 'macbook%'
+    OR LOWER(product.category2) LIKE 'macbook%'
+  ))
+)`;
 
 type GstoreOfferProduct = GstoreOfferProductDto & { id: string };
 
@@ -758,6 +765,8 @@ export class TradeInService {
       brands?.[brand] && (
         this.equals(product.category, category)
         || this.equals(product.category2, category)
+        || (category === 'laptop' && [product.category, product.category2]
+          .some((value) => this.availabilityKey(value).startsWith('macbook')))
         || slugPrefix.endsWith(`-${category}`)
       ));
   }
