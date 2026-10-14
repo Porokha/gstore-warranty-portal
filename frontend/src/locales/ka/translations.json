@@ -102,6 +102,10 @@
     "availability": "მდგომარეობა",
     "brandSubcategories": "ბრენდების ჩვენება",
     "categoryUpdateFailed": "კატეგორიის შეცვლა ვერ მოხერხდა",
+    "categoryOrderFailed": "კატეგორიების რიგის შენახვა ვერ მოხერხდა. სცადეთ ხელახლა.",
+    "moveCategory": "{{category}}-ის გადატანა. გამოიყენეთ ზემოთ ან ქვემოთ ისრები.",
+    "moveCategoryUp": "{{category}}-ის ზემოთ გადატანა",
+    "moveCategoryDown": "{{category}}-ის ქვემოთ გადატანა",
     "availabilityStates": { "hidden": "გამორთულია", "soon": "მალე", "active": "აქტიური" },
     "statuses": { "pending": "მოლოდინში", "contacted": "დაკავშირებული", "accepted": "მიღებული", "completed": "დასრულებული", "cancelled": "გაუქმებული" }
   },

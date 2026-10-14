@@ -30,6 +30,9 @@ import {
   DeleteOutlineRounded,
   CloseRounded,
   DownloadRounded,
+  DragIndicatorRounded,
+  KeyboardArrowDownRounded,
+  KeyboardArrowUpRounded,
   EditRounded,
   VisibilityOutlined,
   ExpandMoreRounded,
@@ -94,6 +97,9 @@ const ShopAdminTradeInPage = () => {
   const [productCategory, setProductCategory] = useState('');
   const [productSubcategory, setProductSubcategory] = useState('');
   const [expandedBrandCategory, setExpandedBrandCategory] = useState('');
+  const [categoryOrder, setCategoryOrder] = useState(null);
+  const [draggedCategoryId, setDraggedCategoryId] = useState(null);
+  const [dropCategoryId, setDropCategoryId] = useState(null);
   const [productPage, setProductPage] = useState(1);
   const [selectedProductIds, setSelectedProductIds] = useState([]);
   const [pricingImport, setPricingImport] = useState(null);
@@ -244,6 +250,14 @@ const ShopAdminTradeInPage = () => {
     ({ id, payload }) => tradeInService.updateAdminCategory(id, payload),
     { onSuccess: () => queryClient.invalidateQueries('trade-in-admin-categories') },
   );
+  const reorderCategoriesMutation = useMutation(tradeInService.reorderAdminCategories, {
+    onSuccess: (categories) => {
+      queryClient.setQueryData(['trade-in-admin-categories'], categories);
+      setCategoryOrder(null);
+      queryClient.invalidateQueries('trade-in-categories');
+    },
+    onError: () => setCategoryOrder(null),
+  });
   const brandAvailabilityMutation = useMutation(tradeInService.updateAdminBrandAvailability, {
     onSuccess: () => {
       queryClient.invalidateQueries('trade-in-admin-brands');
@@ -255,6 +269,20 @@ const ShopAdminTradeInPage = () => {
   const pageProducts = productsQuery.data?.items || [];
   const pageProductIds = pageProducts.map((product) => product.id);
   const allPageSelected = pageProductIds.length > 0 && pageProductIds.every((id) => selectedProductIds.includes(id));
+  const categories = categoriesQuery.data || [];
+  const orderedCategories = categoryOrder
+    ? [...categories].sort((a, b) => categoryOrder.indexOf(a.id) - categoryOrder.indexOf(b.id))
+    : categories;
+  const moveCategory = (sourceId, targetId) => {
+    if (sourceId == null || targetId == null || sourceId === targetId || reorderCategoriesMutation.isLoading) return;
+    const ids = orderedCategories.map((category) => category.id);
+    const from = ids.indexOf(sourceId);
+    const to = ids.indexOf(targetId);
+    if (from < 0 || to < 0) return;
+    ids.splice(to, 0, ids.splice(from, 1)[0]);
+    setCategoryOrder(ids);
+    reorderCategoriesMutation.mutate(ids);
+  };
 
   const exportAllPricing = async () => {
     if (selectedProductIds.length) return;
@@ -781,11 +809,37 @@ const ShopAdminTradeInPage = () => {
               <Box className="zzv-shop-tradein__categories">
                 {brandAvailabilityMutation.isError && <Alert severity="error">Could not update brand availability.</Alert>}
                 {categoryMutation.isError && <Alert severity="error">{t('shopTradeIn.categoryUpdateFailed')}</Alert>}
+                {reorderCategoriesMutation.isError && <Alert severity="error">{t('shopTradeIn.categoryOrderFailed')}</Alert>}
                 <Box className="zzv-shop-tradein__category-head"><span>{t('shopTradeIn.category')}</span><span>{t('shopTradeIn.availability')}</span></Box>
-                {(categoriesQuery.data || []).map((category) => (
-                  <Box key={category.id} className="zzv-shop-tradein__category">
+                {orderedCategories.map((category, index) => (
+                  <Box
+                    key={category.id}
+                    className={`zzv-shop-tradein__category${dropCategoryId === category.id && draggedCategoryId !== category.id ? ' is-drop-target' : ''}${draggedCategoryId === category.id ? ' is-dragging' : ''}`}
+                    onDragOver={(event) => { if (draggedCategoryId != null) { event.preventDefault(); setDropCategoryId(category.id); } }}
+                    onDrop={(event) => { event.preventDefault(); moveCategory(draggedCategoryId, category.id); setDraggedCategoryId(null); setDropCategoryId(null); }}
+                  >
                     <Box className="zzv-shop-tradein__category-row">
                       <Box className="zzv-shop-tradein__category-name">
+                        <Box
+                          component="span"
+                          className="zzv-shop-tradein__drag-handle"
+                          draggable={!reorderCategoriesMutation.isLoading}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={t('shopTradeIn.moveCategory', { category: category.label })}
+                          onDragStart={(event) => { setDraggedCategoryId(category.id); event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', String(category.id)); }}
+                          onDragEnd={() => { setDraggedCategoryId(null); setDropCategoryId(null); }}
+                          onKeyDown={(event) => {
+                            if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                              event.preventDefault();
+                              moveCategory(category.id, orderedCategories[index + (event.key === 'ArrowUp' ? -1 : 1)]?.id);
+                            }
+                          }}
+                        ><DragIndicatorRounded fontSize="small" /></Box>
+                        <Box className="zzv-shop-tradein__move-buttons">
+                          <IconButton size="small" disabled={index === 0 || reorderCategoriesMutation.isLoading} aria-label={t('shopTradeIn.moveCategoryUp', { category: category.label })} onClick={() => moveCategory(category.id, orderedCategories[index - 1]?.id)}><KeyboardArrowUpRounded /></IconButton>
+                          <IconButton size="small" disabled={index === orderedCategories.length - 1 || reorderCategoriesMutation.isLoading} aria-label={t('shopTradeIn.moveCategoryDown', { category: category.label })} onClick={() => moveCategory(category.id, orderedCategories[index + 1]?.id)}><KeyboardArrowDownRounded /></IconButton>
+                        </Box>
                         <IconButton size="small" aria-label={t('shopTradeIn.brandSubcategories')} onClick={() => setExpandedBrandCategory((current) => current === category.slug ? '' : category.slug)}>
                           <ExpandMoreRounded sx={{ transform: expandedBrandCategory === category.slug ? 'rotate(180deg)' : 'rotate(-90deg)' }} />
                         </IconButton>
