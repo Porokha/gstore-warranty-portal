@@ -58,6 +58,12 @@ const headerCell = {
 
 const quoteGridColumns = '125px minmax(210px, 1.3fr) 130px minmax(300px, 1.2fr) 105px 145px 116px';
 
+const phoneDialerHref = (phone) => {
+  const value = String(phone || '').trim();
+  const digits = value.replace(/\D/g, '');
+  return digits ? `tel:${value.startsWith('+') ? '+' : ''}${digits}` : null;
+};
+
 const imageUrl = (value) => {
   if (!value || String(value).includes('image-not-found')) return '/brand-logotype-original.svg';
   if (/^https?:\/\//i.test(value)) return value;
@@ -726,7 +732,15 @@ const ShopAdminTradeInPage = () => {
                         </Box>
                         {quote.pricing_path?.find((entry) => entry.label === 'gstore_product')?.answers?.[0]?.text && <Typography sx={{ fontSize: 11, color: '#5d3bd0' }}>Gstore: {quote.pricing_path.find((entry) => entry.label === 'gstore_product').answers[0].text}</Typography>}
                       </Box>
-                      <Typography sx={{ fontSize: 13 }}>{quote.customer_phone}</Typography>
+                      {phoneDialerHref(quote.customer_phone) ? (
+                        <Typography
+                          component="a"
+                          href={phoneDialerHref(quote.customer_phone)}
+                          sx={{ fontSize: 13, color: '#156cd9', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                        >
+                          {quote.customer_phone}
+                        </Typography>
+                      ) : <Typography sx={{ fontSize: 13 }}>—</Typography>}
                       <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.75, whiteSpace: 'nowrap' }}>
                         <Typography sx={{ fontSize: 14, fontWeight: 900 }}>{isManualTradeInQuote(quote) && Number(quote.final_price) <= 0 ? (i18n.language === 'ka' ? 'შეფასების შემდეგ' : 'After inspection') : `₾${Number(quote.final_price).toFixed(0)}`}</Typography>
                         {isManualTradeInQuote(quote) && Number(quote.final_price) > 0 && <Typography sx={{ fontSize: 11, color: '#667085' }}>{i18n.language === 'ka' ? 'საორიენტაციო მინიმუმი' : 'Estimated minimum'}</Typography>}
