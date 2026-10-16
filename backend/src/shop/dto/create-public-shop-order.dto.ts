@@ -12,6 +12,7 @@ import {
   Min,
   ValidateIf,
   ValidateNested,
+  IsUUID,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -84,6 +85,10 @@ export class CreatePublicShopOrderDto {
 
   @IsEnum(ShopOrderPaymentChoice)
   payment_method: ShopOrderPaymentChoice;
+
+  @IsOptional()
+  @IsUUID('4')
+  checkout_request_id?: string;
 
   @IsArray()
   @ArrayMinSize(1)

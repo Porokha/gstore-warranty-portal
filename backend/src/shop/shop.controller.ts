@@ -28,6 +28,7 @@ import { CreateShopProductDto } from './dto/create-shop-product.dto';
 import { UpdateShopOrderDto } from './dto/update-shop-order.dto';
 import { UpdateShopProductDto } from './dto/update-shop-product.dto';
 import { ShopService } from './shop.service';
+import { ShopPaymentsService } from './shop-payments.service';
 
 type MulterFile = any;
 
@@ -35,7 +36,18 @@ type MulterFile = any;
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
 export class ShopController {
-  constructor(private readonly shopService: ShopService) {}
+  constructor(private readonly shopService: ShopService, private readonly payments: ShopPaymentsService) {}
+
+  @Get('payment-settings')
+  paymentSettings() { return this.payments.adminSettings(); }
+
+  @Put('payment-settings')
+  updatePaymentSettings(@Body() body: { onsite?: boolean; online?: boolean; client_id?: string; client_secret?: string }) {
+    return this.payments.updateSettings(body);
+  }
+
+  @Get('orders/:id/payments')
+  orderPayments(@Param('id', ParseIntPipe) id: number) { return this.payments.orderHistory(id); }
 
   @Get('products')
   listProducts(

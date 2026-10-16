@@ -21,6 +21,12 @@ export const shopService = {
     return response.data;
   },
 
+  getPaymentMethods: async () => (await api.get('/public/shop/payment-methods')).data,
+  getPaymentStatus: async (order, token) => (await api.get('/public/shop/payments/status', { params: { order, token } })).data,
+  getPaymentSettings: async () => (await api.get('/shop/admin/payment-settings')).data,
+  updatePaymentSettings: async (payload) => (await api.put('/shop/admin/payment-settings', payload)).data,
+  getOrderPayments: async (id) => (await api.get(`/shop/admin/orders/${id}/payments`)).data,
+
   getAdminProducts: async (scope = 'active', supplier = 'manual', params = {}) => {
     const response = await api.get('/shop/admin/products', {
       params: { scope, supplier, ...params },

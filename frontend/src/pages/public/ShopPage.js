@@ -303,6 +303,42 @@ const ShopPage = () => {
   const [orderForm, setOrderForm] = useState(createInitialOrderForm);
   const [orderErrors, setOrderErrors] = useState({});
   const [createdOrder, setCreatedOrder] = useState(null);
+  const [paymentNotice, setPaymentNotice] = useState('');
+  const { data: paymentMethods = { onsite: true, online: false } } = useQuery(['shop-payment-methods'], shopService.getPaymentMethods);
+  useEffect(() => {
+    if (!paymentMethods.onsite && paymentMethods.online) {
+      setOrderForm((value) => ({ ...value, payment_method: 'online' }));
+    } else if (!paymentMethods.online && paymentMethods.onsite) {
+      setOrderForm((value) => ({ ...value, payment_method: 'onsite' }));
+    }
+  }, [paymentMethods.onsite, paymentMethods.online]);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const order = params.get('payment_order');
+    const token = params.get('payment_token');
+    if (!order || !token) return undefined;
+    params.delete('payment_order'); params.delete('payment_token'); params.delete('payment_return');
+    window.history.replaceState({}, '', `${window.location.pathname}${window.location.search}`);
+    let count = 0;
+    let stopped = false;
+    const check = async () => {
+      try {
+        const result = await shopService.getPaymentStatus(order, token);
+        if (stopped) return;
+        if (result.payment_status === 'paid') {
+          setPaymentNotice(`${i18n.language === 'ka' ? 'გადახდა დადასტურებულია. შეკვეთა' : 'Payment confirmed. Order'} #${order}`);
+          setCart([]);
+          stopped = true;
+        } else if (result.payment_status === 'failed') {
+          setPaymentNotice(`${i18n.language === 'ka' ? 'გადახდა ვერ დადასტურდა. შეკვეთა' : 'Payment was not confirmed. Order'} #${order}`);
+          stopped = true;
+        } else if (count >= 6) setPaymentNotice(`${i18n.language === 'ka' ? 'გადახდა ჯერ არ არის დადასტურებული. შეკვეთა' : 'Payment is not confirmed yet. Order'} #${order}`);
+      } catch { if (!stopped) setPaymentNotice('Payment status could not be verified. Please contact us with your order number.'); }
+    };
+    check();
+    const timer = window.setInterval(() => { if (!stopped && count++ < 6) check(); else window.clearInterval(timer); }, 3000);
+    return () => { stopped = true; window.clearInterval(timer); };
+  }, [i18n.language]);
   const [compactCart, setCompactCart] = useState(false);
   const [cartExpanded, setCartExpanded] = useState(true);
   const [pullRefresh, setPullRefresh] = useState({ active: false, ready: false, distance: 0 });
@@ -382,6 +418,14 @@ const ShopPage = () => {
   const shouldShowFilterLoader = isFacetsFetching && showSlowFilterLoader;
   const orderMutation = useMutation((payload) => shopService.createPublicOrder(payload), {
     onSuccess: (result, variables) => {
+      if (variables.payment_method === 'online') {
+        if (result.payment_redirect_url) {
+          window.location.assign(result.payment_redirect_url);
+          return;
+        }
+        setOrderErrors((current) => ({ ...current, submit: result.payment_error || 'Online payment could not be started.' }));
+        return;
+      }
       setCreatedOrder({
         ...result,
         customer_last_name: variables.customer_last_name,
@@ -856,6 +900,7 @@ const ShopPage = () => {
     setOrderStep(1);
     setOrderForm((current) => ({
       ...createInitialOrderForm(),
+      payment_method: paymentMethods.onsite ? 'onsite' : 'online',
       customer_name: current.customer_name,
       customer_last_name: current.customer_last_name,
       customer_phone: current.customer_phone,
@@ -880,7 +925,7 @@ const ShopPage = () => {
       setOrderErrors({});
       setCreatedOrder(null);
       if (!orderMutation.isLoading) {
-        setOrderForm(createInitialOrderForm());
+        setOrderForm({ ...createInitialOrderForm(), payment_method: paymentMethods.onsite ? 'onsite' : 'online' });
       }
     }, ORDER_MODAL_CLOSE_MS);
   }
@@ -926,7 +971,7 @@ const ShopPage = () => {
 
     orderMutation.mutate({
       ...orderForm,
-      payment_method: 'onsite',
+      payment_method: orderForm.payment_method,
       items: cart.map((item) => ({
         product_id: item.productId,
         mode: item.mode,
@@ -989,6 +1034,7 @@ const ShopPage = () => {
       className={`zpos-root zpos-root--figma ${filtersOpen ? 'zpos-filters-open' : ''} ${filtersClosing ? 'zpos-filters-closing' : ''} ${compactCart ? 'zpos-compact-cart-mode' : ''} ${cartViewOpen ? 'zpos-cart-view-open' : ''}`}
       aria-label={t('shop.ariaLabel')}
     >
+      {paymentNotice && <div role="status" style={{ padding: '12px 20px', background: '#e9f7ef', color: '#133d2b' }}>{paymentNotice}</div>}
       <button
         type="button"
         className="zpos-filter-overlay"
@@ -1641,7 +1687,8 @@ const ShopPage = () => {
                       </section>
                       <section className="zpos-checkout-card">
                         <h3>{t('shop.orderFlow.checkout.payment')}</h3>
-                        <div className="zpos-checkout-option is-selected"><div><strong>{t('shop.orderFlow.stepThree.payOnsite')}</strong><small>{t('shop.orderFlow.stepThree.payOnsiteDescription')}</small></div><span className="zpos-checkout-radio" aria-hidden="true" /></div>
+                        {paymentMethods.onsite && <button type="button" className={`zpos-checkout-option ${orderForm.payment_method === 'onsite' ? 'is-selected' : ''}`} onClick={() => updateOrderForm('payment_method', 'onsite')}><div><strong>{t('shop.orderFlow.stepThree.payOnsite')}</strong><small>{t('shop.orderFlow.stepThree.payOnsiteDescription')}</small></div><span className="zpos-checkout-radio" aria-hidden="true" /></button>}
+                        {paymentMethods.online && <button type="button" className={`zpos-checkout-option ${orderForm.payment_method === 'online' ? 'is-selected' : ''}`} onClick={() => updateOrderForm('payment_method', 'online')}><div><strong>{i18n.language === 'ka' ? 'ონლაინ გადახდა (საქართველოს ბანკი)' : 'Pay online (Bank of Georgia)'}</strong><small>{i18n.language === 'ka' ? 'გადახდა უსაფრთხო ბანკის გვერდზე' : 'Secure checkout on the bank website'}</small></div><span className="zpos-checkout-radio" aria-hidden="true" /></button>}
                       </section>
                       <section className="zpos-checkout-card">
                         <h3>{t('shop.orderFlow.checkout.additional')}</h3>
