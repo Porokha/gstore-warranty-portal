@@ -28,6 +28,7 @@ import {
   ShopProductSupplier,
 } from './entities/shop-product.entity';
 import { ShopOrder, ShopOrderStatus } from './entities/shop-order.entity';
+import { ShopPaymentsService } from './shop-payments.service';
 
 type ShopScope = 'active' | 'trash';
 type ShopSupplierScope = 'manual' | 'mobilesentrix' | 'all';
@@ -42,6 +43,7 @@ export class ShopService {
     private readonly shopProductsRepository: Repository<ShopProduct>,
     @InjectRepository(ShopOrder)
     private readonly shopOrdersRepository: Repository<ShopOrder>,
+    private readonly payments: ShopPaymentsService,
   ) {}
 
   async listPublicProducts(filters: PublicShopProductsDto) {
@@ -409,8 +411,14 @@ export class ShopService {
   async createPublicOrder(createDto: CreatePublicShopOrderDto) {
     await this.purgeExpiredTrash();
 
-    if (createDto.payment_method !== ShopOrderPaymentChoice.ONSITE) {
-      throw new BadRequestException('Online payment is not available yet.');
+    const methods = await this.payments.methods();
+    if ((createDto.payment_method === ShopOrderPaymentChoice.ONSITE && !methods.onsite) ||
+        (createDto.payment_method === ShopOrderPaymentChoice.ONLINE && !methods.online)) {
+      throw new BadRequestException('Selected payment method is unavailable.');
+    }
+    if (createDto.checkout_request_id) {
+      const existing = await this.shopOrdersRepository.findOne({ where: { checkout_request_id: createDto.checkout_request_id } });
+      if (existing) throw new BadRequestException(`This checkout was already submitted as ${existing.order_number}.`);
     }
 
     if (createDto.has_partner_warranty && !createDto.partner_warranty_id?.trim()) {
@@ -475,7 +483,7 @@ export class ShopService {
 
     const orderPayload: Partial<ShopOrder> = {
       order_number: await this.generateOrderNumber(),
-      status: ShopOrderStatus.PROCESSING,
+      status: createDto.payment_method === ShopOrderPaymentChoice.ONLINE ? ShopOrderStatus.NEW : ShopOrderStatus.PROCESSING,
       customer_name: createDto.customer_name.trim(),
       customer_last_name: createDto.customer_last_name.trim(),
       customer_phone: createDto.customer_phone.trim(),
@@ -490,9 +498,11 @@ export class ShopService {
       service_amount: service_amount.toFixed(2),
       total_amount: total_amount.toFixed(2),
       currency: 'GEL',
-      payment_method: ShopOrderPaymentChoice.ONSITE,
+      payment_method: createDto.payment_method,
+      payment_status: createDto.payment_method === ShopOrderPaymentChoice.ONLINE ? 'pending' : 'unpaid',
+      checkout_request_id: createDto.checkout_request_id || null,
       customer_note: createDto.customer_note?.trim() || null,
-      source: 'shop_public_onsite',
+      source: createDto.payment_method === ShopOrderPaymentChoice.ONLINE ? 'shop_public_bog' : 'shop_public_onsite',
       viewed_at: null,
       deleted_at: null,
     };
@@ -500,6 +510,8 @@ export class ShopService {
     const order = this.shopOrdersRepository.create(orderPayload);
 
     const saved = await this.shopOrdersRepository.save(order);
+
+    const payment = createDto.payment_method === ShopOrderPaymentChoice.ONLINE ? await this.payments.start(saved) : {};
 
     return {
       id: saved.id,
@@ -513,6 +525,8 @@ export class ShopService {
       has_partner_warranty: saved.has_partner_warranty,
       partner_warranty_id: saved.partner_warranty_id,
       created_at: saved.created_at,
+      payment_status: saved.payment_status,
+      ...payment,
     };
   }
 
@@ -627,6 +641,12 @@ export class ShopService {
       throw new NotFoundException(`Shop order with ID ${id} not found`);
     }
 
+    if (order.payment_method === ShopOrderPaymentChoice.ONLINE && order.payment_status !== 'paid' && updateDto.status === ShopOrderStatus.COMPLETED) {
+      throw new BadRequestException('Online orders cannot be completed before payment is confirmed.');
+    }
+    if (order.payment_method === ShopOrderPaymentChoice.ONLINE && updateDto.payment_method !== undefined && updateDto.payment_method !== ShopOrderPaymentChoice.ONLINE) {
+      throw new BadRequestException('Payment method cannot be changed for an online payment order.');
+    }
     if (updateDto.status !== undefined) order.status = updateDto.status;
     if (updateDto.admin_note !== undefined) order.admin_note = updateDto.admin_note;
     if (updateDto.payment_method !== undefined) order.payment_method = updateDto.payment_method;
@@ -667,6 +687,10 @@ export class ShopService {
       throw new NotFoundException(`Shop order with ID ${id} not found`);
     }
 
+    if (await this.payments.hasAttempts(id)) {
+      throw new BadRequestException('Orders with payment history cannot be permanently deleted.');
+    }
+
     await this.shopOrdersRepository.remove(order);
     return { success: true };
   }
@@ -695,9 +719,10 @@ export class ShopService {
       deleted_at: LessThan(cutoff),
     });
 
-    await this.shopOrdersRepository.delete({
-      deleted_at: LessThan(cutoff),
-    });
+    await this.shopOrdersRepository.createQueryBuilder().delete()
+      .where('deleted_at < :cutoff', { cutoff })
+      .andWhere('id NOT IN (SELECT shop_order_id FROM shop_payment_attempts)')
+      .execute();
   }
 
   private applyScope(qb: any, alias: string, scope: ShopScope) {

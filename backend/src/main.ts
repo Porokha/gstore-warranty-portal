@@ -12,7 +12,7 @@ if (typeof globalThis.crypto === 'undefined') {
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true });
   // A single trade-in pricing tree can exceed Express's 100 KB JSON default.
   app.useBodyParser('json', { limit: '1mb' });
 

@@ -32,7 +32,7 @@ describe('ShopService admin product filters', () => {
   it('applies MobileSentrix search and filters before paginating, while returning full-catalog counts', async () => {
     const query = createQuery({ clauses: [], params: {}, skip: 0, take: 0 });
     const productsRepository = { createQueryBuilder: jest.fn(() => query) };
-    const service = new ShopService(productsRepository as any, {} as any);
+    const service = new ShopService(productsRepository as any, {} as any, {} as any);
     jest.spyOn(service as any, 'purgeExpiredTrash').mockResolvedValue(undefined);
 
     const result = await service.listAdminProducts('active', 'mobilesentrix', 2, 100, {
@@ -53,7 +53,7 @@ describe('ShopService admin product filters', () => {
   it('filters manual categories and returns all category options', async () => {
     const query = createQuery({ clauses: [], params: {}, skip: 0, take: 0 });
     const productsRepository = { createQueryBuilder: jest.fn(() => query) };
-    const service = new ShopService(productsRepository as any, {} as any);
+    const service = new ShopService(productsRepository as any, {} as any, {} as any);
     jest.spyOn(service as any, 'purgeExpiredTrash').mockResolvedValue(undefined);
 
     const result = await service.listAdminProducts('active', 'manual', 1, 200, {
@@ -83,7 +83,7 @@ describe('ShopService admin product filters', () => {
       findOne: jest.fn(async () => product),
       save: jest.fn(async () => product),
     };
-    const service = new ShopService(productsRepository as any, {} as any);
+    const service = new ShopService(productsRepository as any, {} as any, {} as any);
     const prepareImage = jest.spyOn(service as any, 'prepareImageUrl');
 
     await service.updateProduct(product.id, { image_url: product.image_url, is_active: true, quality_line: 'Zezva Premium', device_model: 'iPhone 15 Pro' });
@@ -97,7 +97,7 @@ describe('ShopService admin product filters', () => {
   it('saves a service sale price only when it is below a regular service price', async () => {
     const product = { id: 1, title: 'Battery replacement', slug: 'battery', price: '80.00', sale_price: null, service_price: '120.00', service_sale_price: null };
     const productsRepository = { findOne: jest.fn(async () => product), save: jest.fn(async () => product) };
-    const service = new ShopService(productsRepository as any, {} as any);
+    const service = new ShopService(productsRepository as any, {} as any, {} as any);
 
     await service.updateProduct(1, { service_sale_price: 105 });
     expect(productsRepository.save).toHaveBeenCalledWith(expect.objectContaining({ service_sale_price: '105.00' }));
@@ -109,7 +109,7 @@ describe('ShopService admin product filters', () => {
   it('locks an edited MobileSentrix product out of automatic sync, but not a visibility toggle', async () => {
     const product = { id: 2, slug: 'supplier-part', supplier: 'mobilesentrix', price: '100.00', service_price: null, service_sale_price: null, supplier_auto_sync_disabled: false };
     const productsRepository = { findOne: jest.fn(async () => product), save: jest.fn(async () => product) };
-    const service = new ShopService(productsRepository as any, {} as any);
+    const service = new ShopService(productsRepository as any, {} as any, {} as any);
 
     await service.updateProduct(2, { is_active: false });
     expect(product.supplier_auto_sync_disabled).toBe(false);
@@ -123,7 +123,7 @@ describe('ShopService admin product filters', () => {
     const product = { id: 1, title: 'Battery replacement', is_active: true, deleted_at: null, price: '80.00', sale_price: null, service_price: '120.00', service_sale_price: '105.00' };
     const productsRepository = { find: jest.fn(async () => [product]) };
     const ordersRepository = { create: jest.fn((payload) => payload), save: jest.fn(async (payload) => ({ ...payload, id: 1 })) };
-    const service = new ShopService(productsRepository as any, ordersRepository as any);
+    const service = new ShopService(productsRepository as any, ordersRepository as any, { methods: async () => ({ onsite: true, online: false }) } as any);
     jest.spyOn(service as any, 'purgeExpiredTrash').mockResolvedValue(undefined);
     jest.spyOn(service as any, 'generateOrderNumber').mockResolvedValue('TEST-1');
 

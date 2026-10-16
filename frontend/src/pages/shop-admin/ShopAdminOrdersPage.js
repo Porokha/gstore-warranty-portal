@@ -159,6 +159,11 @@ const ShopAdminOrdersPage = () => {
     () => filteredOrders.find((order) => order.id === selectedOrderId) || null,
     [filteredOrders, selectedOrderId],
   );
+  const { data: paymentHistory } = useQuery(
+    ['shop-order-payments', selectedOrderId],
+    () => shopService.getOrderPayments(selectedOrderId),
+    { enabled: Boolean(selectedOrderId), refetchInterval: selectedOrderId ? 15000 : false },
+  );
 
   useEffect(() => {
     if (scope !== 'active') {
@@ -470,10 +475,20 @@ const ShopAdminOrdersPage = () => {
                               <Typography sx={{ color: '#344054' }}>
                                 {t('shopOrders.payment')}: <strong>{selectedOrder.payment_method || 'onsite'}</strong>
                               </Typography>
+                              <Typography sx={{ color: '#344054' }}>
+                                {i18n.language === 'ka' ? 'გადახდის სტატუსი' : 'Payment status'}: <strong>{selectedOrder.payment_status || 'unpaid'}</strong>
+                              </Typography>
                             </Stack>
                           </Paper>
                         </Grid>
                       </Grid>
+
+                      {paymentHistory?.events?.length > 0 && <Paper elevation={0} className="zzv-shop-orders__info-card" sx={{ mt: 2 }}>
+                        <Typography fontWeight={800}>{i18n.language === 'ka' ? 'გადახდის ისტორია' : 'Payment history'}</Typography>
+                        {paymentHistory.events.map((event) => <Typography key={event.id} sx={{ mt: 1, fontSize: 13 }}>
+                          {new Date(event.created_at).toLocaleString()} · {event.event_type} · {event.status}{event.detail ? ` · ${event.detail}` : ''}
+                        </Typography>)}
+                      </Paper>}
 
                       <Paper elevation={0} className="zzv-shop-orders__workflow">
                         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ xs: 'stretch', md: 'center' }}>

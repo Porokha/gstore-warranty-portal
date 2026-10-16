@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Box, Button, Paper, Switch, Typography } from '@mui/material';
+import { Alert, Box, Button, Paper, Switch, TextField, Typography } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { useTranslation } from 'react-i18next';
 import { shopService } from '../../services/shopService';
@@ -14,6 +14,20 @@ const ShopAdminSettingsPage = () => {
   const [saveError, setSaveError] = useState('');
   const [signatureDraft, setSignatureDraft] = useState('');
   const [signatureSaved, setSignatureSaved] = useState(false);
+  const [paymentDraft, setPaymentDraft] = useState({ onsite: true, online: false, client_id: '', client_secret: '' });
+  const [paymentMessage, setPaymentMessage] = useState('');
+  const paymentQuery = useQuery(['shop-payment-settings'], shopService.getPaymentSettings);
+  useEffect(() => {
+    if (paymentQuery.data) setPaymentDraft({ ...paymentQuery.data, client_secret: '' });
+  }, [paymentQuery.data]);
+  const paymentMutation = useMutation(shopService.updatePaymentSettings, {
+    onSuccess: (value) => {
+      queryClient.setQueryData(['shop-payment-settings'], value);
+      setPaymentDraft({ ...value, client_secret: '' });
+      setPaymentMessage('Payment settings saved.');
+    },
+    onError: (error) => setPaymentMessage(error.response?.data?.message || 'Payment settings could not be saved.'),
+  });
   const signatureQuery = useQuery(['trade-in-own-signature'], tradeInService.getOwnTradeInSignature, { retry: false });
   const signatureMutation = useMutation(() => tradeInService.saveOwnTradeInSignature(signatureDraft), {
     onSuccess: (value) => {
@@ -88,6 +102,15 @@ const ShopAdminSettingsPage = () => {
             disabled={isLoading || updateMutation.isLoading}
           />
         </Box>
+      </Paper>
+      <Paper className="zzv-shop-settings__panel" elevation={0} sx={{ mt: 2, p: 2.5, maxWidth: 680 }}>
+        <h2>Payment methods / გადახდის მეთოდები</h2>
+        <Box className="zzv-shop-settings__row"><Typography>Pay on-site / ადგილზე გადახდა</Typography><Switch checked={paymentDraft.onsite} onChange={(event) => setPaymentDraft((value) => ({ ...value, onsite: event.target.checked }))} /></Box>
+        <Box className="zzv-shop-settings__row"><Typography>Bank of Georgia online / ონლაინ გადახდა</Typography><Switch checked={paymentDraft.online} onChange={(event) => setPaymentDraft((value) => ({ ...value, online: event.target.checked }))} /></Box>
+        <TextField fullWidth label="BoG Client ID" value={paymentDraft.client_id} onChange={(event) => setPaymentDraft((value) => ({ ...value, client_id: event.target.value }))} sx={{ mt: 2 }} />
+        <TextField fullWidth type="password" autoComplete="new-password" label={paymentDraft.secret_configured ? 'BoG Client Secret (leave blank to keep existing)' : 'BoG Client Secret'} value={paymentDraft.client_secret} onChange={(event) => setPaymentDraft((value) => ({ ...value, client_secret: event.target.value }))} sx={{ mt: 2 }} />
+        {paymentMessage && <Alert severity={paymentMutation.isError ? 'error' : 'success'} sx={{ mt: 2 }}>{paymentMessage}</Alert>}
+        <Button variant="contained" sx={{ mt: 2 }} disabled={paymentMutation.isLoading} onClick={() => paymentMutation.mutate(paymentDraft)}>Save payment settings</Button>
       </Paper>
       <Paper className="zzv-shop-settings__panel" elevation={0} sx={{ mt: 2, p: 2.5, maxWidth: 680 }}>
         <h2>Trade-in · ჩემი ხელმოწერა</h2>

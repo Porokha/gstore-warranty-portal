@@ -75,6 +75,15 @@ export class ShopOrder {
   @Column({ nullable: true })
   payment_method: string;
 
+  @Column({ default: 'unpaid' })
+  payment_status: string;
+
+  @Column({ type: 'datetime', nullable: true })
+  paid_at: Date | null;
+
+  @Column({ nullable: true, unique: true })
+  checkout_request_id: string | null;
+
   @Column({ type: 'text', nullable: true })
   customer_note: string;
 
