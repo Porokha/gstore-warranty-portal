@@ -20,6 +20,12 @@ export class TradeInStaffSigningLink {
   @Column({ nullable: true })
   quote_id: number | null;
 
+  @Column({ nullable: true })
+  signature_profile_id: number | null;
+
+  @Column({ type: 'varchar', length: 80, nullable: true })
+  signature_title: string | null;
+
   @Column({ type: 'datetime' })
   expires_at: Date;
 

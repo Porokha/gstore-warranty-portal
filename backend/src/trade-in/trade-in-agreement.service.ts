@@ -7,6 +7,7 @@ import { AgreementDetails, agreementTerms, makeAgreementPdf } from './trade-in-a
 import { TradeInAgreement } from './entities/trade-in-agreement.entity';
 import { TradeInQuote, TradeInQuoteStatus } from './entities/trade-in-quote.entity';
 import { TradeInStaffSignature } from './entities/trade-in-staff-signature.entity';
+import { TradeInStaffSignatureProfile } from './entities/trade-in-staff-signature-profile.entity';
 import { TradeInStaffSigningLink, StaffSigningPurpose } from './entities/trade-in-staff-signing-link.entity';
 import { TradeInService } from './trade-in.service';
 
@@ -43,6 +44,7 @@ export class TradeInAgreementService {
     @InjectRepository(TradeInAgreement) private readonly agreements: Repository<TradeInAgreement>,
     @InjectRepository(TradeInQuote) private readonly quotes: Repository<TradeInQuote>,
     @InjectRepository(TradeInStaffSignature) private readonly staffSignatures: Repository<TradeInStaffSignature>,
+    @InjectRepository(TradeInStaffSignatureProfile) private readonly signatureProfiles: Repository<TradeInStaffSignatureProfile>,
     @InjectRepository(TradeInStaffSigningLink) private readonly staffSigningLinks: Repository<TradeInStaffSigningLink>,
     @InjectRepository(User) private readonly users: Repository<User>,
     private readonly tradeInService: TradeInService,
@@ -196,16 +198,68 @@ export class TradeInAgreementService {
     return { signed: true };
   }
 
-  async getStaffSignature(userId: number) {
-    const row = await this.staffSignatures.createQueryBuilder('signature').addSelect('signature.signature')
-      .where('signature.user_id = :userId', { userId }).getOne();
-    return { signature: row ? `data:image/png;base64,${row.signature.toString('base64')}` : null };
+  private signatureTitle(value: string) {
+    const title = typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : '';
+    if (!title || title.length > 80) throw new BadRequestException('Enter a signature title of up to 80 characters.');
+    return title;
   }
 
+  async getStaffSignature(userId: number) {
+    const rows = await this.signatureProfiles.createQueryBuilder('profile').addSelect('profile.signature')
+      .where('profile.user_id = :userId', { userId }).orderBy('profile.id', 'ASC').getMany();
+    const signatures = rows.map((row) => ({
+      id: row.id, title: row.title, signature: `data:image/png;base64,${row.signature.toString('base64')}`,
+      updated_at: row.updated_at,
+    }));
+    return { signatures, signature: signatures[0]?.signature || null };
+  }
+
+  async createStaffSignatureProfile(userId: number, rawTitle: string, dataUrl?: string) {
+    const title = this.signatureTitle(rawTitle);
+    if (!dataUrl) throw new BadRequestException('Draw a signature first.');
+    const signature = signatureBuffer(dataUrl);
+    await this.signatureProfiles.manager.transaction(async (manager) => {
+      if (await manager.findOne(TradeInStaffSignatureProfile, { where: { user_id: userId, title } })) {
+        throw new BadRequestException('A signature with this title already exists.');
+      }
+      await manager.save(TradeInStaffSignatureProfile, { user_id: userId, title, signature });
+      await this.revokeStaffSigningLinks(manager, userId, 'saved');
+    });
+    return this.getStaffSignature(userId);
+  }
+
+  async updateStaffSignatureProfile(userId: number, id: number, rawTitle: string, dataUrl?: string) {
+    const title = this.signatureTitle(rawTitle);
+    const signature = dataUrl ? signatureBuffer(dataUrl) : null;
+    await this.signatureProfiles.manager.transaction(async (manager) => {
+      const profile = await manager.findOne(TradeInStaffSignatureProfile, {
+        where: { id, user_id: userId }, lock: { mode: 'pessimistic_write' },
+      });
+      if (!profile) throw new NotFoundException('Signature not found.');
+      const duplicate = await manager.findOne(TradeInStaffSignatureProfile, { where: { user_id: userId, title } });
+      if (duplicate && duplicate.id !== id) throw new BadRequestException('A signature with this title already exists.');
+      profile.title = title;
+      if (signature) profile.signature = signature;
+      await manager.save(profile);
+      await this.revokeStaffSigningLinks(manager, userId, 'saved');
+    });
+    return this.getStaffSignature(userId);
+  }
+
+  async deleteStaffSignatureProfile(userId: number, id: number) {
+    const deleted = await this.signatureProfiles.delete({ id, user_id: userId });
+    if (!deleted.affected) throw new NotFoundException('Signature not found.');
+  }
+
+  // Retain the previous endpoint for staff who still have an old admin tab open.
   async saveStaffSignature(userId: number, dataUrl: string) {
     const signature = signatureBuffer(dataUrl);
     await this.staffSignatures.manager.transaction(async (manager) => {
       await manager.save(TradeInStaffSignature, { user_id: userId, signature });
+      const existing = await manager.findOne(TradeInStaffSignatureProfile, { where: { user_id: userId }, order: { id: 'ASC' } });
+      await manager.save(TradeInStaffSignatureProfile, {
+        id: existing?.id, user_id: userId, title: existing?.title || 'ძირითადი ხელმოწერა', signature,
+      });
       await this.revokeStaffSigningLinks(manager, userId, 'saved');
     });
     return this.getStaffSignature(userId);
@@ -219,7 +273,7 @@ export class TradeInAgreementService {
     await links.execute();
   }
 
-  async startStaffSigning(userId: number, quoteId?: number) {
+  async startStaffSigning(userId: number, quoteId?: number, profileInput?: { title?: string; profile_id?: number }) {
     const purpose: StaffSigningPurpose = quoteId === undefined ? 'saved' : 'agreement';
     return this.agreements.manager.transaction(async (manager) => {
       const user = await manager.findOne(User, { where: { id: userId }, lock: { mode: 'pessimistic_write' } });
@@ -232,6 +286,21 @@ export class TradeInAgreementService {
           throw new BadRequestException('This agreement cannot be signed.');
         }
       }
+      let profileId: number | null = null;
+      let profileTitle: string | null = null;
+      if (purpose === 'saved') {
+        let profile = profileInput?.profile_id
+          ? await manager.findOne(TradeInStaffSignatureProfile, { where: { id: profileInput.profile_id, user_id: userId } })
+          : null;
+        if (profileInput?.profile_id && !profile) throw new NotFoundException('Signature not found.');
+        if (!profileInput?.title && !profile) {
+          profile = await manager.findOne(TradeInStaffSignatureProfile, { where: { user_id: userId }, order: { id: 'ASC' } });
+        }
+        profileId = profile?.id || null;
+        profileTitle = this.signatureTitle(profileInput?.title || profile?.title || 'ძირითადი ხელმოწერა');
+        const duplicate = await manager.findOne(TradeInStaffSignatureProfile, { where: { user_id: userId, title: profileTitle } });
+        if (duplicate && duplicate.id !== profileId) throw new BadRequestException('A signature with this title already exists.');
+      }
       await this.revokeStaffSigningLinks(manager, userId, purpose, quoteId);
       const token = randomBytes(32).toString('base64url');
       const link = await manager.save(TradeInStaffSigningLink, {
@@ -239,6 +308,8 @@ export class TradeInAgreementService {
         purpose,
         user_id: userId,
         quote_id: quoteId ?? null,
+        signature_profile_id: profileId,
+        signature_title: profileTitle,
         expires_at: new Date(Date.now() + 15 * 60 * 1000),
         used_at: null,
       });
@@ -276,7 +347,7 @@ export class TradeInAgreementService {
       }
       quoteNumber = quote.quote_number;
     }
-    return { purpose: link.purpose, signer_name: `${user.name} ${user.last_name}`.trim(), quote_number: quoteNumber };
+    return { purpose: link.purpose, signer_name: `${user.name} ${user.last_name}`.trim(), quote_number: quoteNumber, signature_title: link.signature_title };
   }
 
   async submitStaffSignature(token: string, dataUrl: string) {
@@ -292,7 +363,21 @@ export class TradeInAgreementService {
       const user = await manager.findOne(User, { where: { id: locked.user_id } });
       if (!user || user.is_postponed) throw new GoneException('Employee account is unavailable.');
       if (locked.purpose === 'saved') {
-        await manager.save(TradeInStaffSignature, { user_id: locked.user_id, signature: bytes });
+        const title = this.signatureTitle(locked.signature_title || 'ძირითადი ხელმოწერა');
+        if (locked.signature_profile_id) {
+          const profile = await manager.findOne(TradeInStaffSignatureProfile, {
+            where: { id: locked.signature_profile_id, user_id: locked.user_id }, lock: { mode: 'pessimistic_write' },
+          });
+          if (!profile) throw new GoneException('Signature profile no longer exists.');
+          profile.title = title;
+          profile.signature = bytes;
+          await manager.save(profile);
+        } else {
+          if (await manager.findOne(TradeInStaffSignatureProfile, { where: { user_id: locked.user_id, title } })) {
+            throw new BadRequestException('A signature with this title already exists.');
+          }
+          await manager.save(TradeInStaffSignatureProfile, { user_id: locked.user_id, title, signature: bytes });
+        }
       } else {
         if (locked.purpose !== 'agreement' || !locked.quote_id) throw new GoneException('Signing link is invalid.');
         const quote = await manager.findOne(TradeInQuote, { where: { id: locked.quote_id } });
@@ -311,15 +396,17 @@ export class TradeInAgreementService {
     });
   }
 
-  async setRepresentativeSignature(quoteId: number, userId: number, input: { use_saved?: boolean; signature?: string }) {
+  async setRepresentativeSignature(quoteId: number, userId: number, input: { use_saved?: boolean; signature_id?: number; signature?: string }) {
     if (!input.use_saved && !input.signature) throw new BadRequestException('Provide or select a signature.');
     const user = await this.users.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('Representative not found.');
     const representativeName = `${user.name} ${user.last_name}`.trim();
     let signature: Buffer;
     if (input.use_saved) {
-      const row = await this.staffSignatures.createQueryBuilder('signature').addSelect('signature.signature')
-        .where('signature.user_id = :userId', { userId }).getOne();
+      const selected = this.signatureProfiles.createQueryBuilder('profile').addSelect('profile.signature')
+        .where('profile.user_id = :userId', { userId });
+      if (input.signature_id) selected.andWhere('profile.id = :id', { id: input.signature_id });
+      const row = await selected.orderBy('profile.id', 'ASC').getOne();
       if (!row) throw new BadRequestException('Save your signature in Shop Admin settings first.');
       signature = row.signature;
     } else {

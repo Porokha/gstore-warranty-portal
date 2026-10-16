@@ -31,7 +31,7 @@ const TradeInStaffSignPage = () => {
           <>
             <h1>წარმომადგენლის ხელმოწერა</h1>
             <p className="zzv-sign-page__intro">{data.signer_name}</p>
-            <p className="zzv-sign-page__intro">{data.purpose === 'agreement' ? `განაცხადი № ${data.quote_number} · ხელმოწერა დაემატება ამ ხელშეკრულებას.` : 'ხელმოწერა შეინახება თქვენს Shop Admin Settings-ში მომავალი ხელშეკრულებებისთვის.'}</p>
+            <p className="zzv-sign-page__intro">{data.purpose === 'agreement' ? `განაცხადი № ${data.quote_number} · ხელმოწერა დაემატება ამ ხელშეკრულებას.` : `„${data.signature_title || 'ძირითადი ხელმოწერა'}“ შეინახება თქვენს Shop Admin Settings-ში მომავალი ხელშეკრულებებისთვის.`}</p>
             <SignaturePad onChange={setSignature} clearLabel="წაშლა და ხელახლა დახატვა" />
             {submit.isError && <Alert severity="error">{submit.error?.response?.data?.message || 'ხელმოწერის შენახვა ვერ მოხერხდა.'}</Alert>}
             <Button variant="contained" fullWidth size="large" disabled={!signature || submit.isLoading} onClick={() => submit.mutate()}>ხელმოწერის დასრულება</Button>

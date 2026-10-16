@@ -6,7 +6,7 @@ import { shopService } from '../../services/shopService';
 import { tradeInService } from '../../services/tradeInService';
 import SignaturePad from '../../components/trade-in/SignaturePad';
 import StaffSignatureQrDialog from '../../components/trade-in/StaffSignatureQrDialog';
-import { CloseOutlined, CreditCardOutlined, EditOutlined, LockOutlined, StorefrontOutlined } from '@mui/icons-material';
+import { AddOutlined, CloseOutlined, CreditCardOutlined, DeleteOutline, EditOutlined, LockOutlined, StorefrontOutlined } from '@mui/icons-material';
 
 const ShopAdminSettingsPage = () => {
   const { t } = useTranslation();
@@ -16,7 +16,9 @@ const ShopAdminSettingsPage = () => {
   const [saveError, setSaveError] = useState('');
   const [signatureDraft, setSignatureDraft] = useState('');
   const [signaturePadVersion, setSignaturePadVersion] = useState(0);
-  const [signatureSaved, setSignatureSaved] = useState(false);
+  const [signatureEditor, setSignatureEditor] = useState(null);
+  const [signatureDelete, setSignatureDelete] = useState(null);
+  const [signatureError, setSignatureError] = useState('');
   const [signatureQrOpen, setSignatureQrOpen] = useState(false);
   const [paymentDraft, setPaymentDraft] = useState({ onsite: true, online: false });
   const [paymentMessage, setPaymentMessage] = useState('');
@@ -102,13 +104,32 @@ const ShopAdminSettingsPage = () => {
     });
   };
   const signatureQuery = useQuery(['trade-in-own-signature'], tradeInService.getOwnTradeInSignature, { retry: false });
-  const signatureMutation = useMutation(() => tradeInService.saveOwnTradeInSignature(signatureDraft), {
+  const signatureMutation = useMutation((payload) => payload.id
+    ? tradeInService.updateOwnSignatureProfile(payload.id, payload.data)
+    : tradeInService.createOwnSignatureProfile(payload.data), {
     onSuccess: (value) => {
       queryClient.setQueryData(['trade-in-own-signature'], value);
       setSignatureDraft('');
-      setSignatureSaved(true);
+      setSignatureEditor(null);
+      setSignatureError('');
     },
+    onError: (error) => setSignatureError(error.response?.data?.message || 'ხელმოწერის შენახვა ვერ მოხერხდა.'),
   });
+  const deleteSignatureMutation = useMutation((id) => tradeInService.deleteOwnSignatureProfile(id), {
+    onSuccess: () => { signatureQuery.refetch(); setSignatureDelete(null); setSignatureError(''); },
+    onError: (error) => setSignatureError(error.response?.data?.message || 'ხელმოწერის წაშლა ვერ მოხერხდა.'),
+  });
+  const openSignatureEditor = (profile = null) => {
+    setSignatureEditor({ id: profile?.id || null, title: profile?.title || '' });
+    setSignatureDraft('');
+    setSignatureError('');
+    setSignaturePadVersion((version) => version + 1);
+  };
+  const saveSignature = () => {
+    const title = signatureEditor?.title.trim();
+    if (!title || (!signatureEditor.id && !signatureDraft)) return;
+    signatureMutation.mutate({ id: signatureEditor.id, data: { title, ...(signatureDraft ? { signature: signatureDraft } : {}) } });
+  };
 
   const { data, isLoading } = useQuery(['shop-admin-settings'], () => shopService.getAdminSettings(), {
     refetchOnWindowFocus: true,
@@ -225,19 +246,25 @@ const ShopAdminSettingsPage = () => {
           <Button variant="contained" onClick={saveCredentials} disabled={!credentialsDirty || credentialsMutation.isLoading}>{t('shopSettings.saveCredentials')}</Button>
         </DialogActions>
       </Dialog>
-      <Paper className="zzv-shop-settings__panel" elevation={0} sx={{ mt: 2, p: 2.5, maxWidth: 680 }}>
-        <h2>Trade-in · ჩემი ხელმოწერა</h2>
-        <Typography sx={{ mb: 2, color: '#667085', fontSize: 13 }}>აქ შენახული ხელმოწერა შეგიძლიათ გამოიყენოთ მხოლოდ თქვენს მიერ გაფორმებულ Trade-in ხელშეკრულებაზე. შეცვლისას ძველი ხელმოწერა ჩანაცვლდება, უკვე გაფორმებული PDF კი უცვლელი დარჩება.</Typography>
-        {signatureQuery.data?.signature && <Box sx={{ mb: 2, p: 1, border: '1px solid #e5e1ed', borderRadius: 2 }}><Typography sx={{ fontSize: 11, color: '#667085' }}>შენახული ხელმოწერა</Typography><img src={signatureQuery.data.signature} alt="შენახული ხელმოწერა" style={{ maxWidth: '100%', height: 80, objectFit: 'contain' }} /></Box>}
-        <SignaturePad key={signaturePadVersion} onChange={(value) => { setSignatureDraft(value); setSignatureSaved(false); }} clearLabel="წაშლა და ხელახლა დახატვა" />
-        {signatureSaved && <Alert severity="success" sx={{ mt: 1 }}>ხელმოწერა შენახულია.</Alert>}
-        {signatureMutation.isError && <Alert severity="error" sx={{ mt: 1 }}>ხელმოწერის შენახვა ვერ მოხერხდა.</Alert>}
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1.5 }}>
-          <Button variant="contained" disabled={!signatureDraft || signatureMutation.isLoading} onClick={() => signatureMutation.mutate()}>ხელმოწერის შენახვა</Button>
-          <Button variant="outlined" onClick={() => setSignatureQrOpen(true)}>QR · ტელეფონზე ხელმოწერა</Button>
-        </Box>
+      <Paper className="zzv-shop-settings__panel zzv-shop-settings__signature-panel" elevation={0}>
+        <div className="zzv-shop-settings__signature-head"><div><h2>Trade-in · ხელმოწერები</h2><p>შეინახეთ რამდენიმე ხელმოწერა და გაფორმებისას აირჩიეთ სასურველი. ცვლილება უკვე გაფორმებულ PDF-ს არ ცვლის.</p></div><Button variant="contained" startIcon={<AddOutlined />} onClick={() => openSignatureEditor()}>ახალი ხელმოწერა</Button></div>
+        {signatureQuery.isError && <Alert severity="error">ხელმოწერები ვერ ჩაიტვირთა.</Alert>}
+        {signatureError && !signatureEditor && <Alert severity="error">{String(signatureError)}</Alert>}
+        {signatureQuery.data?.signatures?.length ? <div className="zzv-shop-settings__signature-list">{signatureQuery.data.signatures.map((profile) => <div className="zzv-shop-settings__signature-card" key={profile.id}><div className="zzv-shop-settings__signature-image"><img src={profile.signature} alt={profile.title} /></div><div className="zzv-shop-settings__signature-meta"><strong>{profile.title}</strong><span>განახლებულია {new Date(profile.updated_at).toLocaleDateString('ka-GE')}</span></div><div className="zzv-shop-settings__signature-actions"><IconButton aria-label={`${profile.title} შეცვლა`} onClick={() => openSignatureEditor(profile)}><EditOutlined fontSize="small" /></IconButton><IconButton aria-label={`${profile.title} წაშლა`} onClick={() => { setSignatureError(''); setSignatureDelete(profile); }}><DeleteOutline fontSize="small" /></IconButton></div></div>)}</div> : !signatureQuery.isLoading && <div className="zzv-shop-settings__signature-empty">ხელმოწერები ჯერ არ არის შენახული.</div>}
       </Paper>
-      {signatureQrOpen && <StaffSignatureQrDialog onClose={() => setSignatureQrOpen(false)} onSigned={() => { signatureQuery.refetch(); setSignatureDraft(''); setSignaturePadVersion((version) => version + 1); setSignatureSaved(true); }} />}
+      <Dialog open={Boolean(signatureEditor)} onClose={() => !signatureMutation.isLoading && setSignatureEditor(null)} maxWidth="sm" fullWidth PaperProps={{ className: 'zzv-shop-settings__signature-dialog' }}>
+        <DialogTitle>{signatureEditor?.id ? 'ხელმოწერის შეცვლა' : 'ახალი ხელმოწერა'}</DialogTitle>
+        <DialogContent className="zzv-shop-settings__signature-editor">
+          <TextField label="ხელმოწერის სახელი" fullWidth value={signatureEditor?.title || ''} onChange={(event) => setSignatureEditor((value) => ({ ...value, title: event.target.value }))} inputProps={{ maxLength: 80 }} autoFocus />
+          {signatureEditor?.id && !signatureDraft && <div className="zzv-shop-settings__signature-current"><span>ამჟამინდელი ხელმოწერა</span><img src={signatureQuery.data?.signatures?.find((entry) => entry.id === signatureEditor.id)?.signature} alt="ამჟამინდელი ხელმოწერა" /></div>}
+          <Typography>{signatureEditor?.id ? 'ხელახლა დახატვა სურვილისამებრ' : 'დახატეთ ხელმოწერა ან გამოიყენეთ QR ტელეფონზე'}</Typography>
+          <SignaturePad key={signaturePadVersion} onChange={setSignatureDraft} clearLabel="წაშლა და ხელახლა დახატვა" />
+          {signatureError && <Alert severity="error">{String(signatureError)}</Alert>}
+        </DialogContent>
+        <DialogActions><Button onClick={() => setSignatureEditor(null)} disabled={signatureMutation.isLoading}>გაუქმება</Button><Button variant="outlined" disabled={!signatureEditor?.title.trim() || signatureMutation.isLoading} onClick={() => setSignatureQrOpen(true)}>QR · ტელეფონზე</Button><Button variant="contained" disabled={!signatureEditor?.title.trim() || (!signatureEditor?.id && !signatureDraft) || signatureMutation.isLoading} onClick={saveSignature}>შენახვა</Button></DialogActions>
+      </Dialog>
+      <Dialog open={Boolean(signatureDelete)} onClose={() => setSignatureDelete(null)} maxWidth="xs" fullWidth PaperProps={{ className: 'zzv-shop-settings__signature-dialog' }}><DialogTitle>ხელმოწერის წაშლა</DialogTitle><DialogContent><Typography>წაიშალოს „{signatureDelete?.title}“? უკვე გაფორმებული PDF-ები უცვლელი დარჩება.</Typography></DialogContent><DialogActions><Button onClick={() => setSignatureDelete(null)} disabled={deleteSignatureMutation.isLoading}>გაუქმება</Button><Button color="error" variant="contained" onClick={() => deleteSignatureMutation.mutate(signatureDelete.id)} disabled={deleteSignatureMutation.isLoading}>წაშლა</Button></DialogActions></Dialog>
+      {signatureQrOpen && <StaffSignatureQrDialog profile={signatureEditor} onClose={() => setSignatureQrOpen(false)} onSigned={() => { signatureQuery.refetch(); setSignatureQrOpen(false); setSignatureEditor(null); setSignatureDraft(''); }} />}
     </Box>
   );
 };

@@ -5,7 +5,7 @@ import QRCode from 'qrcode';
 import { tradeInService } from '../../services/tradeInService';
 import './trade-in-agreement.css';
 
-const StaffSignatureQrDialog = ({ quoteId, onClose, onSigned }) => {
+const StaffSignatureQrDialog = ({ quoteId, profile, onClose, onSigned }) => {
   const [link, setLink] = useState(null);
   const [image, setImage] = useState('');
   const [error, setError] = useState('');
@@ -25,7 +25,7 @@ const StaffSignatureQrDialog = ({ quoteId, onClose, onSigned }) => {
     setImage('');
     try {
       const next = quoteId === undefined
-        ? await tradeInService.createOwnSignatureSigningLink()
+        ? await tradeInService.createOwnSignatureSigningLink({ title: profile?.title, profile_id: profile?.id })
         : await tradeInService.createRepresentativeSigningLink(quoteId);
       reported.current = false;
       setLink(next);
@@ -56,7 +56,7 @@ const StaffSignatureQrDialog = ({ quoteId, onClose, onSigned }) => {
 
   return (
     <Dialog open onClose={onClose} maxWidth="xs" fullWidth className="zzv-agreement-dialog__qr-modal">
-      <DialogTitle>{quoteId === undefined ? 'ჩემი ხელმოწერის შენახვა ტელეფონით' : 'წარმომადგენლის ხელმოწერა ტელეფონით'}</DialogTitle>
+      <DialogTitle>{quoteId === undefined ? `ხელმოწერა ტელეფონით · ${profile?.title || ''}` : 'წარმომადგენლის ხელმოწერა ტელეფონით'}</DialogTitle>
       <DialogContent className="zzv-agreement-dialog__qr">
         {image && <img src={image} alt="წარმომადგენლის ხელმოწერის QR კოდი" />}
         {loading && <Typography>QR კოდი იქმნება...</Typography>}

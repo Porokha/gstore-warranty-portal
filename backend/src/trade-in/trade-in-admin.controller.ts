@@ -17,6 +17,7 @@ import { TradeInQuoteStatus } from './entities/trade-in-quote.entity';
 import { TradeInService } from './trade-in.service';
 import { TradeInAgreementService } from './trade-in-agreement.service';
 import { SaveTradeInAgreementDto, SetRepresentativeSignatureDto, SubmitTradeInSignatureDto } from './dto/save-trade-in-agreement.dto';
+import { SaveStaffSignatureProfileDto, StartStaffSignatureProfileSigningDto } from './dto/staff-signature-profile.dto';
 
 @Controller('shop/admin/trade-in')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -34,9 +35,25 @@ export class TradeInAdminController {
     return this.agreements.saveStaffSignature(req.user.id, dto.signature);
   }
 
+  @Post('signature/profiles')
+  createOwnSignature(@Request() req, @Body() dto: SaveStaffSignatureProfileDto) {
+    return this.agreements.createStaffSignatureProfile(req.user.id, dto.title, dto.signature);
+  }
+
+  @Patch('signature/profiles/:id')
+  updateOwnSignature(@Request() req, @Param('id', ParseIntPipe) id: number, @Body() dto: SaveStaffSignatureProfileDto) {
+    return this.agreements.updateStaffSignatureProfile(req.user.id, id, dto.title, dto.signature);
+  }
+
+  @Delete('signature/profiles/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteOwnSignature(@Request() req, @Param('id', ParseIntPipe) id: number) {
+    return this.agreements.deleteStaffSignatureProfile(req.user.id, id);
+  }
+
   @Post('signature/signing-link')
-  startOwnSignatureSigning(@Request() req) {
-    return this.agreements.startStaffSigning(req.user.id);
+  startOwnSignatureSigning(@Request() req, @Body() dto: StartStaffSignatureProfileSigningDto) {
+    return this.agreements.startStaffSigning(req.user.id, undefined, dto);
   }
 
   @Get('signature/signing-link/:id/status')
