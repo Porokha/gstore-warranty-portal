@@ -15,7 +15,7 @@ import { TradeInProduct } from './entities/trade-in-product.entity';
 import { TradeInQuote, TradeInQuoteStatus } from './entities/trade-in-quote.entity';
 import { TradeInSetting } from './entities/trade-in-setting.entity';
 import { validatePricingTree } from './pricing-tree.validation';
-import { isMacBook, macBookDisplay, macBookFamily } from './macbook-catalog';
+import { isMacBook, macBookDisplay, macBookFamily, normalizeMacBookName } from './macbook-catalog';
 import { TradeInAgreement } from './entities/trade-in-agreement.entity';
 
 const PRODUCT_CATEGORY_MATCH = `(
@@ -520,7 +520,7 @@ export class TradeInService {
     }
     const next = {
       ...dto,
-      name: dto.name?.trim(),
+      name: dto.name === undefined ? undefined : isMacBook(product) ? normalizeMacBookName(dto.name) : dto.name.trim(),
       brand: dto.brand?.trim() || null,
       category: dto.category?.trim() || null,
       category2: dto.category2?.trim() || null,

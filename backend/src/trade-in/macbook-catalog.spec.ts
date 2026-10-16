@@ -1,4 +1,4 @@
-import { macBookDisplay, macBookFamily } from './macbook-catalog';
+import { macBookDisplay, macBookFamily, normalizeMacBookName } from './macbook-catalog';
 
 describe('MacBook catalogue labels', () => {
   it('groups the original slugs into customer-facing families', () => {
@@ -15,6 +15,13 @@ describe('MacBook catalogue labels', () => {
     ] }] }] }];
     expect(macBookDisplay({ name: 'MacBook Air 13\\', slug: 'macbook-air-2021-m/macbook-air-13-2022' }, tree))
       .toEqual({ name: 'MacBook Air 13" (2022, M2)', release_year: '2022', chip: 'M2' });
+  });
+
+  it('normalizes either stray slash without altering an already-correct name', () => {
+    expect(normalizeMacBookName('MacBook Pro 16\\')).toBe('MacBook Pro 16"');
+    expect(normalizeMacBookName('MacBook Pro 16/ ')).toBe('MacBook Pro 16"');
+    expect(normalizeMacBookName('MacBook Pro 16"')).toBe('MacBook Pro 16"');
+    expect(normalizeMacBookName('MacBook Neo')).toBe('MacBook Neo');
   });
 
   it('keeps a year range where the valuation asks for the exact year', () => {
