@@ -46,7 +46,7 @@ import { tradeInService } from '../../services/tradeInService';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import GstoreOfferProducts from './GstoreOfferProducts';
 import TradeInFinalizeDialog, { printTradeInAgreement } from './TradeInFinalizeDialog';
-import { isManualTradeInQuote, tradeInAnswerKa, tradeInQuestionKa } from '../../utils/tradeInQuoteLabels';
+import { hydrateTradeInPricingCopy, isManualTradeInQuote, tradeInAnswerKa, tradeInQuestionKa } from '../../utils/tradeInQuoteLabels';
 
 const headerCell = {
   color: '#667085',
@@ -432,7 +432,7 @@ const ShopAdminTradeInPage = () => {
     setPricingRawMode(false);
     setActivePricingSection(0);
     const detailed = await tradeInService.getAdminProduct(product.id);
-    const tree = cloneTree(detailed.pricing_tree);
+    const tree = hydrateTradeInPricingCopy(cloneTree(detailed.pricing_tree));
     setPricingProduct(detailed);
     setPricingTree(tree);
     setPricingRaw(JSON.stringify(tree, null, 2));
