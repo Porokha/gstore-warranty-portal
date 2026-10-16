@@ -1,3 +1,5 @@
+SET NAMES utf8mb4;
+
 CREATE TABLE IF NOT EXISTS trade_in_staff_signature_profiles (
   id INT PRIMARY KEY AUTO_INCREMENT,
   user_id INT NOT NULL,
