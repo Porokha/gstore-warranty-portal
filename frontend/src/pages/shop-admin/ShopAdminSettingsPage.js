@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { shopService } from '../../services/shopService';
 import { tradeInService } from '../../services/tradeInService';
 import SignaturePad from '../../components/trade-in/SignaturePad';
+import StaffSignatureQrDialog from '../../components/trade-in/StaffSignatureQrDialog';
 import { CloseOutlined, CreditCardOutlined, EditOutlined, LockOutlined, StorefrontOutlined } from '@mui/icons-material';
 
 const ShopAdminSettingsPage = () => {
@@ -14,7 +15,9 @@ const ShopAdminSettingsPage = () => {
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [signatureDraft, setSignatureDraft] = useState('');
+  const [signaturePadVersion, setSignaturePadVersion] = useState(0);
   const [signatureSaved, setSignatureSaved] = useState(false);
+  const [signatureQrOpen, setSignatureQrOpen] = useState(false);
   const [paymentDraft, setPaymentDraft] = useState({ onsite: true, online: false });
   const [paymentMessage, setPaymentMessage] = useState('');
   const [credentialsOpen, setCredentialsOpen] = useState(false);
@@ -226,11 +229,15 @@ const ShopAdminSettingsPage = () => {
         <h2>Trade-in · ჩემი ხელმოწერა</h2>
         <Typography sx={{ mb: 2, color: '#667085', fontSize: 13 }}>აქ შენახული ხელმოწერა შეგიძლიათ გამოიყენოთ მხოლოდ თქვენს მიერ გაფორმებულ Trade-in ხელშეკრულებაზე. შეცვლისას ძველი ხელმოწერა ჩანაცვლდება, უკვე გაფორმებული PDF კი უცვლელი დარჩება.</Typography>
         {signatureQuery.data?.signature && <Box sx={{ mb: 2, p: 1, border: '1px solid #e5e1ed', borderRadius: 2 }}><Typography sx={{ fontSize: 11, color: '#667085' }}>შენახული ხელმოწერა</Typography><img src={signatureQuery.data.signature} alt="შენახული ხელმოწერა" style={{ maxWidth: '100%', height: 80, objectFit: 'contain' }} /></Box>}
-        <SignaturePad onChange={(value) => { setSignatureDraft(value); setSignatureSaved(false); }} clearLabel="წაშლა და ხელახლა დახატვა" />
+        <SignaturePad key={signaturePadVersion} onChange={(value) => { setSignatureDraft(value); setSignatureSaved(false); }} clearLabel="წაშლა და ხელახლა დახატვა" />
         {signatureSaved && <Alert severity="success" sx={{ mt: 1 }}>ხელმოწერა შენახულია.</Alert>}
         {signatureMutation.isError && <Alert severity="error" sx={{ mt: 1 }}>ხელმოწერის შენახვა ვერ მოხერხდა.</Alert>}
-        <Button sx={{ mt: 1.5 }} variant="contained" disabled={!signatureDraft || signatureMutation.isLoading} onClick={() => signatureMutation.mutate()}>ხელმოწერის შენახვა</Button>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1.5 }}>
+          <Button variant="contained" disabled={!signatureDraft || signatureMutation.isLoading} onClick={() => signatureMutation.mutate()}>ხელმოწერის შენახვა</Button>
+          <Button variant="outlined" onClick={() => setSignatureQrOpen(true)}>QR · ტელეფონზე ხელმოწერა</Button>
+        </Box>
       </Paper>
+      {signatureQrOpen && <StaffSignatureQrDialog onClose={() => setSignatureQrOpen(false)} onSigned={() => { signatureQuery.refetch(); setSignatureDraft(''); setSignaturePadVersion((version) => version + 1); setSignatureSaved(true); }} />}
     </Box>
   );
 };

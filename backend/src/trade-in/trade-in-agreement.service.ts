@@ -7,6 +7,7 @@ import { AgreementDetails, agreementTerms, makeAgreementPdf } from './trade-in-a
 import { TradeInAgreement } from './entities/trade-in-agreement.entity';
 import { TradeInQuote, TradeInQuoteStatus } from './entities/trade-in-quote.entity';
 import { TradeInStaffSignature } from './entities/trade-in-staff-signature.entity';
+import { TradeInStaffSigningLink, StaffSigningPurpose } from './entities/trade-in-staff-signing-link.entity';
 import { TradeInService } from './trade-in.service';
 
 const detailKeys = [
@@ -42,6 +43,7 @@ export class TradeInAgreementService {
     @InjectRepository(TradeInAgreement) private readonly agreements: Repository<TradeInAgreement>,
     @InjectRepository(TradeInQuote) private readonly quotes: Repository<TradeInQuote>,
     @InjectRepository(TradeInStaffSignature) private readonly staffSignatures: Repository<TradeInStaffSignature>,
+    @InjectRepository(TradeInStaffSigningLink) private readonly staffSigningLinks: Repository<TradeInStaffSigningLink>,
     @InjectRepository(User) private readonly users: Repository<User>,
     private readonly tradeInService: TradeInService,
   ) {}
@@ -203,6 +205,102 @@ export class TradeInAgreementService {
   async saveStaffSignature(userId: number, dataUrl: string) {
     await this.staffSignatures.save({ user_id: userId, signature: signatureBuffer(dataUrl) });
     return this.getStaffSignature(userId);
+  }
+
+  async startStaffSigning(userId: number, quoteId?: number) {
+    const purpose: StaffSigningPurpose = quoteId === undefined ? 'saved' : 'agreement';
+    return this.agreements.manager.transaction(async (manager) => {
+      const user = await manager.findOne(User, { where: { id: userId }, lock: { mode: 'pessimistic_write' } });
+      if (!user || user.is_postponed) throw new BadRequestException('Employee account is unavailable.');
+      if (purpose === 'agreement') {
+        const quote = await manager.findOne(TradeInQuote, { where: { id: quoteId } });
+        const agreement = await manager.findOne(TradeInAgreement, { where: { quote_id: quoteId } });
+        if (!quote || !agreement) throw new NotFoundException('Open the agreement first.');
+        if (quote.status === TradeInQuoteStatus.CANCELLED || agreement.finalized_at) {
+          throw new BadRequestException('This agreement cannot be signed.');
+        }
+      }
+      const previous = manager.createQueryBuilder().delete().from(TradeInStaffSigningLink)
+        .where('user_id = :userId AND purpose = :purpose', { userId, purpose });
+      if (quoteId === undefined) previous.andWhere('quote_id IS NULL');
+      else previous.andWhere('quote_id = :quoteId', { quoteId });
+      await previous.execute();
+      const token = randomBytes(32).toString('base64url');
+      const link = await manager.save(TradeInStaffSigningLink, {
+        token_hash: createHash('sha256').update(token).digest('hex'),
+        purpose,
+        user_id: userId,
+        quote_id: quoteId ?? null,
+        expires_at: new Date(Date.now() + 15 * 60 * 1000),
+        used_at: null,
+      });
+      return { id: link.id, token, expires_at: link.expires_at };
+    });
+  }
+
+  async staffSigningStatus(id: number, userId: number) {
+    const link = await this.staffSigningLinks.findOne({ where: { id, user_id: userId } });
+    if (!link) throw new NotFoundException('Signing link not found.');
+    return { signed: Boolean(link.used_at), expired: !link.used_at && link.expires_at.getTime() < Date.now() };
+  }
+
+  private async validStaffSigningLink(token: string) {
+    if (!/^[A-Za-z0-9_-]{43}$/.test(token)) throw new GoneException('Signing link is invalid.');
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+    const link = await this.staffSigningLinks.findOne({ where: { token_hash: tokenHash } });
+    if (!link || link.used_at || link.expires_at.getTime() < Date.now()) {
+      throw new GoneException('Signing link has expired or was already used. Ask for a new QR code.');
+    }
+    return link;
+  }
+
+  async staffSigningPreview(token: string) {
+    const link = await this.validStaffSigningLink(token);
+    const user = await this.users.findOne({ where: { id: link.user_id } });
+    if (!user || user.is_postponed) throw new GoneException('Employee account is unavailable.');
+    let quoteNumber: string | null = null;
+    if (link.purpose === 'agreement') {
+      if (!link.quote_id) throw new GoneException('Signing link is invalid.');
+      const quote = await this.quote(link.quote_id);
+      const agreement = await this.agreement(link.quote_id);
+      if (quote.status === TradeInQuoteStatus.CANCELLED || agreement?.finalized_at || !agreement) {
+        throw new GoneException('This agreement cannot be signed.');
+      }
+      quoteNumber = quote.quote_number;
+    }
+    return { purpose: link.purpose, signer_name: `${user.name} ${user.last_name}`.trim(), quote_number: quoteNumber };
+  }
+
+  async submitStaffSignature(token: string, dataUrl: string) {
+    const bytes = signatureBuffer(dataUrl);
+    const link = await this.validStaffSigningLink(token);
+    return this.agreements.manager.transaction(async (manager) => {
+      const locked = await manager.findOne(TradeInStaffSigningLink, {
+        where: { id: link.id }, lock: { mode: 'pessimistic_write' },
+      });
+      if (!locked || locked.used_at || locked.expires_at.getTime() < Date.now()) {
+        throw new GoneException('Signing link was already used or expired.');
+      }
+      const user = await manager.findOne(User, { where: { id: locked.user_id } });
+      if (!user || user.is_postponed) throw new GoneException('Employee account is unavailable.');
+      if (locked.purpose === 'saved') {
+        await manager.save(TradeInStaffSignature, { user_id: locked.user_id, signature: bytes });
+      } else {
+        if (locked.purpose !== 'agreement' || !locked.quote_id) throw new GoneException('Signing link is invalid.');
+        const quote = await manager.findOne(TradeInQuote, { where: { id: locked.quote_id } });
+        const agreement = await this.lockedAgreement(manager, locked.quote_id);
+        if (!quote || !agreement || agreement.finalized_at || quote.status === TradeInQuoteStatus.CANCELLED) {
+          throw new GoneException('This agreement cannot be signed.');
+        }
+        agreement.representative_signature = bytes;
+        agreement.representative_user_id = locked.user_id;
+        agreement.details = { ...agreement.details, representative_name: `${user.name} ${user.last_name}`.trim() };
+        await manager.save(agreement);
+      }
+      locked.used_at = new Date();
+      await manager.save(locked);
+      return { signed: true };
+    });
   }
 
   async setRepresentativeSignature(quoteId: number, userId: number, input: { use_saved?: boolean; signature?: string }) {

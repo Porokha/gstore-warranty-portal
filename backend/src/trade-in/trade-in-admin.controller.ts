@@ -34,6 +34,16 @@ export class TradeInAdminController {
     return this.agreements.saveStaffSignature(req.user.id, dto.signature);
   }
 
+  @Post('signature/signing-link')
+  startOwnSignatureSigning(@Request() req) {
+    return this.agreements.startStaffSigning(req.user.id);
+  }
+
+  @Get('signature/signing-link/:id/status')
+  ownSignatureSigningStatus(@Request() req, @Param('id', ParseIntPipe) id: number) {
+    return this.agreements.staffSigningStatus(id, req.user.id);
+  }
+
   @Post('quotes/:id/agreement')
   getAgreement(@Param('id', ParseIntPipe) id: number, @Request() req) {
     return this.agreements.getOrCreate(id, req.user.id);
@@ -47,6 +57,11 @@ export class TradeInAdminController {
   @Post('quotes/:id/agreement/signing-link')
   startSigning(@Param('id', ParseIntPipe) id: number) {
     return this.agreements.startSigning(id);
+  }
+
+  @Post('quotes/:id/agreement/representative-signing-link')
+  startRepresentativeSigning(@Param('id', ParseIntPipe) id: number, @Request() req) {
+    return this.agreements.startStaffSigning(req.user.id, id);
   }
 
   @Put('quotes/:id/agreement/representative-signature')

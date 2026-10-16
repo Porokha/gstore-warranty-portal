@@ -20,6 +20,18 @@ export class TradeInPublicController {
     return this.agreements.submitCustomerSignature(token, dto.signature);
   }
 
+  @Get('staff-sign/:token')
+  @Header('Cache-Control', 'no-store')
+  staffSigningPreview(@Param('token') token: string) {
+    return this.agreements.staffSigningPreview(token);
+  }
+
+  @Post('staff-sign/:token')
+  @Header('Cache-Control', 'no-store')
+  staffSign(@Param('token') token: string, @Body() dto: SubmitTradeInSignatureDto) {
+    return this.agreements.submitStaffSignature(token, dto.signature);
+  }
+
   @Get('categories')
   listCategories() {
     return this.tradeInService.listPublicCategories();

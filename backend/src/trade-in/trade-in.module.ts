@@ -10,6 +10,7 @@ import { TradeInPublicController } from './trade-in-public.controller';
 import { TradeInService } from './trade-in.service';
 import { TradeInAgreement } from './entities/trade-in-agreement.entity';
 import { TradeInStaffSignature } from './entities/trade-in-staff-signature.entity';
+import { TradeInStaffSigningLink } from './entities/trade-in-staff-signing-link.entity';
 import { User } from '../users/entities/user.entity';
 import { TradeInAgreementService } from './trade-in-agreement.service';
 
@@ -23,6 +24,7 @@ import { TradeInAgreementService } from './trade-in-agreement.service';
       TradeInSetting,
       TradeInAgreement,
       TradeInStaffSignature,
+      TradeInStaffSigningLink,
       User,
     ]),
   ],

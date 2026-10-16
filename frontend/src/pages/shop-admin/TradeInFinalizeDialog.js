@@ -5,6 +5,7 @@ import KeyboardArrowDownRounded from '@mui/icons-material/KeyboardArrowDownRound
 import { useMutation, useQuery } from 'react-query';
 import QRCode from 'qrcode';
 import SignaturePad from '../../components/trade-in/SignaturePad';
+import StaffSignatureQrDialog from '../../components/trade-in/StaffSignatureQrDialog';
 import { tradeInService } from '../../services/tradeInService';
 import '../../components/trade-in/trade-in-agreement.css';
 
@@ -49,13 +50,14 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
   const [qrImage, setQrImage] = useState('');
   const [repMode, setRepMode] = useState('saved');
   const [drawnSignature, setDrawnSignature] = useState('');
+  const [representativeQrOpen, setRepresentativeQrOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [attemptedFinish, setAttemptedFinish] = useState(false);
   const [previewUrl, setPreviewUrl] = useState('');
   const [previewBusy, setPreviewBusy] = useState(false);
   const agreementQuery = useQuery(['trade-in-agreement', quote?.id], () => tradeInService.openAdminAgreement(quote.id), {
-    enabled: Boolean(quote), retry: false, refetchInterval: qr ? 3000 : false,
+    enabled: Boolean(quote), retry: false, refetchInterval: qr || representativeQrOpen ? 3000 : false,
   });
   const savedSignatureQuery = useQuery(['trade-in-own-signature'], tradeInService.getOwnTradeInSignature, { enabled: Boolean(quote), retry: false });
 
@@ -187,6 +189,7 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
                       </div>
                       {repMode === 'draw' && <Box sx={{ mt: 1 }}><SignaturePad onChange={setDrawnSignature} clearLabel="წაშლა" /></Box>}
                       <Button sx={{ mt: 1 }} variant="outlined" onClick={applyRepresentative} disabled={busy || (repMode === 'draw' && !drawnSignature) || (repMode === 'saved' && !savedSignatureQuery.data?.signature)}>გამოყენება / შეცვლა</Button>
+                      <Button sx={{ mt: 1, ml: 1 }} variant="outlined" onClick={() => setRepresentativeQrOpen(true)} disabled={busy}>QR · ტელეფონზე ხელმოწერა</Button>
                       {!savedSignatureQuery.data?.signature && <Typography sx={{ fontSize: 11, color: '#667085' }}>შეგიძლიათ ხელმოწერა შეინახოთ Shop Admin → Settings-ში.</Typography>}
                     </>}
                   </div>
@@ -204,6 +207,7 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
         <DialogActions><Button onClick={() => setPreviewUrl('')}>დახურვა</Button></DialogActions>
       </Dialog>
       <Dialog open={Boolean(qr)} onClose={() => setQr(null)} maxWidth="xs" fullWidth className="zzv-agreement-dialog__qr-modal"><DialogTitle>მომხმარებლის ხელმოწერა</DialogTitle><DialogContent className="zzv-agreement-dialog__qr">{qrImage && <img src={qrImage} alt="ხელმოწერის QR კოდი" />}<Typography sx={{ fontSize: 13 }}>მომხმარებელმა დაასკანეროს QR და მოაწეროს ხელი საკუთარ ტელეფონზე. ბმული მოქმედებს 15 წუთი, ერთხელ.</Typography><code>{qr && `${window.location.origin}/trade-in/sign/${qr.token}`}</code>{agreement?.customer_signed_at && <Alert severity="success">ხელმოწერა მიღებულია.</Alert>}</DialogContent><DialogActions><Button onClick={() => setQr(null)}>დახურვა</Button><Button onClick={issueLink} disabled={busy}>ახალი QR</Button></DialogActions></Dialog>
+      {representativeQrOpen && <StaffSignatureQrDialog quoteId={quote.id} onClose={() => setRepresentativeQrOpen(false)} onSigned={() => { agreementQuery.refetch(); setMessage('წარმომადგენლის ხელმოწერა მიღებულია.'); }} />}
     </>
   );
 };

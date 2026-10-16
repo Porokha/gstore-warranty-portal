@@ -18,7 +18,8 @@ describe('Trade-in agreement', () => {
   const manager = { createQueryBuilder: jest.fn().mockReturnValue(agreementQuery), findOne: jest.fn(), save: jest.fn(async (value) => value) };
   const agreements = { createQueryBuilder: jest.fn().mockReturnValue(agreementQuery), manager: { transaction: (callback: any) => callback(manager) } };
   const quotes = { findOne: jest.fn().mockResolvedValue({ id: 5, status: 'accepted', quote_number: 'TI-5' }) };
-  const service = new TradeInAgreementService(agreements as any, quotes as any, {} as any, {} as any, {} as any);
+  const staffLinks = { findOne: jest.fn() };
+  const service = new TradeInAgreementService(agreements as any, quotes as any, {} as any, staffLinks as any, {} as any, {} as any);
 
   beforeEach(() => {
     jest.restoreAllMocks();
@@ -26,6 +27,7 @@ describe('Trade-in agreement', () => {
     manager.save.mockClear();
     quotes.findOne.mockClear();
     manager.findOne.mockReset().mockResolvedValue({ id: 5, status: 'accepted' });
+    staffLinks.findOne.mockReset();
   });
 
   it('invalidates an old customer signature when generating a new QR link', async () => {
@@ -82,6 +84,49 @@ describe('Trade-in agreement', () => {
   it('rejects reused or unknown signing tokens', async () => {
     agreementQuery.getOne.mockResolvedValue(null);
     await expect(service.signingPreview('a'.repeat(43))).rejects.toThrow(GoneException);
+  });
+
+  it('does not reveal staff signing status to a different employee', async () => {
+    staffLinks.findOne.mockResolvedValue(null);
+    await expect(service.staffSigningStatus(12, 99)).rejects.toThrow('Signing link not found.');
+    expect(staffLinks.findOne).toHaveBeenCalledWith({ where: { id: 12, user_id: 99 } });
+  });
+
+  it('rejects an already used staff QR token', async () => {
+    staffLinks.findOne.mockResolvedValue({ used_at: new Date(), expires_at: new Date(Date.now() + 60000) });
+    await expect(service.staffSigningPreview('a'.repeat(43))).rejects.toThrow(GoneException);
+  });
+
+  it('stores a one-time settings QR drawing for the issuing employee', async () => {
+    const image = `data:image/png;base64,${Buffer.concat([
+      Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/lxoAAAAASUVORK5CYII=', 'base64'),
+      Buffer.alloc(100),
+    ]).toString('base64')}`;
+    const link = { id: 7, user_id: 42, purpose: 'saved', quote_id: null, used_at: null as Date | null, expires_at: new Date(Date.now() + 60000) };
+    staffLinks.findOne.mockResolvedValue(link);
+    manager.findOne.mockImplementation(async (entity: any) => entity.name === 'TradeInStaffSigningLink' ? link : { id: 42, is_postponed: false });
+    expect(await service.submitStaffSignature('a'.repeat(43), image)).toEqual({ signed: true });
+    expect(manager.save).toHaveBeenCalledWith(expect.anything(), { user_id: 42, signature: expect.any(Buffer) });
+    expect(link.used_at).toBeInstanceOf(Date);
+  });
+
+  it('attaches a mobile representative drawing to its draft agreement', async () => {
+    const image = `data:image/png;base64,${Buffer.concat([
+      Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/lxoAAAAASUVORK5CYII=', 'base64'),
+      Buffer.alloc(100),
+    ]).toString('base64')}`;
+    const link = { id: 8, user_id: 42, purpose: 'agreement', quote_id: 5, used_at: null as Date | null, expires_at: new Date(Date.now() + 60000) };
+    const draft = { ...agreement, details: { ...fullDetails }, representative_signature: null, representative_user_id: null };
+    staffLinks.findOne.mockResolvedValue(link);
+    agreementQuery.getOne.mockResolvedValue(draft);
+    manager.findOne.mockImplementation(async (entity: any) => entity.name === 'TradeInStaffSigningLink'
+      ? link : entity.name === 'User' ? { id: 42, name: 'Test', last_name: 'Employee', is_postponed: false }
+        : { id: 5, status: 'accepted' });
+    await service.submitStaffSignature('b'.repeat(43), image);
+    expect(draft.representative_user_id).toBe(42);
+    expect(draft.representative_signature).toBeInstanceOf(Buffer);
+    expect(draft.details.representative_name).toBe('Test Employee');
+    expect(link.used_at).toBeInstanceOf(Date);
   });
 
   it('does not finalize without both signatures', async () => {

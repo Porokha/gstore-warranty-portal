@@ -82,6 +82,11 @@ export const tradeInService = {
     return response.data;
   },
 
+  createRepresentativeSigningLink: async (id) => {
+    const response = await api.post(`/shop/admin/trade-in/quotes/${id}/agreement/representative-signing-link`);
+    return response.data;
+  },
+
   setAgreementRepresentativeSignature: async (id, payload) => {
     const response = await api.put(`/shop/admin/trade-in/quotes/${id}/agreement/representative-signature`, payload);
     return response.data;
@@ -109,6 +114,26 @@ export const tradeInService = {
 
   saveOwnTradeInSignature: async (signature) => {
     const response = await api.put('/shop/admin/trade-in/signature', { signature });
+    return response.data;
+  },
+
+  createOwnSignatureSigningLink: async () => {
+    const response = await api.post('/shop/admin/trade-in/signature/signing-link');
+    return response.data;
+  },
+
+  getStaffSigningStatus: async (id) => {
+    const response = await api.get(`/shop/admin/trade-in/signature/signing-link/${id}/status`);
+    return response.data;
+  },
+
+  getStaffSigningPreview: async (token) => {
+    const response = await api.get(`/trade-in/staff-sign/${token}`);
+    return response.data;
+  },
+
+  submitStaffSignature: async (token, signature) => {
+    const response = await api.post(`/trade-in/staff-sign/${token}`, { signature });
     return response.data;
   },
 
