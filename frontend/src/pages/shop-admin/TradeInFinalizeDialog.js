@@ -68,8 +68,8 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
   const finalizeMutation = useMutation(() => tradeInService.finalizeAdminAgreement(quote.id));
 
   useEffect(() => {
-    if (agreementQuery.data && (!details || !dirty)) setDetails(agreementQuery.data.details);
-  }, [agreementQuery.data, details, dirty]);
+    if (agreementQuery.data && details === null) setDetails(agreementQuery.data.details);
+  }, [agreementQuery.data, details]);
 
   useEffect(() => {
     if (!qr?.token) return;
@@ -87,6 +87,7 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
   const update = (key, value) => { setDirty(true); setMessage(''); setDetails((current) => ({ ...current, [key]: value })); };
   const save = async () => {
     const result = await saveMutation.mutateAsync();
+    setDetails(result.details);
     setDirty(false);
     await agreementQuery.refetch();
     return result;
@@ -128,6 +129,22 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
     }
     try {
       if (dirty) await save();
+      const latest = await agreementQuery.refetch();
+      if (!latest.data?.customer_signed_at) {
+        setError('მომხმარებლის ხელმოწერა ჯერ არ არის მიღებული. დაასკანერეთ QR კოდი და სცადეთ ხელახლა.');
+        return;
+      }
+      if (!latest.data.representative_signed) {
+        if (repMode === 'saved' && savedSignatureQuery.data?.signature) {
+          await repMutation.mutateAsync({ use_saved: true });
+        } else if (repMode === 'draw' && drawnSignature) {
+          await repMutation.mutateAsync({ signature: drawnSignature });
+        } else {
+          setError('წარმომადგენლის ხელმოწერაც საჭიროა. აირჩიეთ შენახული ხელმოწერა ან დახატეთ ახალი.');
+          return;
+        }
+        await agreementQuery.refetch();
+      }
       await finalizeMutation.mutateAsync();
       await agreementQuery.refetch();
       onFinalized();
