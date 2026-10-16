@@ -203,8 +203,20 @@ export class TradeInAgreementService {
   }
 
   async saveStaffSignature(userId: number, dataUrl: string) {
-    await this.staffSignatures.save({ user_id: userId, signature: signatureBuffer(dataUrl) });
+    const signature = signatureBuffer(dataUrl);
+    await this.staffSignatures.manager.transaction(async (manager) => {
+      await manager.save(TradeInStaffSignature, { user_id: userId, signature });
+      await this.revokeStaffSigningLinks(manager, userId, 'saved');
+    });
     return this.getStaffSignature(userId);
+  }
+
+  private async revokeStaffSigningLinks(manager: EntityManager, userId: number, purpose: StaffSigningPurpose, quoteId?: number) {
+    const links = manager.createQueryBuilder().delete().from(TradeInStaffSigningLink)
+      .where('user_id = :userId AND purpose = :purpose', { userId, purpose });
+    if (quoteId === undefined) links.andWhere('quote_id IS NULL');
+    else links.andWhere('quote_id = :quoteId', { quoteId });
+    await links.execute();
   }
 
   async startStaffSigning(userId: number, quoteId?: number) {
@@ -220,11 +232,7 @@ export class TradeInAgreementService {
           throw new BadRequestException('This agreement cannot be signed.');
         }
       }
-      const previous = manager.createQueryBuilder().delete().from(TradeInStaffSigningLink)
-        .where('user_id = :userId AND purpose = :purpose', { userId, purpose });
-      if (quoteId === undefined) previous.andWhere('quote_id IS NULL');
-      else previous.andWhere('quote_id = :quoteId', { quoteId });
-      await previous.execute();
+      await this.revokeStaffSigningLinks(manager, userId, purpose, quoteId);
       const token = randomBytes(32).toString('base64url');
       const link = await manager.save(TradeInStaffSigningLink, {
         token_hash: createHash('sha256').update(token).digest('hex'),
@@ -326,7 +334,9 @@ export class TradeInAgreementService {
       }
       agreement.representative_signature = signature;
       agreement.representative_user_id = userId;
-      return this.view(await manager.save(agreement));
+      const saved = await manager.save(agreement);
+      await this.revokeStaffSigningLinks(manager, userId, 'agreement', quoteId);
+      return this.view(saved);
     });
   }
 
