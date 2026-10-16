@@ -1687,8 +1687,35 @@ const ShopPage = () => {
                       </section>
                       <section className="zpos-checkout-card">
                         <h3>{t('shop.orderFlow.checkout.payment')}</h3>
-                        {paymentMethods.onsite && <button type="button" className={`zpos-checkout-option ${orderForm.payment_method === 'onsite' ? 'is-selected' : ''}`} onClick={() => updateOrderForm('payment_method', 'onsite')}><div><strong>{t('shop.orderFlow.stepThree.payOnsite')}</strong><small>{t('shop.orderFlow.stepThree.payOnsiteDescription')}</small></div><span className="zpos-checkout-radio" aria-hidden="true" /></button>}
-                        {paymentMethods.online && <button type="button" className={`zpos-checkout-option ${orderForm.payment_method === 'online' ? 'is-selected' : ''}`} onClick={() => updateOrderForm('payment_method', 'online')}><div><strong>{i18n.language === 'ka' ? 'ონლაინ გადახდა (საქართველოს ბანკი)' : 'Pay online (Bank of Georgia)'}</strong><small>{i18n.language === 'ka' ? 'გადახდა უსაფრთხო ბანკის გვერდზე' : 'Secure checkout on the bank website'}</small></div><span className="zpos-checkout-radio" aria-hidden="true" /></button>}
+                        <div className="zpos-payment-methods" role="radiogroup" aria-label={t('shop.orderFlow.checkout.payment')}>
+                          {paymentMethods.online && (
+                            <div className={`zpos-payment-method ${orderForm.payment_method === 'online' ? 'is-selected' : ''}`}>
+                              <label className="zpos-payment-method__head">
+                                <input type="radio" name="shop-payment-method" value="online" checked={orderForm.payment_method === 'online'} onChange={() => updateOrderForm('payment_method', 'online')} />
+                                <span className="zpos-payment-method__copy"><strong>{t('shop.orderFlow.checkout.payOnline')}</strong><small>{t('shop.orderFlow.checkout.payOnlineDescription')}</small></span>
+                                <span className="zpos-payment-method__radio" aria-hidden="true" />
+                              </label>
+                              {orderForm.payment_method === 'online' && (
+                                <div className="zpos-payment-method__providers">
+                                  <span>{t('shop.orderFlow.checkout.payByCard')}</span>
+                                  <span className="zpos-payment-method__brands" aria-label="Visa, Mastercard">
+                                    <span><img src="/figma-shop-payment-visa.svg" alt="Visa" /></span>
+                                    <span><img src="/figma-shop-payment-mastercard.svg" alt="Mastercard" /></span>
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          {paymentMethods.onsite && (
+                            <div className={`zpos-payment-method ${orderForm.payment_method === 'onsite' ? 'is-selected' : ''}`}>
+                              <label className="zpos-payment-method__head">
+                                <input type="radio" name="shop-payment-method" value="onsite" checked={orderForm.payment_method === 'onsite'} onChange={() => updateOrderForm('payment_method', 'onsite')} />
+                                <span className="zpos-payment-method__copy"><strong>{t('shop.orderFlow.stepThree.payOnsite')}</strong><small>{t('shop.orderFlow.stepThree.payOnsiteDescription')}</small></span>
+                                <span className="zpos-payment-method__radio" aria-hidden="true" />
+                              </label>
+                            </div>
+                          )}
+                        </div>
                       </section>
                       <section className="zpos-checkout-card">
                         <h3>{t('shop.orderFlow.checkout.additional')}</h3>

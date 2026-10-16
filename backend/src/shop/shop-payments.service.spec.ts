@@ -19,6 +19,7 @@ describe('ShopPaymentsService', () => {
     const result = await service.updateSettings({ onsite: true, online: true, client_id: 'id', client_secret: 'secret' });
     expect(result).toEqual({ onsite: true, online: true, client_id: 'id', secret_configured: true });
     expect(JSON.stringify(result)).not.toContain('secret"');
+    await expect(service.updateSettings({ onsite: true, online: true, client_id: 'other' })).rejects.toThrow('new BoG client secret');
   });
 
   it('rejects unsigned callbacks before parsing them', async () => {
