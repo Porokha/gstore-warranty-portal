@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
 import { Link } from 'react-router-dom';
 import { tradeInService } from '../../services/tradeInService';
-import { tradeInAnswerKa, tradeInQuestionKa } from '../../utils/tradeInQuoteLabels';
+import { tradeInAnswerHelp, tradeInAnswerKa, tradeInAnswerText, tradeInConditionGrade, tradeInQuestionKa, tradeInQuestionText } from '../../utils/tradeInQuoteLabels';
 
 const imageUrl = (value) => {
   if (!value || String(value).includes('image-not-found')) return null;
@@ -34,29 +34,6 @@ const pathEntry = (question, answers, extras = {}) => ({
   answers: answers.map((answer) => ({ text: answer.text, text_ka: tradeInAnswerKa(question, answer), value: amount(answer), attributes: answer.attributes || [] })),
   ...extras,
 });
-
-const gradeNames = {
-  'brand new': { grade: 'A+', ka: 'ახალი, გაუხსნელი', en: 'Brand new', detailKa: 'ლუქი დაუზიანებელია', detailEn: 'Factory sealed' },
-  flawless: { grade: 'A+', ka: 'როგორც ახალი', en: 'Flawless', detailKa: 'ნახმარობის კვალის გარეშე', detailEn: 'No visible signs of use' },
-  excellent: { grade: 'A', ka: 'შესანიშნავი', en: 'Excellent', detailKa: 'მინიმალური ნახმარობის კვალი', detailEn: 'Minimal signs of use' },
-  'very good': { grade: 'B', ka: 'კარგი', en: 'Very good', detailKa: 'მცირე ნაკაწრები', detailEn: 'Minor signs of use' },
-  good: { grade: 'C', ka: 'ნახმარი', en: 'Good', detailKa: 'შესამჩნევი ნახმარობის კვალი', detailEn: 'Visible signs of use' },
-  fair: { grade: 'D', ka: 'დაზიანებული', en: 'Fair', detailKa: 'მნიშვნელოვანი დაზიანებები', detailEn: 'Significant wear' },
-  broken: { grade: 'E', ka: 'გატეხილი', en: 'Broken', detailKa: 'შეკეთებას საჭიროებს', detailEn: 'Needs repair' },
-};
-
-const answerNames = {
-  'Original Box': 'ორიგინალი ყუთი',
-  'New Original Headsets': 'ორიგინალი ყურსასმენი',
-  'Powercable + Adapter': 'დამტენი და კაბელი',
-  Unlocked: 'განბლოკილი',
-  Locked: 'დაბლოკილი',
-  'Other Carrier': 'სხვა ოპერატორი',
-  SIM: 'SIM',
-  eSIM: 'eSIM',
-  Yes: 'დიახ',
-  No: 'არა',
-};
 
 const faultOptions = [
   ['power', 'არ ირთვება', 'Does not turn on'],
@@ -138,9 +115,9 @@ export default function TradeInValuation({ product, t, language, initialStorage 
   const summaryAnswerLabel = (stepQuestion, answer) => {
     const raw = String(answer?.text || '').trim();
     if (!raw) return null;
-    const grade = stepQuestion?.label === 'condition' ? gradeNames[raw.toLowerCase()] : null;
-    const translated = language === 'ka' ? answer.text_ka || grade?.ka || answerNames[raw] || raw : grade?.en || raw;
-    if (grade) return `${grade.grade} · ${translated}`;
+    const grade = tradeInConditionGrade(stepQuestion, answer);
+    const translated = tradeInAnswerText(stepQuestion, answer, language);
+    if (grade) return `${grade} · ${translated}`;
     if (stepQuestion?.label === 'fully_functional') return `${language === 'ka' ? 'მუშაობს' : 'Working'}: ${translated}`;
     return translated;
   };
@@ -376,7 +353,7 @@ export default function TradeInValuation({ product, t, language, initialStorage 
       </aside>
       <section className="zzv-trade-flow-panel">
         {phase === 'storage' && <>
-          <h1>{language === 'ka' ? storageQuestions[0]?.text_ka || 'რამდენი აქვს მეხსიერება?' : storageQuestions[0]?.text || 'How much storage does it have?'}</h1>
+          <h1>{storageQuestions[0] ? tradeInQuestionText(storageQuestions[0], language) : (language === 'ka' ? 'რამდენი აქვს მეხსიერება?' : 'How much storage does it have?')}</h1>
           <div className="zzv-trade-answer-list">
             {storageOptions.map((choice) => <SelectionRow key={choice} selected={storage === choice} onClick={() => setStorage(choice)} title={choice} value={storagePreview(choice) === null ? null : `${t('public.tradeIn.upTo')} ${money(storagePreview(choice))}`} />)}
           </div>
@@ -385,14 +362,14 @@ export default function TradeInValuation({ product, t, language, initialStorage 
         </>}
 
         {phase === 'question' && question && <>
-          <h1>{language === 'ka' ? question.text_ka || (isCondition ? 'რა მდგომარეობაშია?' : isAccessories ? 'რა მოყვება?' : ({ carrier: 'რომელ ქსელზე მუშაობს?', carrier_lock: 'განბლოკილია მოწყობილობა?', fully_functional: 'სრულად მუშაობს მოწყობილობა?', sim_type: 'რომელი SIM ტიპისაა?' })[question.label] || question.text) : question.text}</h1>
+          <h1>{tradeInQuestionText(question, language)}</h1>
           {isAccessories && <p className="zzv-trade-flow-hint">{language === 'ka' ? 'მონიშნე ყველაფერი, რაც მოყვება. შეგიძლია არცერთი არ მონიშნო.' : 'Select everything included, or continue without selecting any.'}</p>}
           {isCondition && <small className="zzv-trade-group-label">{language === 'ka' ? 'მდგომარეობა' : 'Condition'}</small>}
           <div className="zzv-trade-answer-list">
             {answers.map((answer, index) => {
-              const grade = isCondition ? gradeNames[answer.text.toLowerCase()] : null;
+              const grade = tradeInConditionGrade(question, answer);
               const accessoryIcon = isAccessories ? (/box/i.test(answer.text) ? '/figma-home/trade-accessory-box.svg' : /cable|adapter/i.test(answer.text) ? '/figma-home/imgIconPlug.svg' : '/figma-home/imgIconSmartphone.svg') : null;
-              return <SelectionRow key={`${answer.text}-${index}`} selected={selectedIndexes.includes(index)} onClick={() => setSelectedIndexes((current) => isMulti ? current.includes(index) ? current.filter((item) => item !== index) : [...current, index] : [index])} title={language === 'ka' ? answer.text_ka || (grade ? grade.ka : answerNames[answer.text] || answer.text) : grade ? grade.en : answer.text} subtitle={language === 'ka' ? answer.tooltip_ka || (grade ? grade.detailKa : answer.tooltip) : answer.tooltip || (grade ? grade.detailEn : null)} badge={grade?.grade} icon={accessoryIcon} multiple={isMulti} value={isCondition ? money(conditionPreview(answer)) : amount(answer) ? `${amount(answer) > 0 ? '+' : '-'}${money(Math.abs(amount(answer)))}` : null} />;
+              return <SelectionRow key={`${answer.text}-${index}`} selected={selectedIndexes.includes(index)} onClick={() => setSelectedIndexes((current) => isMulti ? current.includes(index) ? current.filter((item) => item !== index) : [...current, index] : [index])} title={tradeInAnswerText(question, answer, language)} subtitle={tradeInAnswerHelp(question, answer, language)} badge={grade} icon={accessoryIcon} multiple={isMulti} value={isCondition ? money(conditionPreview(answer)) : amount(answer) ? `${amount(answer) > 0 ? '+' : '-'}${money(Math.abs(amount(answer)))}` : null} />;
             })}
             {isCondition && <SelectionRow selected={false} onClick={() => { setFaults([]); setManualAssessment(true); setPhase('faults'); }} title={language === 'ka' ? 'არ ვიცი — ჩვენ შევაფასებთ' : 'Not sure — we will assess it'} subtitle={language === 'ka' ? 'ფასის დიაპაზონს მიიღებ' : 'Get an estimated price range'} muted />}
           </div>
