@@ -1316,6 +1316,135 @@ body:has(.zpos-cart.is-figma-open) .zzv-public-chat-opener {
   white-space: nowrap;
 }
 
+#zpos-root.zpos-root--figma .zpos-payment-methods {
+  display: grid;
+  gap: 8px;
+}
+
+#zpos-root.zpos-root--figma .zpos-payment-method {
+  overflow: hidden;
+  border: 1px solid #d6d2e2;
+  border-radius: 12px;
+  background: #fff;
+  color: #171321;
+  transition: border-color .18s ease;
+}
+
+#zpos-root.zpos-root--figma .zpos-payment-method:hover {
+  border-color: #a48aec;
+}
+
+#zpos-root.zpos-root--figma .zpos-payment-method.is-selected {
+  border-color: #7c4df5;
+}
+
+#zpos-root.zpos-root--figma .zpos-payment-method:focus-within {
+  outline: 2px solid #7c4df5;
+  outline-offset: 2px;
+}
+
+#zpos-root.zpos-root--figma .zpos-payment-method__head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 66px;
+  padding: 12px;
+  cursor: pointer;
+}
+
+#zpos-root.zpos-root--figma .zpos-payment-method.is-selected .zpos-payment-method__head {
+  background: #f1edff;
+}
+
+#zpos-root.zpos-root--figma .zpos-payment-method__head input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+#zpos-root.zpos-root--figma .zpos-payment-method__copy {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 3px;
+  min-width: 0;
+}
+
+#zpos-root.zpos-root--figma .zpos-payment-method__copy strong {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+#zpos-root.zpos-root--figma .zpos-payment-method__copy small {
+  color: #686276;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+#zpos-root.zpos-root--figma .zpos-payment-method.is-selected .zpos-payment-method__copy {
+  color: #5f32d4;
+}
+
+#zpos-root.zpos-root--figma .zpos-payment-method.is-selected .zpos-payment-method__copy small {
+  color: inherit;
+}
+
+#zpos-root.zpos-root--figma .zpos-payment-method__radio {
+  display: grid;
+  flex: 0 0 20px;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid #d6d2e2;
+  border-radius: 50%;
+  background: #fff;
+}
+
+#zpos-root.zpos-root--figma .zpos-payment-method.is-selected .zpos-payment-method__radio {
+  border: 3px solid #7c4df5;
+}
+
+#zpos-root.zpos-root--figma .zpos-payment-method.is-selected .zpos-payment-method__radio::after {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #7c4df5;
+  content: '';
+}
+
+#zpos-root.zpos-root--figma .zpos-payment-method__providers {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-top: 1px solid #eae7f2;
+  font-size: 14px;
+}
+
+#zpos-root.zpos-root--figma .zpos-payment-method__brands {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+#zpos-root.zpos-root--figma .zpos-payment-method__brands > span {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 26px;
+  border: 1px solid #eae7f2;
+  border-radius: 4px;
+  background: #fff;
+}
+
+#zpos-root.zpos-root--figma .zpos-payment-method__brands img {
+  max-width: 30px;
+  max-height: 14px;
+}
+
 #zpos-root.zpos-root--figma .zpos-checkout-warranty {
   display: flex;
   flex-wrap: wrap;

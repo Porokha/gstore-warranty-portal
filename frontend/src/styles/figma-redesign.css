@@ -28,6 +28,28 @@
 .zzv-shop-settings__row .MuiSwitch-root { flex: none; margin: 0; }
 .zzv-shop-settings__row .MuiSwitch-switchBase.Mui-checked { color: var(--zzv-purple-500); }
 .zzv-shop-settings__row .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track { background: var(--zzv-purple-500); }
+.zzv-shop-settings__payment-body { display: grid; gap: 20px; padding: 20px; }
+.zzv-shop-settings__payment-intro.MuiTypography-root { color: var(--zzv-text-secondary); font: 400 12px/1.5 var(--zzv-font); }
+.zzv-shop-settings__methods { display: grid; gap: 8px; }
+.zzv-shop-settings__method { display: flex; align-items: center; gap: 14px; min-height: 72px; padding: 12px 14px; border: 1px solid var(--zzv-border-subtle); border-radius: 10px; background: #fff; }
+.zzv-shop-settings__method-icon, .zzv-shop-settings__credentials-icon { display: grid; flex: 0 0 38px; place-items: center; width: 38px; height: 38px; border-radius: 9px; background: #f3efff; color: var(--zzv-purple-500); }
+.zzv-shop-settings__method-copy { flex: 1 1 auto; min-width: 0; }
+.zzv-shop-settings__method-copy h3.MuiTypography-root, .zzv-shop-settings__credentials-heading h3.MuiTypography-root { margin: 0 0 3px; color: var(--zzv-text-primary); font: 600 13px/1.35 var(--zzv-font); }
+.zzv-shop-settings__method-copy p.MuiTypography-root, .zzv-shop-settings__credentials-heading p.MuiTypography-root { color: var(--zzv-text-secondary); font: 400 12px/1.45 var(--zzv-font); }
+.zzv-shop-settings__method-state { flex: none; padding: 5px 8px; border-radius: 7px; background: #f3f4f7; color: #6b7280; font: 600 11px/1.3 var(--zzv-font); }
+.zzv-shop-settings__method-state.is-on { background: #eefaf5; color: #137b57; }
+.zzv-shop-settings__method .MuiSwitch-root { flex: none; margin: 0; }
+.zzv-shop-settings__method .MuiSwitch-switchBase.Mui-checked { color: var(--zzv-purple-500); }
+.zzv-shop-settings__method .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track { background: var(--zzv-purple-500); }
+.zzv-shop-settings__credentials { display: grid; gap: 14px; padding: 18px; border: 1px solid var(--zzv-border-subtle); border-radius: 10px; background: var(--zzv-bg-subtle); }
+.zzv-shop-settings__credentials-heading { display: flex; align-items: center; gap: 12px; }
+.zzv-shop-settings__credential-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.zzv-shop-settings__credential-fields .MuiOutlinedInput-root { border-radius: 8px; background: #fff; }
+.zzv-shop-settings__credential-status { color: #986b1d; font: 500 11px/1.4 var(--zzv-font); }
+.zzv-shop-settings__credential-status.is-ready { color: #137b57; }
+.zzv-shop-settings__payment-actions { display: flex; justify-content: flex-end; padding-top: 2px; }
+.zzv-shop-settings__payment-actions .MuiButton-root { border-radius: 8px; font: 600 12px/1.4 var(--zzv-font); text-transform: none; }
+@media (max-width: 600px) { .zzv-shop-settings__payment-body { padding: 14px; gap: 16px; } .zzv-shop-settings__method { gap: 8px; padding: 10px; } .zzv-shop-settings__method-state { display: none; } .zzv-shop-settings__credential-fields { grid-template-columns: minmax(0, 1fr); } .zzv-shop-settings__credentials { padding: 14px; } }
 @media (max-width: 560px) { .zzv-shop-settings { padding: 12px; } .zzv-shop-settings__row { gap: 8px; } .zzv-shop-settings__badge { display: none; } }
 
 .zzv-shop-orders { min-width: 0; color: var(--zzv-text-primary); font-family: var(--zzv-font); }

@@ -52,7 +52,11 @@ export class ShopPaymentsService {
       throw new BadRequestException('Payment switches must be booleans.');
     }
     if (!input.onsite && !input.online) throw new BadRequestException('Keep at least one payment method enabled.');
-    const clientId = input.client_id?.trim() || await this.settings.get('SHOP_BOG_CLIENT_ID');
+    const previousClientId = await this.settings.get('SHOP_BOG_CLIENT_ID');
+    const clientId = input.client_id?.trim() || previousClientId;
+    if (clientId !== previousClientId && !input.client_secret?.trim()) {
+      throw new BadRequestException('A new BoG client secret is required when changing the client ID.');
+    }
     const secret = input.client_secret?.trim() || await this.settings.get('SHOP_BOG_CLIENT_SECRET');
     if (input.online && (!clientId || !secret)) throw new BadRequestException('BoG client ID and secret are required.');
     if (input.client_id !== undefined) await this.settings.set('SHOP_BOG_CLIENT_ID', clientId || '');
