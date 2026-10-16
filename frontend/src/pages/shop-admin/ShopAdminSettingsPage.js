@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { Alert, Box, Button, Paper, Switch, TextField, Typography } from '@mui/material';
+import React, { useEffect, useRef, useState } from 'react';
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Paper, Switch, TextField, Typography } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { useTranslation } from 'react-i18next';
 import { shopService } from '../../services/shopService';
 import { tradeInService } from '../../services/tradeInService';
 import SignaturePad from '../../components/trade-in/SignaturePad';
-import { CreditCardOutlined, LockOutlined, StorefrontOutlined } from '@mui/icons-material';
+import { CloseOutlined, CreditCardOutlined, EditOutlined, LockOutlined, StorefrontOutlined } from '@mui/icons-material';
 
 const ShopAdminSettingsPage = () => {
   const { t } = useTranslation();
@@ -15,43 +15,88 @@ const ShopAdminSettingsPage = () => {
   const [saveError, setSaveError] = useState('');
   const [signatureDraft, setSignatureDraft] = useState('');
   const [signatureSaved, setSignatureSaved] = useState(false);
-  const [paymentDraft, setPaymentDraft] = useState({ onsite: true, online: false, client_id: '', client_secret: '' });
+  const [paymentDraft, setPaymentDraft] = useState({ onsite: true, online: false });
   const [paymentMessage, setPaymentMessage] = useState('');
+  const [credentialsOpen, setCredentialsOpen] = useState(false);
+  const [credentialsDraft, setCredentialsDraft] = useState({ client_id: '', client_secret: '' });
+  const [credentialsMessage, setCredentialsMessage] = useState('');
+  const methodEditsRef = useRef(false);
   const paymentQuery = useQuery(['shop-payment-settings'], shopService.getPaymentSettings, { refetchOnWindowFocus: false });
   useEffect(() => {
-    if (paymentQuery.data) setPaymentDraft({ ...paymentQuery.data, client_secret: '' });
+    if (paymentQuery.data && !methodEditsRef.current) {
+      setPaymentDraft({ onsite: paymentQuery.data.onsite, online: paymentQuery.data.online });
+    }
   }, [paymentQuery.data]);
   const paymentMutation = useMutation(shopService.updatePaymentSettings, {
     onSuccess: (value) => {
+      methodEditsRef.current = false;
       queryClient.setQueryData(['shop-payment-settings'], value);
-      setPaymentDraft({ ...value, client_secret: '' });
+      setPaymentDraft({ onsite: value.onsite, online: value.online });
       setPaymentMessage(t('shopSettings.paymentSaved'));
     },
     onError: (error) => setPaymentMessage(error.response?.data?.message || t('shopSettings.paymentSaveFailed')),
   });
+  const credentialsMutation = useMutation(shopService.updatePaymentSettings, {
+    onSuccess: (value) => {
+      queryClient.setQueryData(['shop-payment-settings'], value);
+      setCredentialsOpen(false);
+      setCredentialsDraft({ client_id: '', client_secret: '' });
+      setCredentialsMessage('');
+      setPaymentMessage(t('shopSettings.credentialsSaved'));
+    },
+    onError: (error) => setCredentialsMessage(error.response?.data?.message || t('shopSettings.paymentSaveFailed')),
+  });
   const paymentDirty = Boolean(paymentQuery.data) && (
     paymentDraft.onsite !== paymentQuery.data.onsite ||
-    paymentDraft.online !== paymentQuery.data.online ||
-    paymentDraft.client_id !== paymentQuery.data.client_id ||
-    Boolean(paymentDraft.client_secret)
+    paymentDraft.online !== paymentQuery.data.online
   );
-  const clientIdChanged = Boolean(paymentQuery.data && paymentDraft.client_id.trim() !== paymentQuery.data.client_id);
-  const credentialsReady = Boolean(paymentDraft.client_id.trim() && (
-    paymentDraft.client_secret.trim() ||
-    paymentDraft.secret_configured && paymentDraft.client_id.trim() === paymentQuery.data?.client_id
+  const clientIdChanged = credentialsDraft.client_id.trim() !== (paymentQuery.data?.client_id || '');
+  const credentialsReady = Boolean(credentialsDraft.client_id.trim() && (
+    credentialsDraft.client_secret.trim() ||
+    paymentQuery.data?.secret_configured && !clientIdChanged
   ));
-  const credentialsSaved = Boolean(paymentDraft.secret_configured && !paymentDraft.client_secret.trim() && paymentDraft.client_id.trim() === paymentQuery.data?.client_id);
+  const credentialsDirty = clientIdChanged || Boolean(credentialsDraft.client_secret.trim());
+  const updatePaymentMethod = (field, enabled) => {
+    const next = { ...paymentDraft, [field]: enabled };
+    methodEditsRef.current = next.onsite !== paymentQuery.data?.onsite || next.online !== paymentQuery.data?.online;
+    setPaymentMessage('');
+    setPaymentDraft(next);
+  };
+  const openCredentials = () => {
+    setCredentialsDraft({ client_id: paymentQuery.data?.client_id || '', client_secret: '' });
+    setCredentialsMessage('');
+    setCredentialsOpen(true);
+  };
+  const closeCredentials = () => {
+    if (credentialsMutation.isLoading) return;
+    setCredentialsOpen(false);
+    setCredentialsDraft({ client_id: '', client_secret: '' });
+    setCredentialsMessage('');
+  };
   const savePayments = () => {
     setPaymentMessage('');
     if (!paymentDraft.onsite && !paymentDraft.online) {
       setPaymentMessage(t('shopSettings.oneMethodRequired'));
       return;
     }
-    if ((clientIdChanged && !paymentDraft.client_secret.trim()) || (paymentDraft.online && !credentialsReady)) {
+    if (paymentDraft.online && !(paymentQuery.data?.client_id && paymentQuery.data?.secret_configured)) {
       setPaymentMessage(t('shopSettings.credentialsRequired'));
       return;
     }
     paymentMutation.mutate(paymentDraft);
+  };
+  const saveCredentials = () => {
+    setCredentialsMessage('');
+    if (!credentialsReady) {
+      setCredentialsMessage(t('shopSettings.credentialsRequired'));
+      return;
+    }
+    credentialsMutation.mutate({
+      onsite: paymentQuery.data.onsite,
+      online: paymentQuery.data.online,
+      client_id: credentialsDraft.client_id.trim(),
+      client_secret: credentialsDraft.client_secret.trim(),
+    });
   };
   const signatureQuery = useQuery(['trade-in-own-signature'], tradeInService.getOwnTradeInSignature, { retry: false });
   const signatureMutation = useMutation(() => tradeInService.saveOwnTradeInSignature(signatureDraft), {
@@ -140,38 +185,43 @@ const ShopAdminSettingsPage = () => {
                 <Typography>{t('shopSettings.onsitePaymentDescription')}</Typography>
               </div>
               <span className={`zzv-shop-settings__method-state ${paymentDraft.onsite ? 'is-on' : ''}`}>{t(`shopSettings.${paymentDraft.onsite ? 'enabled' : 'disabled'}`)}</span>
-              <Switch inputProps={{ 'aria-label': t('shopSettings.onsitePayment') }} checked={paymentDraft.onsite} onChange={(event) => { setPaymentMessage(''); setPaymentDraft((value) => ({ ...value, onsite: event.target.checked })); }} disabled={paymentQuery.isLoading || paymentMutation.isLoading} />
+              <Switch inputProps={{ 'aria-label': t('shopSettings.onsitePayment') }} checked={paymentDraft.onsite} onChange={(event) => updatePaymentMethod('onsite', event.target.checked)} disabled={paymentQuery.isLoading || paymentMutation.isLoading} />
             </div>
             <div className="zzv-shop-settings__method">
               <span className="zzv-shop-settings__method-icon"><CreditCardOutlined fontSize="small" /></span>
               <div className="zzv-shop-settings__method-copy">
                 <Typography component="h3">{t('shopSettings.bogPayment')}</Typography>
                 <Typography>{t('shopSettings.bogPaymentDescription')}</Typography>
+                <span className={`zzv-shop-settings__credential-status ${paymentQuery.data?.secret_configured ? 'is-ready' : ''}`}>{t(paymentQuery.data?.secret_configured ? 'shopSettings.bogConfigured' : 'shopSettings.bogNotConfigured')}</span>
               </div>
               <span className={`zzv-shop-settings__method-state ${paymentDraft.online ? 'is-on' : ''}`}>{t(`shopSettings.${paymentDraft.online ? 'enabled' : 'disabled'}`)}</span>
-              <Switch inputProps={{ 'aria-label': t('shopSettings.bogPayment') }} checked={paymentDraft.online} onChange={(event) => { setPaymentMessage(''); setPaymentDraft((value) => ({ ...value, online: event.target.checked })); }} disabled={paymentQuery.isLoading || paymentMutation.isLoading} />
+              <Button className="zzv-shop-settings__edit-credentials" size="small" variant="outlined" startIcon={<EditOutlined fontSize="small" />} onClick={openCredentials} disabled={paymentQuery.isLoading || credentialsMutation.isLoading}>{t('shopSettings.editCredentials')}</Button>
+              <Switch inputProps={{ 'aria-label': t('shopSettings.bogPayment') }} checked={paymentDraft.online} onChange={(event) => updatePaymentMethod('online', event.target.checked)} disabled={paymentQuery.isLoading || paymentMutation.isLoading} />
             </div>
           </div>
-          <div className="zzv-shop-settings__credentials">
-            <div className="zzv-shop-settings__credentials-heading">
-              <span className="zzv-shop-settings__credentials-icon"><LockOutlined fontSize="small" /></span>
-              <div>
-                <Typography component="h3">{t('shopSettings.bogCredentials')}</Typography>
-                <Typography>{t('shopSettings.bogCredentialsDescription')}</Typography>
-              </div>
-            </div>
-            <div className="zzv-shop-settings__credential-fields">
-              <TextField fullWidth size="small" label={t('shopSettings.bogClientId')} value={paymentDraft.client_id} onChange={(event) => { setPaymentMessage(''); setPaymentDraft((value) => ({ ...value, client_id: event.target.value })); }} disabled={paymentMutation.isLoading} />
-              <TextField fullWidth size="small" type="password" autoComplete="new-password" label={t('shopSettings.bogClientSecret')} placeholder={t(paymentDraft.secret_configured ? 'shopSettings.bogSecretKeep' : 'shopSettings.bogSecretNew')} value={paymentDraft.client_secret} onChange={(event) => { setPaymentMessage(''); setPaymentDraft((value) => ({ ...value, client_secret: event.target.value })); }} disabled={paymentMutation.isLoading} />
-            </div>
-            <span className={`zzv-shop-settings__credential-status ${credentialsReady ? 'is-ready' : ''}`}>{t(credentialsSaved ? 'shopSettings.bogConfigured' : credentialsReady ? 'shopSettings.bogReadyToSave' : 'shopSettings.bogNotConfigured')}</span>
-          </div>
-          {paymentMessage && <Alert severity={paymentMutation.isError || !paymentDraft.onsite && !paymentDraft.online || clientIdChanged && !paymentDraft.client_secret.trim() || paymentDraft.online && !credentialsReady ? 'error' : 'success'}>{paymentMessage}</Alert>}
+          {paymentMessage && <Alert severity={paymentMutation.isError || !paymentDraft.onsite && !paymentDraft.online || paymentDraft.online && !(paymentQuery.data?.client_id && paymentQuery.data?.secret_configured) ? 'error' : 'success'}>{paymentMessage}</Alert>}
           <div className="zzv-shop-settings__payment-actions">
             <Button variant="contained" disabled={!paymentDirty || paymentMutation.isLoading || paymentQuery.isLoading} onClick={savePayments}>{t('shopSettings.savePayments')}</Button>
           </div>
         </div>
       </Paper>
+      <Dialog open={credentialsOpen} onClose={closeCredentials} maxWidth="sm" fullWidth PaperProps={{ className: 'zzv-shop-settings__credentials-dialog' }}>
+        <DialogTitle className="zzv-shop-settings__dialog-title">
+          <span className="zzv-shop-settings__credentials-icon"><LockOutlined fontSize="small" /></span>
+          <span>{t('shopSettings.bogCredentials')}</span>
+          <IconButton aria-label={t('shopSettings.cancel')} onClick={closeCredentials} disabled={credentialsMutation.isLoading}><CloseOutlined fontSize="small" /></IconButton>
+        </DialogTitle>
+        <DialogContent className="zzv-shop-settings__dialog-content">
+          <Typography>{t('shopSettings.bogCredentialsDescription')}</Typography>
+          <TextField fullWidth size="small" autoComplete="off" label={t('shopSettings.bogClientId')} value={credentialsDraft.client_id} onChange={(event) => { setCredentialsMessage(''); setCredentialsDraft((value) => ({ ...value, client_id: event.target.value })); }} disabled={credentialsMutation.isLoading} />
+          <TextField fullWidth size="small" type="password" autoComplete="new-password" label={t('shopSettings.bogClientSecret')} placeholder={t(paymentQuery.data?.secret_configured ? 'shopSettings.bogSecretKeep' : 'shopSettings.bogSecretNew')} value={credentialsDraft.client_secret} onChange={(event) => { setCredentialsMessage(''); setCredentialsDraft((value) => ({ ...value, client_secret: event.target.value })); }} disabled={credentialsMutation.isLoading} />
+          {credentialsMessage && <Alert severity="error">{credentialsMessage}</Alert>}
+        </DialogContent>
+        <DialogActions className="zzv-shop-settings__dialog-actions">
+          <Button onClick={closeCredentials} disabled={credentialsMutation.isLoading}>{t('shopSettings.cancel')}</Button>
+          <Button variant="contained" onClick={saveCredentials} disabled={!credentialsDirty || credentialsMutation.isLoading}>{t('shopSettings.saveCredentials')}</Button>
+        </DialogActions>
+      </Dialog>
       <Paper className="zzv-shop-settings__panel" elevation={0} sx={{ mt: 2, p: 2.5, maxWidth: 680 }}>
         <h2>Trade-in · ჩემი ხელმოწერა</h2>
         <Typography sx={{ mb: 2, color: '#667085', fontSize: 13 }}>აქ შენახული ხელმოწერა შეგიძლიათ გამოიყენოთ მხოლოდ თქვენს მიერ გაფორმებულ Trade-in ხელშეკრულებაზე. შეცვლისას ძველი ხელმოწერა ჩანაცვლდება, უკვე გაფორმებული PDF კი უცვლელი დარჩება.</Typography>

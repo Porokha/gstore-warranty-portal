@@ -41,15 +41,21 @@
 .zzv-shop-settings__method .MuiSwitch-root { flex: none; margin: 0; }
 .zzv-shop-settings__method .MuiSwitch-switchBase.Mui-checked { color: var(--zzv-purple-500); }
 .zzv-shop-settings__method .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track { background: var(--zzv-purple-500); }
-.zzv-shop-settings__credentials { display: grid; gap: 14px; padding: 18px; border: 1px solid var(--zzv-border-subtle); border-radius: 10px; background: var(--zzv-bg-subtle); }
-.zzv-shop-settings__credentials-heading { display: flex; align-items: center; gap: 12px; }
-.zzv-shop-settings__credential-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.zzv-shop-settings__credential-fields .MuiOutlinedInput-root { border-radius: 8px; background: #fff; }
+.zzv-shop-settings__edit-credentials.MuiButton-root { flex: none; min-width: 0; padding: 5px 10px; border-color: var(--zzv-border-default); border-radius: 7px; color: var(--zzv-purple-700); font: 600 11px/1.4 var(--zzv-font); text-transform: none; }
 .zzv-shop-settings__credential-status { color: #986b1d; font: 500 11px/1.4 var(--zzv-font); }
 .zzv-shop-settings__credential-status.is-ready { color: #137b57; }
+.zzv-shop-settings__method-copy .zzv-shop-settings__credential-status { display: block; margin-top: 4px; }
+.zzv-shop-settings__credentials-dialog.MuiPaper-root { overflow: hidden; border: 1px solid var(--zzv-border-subtle); border-radius: 12px; color: var(--zzv-text-primary); font-family: var(--zzv-font); }
+.zzv-shop-settings__dialog-title.MuiDialogTitle-root { display: flex; align-items: center; gap: 12px; padding: 18px 20px; border-bottom: 1px solid var(--zzv-border-subtle); font: 600 16px/1.4 var(--zzv-font); }
+.zzv-shop-settings__dialog-title .MuiIconButton-root { margin-left: auto; color: var(--zzv-text-secondary); }
+.zzv-shop-settings__dialog-content.MuiDialogContent-root { display: grid; gap: 16px; padding: 20px; }
+.zzv-shop-settings__dialog-content > .MuiTypography-root { color: var(--zzv-text-secondary); font: 400 12px/1.55 var(--zzv-font); }
+.zzv-shop-settings__dialog-content .MuiOutlinedInput-root { border-radius: 8px; background: #fff; }
+.zzv-shop-settings__dialog-actions.MuiDialogActions-root { gap: 8px; padding: 12px 20px 20px; }
+.zzv-shop-settings__dialog-actions .MuiButton-root { border-radius: 8px; font: 600 12px/1.4 var(--zzv-font); text-transform: none; }
 .zzv-shop-settings__payment-actions { display: flex; justify-content: flex-end; padding-top: 2px; }
 .zzv-shop-settings__payment-actions .MuiButton-root { border-radius: 8px; font: 600 12px/1.4 var(--zzv-font); text-transform: none; }
-@media (max-width: 600px) { .zzv-shop-settings__payment-body { padding: 14px; gap: 16px; } .zzv-shop-settings__method { gap: 8px; padding: 10px; } .zzv-shop-settings__method-state { display: none; } .zzv-shop-settings__credential-fields { grid-template-columns: minmax(0, 1fr); } .zzv-shop-settings__credentials { padding: 14px; } }
+@media (max-width: 600px) { .zzv-shop-settings__payment-body { padding: 14px; gap: 16px; } .zzv-shop-settings__method { gap: 8px; padding: 10px; } .zzv-shop-settings__method-state { display: none; } .zzv-shop-settings__edit-credentials.MuiButton-root { padding: 5px 7px; font-size: 0; } .zzv-shop-settings__edit-credentials .MuiButton-startIcon { margin: 0; } .zzv-shop-settings__dialog-content.MuiDialogContent-root { padding: 16px; } }
 @media (max-width: 560px) { .zzv-shop-settings { padding: 12px; } .zzv-shop-settings__row { gap: 8px; } .zzv-shop-settings__badge { display: none; } }
 
 .zzv-shop-orders { min-width: 0; color: var(--zzv-text-primary); font-family: var(--zzv-font); }
