@@ -11,6 +11,9 @@ export const macBookFamily = (slug: string) => {
   return 'MacBook';
 };
 
+export const normalizeMacBookName = (name: string) =>
+  name.trim().replace(/(\d{2})[\\/]+$/, '$1"');
+
 const firstAnswers = (tree: unknown): any[] => {
   try {
     const sections = typeof tree === 'string' ? JSON.parse(tree) : tree;
@@ -30,7 +33,7 @@ const sharedAttribute = (answers: any[], key: string) => {
 };
 
 export const macBookDisplay = (product: Pick<TradeInProduct, 'name' | 'slug'>, tree?: unknown) => {
-  const name = product.name.trim().replace(/\\+$/, '').trim();
+  const name = normalizeMacBookName(product.name);
   const leaf = product.slug.split('/').pop() || '';
   const parent = product.slug.split('/')[0];
   const answers = firstAnswers(tree);

@@ -113,7 +113,9 @@ async function main() {
       products.map((row) => [
         row.id,
         row.slug,
-        row.name,
+        String(row.slug || '').startsWith('macbook-')
+          ? String(row.name || '').trim().replace(/(\d{2})[\\/]+$/, '$1"')
+          : row.name,
         row.brand || null,
         row.category || null,
         row.category2 || null,
