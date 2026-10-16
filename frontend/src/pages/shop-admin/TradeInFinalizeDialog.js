@@ -49,6 +49,7 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
   const [qr, setQr] = useState(null);
   const [qrImage, setQrImage] = useState('');
   const [repMode, setRepMode] = useState('saved');
+  const [selectedSignatureId, setSelectedSignatureId] = useState('');
   const [drawnSignature, setDrawnSignature] = useState('');
   const [representativeQrOpen, setRepresentativeQrOpen] = useState(false);
   const [message, setMessage] = useState('');
@@ -62,7 +63,11 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
   const savedSignatureQuery = useQuery(['trade-in-own-signature'], tradeInService.getOwnTradeInSignature, { enabled: Boolean(quote), retry: false });
 
   useEffect(() => {
-    if (savedSignatureQuery.data && !savedSignatureQuery.data.signature) setRepMode('draw');
+    const profiles = savedSignatureQuery.data?.signatures || [];
+    if (savedSignatureQuery.data && !profiles.length) setRepMode('draw');
+    if (profiles.length && !profiles.some((profile) => String(profile.id) === String(selectedSignatureId))) {
+      setSelectedSignatureId(String(profiles[0].id));
+    }
   }, [savedSignatureQuery.data]);
   const saveMutation = useMutation(() => tradeInService.saveAdminAgreement(quote.id, details));
   const linkMutation = useMutation(() => tradeInService.createAgreementSigningLink(quote.id));
@@ -117,7 +122,7 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
     setError('');
     try {
       if (dirty) await save();
-      await repMutation.mutateAsync(repMode === 'saved' ? { use_saved: true } : { signature: drawnSignature });
+      await repMutation.mutateAsync(repMode === 'saved' ? { use_saved: true, signature_id: Number(selectedSignatureId) } : { signature: drawnSignature });
       await agreementQuery.refetch();
       setMessage('წარმომადგენლის ხელმოწერა გამოყენებულია.');
     } catch (failure) { setError(failure.response?.data?.message || 'ხელმოწერის გამოყენება ვერ მოხერხდა.'); }
@@ -137,8 +142,8 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
         return;
       }
       if (!latest.data.representative_signed) {
-        if (repMode === 'saved' && savedSignatureQuery.data?.signature) {
-          await repMutation.mutateAsync({ use_saved: true });
+        if (repMode === 'saved' && selectedSignatureId) {
+          await repMutation.mutateAsync({ use_saved: true, signature_id: Number(selectedSignatureId) });
         } else if (repMode === 'draw' && drawnSignature) {
           await repMutation.mutateAsync({ signature: drawnSignature });
         } else {
@@ -183,14 +188,15 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
                       <div className="zzv-agreement-dialog__field">
                         <label htmlFor="agreement-signature-source">ხელმოწერის წყარო</label>
                         <TextField id="agreement-signature-source" fullWidth size="small" select value={repMode} onChange={(event) => { setRepMode(event.target.value); setDrawnSignature(''); }} SelectProps={{ IconComponent: KeyboardArrowDownRounded, MenuProps: { PaperProps: { className: 'zzv-agreement-dialog__menu' } } }}>
-                          <MenuItem value="saved" disabled={!savedSignatureQuery.data?.signature}>ჩემი შენახული ხელმოწერა</MenuItem>
+                          <MenuItem value="saved" disabled={!savedSignatureQuery.data?.signatures?.length}>შენახული ხელმოწერა</MenuItem>
                           <MenuItem value="draw">ახლავე დახატვა</MenuItem>
                         </TextField>
                       </div>
+                      {repMode === 'saved' && <div className="zzv-agreement-dialog__field"><label htmlFor="agreement-signature-profile">აირჩიეთ ხელმოწერა</label><TextField id="agreement-signature-profile" fullWidth size="small" select value={selectedSignatureId} onChange={(event) => setSelectedSignatureId(event.target.value)} SelectProps={{ IconComponent: KeyboardArrowDownRounded, MenuProps: { PaperProps: { className: 'zzv-agreement-dialog__menu' } } }}>{(savedSignatureQuery.data?.signatures || []).map((profile) => <MenuItem key={profile.id} value={String(profile.id)}>{profile.title}</MenuItem>)}</TextField>{selectedSignatureId && <div className="zzv-agreement-dialog__saved-preview"><img src={savedSignatureQuery.data?.signatures?.find((profile) => String(profile.id) === selectedSignatureId)?.signature} alt="არჩეული ხელმოწერა" /></div>}</div>}
                       {repMode === 'draw' && <Box sx={{ mt: 1 }}><SignaturePad onChange={setDrawnSignature} clearLabel="წაშლა" /></Box>}
-                      <Button sx={{ mt: 1 }} variant="outlined" onClick={applyRepresentative} disabled={busy || (repMode === 'draw' && !drawnSignature) || (repMode === 'saved' && !savedSignatureQuery.data?.signature)}>გამოყენება / შეცვლა</Button>
+                      <Button sx={{ mt: 1 }} variant="outlined" onClick={applyRepresentative} disabled={busy || (repMode === 'draw' && !drawnSignature) || (repMode === 'saved' && !selectedSignatureId)}>გამოყენება / შეცვლა</Button>
                       <Button sx={{ mt: 1, ml: 1 }} variant="outlined" onClick={() => setRepresentativeQrOpen(true)} disabled={busy}>QR · ტელეფონზე ხელმოწერა</Button>
-                      {!savedSignatureQuery.data?.signature && <Typography sx={{ fontSize: 11, color: '#667085' }}>შეგიძლიათ ხელმოწერა შეინახოთ Shop Admin → Settings-ში.</Typography>}
+                      {!savedSignatureQuery.data?.signatures?.length && <Typography sx={{ fontSize: 11, color: '#667085' }}>შეგიძლიათ ხელმოწერა შეინახოთ Shop Admin → Settings-ში.</Typography>}
                     </>}
                   </div>
                 </div>

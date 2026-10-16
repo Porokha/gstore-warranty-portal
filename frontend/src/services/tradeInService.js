@@ -117,8 +117,23 @@ export const tradeInService = {
     return response.data;
   },
 
-  createOwnSignatureSigningLink: async () => {
-    const response = await api.post('/shop/admin/trade-in/signature/signing-link');
+  createOwnSignatureProfile: async (payload) => {
+    const response = await api.post('/shop/admin/trade-in/signature/profiles', payload);
+    return response.data;
+  },
+
+  updateOwnSignatureProfile: async (id, payload) => {
+    const response = await api.patch(`/shop/admin/trade-in/signature/profiles/${id}`, payload);
+    return response.data;
+  },
+
+  deleteOwnSignatureProfile: async (id) => {
+    const response = await api.delete(`/shop/admin/trade-in/signature/profiles/${id}`);
+    return response.data;
+  },
+
+  createOwnSignatureSigningLink: async (payload) => {
+    const response = await api.post('/shop/admin/trade-in/signature/signing-link', payload);
     return response.data;
   },
 

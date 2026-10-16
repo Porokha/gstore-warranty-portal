@@ -1,4 +1,4 @@
-import { IsBoolean, IsObject, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsBoolean, IsInt, IsObject, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
 export class SaveTradeInAgreementDto {
   @IsObject()
@@ -15,6 +15,11 @@ export class SetRepresentativeSignatureDto {
   @IsOptional()
   @IsBoolean()
   use_saved?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  signature_id?: number;
 
   @IsOptional()
   @IsString()

@@ -19,7 +19,8 @@ describe('Trade-in agreement', () => {
   const agreements = { createQueryBuilder: jest.fn().mockReturnValue(agreementQuery), manager: { transaction: (callback: any) => callback(manager) } };
   const quotes = { findOne: jest.fn().mockResolvedValue({ id: 5, status: 'accepted', quote_number: 'TI-5' }) };
   const staffLinks = { findOne: jest.fn() };
-  const service = new TradeInAgreementService(agreements as any, quotes as any, {} as any, staffLinks as any, {} as any, {} as any);
+  const profiles = { createQueryBuilder: jest.fn(), manager: { transaction: (callback: any) => callback(manager) } };
+  const service = new TradeInAgreementService(agreements as any, quotes as any, {} as any, profiles as any, staffLinks as any, {} as any, {} as any);
 
   beforeEach(() => {
     jest.restoreAllMocks();
@@ -102,12 +103,30 @@ describe('Trade-in agreement', () => {
       Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/lxoAAAAASUVORK5CYII=', 'base64'),
       Buffer.alloc(100),
     ]).toString('base64')}`;
-    const link = { id: 7, user_id: 42, purpose: 'saved', quote_id: null, used_at: null as Date | null, expires_at: new Date(Date.now() + 60000) };
+    const link = { id: 7, user_id: 42, purpose: 'saved', quote_id: null, signature_title: 'სამუშაო', signature_profile_id: null, used_at: null as Date | null, expires_at: new Date(Date.now() + 60000) };
     staffLinks.findOne.mockResolvedValue(link);
-    manager.findOne.mockImplementation(async (entity: any) => entity.name === 'TradeInStaffSigningLink' ? link : { id: 42, is_postponed: false });
+    manager.findOne.mockImplementation(async (entity: any) => entity.name === 'TradeInStaffSigningLink' ? link : entity.name === 'User' ? { id: 42, is_postponed: false } : null);
     expect(await service.submitStaffSignature('a'.repeat(43), image)).toEqual({ signed: true });
-    expect(manager.save).toHaveBeenCalledWith(expect.anything(), { user_id: 42, signature: expect.any(Buffer) });
+    expect(manager.save).toHaveBeenCalledWith(expect.anything(), { user_id: 42, title: 'სამუშაო', signature: expect.any(Buffer) });
     expect(link.used_at).toBeInstanceOf(Date);
+  });
+
+  it('uses the selected owned signature profile for an agreement', async () => {
+    const selectedSignature = Buffer.from('selected');
+    const profileQuery = {
+      addSelect: jest.fn().mockReturnThis(), where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(), orderBy: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue({ id: 17, user_id: 42, signature: selectedSignature }),
+    };
+    profiles.createQueryBuilder.mockReturnValue(profileQuery);
+    const users = (service as any).users;
+    users.findOne = jest.fn().mockResolvedValue({ id: 42, name: 'Test', last_name: 'Employee' });
+    const revoke = jest.spyOn(service as any, 'revokeStaffSigningLinks').mockResolvedValue(undefined);
+    const result = await service.setRepresentativeSignature(5, 42, { use_saved: true, signature_id: 17 });
+    expect(profileQuery.andWhere).toHaveBeenCalledWith('profile.id = :id', { id: 17 });
+    expect(manager.save.mock.calls[0][0].representative_signature).toBe(selectedSignature);
+    expect(result.representative_signed).toBe(true);
+    revoke.mockRestore();
   });
 
   it('attaches a mobile representative drawing to its draft agreement', async () => {
