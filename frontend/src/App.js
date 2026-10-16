@@ -49,6 +49,7 @@ const ShopAdminProductsPage = lazy(() => import('./pages/shop-admin/ShopAdminPro
 const ShopAdminOrdersPage = lazy(() => import('./pages/shop-admin/ShopAdminOrdersPage'));
 const ShopAdminSettingsPage = lazy(() => import('./pages/shop-admin/ShopAdminSettingsPage'));
 const TradeInSignPage = lazy(() => import('./pages/public/TradeInSignPage'));
+const TradeInStaffSignPage = lazy(() => import('./pages/public/TradeInStaffSignPage'));
 const ShopAdminTradeInPage = lazy(() => import('./pages/shop-admin/ShopAdminTradeInPage'));
 
 const PageFallback = () => null;
@@ -142,6 +143,7 @@ function AppRoutes() {
           <Routes>
             {/* Public Routes */}
             <Route path="/trade-in/sign/:token" element={<TradeInSignPage />} />
+            <Route path="/trade-in/staff-sign/:token" element={<TradeInStaffSignPage />} />
             {isPublicMaintenanceMode ? (
               <>
                 <Route path="/" element={<MaintenancePage />} />
