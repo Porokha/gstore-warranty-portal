@@ -50,6 +50,7 @@ const PartnersPage = () => {
   const { data: partners = [], isLoading, isError, refetch } = useQuery(
     ['partners', view],
     () => partnersService.getAll(view === 'archived' ? { archived: true } : {}),
+    { staleTime: 30_000 },
   );
 
   const closeDialog = () => {

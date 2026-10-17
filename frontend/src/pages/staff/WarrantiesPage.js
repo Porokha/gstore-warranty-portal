@@ -95,6 +95,7 @@ const WarrantiesPage = () => {
     () => warrantiesService.getAll(warrantyQueryParams),
     {
       keepPreviousData: true,
+      staleTime: 30_000,
     }
   );
 
