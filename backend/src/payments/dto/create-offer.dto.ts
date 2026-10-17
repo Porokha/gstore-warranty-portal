@@ -3,6 +3,7 @@ import {
   IsNumber,
   IsOptional,
   IsInt,
+  IsString,
   Min,
   Max,
 } from 'class-validator';
@@ -27,5 +28,9 @@ export class CreateOfferDto {
   @Min(1)
   @Max(365)
   estimated_days_after_payment?: number;
+
+  @IsOptional()
+  @IsString()
+  replacement_product_title?: string;
 }
 

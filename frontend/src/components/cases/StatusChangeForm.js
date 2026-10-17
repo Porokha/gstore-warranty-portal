@@ -5,22 +5,22 @@ import {
   TextField,
   Alert,
   Typography,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
 import { useAuth } from '../../contexts/AuthContext';
-import { paymentsService } from '../../services/paymentsService';
-import { useMutation, useQueryClient } from 'react-query';
 import { isManagementRole } from '../../utils/roles';
 import StatusStepper from './StatusStepper';
 
 const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange, statusTimestamps }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
   const canManageCases = isManagementRole(user?.role);
 
   const [formData, setFormData] = useState({
     new_status_level: case_.status_level,
+    require_pickup_pin: false,
     result_type: case_.result_type || '',
     note_public: '',
     note_private: '',
@@ -35,6 +35,7 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange, sta
 
   const [error, setError] = useState('');
   const [generatedCode, setGeneratedCode] = useState('');
+  const [pickupWarning, setPickupWarning] = useState(false);
   const payablePayment = case_.payments?.find((payment) => payment.offer_type === 'payable');
   const hasPayablePayment = Boolean(payablePayment);
   const hasPaidPayablePayment = case_.payments?.some(
@@ -42,48 +43,24 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange, sta
   );
   const allowsResult = formData.new_status_level === 3 || formData.new_status_level === 4;
   const hasStatusChange = formData.new_status_level !== case_.status_level;
-  const hasOfferAction =
-    formData.result_type === 'payable' && !hasPayablePayment && formData.new_status_level === 3;
+  const hasOfferAction = formData.new_status_level >= 3 &&
+    ['payable', 'replaceable'].includes(formData.result_type) &&
+    !case_.payments?.some((payment) => payment.offer_type === formData.result_type);
   const hasNotes = Boolean(formData.note_public || formData.note_private);
   const canSubmit =
     hasStatusChange ||
     hasOfferAction ||
     (canManageCases && allowsResult && (formData.result_type !== (case_.result_type || '') || hasNotes));
 
-  const createOfferMutation = useMutation(
-    (data) => paymentsService.createOffer(case_.id, data),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['case', case_.id]);
-        queryClient.invalidateQueries(['case', String(case_.id)]);
-        queryClient.invalidateQueries(['case-payments', case_.id]);
-        queryClient.invalidateQueries(['case-payments', String(case_.id)]);
-      },
-    }
-  );
-
-  const generateCodeMutation = useMutation(
-    (paymentId) => {
-      const estimatedDays = parseInt(formData.estimated_days_after_payment, 10);
-      const payload = Number.isInteger(estimatedDays)
-        ? { estimated_days_after_payment: estimatedDays }
-        : {};
-      return paymentsService.generateCode(paymentId, payload);
-    },
-    {
-      onSuccess: (data) => {
-        setGeneratedCode(data.generated_code);
-      },
-    }
-  );
-
   useEffect(() => {
     setFormData((prev) => ({
       ...prev,
       new_status_level: case_.status_level,
+      require_pickup_pin: false,
       result_type: case_.result_type || '',
     }));
-  }, [case_]);
+    if (case_.status_level < 4) setGeneratedCode('');
+  }, [case_.id, case_.status_level, case_.result_type]);
 
   useEffect(() => {
     if (!onDraftChange) return;
@@ -138,15 +115,17 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange, sta
     e.preventDefault();
     setError('');
     setGeneratedCode('');
+    setPickupWarning(false);
 
     // Validation
-    if (!canManageCases && formData.new_status_level <= case_.status_level) {
+    if (!canManageCases && formData.new_status_level <= case_.status_level && !hasOfferAction) {
       setError(t('case.technicianForwardOnly'));
       return;
     }
 
     // Special validation for Covered
-    if (formData.result_type === 'covered' && !formData.note_public) {
+    if (formData.result_type === 'covered' && formData.new_status_level === 4 &&
+      case_.status_level !== 4 && !formData.note_public) {
       setError(t('case.coveredPublicNoteRequired'));
       return;
     }
@@ -173,7 +152,7 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange, sta
 
     // Special validation for Replaceable
     if (formData.result_type === 'replaceable') {
-      if (!formData.replacement_product_title) {
+      if (hasOfferAction && !formData.replacement_product_title) {
         setError(t('case.replacementTitleRequired'));
         return;
       }
@@ -199,39 +178,32 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange, sta
       result_type: formData.result_type || null,
       note_public: formData.note_public || null,
       note_private: formData.note_private || null,
+      require_pickup_pin: formData.new_status_level === 4 && case_.status_level !== 4
+        ? formData.require_pickup_pin
+        : undefined,
     };
+    if (hasOfferAction && formData.result_type === 'payable') {
+      statusChangeData.offer = {
+        offer_type: 'payable',
+        offer_amount: Number(formData.offer_amount),
+        payment_method: formData.payment_methods[0],
+        estimated_days_after_payment: formData.estimated_days_after_payment
+          ? Number(formData.estimated_days_after_payment)
+          : undefined,
+      };
+    } else if (hasOfferAction && formData.result_type === 'replaceable') {
+      statusChangeData.offer = {
+        offer_type: 'replaceable',
+        replacement_product_title: formData.replacement_product_title.trim(),
+        offer_amount: formData.replacement_product_price ? Number(formData.replacement_product_price) : undefined,
+      };
+    }
 
     try {
-      await onStatusChange(statusChangeData);
-
-      // Handle special interactions
-      if (formData.result_type === 'covered' && formData.new_status_level === 4) {
-        // Auto-generate code for Covered
-        // First create an offer, then generate code
-        const offer = await createOfferMutation.mutateAsync({
-          offer_type: 'covered',
-          offer_amount: 0,
-        });
-        await generateCodeMutation.mutateAsync(offer.id);
-      } else if (formData.result_type === 'payable' && !hasPayablePayment) {
-        // Create payable offer
-        await createOfferMutation.mutateAsync({
-          offer_type: 'payable',
-          offer_amount: parseFloat(formData.offer_amount),
-          estimated_days_after_payment: formData.estimated_days_after_payment
-            ? parseInt(formData.estimated_days_after_payment, 10)
-            : null,
-          payment_method: formData.payment_methods.join(','),
-        });
-      } else if (formData.result_type === 'replaceable') {
-        // Create replaceable offer
-        await createOfferMutation.mutateAsync({
-          offer_type: 'replaceable',
-          offer_amount: formData.replacement_product_price
-            ? parseFloat(formData.replacement_product_price)
-            : null,
-        });
-      }
+      const savedCase = await onStatusChange(statusChangeData);
+      if (savedCase?.pickup_code) setGeneratedCode(savedCase.pickup_code);
+      if (savedCase?.pickup_warning) setPickupWarning(true);
+      setFormData((prev) => ({ ...prev, note_public: '', note_private: '' }));
       onDraftChange?.(null);
     } catch (err) {
       setError(err.response?.data?.message || t('case.updateFailed'));
@@ -257,6 +229,7 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange, sta
           </Typography>
         </Alert>
       )}
+      {pickupWarning && <Alert severity="warning" sx={{ mb: 1.25 }}>{t('case.pickupIssueFailed')} {t('case.pickupGenerate')}</Alert>}
 
       <StatusStepper
         currentStatus={case_.status_level}
@@ -273,7 +246,7 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange, sta
         </div>
         <div className="zzv-case-flow__stage-controls">
           {canSubmit ? (
-            <button type="submit" className="zzv-case-flow__advance" disabled={isLoading || createOfferMutation.isLoading || generateCodeMutation.isLoading}>
+            <button type="submit" className="zzv-case-flow__advance" disabled={isLoading}>
               {t('common.updateStatus')} <ArrowForwardRoundedIcon fontSize="small" />
             </button>
           ) : case_.status_level < 4 && (
@@ -284,6 +257,17 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange, sta
         </div>
       </div>
       </StatusStepper>
+
+      {formData.new_status_level === 4 && case_.status_level !== 4 && (
+        <section className="zzv-case-flow__panel">
+          <FormControlLabel
+            control={<Checkbox checked={formData.require_pickup_pin}
+              onChange={(event) => setFormData((prev) => ({ ...prev, require_pickup_pin: event.target.checked }))} />}
+            label={t('case.requirePickupPin')}
+          />
+          <p className="zzv-case-flow__helper">{t('case.requirePickupPinHelp')}</p>
+        </section>
+      )}
 
       {allowsResult && (
         <section className="zzv-case-flow__panel">
@@ -318,7 +302,7 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange, sta
       )}
 
       {/* Special fields for Payable */}
-      {formData.result_type === 'payable' && !hasPayablePayment && formData.new_status_level === 3 && (
+      {formData.result_type === 'payable' && !hasPayablePayment && formData.new_status_level >= 3 && (
         <section className="zzv-case-flow__panel">
           <h2>{t('payment.offerDetails')}</h2>
           <div className="zzv-case-flow__payment-fields">
@@ -370,7 +354,7 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange, sta
       )}
 
       {/* Special fields for Replaceable */}
-      {formData.result_type === 'replaceable' && (
+      {formData.result_type === 'replaceable' && hasOfferAction && (
         <section className="zzv-case-flow__panel">
           <h2>{t('replacement.details')}</h2>
           <div className="zzv-case-flow__payment-fields">

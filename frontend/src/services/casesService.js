@@ -40,6 +40,26 @@ export const casesService = {
     return response.data;
   },
 
+  getPickup: async (id) => {
+    const response = await api.get(`/cases/${id}/pickup`);
+    return response.data;
+  },
+
+  issuePickupPin: async (id) => {
+    const response = await api.post(`/cases/${id}/pickup/issue`);
+    return response.data;
+  },
+
+  verifyPickupPin: async (id, code) => {
+    const response = await api.post(`/cases/${id}/pickup/verify`, { code });
+    return response.data;
+  },
+
+  collectWithoutPin: async (id) => {
+    const response = await api.post(`/cases/${id}/pickup/collect`);
+    return response.data;
+  },
+
   startPartsWaiting: async (id) => {
     const response = await api.post(`/cases/${id}/parts-waiting/start`);
     return response.data;

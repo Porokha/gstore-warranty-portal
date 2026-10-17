@@ -10,6 +10,7 @@ import {
   UseGuards,
   Request,
   ParseIntPipe,
+  Header,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -21,11 +22,13 @@ import { UpdateCaseDto } from './dto/update-case.dto';
 import { ChangeStatusDto } from './dto/change-status.dto';
 import { AddInternalNoteDto } from './dto/add-internal-note.dto';
 import { CaseStatusLevel, CaseType, ResultType, Priority } from './entities/service-case.entity';
+import { PickupService } from './pickup.service';
+import { VerifyPickupDto } from './dto/verify-pickup.dto';
 
 @Controller('cases')
 @UseGuards(JwtAuthGuard)
 export class CasesController {
-  constructor(private casesService: CasesService) {}
+  constructor(private casesService: CasesService, private pickupService: PickupService) {}
 
   @Get()
   findAll(
@@ -109,6 +112,7 @@ export class CasesController {
   }
 
   @Post(':id/status')
+  @Header('Cache-Control', 'no-store')
   changeStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() changeStatusDto: ChangeStatusDto,
@@ -150,6 +154,29 @@ export class CasesController {
   @Post(':id/reopen')
   reopen(@Param('id', ParseIntPipe) id: number, @Request() req) {
     return this.casesService.reopen(id, req.user.id);
+  }
+
+  @Get(':id/pickup')
+  pickupStatus(@Param('id', ParseIntPipe) id: number) {
+    return this.pickupService.status(id);
+  }
+
+  @Post(':id/pickup/issue')
+  @Header('Cache-Control', 'no-store')
+  issuePickupPin(@Param('id', ParseIntPipe) id: number, @Request() req) {
+    return this.pickupService.issue(id, req.user.id);
+  }
+
+  @Post(':id/pickup/verify')
+  @Header('Cache-Control', 'no-store')
+  verifyPickupPin(@Param('id', ParseIntPipe) id: number, @Body() dto: VerifyPickupDto, @Request() req) {
+    return this.pickupService.verify(id, dto.code, req.user.id);
+  }
+
+  @Post(':id/pickup/collect')
+  @Header('Cache-Control', 'no-store')
+  collectWithoutPin(@Param('id', ParseIntPipe) id: number, @Request() req) {
+    return this.pickupService.collectWithoutPin(id, req.user.id);
   }
 
   @Delete(':id')

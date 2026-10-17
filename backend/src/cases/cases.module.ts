@@ -9,17 +9,19 @@ import { UsersModule } from '../users/users.module';
 import { SmsModule } from '../sms/sms.module';
 import { AuditModule } from '../audit/audit.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { CasePickup } from './entities/case-pickup.entity';
+import { PickupService } from './pickup.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ServiceCase, CaseStatusHistory, Partner]),
+    TypeOrmModule.forFeature([ServiceCase, CaseStatusHistory, CasePickup, Partner]),
     UsersModule,
     SmsModule,
     AuditModule,
     NotificationsModule,
   ],
   controllers: [CasesController],
-  providers: [CasesService],
-  exports: [CasesService],
+  providers: [CasesService, PickupService],
+  exports: [CasesService, PickupService],
 })
 export class CasesModule {}

@@ -119,6 +119,9 @@ export class ServiceCase {
   })
   status_level: CaseStatusLevel;
 
+  @Column({ default: false })
+  pickup_pin_required: boolean;
+
   @Column({
     type: 'enum',
     enum: ['covered', 'payable', 'returned', 'replaceable'],
