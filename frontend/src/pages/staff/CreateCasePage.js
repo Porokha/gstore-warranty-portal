@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery } from 'react-query';
 import {
-  Container,
   Paper,
   TextField,
   Button,
@@ -19,8 +18,6 @@ import {
   CircularProgress,
   Autocomplete,
   Divider,
-  Tabs,
-  Tab,
 } from '@mui/material';
 import { casesService } from '../../services/casesService';
 import { warrantiesService } from '../../services/warrantiesService';
@@ -342,14 +339,15 @@ const CreateCasePage = () => {
   };
 
   return (
-    <Container maxWidth="md">
-      <Box sx={{ marginTop: 4, marginBottom: 4 }}>
-        <Typography variant="h4" gutterBottom>
+    <main className="zzv-staff-workspace zzv-staff-create-case">
+      <Box className="zzv-staff-workspace__heading">
+        <Typography variant="h4">
           {t('common.createCase')}
         </Typography>
+      </Box>
 
-        <Paper elevation={3} sx={{ padding: 4, mb: 3 }}>
-          <Box display="flex" gap={2} mb={3}>
+        <Paper className="zzv-staff-workspace__panel zzv-staff-create-case__panel">
+          <Box className="zzv-staff-create-case__modes" role="group" aria-label={t('common.createCase')}>
             <Button
               variant={mode === 'warranty' ? 'contained' : 'outlined'}
               onClick={() => handleModeChange('warranty')}
@@ -549,7 +547,7 @@ const CreateCasePage = () => {
 
           <Divider sx={{ mb: 3 }} />
 
-          <form onSubmit={handleSubmit}>
+          <form className="zzv-staff-create-case__form" onSubmit={handleSubmit}>
             {error && (
               <Alert severity="error" sx={{ mb: 2 }}>
                 {error}
@@ -557,6 +555,9 @@ const CreateCasePage = () => {
             )}
 
             <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <div className="zzv-staff-create-case__section"><span>01</span><h2>{t('case.creationDevice')}</h2></div>
+              </Grid>
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
@@ -632,6 +633,9 @@ const CreateCasePage = () => {
                 />
               </Grid>
 
+              <Grid item xs={12}>
+                <div className="zzv-staff-create-case__section"><span>02</span><h2>{t('case.creationCustomer')}</h2></div>
+              </Grid>
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
@@ -696,6 +700,9 @@ const CreateCasePage = () => {
                 />
               </Grid>
 
+              <Grid item xs={12}>
+                <div className="zzv-staff-create-case__section"><span>03</span><h2>{t('case.creationWorkflow')}</h2></div>
+              </Grid>
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
@@ -804,7 +811,7 @@ const CreateCasePage = () => {
               </Grid>
             </Grid>
 
-            <Box mt={3} display="flex" gap={2} justifyContent="flex-end">
+            <Box className="zzv-staff-create-case__actions">
               <Button
                 variant="outlined"
                 onClick={() => navigate('/staff/cases')}
@@ -826,8 +833,7 @@ const CreateCasePage = () => {
             </Box>
           </form>
         </Paper>
-      </Box>
-    </Container>
+    </main>
   );
 };
 

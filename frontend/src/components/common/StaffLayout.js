@@ -613,7 +613,7 @@ const StaffLayout = () => {
         disableEscapeKeyDown={mustChangePassword}
         maxWidth="xs"
         fullWidth
-        PaperProps={{ sx: { borderRadius: '24px' } }}
+        className="zzv-staff-form-dialog"
       >
         <DialogTitle>
           {mustChangePassword

@@ -892,7 +892,7 @@ const SettingsPage = () => {
         onClose={() => setTemplateDialogOpen(false)}
         maxWidth="md"
         fullWidth
-        PaperProps={{ sx: { borderRadius: 3 } }}
+        className="zzv-staff-form-dialog"
       >
         <DialogTitle>
           {editingTemplate ? t('common.editTemplate') || 'Edit Template' : t('common.createTemplate') || 'Create Template'}
@@ -947,7 +947,7 @@ const SettingsPage = () => {
         onClose={() => setUserDialogOpen(false)}
         maxWidth="sm"
         fullWidth
-        PaperProps={{ sx: { borderRadius: '24px' } }}
+        className="zzv-staff-form-dialog"
       >
         <DialogTitle>
           {editingUser ? t('common.editUser') || 'Edit User' : t('common.createUser') || 'Create User'}

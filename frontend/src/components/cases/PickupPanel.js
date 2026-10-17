@@ -85,7 +85,7 @@ const PickupPanel = ({ case_ }) => {
           </Button>}
         </>
       )}
-      <Dialog open={confirmCollect} onClose={() => setConfirmCollect(false)} maxWidth="xs" fullWidth>
+      <Dialog open={confirmCollect} onClose={() => setConfirmCollect(false)} maxWidth="xs" fullWidth className="zzv-staff-form-dialog">
         <DialogTitle>{t('case.markCollected')}</DialogTitle>
         <DialogContent>{t('case.confirmCollectNoPin')}</DialogContent>
         <DialogActions>

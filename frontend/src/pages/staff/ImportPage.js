@@ -447,7 +447,7 @@ const ImportPage = () => {
                 </Alert>
               )}
 
-              <Box sx={{ border: '2px dashed #ccc', borderRadius: 2, p: 4, textAlign: 'center' }}>
+              <Box className="zzv-staff-import__dropzone">
                 <input
                   accept=".csv"
                   style={{ display: 'none' }}
@@ -539,7 +539,7 @@ const ImportPage = () => {
                 </Alert>
               )}
 
-              <Box sx={{ border: '2px dashed #ccc', borderRadius: 2, p: 4, textAlign: 'center' }}>
+              <Box className="zzv-staff-import__dropzone">
                 <input
                   accept=".csv"
                   style={{ display: 'none' }}
