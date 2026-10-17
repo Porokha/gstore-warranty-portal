@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Box, Drawer, IconButton } from '@mui/material';
 import { ChatBubbleRounded as ChatBubbleRoundedIcon, ExpandMoreRounded } from '@mui/icons-material';
@@ -220,7 +220,17 @@ const PublicLayout = () => {
       </Box>
 
       <Box sx={{ flex: 1, bgcolor: '#fbf9ff' }}>
-        <Outlet />
+        <Suspense fallback={
+          <div className="zzv-public-route-loading" role="status" aria-label={i18n.language === 'ka' ? 'გვერდი იტვირთება' : 'Loading page'}>
+            <span className="zzv-public-route-loading__heading" />
+            <span className="zzv-public-route-loading__line" />
+            <span className="zzv-public-route-loading__panel" />
+          </div>
+        }>
+          <div key={location.pathname} className="zzv-public-route">
+            <Outlet />
+          </div>
+        </Suspense>
       </Box>
 
       <Box

@@ -3,6 +3,7 @@ import { useQuery } from 'react-query';
 import { Link } from 'react-router-dom';
 import { tradeInService } from '../../services/tradeInService';
 import { tradeInAnswerHelp, tradeInAnswerKa, tradeInAnswerText, tradeInConditionGrade, tradeInQuestionKa, tradeInQuestionText } from '../../utils/tradeInQuoteLabels';
+import { canGoBackWithinValuation, valuationProgressStep } from '../../utils/tradeInNavigation';
 
 const imageUrl = (value) => {
   if (!value || String(value).includes('image-not-found')) return null;
@@ -153,9 +154,8 @@ export default function TradeInValuation({ product, t, language, initialStorage 
   }, [isManualReviewProduct]);
 
   useEffect(() => {
-    const step = phase === 'storage' ? 3 : phase === 'question' && isCondition ? 4 : phase === 'question' ? 5 : phase === 'faults' ? 4 : phase === 'range' || phase === 'offer' || phase === 'manual-offer' ? 5 : phase === 'contact' ? 'contact' : null;
-    onProgressChange(step);
-  }, [phase, isCondition, onProgressChange]);
+    onProgressChange(valuationProgressStep(phase));
+  }, [phase, onProgressChange]);
 
   useEffect(() => {
     if (phase !== 'offer') return undefined;
@@ -242,7 +242,6 @@ export default function TradeInValuation({ product, t, language, initialStorage 
 
   const previous = () => {
     setError('');
-    if (isManualReviewProduct && phase === 'manual-offer') return onRestart ? onRestart() : restart();
     if (phase === 'contact') return setPhase(noExactPrice ? (faults.length ? 'range' : 'manual-offer') : 'offer');
     if (phase === 'range') return setPhase('faults');
     if (phase === 'faults') return setPhase('question');
@@ -277,7 +276,7 @@ export default function TradeInValuation({ product, t, language, initialStorage 
   useEffect(() => {
     if (!backActionRef) return undefined;
     backActionRef.current = () => {
-      if (phase === 'storage') return false;
+      if (!canGoBackWithinValuation({ phase, steps, storageOptions, isLaptop, isManualReviewProduct })) return false;
       previous();
       return true;
     };
@@ -351,7 +350,7 @@ export default function TradeInValuation({ product, t, language, initialStorage 
         {summaryBadges.length > 0 && <div className="zzv-trade-summary-badges" aria-label={language === 'ka' ? 'არჩეული მახასიათებლები' : 'Selected details'}>{summaryBadges.map((badge) => <span className="zzv-trade-summary-badge" key={badge.key}>{badge.label}</span>)}</div>}
         {!noExactPrice && <div className="zzv-trade-summary-price"><span>{language === 'ka' ? 'მიმდინარე შეფასება' : 'Current estimate'}</span><strong>{money(summaryPrice)}</strong></div>}
       </aside>
-      <section className="zzv-trade-flow-panel">
+      <section key={phase === 'question' ? `${phase}-${pointer.setIndex}-${pointer.questionIndex}` : phase} className="zzv-trade-flow-panel">
         {phase === 'storage' && <>
           <h1>{storageQuestions[0] ? tradeInQuestionText(storageQuestions[0], language) : (language === 'ka' ? 'რამდენი აქვს მეხსიერება?' : 'How much storage does it have?')}</h1>
           <div className="zzv-trade-answer-list">
