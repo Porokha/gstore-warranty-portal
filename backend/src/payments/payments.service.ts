@@ -7,11 +7,9 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CasePayment, PaymentStatus, CodeStatus } from './entities/case-payment.entity';
-import { CaseType, ServiceCase, CaseStatusLevel } from '../cases/entities/service-case.entity';
+import { CaseType, ServiceCase, CaseStatusLevel, ResultType } from '../cases/entities/service-case.entity';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
-import { GenerateCodeDto } from './dto/generate-code.dto';
-import { VerifyCodeDto } from './dto/verify-code.dto';
 import { SmsService } from '../sms/sms.service';
 import { Language } from '../sms/entities/sms-template.entity';
 import { SmsStatus } from '../sms/entities/sms-log.entity';
@@ -25,23 +23,6 @@ export class PaymentsService {
     private casesRepository: Repository<ServiceCase>,
     private smsService: SmsService,
   ) {}
-
-  async generateCode(): Promise<string> {
-    // Generate a 6-digit code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    
-    // Check if code already exists
-    const existing = await this.paymentsRepository.findOne({
-      where: { generated_code: code, code_status: CodeStatus.ACTIVE },
-    });
-
-    if (existing) {
-      // Recursively generate a new code if collision
-      return this.generateCode();
-    }
-
-    return code;
-  }
 
   async createOffer(caseId: number, createOfferDto: CreateOfferDto): Promise<CasePayment> {
     const case_ = await this.casesRepository.findOne({
@@ -87,6 +68,7 @@ export class PaymentsService {
       payment_method: createOfferDto.payment_method || null,
       payment_status: PaymentStatus.PENDING,
       estimated_days_after_payment: createOfferDto.estimated_days_after_payment || null,
+      replacement_product_title: createOfferDto.replacement_product_title || null,
     });
 
     const savedPayment = await this.paymentsRepository.save(payment);
@@ -184,60 +166,10 @@ export class PaymentsService {
 
   async update(id: number, updateDto: UpdatePaymentDto): Promise<CasePayment> {
     const payment = await this.findOne(id);
-    
-    Object.assign(payment, updateDto);
-    return this.paymentsRepository.save(payment);
-  }
-
-  async generatePaymentCode(
-    paymentId: number,
-    generateCodeDto: GenerateCodeDto,
-  ): Promise<CasePayment> {
-    const payment = await this.findOne(paymentId);
-
-    if (payment.payment_status !== PaymentStatus.PENDING) {
-      throw new BadRequestException('Code can only be generated for pending payments');
+    if (payment.payment_status === PaymentStatus.PAID) {
+      throw new BadRequestException('Paid offers cannot be edited');
     }
-
-    if (payment.generated_code && payment.code_status === CodeStatus.ACTIVE) {
-      throw new BadRequestException('An active code already exists for this payment');
-    }
-
-    const code = await this.generateCode();
-
-    payment.generated_code = code;
-    payment.code_status = CodeStatus.ACTIVE;
-    payment.code_generated_at = new Date();
-    if (generateCodeDto.estimated_days_after_payment) {
-      payment.estimated_days_after_payment = generateCodeDto.estimated_days_after_payment;
-    }
-
-    return this.paymentsRepository.save(payment);
-  }
-
-  async verifyCode(verifyCodeDto: VerifyCodeDto): Promise<CasePayment> {
-    const payment = await this.paymentsRepository.findOne({
-      where: {
-        generated_code: verifyCodeDto.code,
-        code_status: CodeStatus.ACTIVE,
-      },
-      relations: ['case_'],
-    });
-
-    if (!payment) {
-      throw new NotFoundException('Invalid or expired code');
-    }
-
-    // Check if code is already used
-    if (payment.code_status === CodeStatus.USED) {
-      throw new BadRequestException('This code has already been used');
-    }
-
-    // Mark code as used
-    payment.code_status = CodeStatus.USED;
-    payment.code_used_at = new Date();
-    payment.payment_status = PaymentStatus.PAID;
-
+    if (updateDto.offer_amount !== undefined) payment.offer_amount = updateDto.offer_amount;
     return this.paymentsRepository.save(payment);
   }
 
@@ -246,6 +178,10 @@ export class PaymentsService {
     bogTransactionId?: string,
   ): Promise<CasePayment> {
     const payment = await this.findOne(paymentId);
+
+    if (payment.offer_type !== ResultType.PAYABLE) {
+      throw new BadRequestException('Only payable offers can be marked as paid');
+    }
 
     if (payment.payment_status === PaymentStatus.PAID) {
       throw new BadRequestException('Payment is already marked as paid');
@@ -287,6 +223,10 @@ export class PaymentsService {
 
   async markAsFailed(paymentId: number): Promise<CasePayment> {
     const payment = await this.findOne(paymentId);
+
+    if (payment.offer_type !== ResultType.PAYABLE) {
+      throw new BadRequestException('Only payable offers can be marked as failed');
+    }
 
     payment.payment_status = PaymentStatus.FAILED;
     return this.paymentsRepository.save(payment);

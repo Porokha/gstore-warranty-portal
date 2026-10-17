@@ -25,6 +25,7 @@ import { casesService } from '../../services/casesService';
 import { paymentsService } from '../../services/paymentsService';
 import { usersService } from '../../services/usersService';
 import StatusChangeForm from '../../components/cases/StatusChangeForm';
+import PickupPanel from '../../components/cases/PickupPanel';
 import FileUpload from '../../components/cases/FileUpload';
 import StaffDeleteDialog from '../../components/common/StaffDeleteDialog';
 import { useAuth } from '../../contexts/AuthContext';
@@ -87,6 +88,7 @@ const CaseDetailPage = () => {
       onSuccess: () => {
         setStatusDraft(null);
         queryClient.invalidateQueries(['case', id]);
+        queryClient.invalidateQueries(['case-payments', id]);
         queryClient.invalidateQueries('cases');
         queryClient.invalidateQueries('dashboard');
       },
@@ -116,19 +118,20 @@ const CaseDetailPage = () => {
 
   // Initialize local data when case loads
   React.useEffect(() => {
-    if (case_) {
+    if (case_ && !hasUnsavedChanges) {
       setLocalCaseData(case_);
-      setHasUnsavedChanges(false);
     }
-  }, [case_]);
+  }, [case_, hasUnsavedChanges]);
 
   const updateCaseMutation = useMutation(
     (data) => casesService.update(id, data),
     {
-      onSuccess: () => {
+      onSuccess: (savedCase) => {
+        queryClient.setQueryData(['case', id], (previous) => ({ ...previous, ...savedCase }));
+        setLocalCaseData((previous) => ({ ...previous, ...savedCase }));
+        setHasUnsavedChanges(false);
         queryClient.invalidateQueries(['case', id]);
         queryClient.invalidateQueries('cases');
-        setHasUnsavedChanges(false);
       },
     }
   );
@@ -743,6 +746,7 @@ const CaseDetailPage = () => {
                 statusTimestamps={statusTimestamps}
               />
             </Box>
+            {case_.status_level === 4 && <PickupPanel case_={case_} />}
           </Box>
         )}
 
@@ -851,10 +855,8 @@ const CaseDetailPage = () => {
                             <strong>{t('payment.method')}:</strong> {getPaymentMethodLabel(payment.payment_method)}
                           </Typography>
                         )}
-                        {payment.generated_code && (
-                          <Typography variant="body2">
-                            <strong>{t('payment.code') || 'Code'}:</strong> {payment.generated_code}
-                          </Typography>
+                        {payment.replacement_product_title && (
+                          <Typography variant="body2">{payment.replacement_product_title}</Typography>
                         )}
                       </Box>
                       <Chip
@@ -869,7 +871,7 @@ const CaseDetailPage = () => {
                         size="small"
                       />
                     </Box>
-                    {canManageCases && payment.payment_status !== 'paid' && editingPaymentId !== payment.id && (
+                    {canManageCases && ['payable', 'replaceable'].includes(payment.offer_type) && payment.payment_status !== 'paid' && editingPaymentId !== payment.id && (
                       <Box className="zzv-case-payment-card__actions" display="flex" gap={1} flexWrap="wrap">
                         <Button
                           variant="outlined"
@@ -881,7 +883,7 @@ const CaseDetailPage = () => {
                         </Button>
                       </Box>
                     )}
-                    {canManageCases && payment.payment_status !== 'paid' && (
+                    {canManageCases && payment.offer_type === 'payable' && payment.payment_status !== 'paid' && (
                       <Box className="zzv-case-payment-card__actions" display="flex" gap={1} flexWrap="wrap">
                         <Button
                           variant="contained"

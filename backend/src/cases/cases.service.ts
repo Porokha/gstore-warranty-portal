@@ -21,9 +21,11 @@ import { UsersService } from '../users/users.service';
 import { SmsService } from '../sms/sms.service';
 import { Language } from '../sms/entities/sms-template.entity';
 import { AuditService } from '../audit/audit.service';
-import { PaymentStatus } from '../payments/entities/case-payment.entity';
+import { CasePayment, PaymentStatus } from '../payments/entities/case-payment.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Partner } from '../partners/entities/partner.entity';
+import { PickupService } from './pickup.service';
+import { AuditLog } from '../audit/entities/audit-log.entity';
 
 @Injectable()
 export class CasesService {
@@ -38,6 +40,7 @@ export class CasesService {
     private smsService: SmsService,
     private auditService: AuditService,
     private notificationsService: NotificationsService,
+    private pickupService: PickupService,
   ) {}
 
   async generateCaseNumber(): Promise<string> {
@@ -407,81 +410,124 @@ export class CasesService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    const case_ = await this.findOne(id);
-
-    const previousStatus = case_.status_level;
-    const previousResult = case_.result_type;
     const newStatus = changeStatusDto.new_status_level;
     const newResult = changeStatusDto.result_type;
-    const effectiveResult = newResult || case_.result_type;
+    const { case_, savedCase, previousStatus, previousResult, offerCreated, replayed } =
+      await this.casesRepository.manager.transaction(async (manager) => {
+        const cases = manager.getRepository(ServiceCase);
+        const offers = manager.getRepository(CasePayment);
+        const case_ = await cases.createQueryBuilder('case')
+          .setLock('pessimistic_write')
+          .where('case.id = :id', { id })
+          .getOne();
+        if (!case_) throw new NotFoundException(`Case with ID ${id} not found`);
 
-    // Role-based restrictions
-    if (!isManagementRole(user.role) && isTechnicianRole(user.role)) {
-      // Technicians can only move forward
-      if (newStatus <= previousStatus) {
-        throw new ForbiddenException('Technicians can only move status forward');
+        const previousStatus = case_.status_level;
+        const previousResult = case_.result_type;
+        const effectiveResult = newStatus < CaseStatusLevel.PENDING ? null : newResult || previousResult;
+        const payments = await offers.find({ where: { case_id: id } });
+        const existingOffer = payments.find((payment) => payment.offer_type === effectiveResult);
+        const offer = changeStatusDto.offer;
+
+        if (offer && (newStatus < CaseStatusLevel.PENDING || offer.offer_type !== effectiveResult)) {
+          throw new BadRequestException('Offer must match the selected result at pending or completed stage');
+        }
+        if (existingOffer && offer &&
+          (Number(existingOffer.offer_amount || 0) !== Number(offer.offer_amount || 0) ||
+            (offer.payment_method && existingOffer.payment_method !== offer.payment_method))) {
+          throw new BadRequestException('Offer already exists; edit the existing offer instead');
+        }
+        const replayed = newStatus === previousStatus && effectiveResult === previousResult &&
+          Boolean(existingOffer) && Boolean(offer) && !changeStatusDto.note_public && !changeStatusDto.note_private;
+        const repairingOffer = newStatus === previousStatus && effectiveResult === previousResult &&
+          !existingOffer && Boolean(offer) && !changeStatusDto.note_public && !changeStatusDto.note_private;
+        if (!isManagementRole(user.role) && isTechnicianRole(user.role)) {
+          if (previousStatus === CaseStatusLevel.COMPLETED) {
+            throw new ForbiddenException('Technicians cannot reopen completed cases');
+          }
+          if (newStatus <= previousStatus && !replayed && !repairingOffer) {
+            throw new ForbiddenException('Technicians can only move status forward');
+          }
+        }
+        if (replayed) return { case_, savedCase: case_, previousStatus, previousResult, offerCreated: false, replayed: true };
+        if (case_.parts_waiting && newStatus !== CaseStatusLevel.INVESTIGATING) {
+          throw new BadRequestException('Mark parts received before moving the case to another stage');
+        }
+        if (newStatus === CaseStatusLevel.COMPLETED && !effectiveResult) {
+          throw new BadRequestException('Choose a result before completing the case');
+        }
+        if (payments.some((payment) => payment.payment_status === PaymentStatus.PAID && payment.offer_type !== effectiveResult)) {
+          throw new BadRequestException('A paid offer cannot be changed to another result');
+        }
+        if (effectiveResult === ResultType.PAYABLE && newStatus >= CaseStatusLevel.PENDING) {
+          if (!existingOffer && (!offer || !Number.isFinite(offer.offer_amount) || offer.offer_amount <= 0 || !offer.payment_method)) {
+            throw new BadRequestException('A payable result requires an amount and payment method');
+          }
+          if (newStatus === CaseStatusLevel.COMPLETED && !payments.some((payment) =>
+            payment.offer_type === ResultType.PAYABLE && payment.payment_status === PaymentStatus.PAID)) {
+            throw new BadRequestException('Payable cases can only be completed after payment is marked as paid');
+          }
+        }
+        if (effectiveResult === ResultType.REPLACEABLE && !existingOffer && !offer?.replacement_product_title?.trim()) {
+          throw new BadRequestException('Replacement product title is required');
+        }
+
+        case_.status_level = newStatus;
+        case_.result_type = effectiveResult;
+        if (newStatus === CaseStatusLevel.COMPLETED && previousStatus !== CaseStatusLevel.COMPLETED) {
+          case_.pickup_pin_required = changeStatusDto.require_pickup_pin === true;
+          case_.closed_at = new Date();
+        } else if (newStatus < CaseStatusLevel.COMPLETED) {
+          case_.pickup_pin_required = false;
+          case_.closed_at = null;
+        }
+        const savedCase = await cases.save(case_);
+        let offerCreated = false;
+        if (!existingOffer && effectiveResult &&
+          (offer || (effectiveResult === ResultType.COVERED && newStatus === CaseStatusLevel.COMPLETED))) {
+          await offers.save(offers.create({
+            case_id: id,
+            offer_type: effectiveResult,
+            offer_amount: offer?.offer_amount ?? (effectiveResult === ResultType.COVERED ? 0 : null),
+            payment_method: offer?.payment_method ?? null,
+            payment_status: PaymentStatus.PENDING,
+            estimated_days_after_payment: offer?.estimated_days_after_payment ?? null,
+            replacement_product_title: offer?.replacement_product_title?.trim() || null,
+          }));
+          offerCreated = true;
+        }
+        await manager.getRepository(CaseStatusHistory).save(manager.getRepository(CaseStatusHistory).create({
+          case_id: id,
+          changed_by: user.id,
+          previous_status_level: previousStatus,
+          new_status_level: newStatus,
+          previous_result: previousResult,
+          new_result: effectiveResult,
+          note_public: changeStatusDto.note_public,
+          note_private: changeStatusDto.note_private,
+        }));
+        await manager.getRepository(AuditLog).save(manager.getRepository(AuditLog).create({
+          user_id: user.id,
+          action: 'CASE_STATUS_CHANGED',
+          payload_json: { caseId: id, previousStatus, newStatus, previousResult, newResult, offerCreated },
+        }));
+        return { case_, savedCase, previousStatus, previousResult, offerCreated, replayed: false };
+      });
+    if (replayed) return savedCase;
+    if (previousStatus === CaseStatusLevel.COMPLETED && newStatus < CaseStatusLevel.COMPLETED) {
+      await this.pickupService.resetForReopen(id, user.id);
+    }
+
+    let pickupCode: string | null = null;
+    let pickupWarning = false;
+    if (newStatus === CaseStatusLevel.COMPLETED && previousStatus !== CaseStatusLevel.COMPLETED && savedCase.pickup_pin_required) {
+      try {
+        pickupCode = (await this.pickupService.issue(id, user.id)).code;
+      } catch (error) {
+        console.error('Failed to issue pickup PIN:', error);
+        pickupWarning = true;
       }
-
-      // Technicians cannot reopen completed cases
-      if (case_.status_level === CaseStatusLevel.COMPLETED) {
-        throw new ForbiddenException('Technicians cannot reopen completed cases');
-      }
     }
-
-    if (newStatus === CaseStatusLevel.COMPLETED && effectiveResult === ResultType.PAYABLE) {
-      const hasPaidPayableOffer = case_.payments?.some(
-        (payment) =>
-          payment.offer_type === ResultType.PAYABLE &&
-          payment.payment_status === PaymentStatus.PAID,
-      );
-
-      if (!hasPaidPayableOffer) {
-        throw new BadRequestException('Payable cases can only be completed after payment is marked as paid');
-      }
-    }
-
-    // Update status
-    case_.status_level = newStatus;
-
-    // Outcomes belong to pending/completed stages; moving back clears a stale outcome.
-    if (newStatus < CaseStatusLevel.PENDING) {
-      case_.result_type = null;
-    } else if (newResult) {
-      case_.result_type = newResult;
-    }
-
-    // Set closed_at if completing
-    if (newStatus === CaseStatusLevel.COMPLETED && !case_.closed_at) {
-      case_.closed_at = new Date();
-    }
-
-    // Clear closed_at if reopening
-    if (newStatus < CaseStatusLevel.COMPLETED && case_.closed_at) {
-      case_.closed_at = null;
-    }
-
-    const savedCase = await this.casesRepository.save(case_);
-
-    // Audit log
-    await this.auditService.log(user.id, 'CASE_STATUS_CHANGED', {
-      caseId: id,
-      previousStatus,
-      newStatus,
-      previousResult,
-      newResult,
-    });
-
-    // Create history entry
-    await this.createHistoryEntry(
-      id,
-      user.id,
-      previousStatus,
-      newStatus,
-      previousResult,
-      newResult,
-      changeStatusDto.note_public,
-      changeStatusDto.note_private,
-    );
 
     if (
       newStatus === CaseStatusLevel.PENDING
@@ -494,8 +540,25 @@ export class CasesService {
       }
     }
 
+    if (offerCreated && case_.result_type === ResultType.PAYABLE && !this.isPartnerCase(case_) && case_.customer_phone) {
+      try {
+        await this.smsService.sendSms({
+          phone: case_.customer_phone,
+          templateKey: 'sms.offer.payable',
+          language: Language.KA,
+          variables: {
+            case_number: case_.case_number,
+            amount: changeStatusDto.offer.offer_amount,
+            payment_code: 'N/A',
+          },
+        });
+      } catch (error) {
+        console.error('Failed to send offer SMS:', error);
+      }
+    }
+
     // Send SMS notification if status changed and public note exists
-    if (!this.isPartnerCase(case_) && changeStatusDto.note_public && case_.customer_phone) {
+    if (!this.isPartnerCase(case_) && previousStatus !== newStatus && changeStatusDto.note_public && case_.customer_phone) {
       try {
         await this.smsService.sendSms({
           phone: case_.customer_phone,
@@ -520,7 +583,7 @@ export class CasesService {
     }
 
     // Send SMS if case is completed
-    if (!this.isPartnerCase(case_) && newStatus === CaseStatusLevel.COMPLETED && case_.customer_phone) {
+    if (!this.isPartnerCase(case_) && previousStatus !== CaseStatusLevel.COMPLETED && newStatus === CaseStatusLevel.COMPLETED && case_.customer_phone) {
       try {
         await this.smsService.sendSms({
           phone: case_.customer_phone,
@@ -542,7 +605,7 @@ export class CasesService {
       }
     }
 
-    return savedCase;
+    return { ...savedCase, ...(pickupCode ? { pickup_code: pickupCode } : {}), ...(pickupWarning ? { pickup_warning: true } : {}) } as ServiceCase;
   }
 
   async reopen(id: number, userId: number): Promise<ServiceCase> {
@@ -561,8 +624,10 @@ export class CasesService {
 
     case_.status_level = CaseStatusLevel.PENDING;
     case_.closed_at = null;
+    case_.pickup_pin_required = false;
 
     const savedCase = await this.casesRepository.save(case_);
+    await this.pickupService.resetForReopen(id, user.id);
 
     await this.createHistoryEntry(
       id,

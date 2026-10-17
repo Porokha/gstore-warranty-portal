@@ -62,7 +62,10 @@ export class CasePayment {
   @Column({ nullable: true })
   estimated_days_after_payment: number;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  replacement_product_title: string | null;
+
+  @Column({ nullable: true, select: false })
   generated_code: string; // 6-digit code
 
   @Column({

@@ -11,6 +11,8 @@ import {
   ParseIntPipe,
   HttpCode,
   HttpStatus,
+  Request,
+  Header,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -19,12 +21,12 @@ import { UserRole } from '../users/entities/user.entity';
 import { PaymentsService } from './payments.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
-import { GenerateCodeDto } from './dto/generate-code.dto';
 import { VerifyCodeDto } from './dto/verify-code.dto';
+import { PickupService } from '../cases/pickup.service';
 
 @Controller('payments')
 export class PaymentsController {
-  constructor(private paymentsService: PaymentsService) {}
+  constructor(private paymentsService: PaymentsService, private pickupService: PickupService) {}
 
   // Protected routes (staff only)
   @Post('cases/:caseId/offers')
@@ -59,13 +61,16 @@ export class PaymentsController {
   }
 
   @Post(':id/generate-code')
+  @Header('Cache-Control', 'no-store')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  generateCode(
+  async generateCode(
     @Param('id', ParseIntPipe) id: number,
-    @Body() generateCodeDto: GenerateCodeDto,
+    @Request() req,
   ) {
-    return this.paymentsService.generatePaymentCode(id, generateCodeDto);
+    const payment = await this.paymentsService.findOne(id);
+    const issued = await this.pickupService.issue(payment.case_id, req.user.id);
+    return { generated_code: issued.code, expires_at: issued.expires_at };
   }
 
   @Post(':id/mark-paid')
@@ -144,10 +149,11 @@ export class PaymentsController {
     return this.paymentsService.getStats(caseId ? parseInt(caseId.toString()) : undefined);
   }
 
-  // Public route (for code verification)
+  // Legacy route retained for staff pickup verification; it never settles payments.
   @Post('verify-code')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  verifyCode(@Body() verifyCodeDto: VerifyCodeDto) {
-    return this.paymentsService.verifyCode(verifyCodeDto);
+  verifyCode(@Body() verifyCodeDto: VerifyCodeDto, @Request() req) {
+    return this.pickupService.verify(verifyCodeDto.case_id, verifyCodeDto.code, req.user.id);
   }
 }
