@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /staff/
+Disallow: /shop/admin/
+Disallow: /trade-in/sign/
+Disallow: /trade-in/staff-sign/
