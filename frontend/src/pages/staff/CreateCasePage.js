@@ -3,6 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery } from 'react-query';
 import {
+  Dialog,
+  DialogContent,
   Paper,
   TextField,
   Button,
@@ -338,14 +340,21 @@ const CreateCasePage = () => {
     }
   };
 
-  return (
-    <main className="zzv-staff-workspace zzv-staff-create-case">
-      <Box className="zzv-staff-workspace__heading">
-        <Typography variant="h4">
-          {t('common.createCase')}
-        </Typography>
-      </Box>
+  const closeModal = () => {
+    const listParams = new URLSearchParams(searchParams);
+    listParams.delete('warranty_id');
+    const query = listParams.toString();
+    navigate(`/staff/cases${query ? `?${query}` : ''}`);
+  };
 
+  return (
+    <Dialog open onClose={createMutation.isLoading ? undefined : closeModal} maxWidth={false} fullWidth scroll="paper" className="zzv-staff-case-dialog" aria-labelledby="zzv-create-case-title">
+      <header className="zzv-staff-case-dialog__head">
+        <h1 id="zzv-create-case-title">{t('common.createCase')}</h1>
+        <button type="button" onClick={closeModal} disabled={createMutation.isLoading} aria-label={t('common.close')}>×</button>
+      </header>
+      <DialogContent className="zzv-staff-case-dialog__body">
+      <div className="zzv-staff-workspace zzv-staff-create-case">
         <Paper className="zzv-staff-workspace__panel zzv-staff-create-case__panel">
           <Box className="zzv-staff-create-case__modes" role="group" aria-label={t('common.createCase')}>
             <Button
@@ -814,7 +823,7 @@ const CreateCasePage = () => {
             <Box className="zzv-staff-create-case__actions">
               <Button
                 variant="outlined"
-                onClick={() => navigate('/staff/cases')}
+                onClick={closeModal}
                 disabled={createMutation.isLoading}
               >
                 {t('common.cancel')}
@@ -833,7 +842,9 @@ const CreateCasePage = () => {
             </Box>
           </form>
         </Paper>
-    </main>
+      </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

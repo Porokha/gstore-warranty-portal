@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from 'react-query';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { CircularProgress } from '@mui/material';
 import { casesService } from '../../services/casesService';
 import CaseQuickViewDialog from '../../components/cases/CaseQuickViewDialog';
@@ -77,7 +77,7 @@ const CasesPage = () => {
   const { data, isLoading, isFetching, isError } = useQuery(
     ['cases', queryFilters],
     () => casesService.getAll(queryFilters),
-    { keepPreviousData: true },
+    { keepPreviousData: true, staleTime: 30_000 },
   );
   const allRows = useMemo(() => {
     if (Array.isArray(data)) return data;
@@ -175,7 +175,7 @@ const CasesPage = () => {
       <div><h1>{t('common.openCases')}</h1><p>{t('case.listSubtitle')}</p></div>
       <div className="zzv-case-list__head-actions">
         {isAdmin && <button type="button" className="zzv-case-list__button zzv-case-list__button--secondary" onClick={() => navigate('/staff/import')}><img src={icon('import')} alt="" />{t('common.importCSV')}</button>}
-        <button type="button" className="zzv-case-list__button zzv-case-list__button--primary" onClick={() => navigate('/staff/cases/new')}><img src={icon('plus')} alt="" />{t('case.newCase')}</button>
+        <button type="button" className="zzv-case-list__button zzv-case-list__button--primary" onClick={() => navigate(`/staff/cases/new${location.search}`)}><img src={icon('plus')} alt="" />{t('case.newCase')}</button>
       </div>
     </header>
     <nav className="zzv-case-list__tabs" aria-label={t('case.caseType')}>
@@ -209,7 +209,7 @@ const CasesPage = () => {
       <img src={icon(hasFilters ? 'no-results' : 'empty')} alt="" />
       <h2>{t(hasFilters ? 'case.noResultsTitle' : 'case.emptyTitle')}</h2>
       <p>{t(hasFilters ? 'case.noResultsDescription' : 'case.emptyDescription')}</p>
-      <button type="button" className={`zzv-case-list__button zzv-case-list__button--${hasFilters ? 'secondary' : 'primary'}`} onClick={hasFilters ? clearFilters : () => navigate('/staff/cases/new')}>{!hasFilters && <img src={icon('plus')} alt="" />}{t(hasFilters ? 'case.clearFilters' : 'case.newCase')}</button>
+      <button type="button" className={`zzv-case-list__button zzv-case-list__button--${hasFilters ? 'secondary' : 'primary'}`} onClick={hasFilters ? clearFilters : () => navigate(`/staff/cases/new${location.search}`)}>{!hasFilters && <img src={icon('plus')} alt="" />}{t(hasFilters ? 'case.clearFilters' : 'case.newCase')}</button>
     </div> : <>
       <div className="zzv-case-list__table-scroll"><table><thead><tr>
         <th className="zzv-case-list__check"><input type="checkbox" checked={selectedPage} onChange={togglePage} aria-label={t('case.selectPage')} /></th>
@@ -237,6 +237,9 @@ const CasesPage = () => {
       </footer>
     </>}
   </section>
+    <React.Suspense fallback={<div className="zzv-case-list__modal-loading" role="status"><CircularProgress size={28} /></div>}>
+      <Outlet />
+    </React.Suspense>
     <CaseQuickViewDialog caseId={previewCaseId} onClose={() => setPreviewCaseId(null)} detailPath={previewCaseId ? `/staff/cases/${previewCaseId}${location.search}` : undefined} />
     <StaffDeleteDialog
       open={deleteOpen}

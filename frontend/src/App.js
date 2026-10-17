@@ -52,7 +52,7 @@ const TradeInSignPage = lazy(() => import('./pages/public/TradeInSignPage'));
 const TradeInStaffSignPage = lazy(() => import('./pages/public/TradeInStaffSignPage'));
 const ShopAdminTradeInPage = lazy(() => import('./pages/shop-admin/ShopAdminTradeInPage'));
 
-const PageFallback = () => null;
+const PageFallback = () => <div className="zzv-page-fallback" role="status" aria-label="Loading page"><span className="zzv-page-fallback__mark">ZEZVA</span><span className="zzv-page-fallback__bar" /></div>;
 
 const queryClient = new QueryClient();
 const buildTimePublicMaintenanceMode = process.env.REACT_APP_PUBLIC_MAINTENANCE_MODE === 'true';
@@ -199,9 +199,10 @@ function AppRoutes() {
                 <Route element={<StaffRoleRoute allowedRoles={['technician', 'tech-manager', 'super_technician']} />}>
                   <Route path="my-cases" element={<MyCasesPage />} />
                 </Route>
-                <Route path="cases" element={<CasesPage />} />
+                <Route path="cases" element={<CasesPage />}>
+                  <Route path="new" element={<CreateCasePage />} />
+                </Route>
                 <Route path="cases/closed" element={<ClosedCasesPage />} />
-                <Route path="cases/new" element={<CreateCasePage />} />
                 <Route path="cases/:id" element={<CaseDetailPage />} />
                 <Route path="partners" element={<PartnersPage />} />
                 <Route path="warranties" element={<WarrantiesPage />} />

@@ -40,6 +40,25 @@ import { hasFinanceStatisticsAccess, isManagementRole, isTechnicianRole, roleLab
 const EXPANDED_DRAWER_WIDTH = 240;
 const COLLAPSED_DRAWER_WIDTH = 64;
 const navIcon = (name) => `/figma-staff/nav-${name}.svg`;
+const staffPageLoaders = {
+  '/staff/dashboard': () => import('../../pages/staff/DashboardPage'),
+  '/staff/my-cases': () => import('../../pages/staff/MyCasesPage'),
+  '/staff/cases': () => import('../../pages/staff/CasesPage'),
+  '/staff/partners': () => import('../../pages/staff/PartnersPage'),
+  '/staff/warranties': () => import('../../pages/staff/WarrantiesPage'),
+  '/staff/finance': () => import('../../pages/staff/FinancePage'),
+  '/staff/statistics': () => import('../../pages/staff/StatisticsPage'),
+  '/staff/import': () => import('../../pages/staff/ImportPage'),
+  '/staff/settings': () => import('../../pages/staff/SettingsPage'),
+  '/staff/audit': () => import('../../pages/staff/AuditPage'),
+};
+const prefetchedStaffPages = new Set();
+const prefetchStaffPage = (path) => {
+  const loader = staffPageLoaders[path];
+  if (!loader || prefetchedStaffPages.has(path)) return;
+  prefetchedStaffPages.add(path);
+  loader().catch(() => prefetchedStaffPages.delete(path));
+};
 
 const StaffLayout = () => {
   const { t, i18n } = useTranslation();
@@ -330,6 +349,8 @@ const StaffLayout = () => {
                     component={Link} 
                     to={item.path}
                     onClick={() => setMobileMenuOpen(false)}
+                    onMouseEnter={() => prefetchStaffPage(item.path)}
+                    onFocus={() => prefetchStaffPage(item.path)}
                     selected={isActive}
                     sx={{
                       height: 40,
@@ -390,6 +411,8 @@ const StaffLayout = () => {
                         component={Link} 
                         to={item.path}
                         onClick={() => setMobileMenuOpen(false)}
+                        onMouseEnter={() => prefetchStaffPage(item.path)}
+                        onFocus={() => prefetchStaffPage(item.path)}
                         selected={isActive}
                         sx={{
                           height: 40,
@@ -592,6 +615,7 @@ const StaffLayout = () => {
         {/* Main Content */}
         <Box
           component="main"
+          className="zzv-staff-route"
           sx={{
             flexGrow: 1,
             bgcolor: '#fbfafe',
@@ -603,7 +627,9 @@ const StaffLayout = () => {
             position: 'relative',
           }}
         >
-          <Outlet />
+          <React.Suspense fallback={<div className="zzv-staff-route-loading" role="status" aria-busy="true"><div className="zzv-staff-route-loading__bar" /><div className="zzv-staff-route-loading__heading" /><div className="zzv-staff-route-loading__panel" /></div>}>
+            <Outlet />
+          </React.Suspense>
         </Box>
       </Box>
 
