@@ -3,10 +3,17 @@ import { CreateTradeInQuoteDto } from './dto/create-trade-in-quote.dto';
 import { TradeInService } from './trade-in.service';
 import { TradeInAgreementService } from './trade-in-agreement.service';
 import { SubmitTradeInSignatureDto } from './dto/save-trade-in-agreement.dto';
+import { TradeInVoucherService } from './trade-in-voucher.service';
 
 @Controller('trade-in')
 export class TradeInPublicController {
-  constructor(private readonly tradeInService: TradeInService, private readonly agreements: TradeInAgreementService) {}
+  constructor(private readonly tradeInService: TradeInService, private readonly agreements: TradeInAgreementService, private readonly vouchers: TradeInVoucherService) {}
+
+  @Get('voucher/:token')
+  @Header('Cache-Control', 'no-store')
+  voucher(@Param('token') token: string) {
+    return this.vouchers.publicView(token);
+  }
 
   @Get('sign/:token')
   @Header('Cache-Control', 'no-store')

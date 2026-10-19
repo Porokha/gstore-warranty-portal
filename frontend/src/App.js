@@ -42,6 +42,7 @@ const ReviewsPage = lazy(() => import('./pages/public/ReviewsPage'));
 const AboutPage = lazy(() => import('./pages/public/AboutPage'));
 const ContactPage = lazy(() => import('./pages/public/ContactPage'));
 const TradeInPage = lazy(() => import('./pages/public/TradeInPage'));
+const TradeInVoucherPage = lazy(() => import('./pages/public/TradeInVoucherPage'));
 const MaintenancePage = lazy(() => import('./pages/public/MaintenancePage'));
 const ShopAdminLayout = lazy(() => import('./components/common/ShopAdminLayout'));
 const ShopAdminLoginPage = lazy(() => import('./pages/shop-admin/ShopAdminLoginPage'));
@@ -143,6 +144,7 @@ function AppRoutes() {
           <Routes>
             {/* Public Routes */}
             <Route path="/trade-in/sign/:token" element={<TradeInSignPage />} />
+            <Route path="/trade-in/voucher/:token" element={<TradeInVoucherPage />} />
             <Route path="/trade-in/staff-sign/:token" element={<TradeInStaffSignPage />} />
             {isPublicMaintenanceMode ? (
               <>

@@ -68,3 +68,6 @@
 .zzv-agreement-dialog__preview-modal iframe { width: 100%; height: 100%; border: 0; background: #f2f2f4; }
 .zzv-agreement-dialog__preview-modal .MuiDialogActions-root { border-top: 1px solid var(--zzv-border-subtle); }
 @media (max-width: 650px) { .zzv-agreement-dialog__grid, .zzv-agreement-dialog__signatures { grid-template-columns: 1fr; } .zzv-agreement-dialog__title.MuiDialogTitle-root, .zzv-agreement-dialog__actions.MuiDialogActions-root { padding-inline: 14px; } .zzv-agreement-dialog__body { padding-inline: 12px; } .zzv-agreement-dialog__actions.MuiDialogActions-root > .MuiBox-root { flex-wrap: wrap; } }
+.zzv-agreement-dialog__voucher{display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:18px;border:1px solid #ded6fa;border-radius:12px;background:#f8f5ff}
+.zzv-agreement-dialog__voucher strong{font-size:24px;color:#211446}
+.zzv-agreement-dialog__voucher span{font-size:14px;color:#59546a}

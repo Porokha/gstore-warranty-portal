@@ -20,7 +20,7 @@ describe('Trade-in agreement', () => {
   const quotes = { findOne: jest.fn().mockResolvedValue({ id: 5, status: 'accepted', quote_number: 'TI-5' }) };
   const staffLinks = { findOne: jest.fn() };
   const profiles = { createQueryBuilder: jest.fn(), manager: { transaction: (callback: any) => callback(manager) } };
-  const service = new TradeInAgreementService(agreements as any, quotes as any, {} as any, profiles as any, staffLinks as any, {} as any, {} as any);
+  const service = new TradeInAgreementService(agreements as any, quotes as any, {} as any, profiles as any, staffLinks as any, {} as any, {} as any, {} as any);
 
   beforeEach(() => {
     jest.restoreAllMocks();

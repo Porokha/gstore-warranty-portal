@@ -18,12 +18,28 @@ import { TradeInService } from './trade-in.service';
 import { TradeInAgreementService } from './trade-in-agreement.service';
 import { SaveTradeInAgreementDto, SetRepresentativeSignatureDto, SubmitTradeInSignatureDto } from './dto/save-trade-in-agreement.dto';
 import { SaveStaffSignatureProfileDto, StartStaffSignatureProfileSigningDto } from './dto/staff-signature-profile.dto';
+import { TradeInVoucherService } from './trade-in-voucher.service';
 
 @Controller('shop/admin/trade-in')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
 export class TradeInAdminController {
-  constructor(private readonly tradeInService: TradeInService, private readonly agreements: TradeInAgreementService) {}
+  constructor(private readonly tradeInService: TradeInService, private readonly agreements: TradeInAgreementService, private readonly vouchers: TradeInVoucherService) {}
+
+  @Get('quotes/:id/voucher')
+  voucher(@Param('id', ParseIntPipe) id: number) {
+    return this.vouchers.adminView(id);
+  }
+
+  @Post('quotes/:id/voucher/resend')
+  resendVoucher(@Param('id', ParseIntPipe) id: number) {
+    return this.vouchers.send(id, true);
+  }
+
+  @Post('quotes/:id/voucher/redeem')
+  redeemVoucher(@Param('id', ParseIntPipe) id: number, @Request() req) {
+    return this.vouchers.redeem(id, req.user.id);
+  }
 
   @Get('signature')
   getOwnSignature(@Request() req) {

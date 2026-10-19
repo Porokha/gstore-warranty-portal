@@ -73,6 +73,20 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
   const linkMutation = useMutation(() => tradeInService.createAgreementSigningLink(quote.id));
   const repMutation = useMutation((payload) => tradeInService.setAgreementRepresentativeSignature(quote.id, payload));
   const finalizeMutation = useMutation(() => tradeInService.finalizeAdminAgreement(quote.id));
+  const voucherQuery = useQuery(['trade-in-voucher-admin', quote?.id], () => tradeInService.getAdminVoucher(quote.id), {
+    enabled: Boolean(quote && agreementQuery.data?.finalized_at), retry: false,
+  });
+  const [voucherBusy, setVoucherBusy] = useState(false);
+  const voucherAction = async (action) => {
+    setVoucherBusy(true); setError('');
+    try {
+      if (action === 'redeem' && !window.confirm('ნამდვილად გამოიყენეთ ეს ვაუჩერი? მოქმედება შეუქცევადია.')) return;
+      if (action === 'redeem') await tradeInService.redeemAdminVoucher(quote.id);
+      else await tradeInService.resendAdminVoucher(quote.id);
+      await voucherQuery.refetch();
+    } catch (failure) { setError(failure.response?.data?.message || 'ვაუჩერის მოქმედება ვერ შესრულდა.'); }
+    finally { setVoucherBusy(false); }
+  };
 
   useEffect(() => {
     if (agreementQuery.data && details === null) setDetails(agreementQuery.data.details);
@@ -155,6 +169,7 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
       await finalizeMutation.mutateAsync();
       await agreementQuery.refetch();
       onFinalized();
+      await voucherQuery.refetch();
       try { await printTradeInAgreement(quote.id); }
       catch (_) { setMessage('დასრულებულია, მაგრამ ბეჭდვა ვერ გაიხსნა. გამოიყენეთ ხელახალი ბეჭდვის ღილაკი.'); }
     } catch (failure) { setError(failure.response?.data?.message || 'გაფორმება ვერ დასრულდა.'); }
@@ -173,6 +188,7 @@ const TradeInFinalizeDialog = ({ quote, onClose, onFinalized }) => {
               <section className="zzv-agreement-dialog__section"><h3><span>01</span> გამყიდველი</h3><div className="zzv-agreement-dialog__grid">{fields.slice(0, 4).map(([key, label]) => <div className="zzv-agreement-dialog__field" key={key}><label htmlFor={`agreement-${key}`}>{label} *</label><TextField id={`agreement-${key}`} size="small" fullWidth value={details[key] || ''} disabled={finalized} error={attemptedFinish && missing.includes(key)} onChange={(event) => update(key, event.target.value)} inputProps={{ maxLength: key === 'personal_id' ? 11 : 1000 }} /></div>)}</div></section>
               <section className="zzv-agreement-dialog__section"><h3><span>02</span> მოწყობილობა და ინსპექტირება</h3><div className="zzv-agreement-dialog__grid">{fields.slice(4).map(([key, label]) => <div className="zzv-agreement-dialog__field" key={key}><label htmlFor={`agreement-${key}`}>{label}{['brand_model', 'color', 'included_items', 'defects'].includes(key) ? ' *' : ''}{key === 'imei' || key === 'serial' ? ' (ერთ-ერთი *)' : ''}</label><TextField id={`agreement-${key}`} size="small" fullWidth value={details[key] || ''} disabled={finalized} error={attemptedFinish && (missing.includes(key) || (key === 'serial' && missing.includes('imei')))} onChange={(event) => update(key, event.target.value)} multiline={key === 'defects'} minRows={key === 'defects' ? 2 : undefined} /></div>)}</div><p className="zzv-agreement-dialog__hint">IMEI ან Serial Number-დან ერთ-ერთი სავალდებულოა. თუ დეფექტი არ არის, ჩაწერეთ „არ აქვს“.</p></section>
               <section className="zzv-agreement-dialog__section"><h3><span>03</span> შეთანხმებული ფასი და ანგარიშსწორება</h3><div className="zzv-agreement-dialog__grid"><div className="zzv-agreement-dialog__field"><label htmlFor="agreement-price">ნასყიდობის ფასი (₾) *</label><TextField id="agreement-price" size="small" fullWidth type="number" value={details.final_price ?? ''} disabled={finalized} error={attemptedFinish && missing.includes('final_price')} onChange={(event) => update('final_price', event.target.value)} inputProps={{ min: 0, step: 0.01 }} /></div><div className="zzv-agreement-dialog__field"><label htmlFor="agreement-method">ანგარიშსწორება *</label><TextField id="agreement-method" size="small" fullWidth select value={details.settlement_method || 'cash'} disabled={finalized} onChange={(event) => update('settlement_method', event.target.value)}><MenuItem value="cash">ნაღდი</MenuItem><MenuItem value="bank">საბანკო გადარიცხვა</MenuItem><MenuItem value="gstore_credit">Gstore კრედიტი</MenuItem></TextField></div></div>{details.settlement_method === 'gstore_credit' && <p className="zzv-agreement-dialog__hint">ბონუსი: ₾{Number(details.credit_bonus || 0).toFixed(2)} · ჯამური კრედიტი: ₾{(Number(details.final_price || 0) + Number(details.credit_bonus || 0)).toFixed(2)}. ახალი თანხის ბონუსი შენახვისას გადაითვლება.</p>}</section>
+              {finalized && details.settlement_method === 'gstore_credit' && <section className="zzv-agreement-dialog__section"><h3>Gstore ვაუჩერი</h3>{voucherQuery.isLoading ? <p>იტვირთება...</p> : voucherQuery.data ? <div className="zzv-agreement-dialog__voucher"><strong>{voucherQuery.data.code} · ₾{voucherQuery.data.amount}</strong><span>მოქმედებს {new Date(voucherQuery.data.expires_at).toLocaleDateString('ka-GE')}-მდე · {voucherQuery.data.status === 'active' ? 'აქტიური' : voucherQuery.data.status === 'used' ? 'გამოყენებულია' : 'ვადა ამოიწურა'}</span><span>SMS: {voucherQuery.data.sms_status}</span><Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}><Button href={voucherQuery.data.public_url} target="_blank" rel="noopener noreferrer" variant="outlined">ვაუჩერის ნახვა</Button><Button disabled={voucherBusy || voucherQuery.data.status !== 'active'} onClick={() => voucherAction('resend')}>SMS ხელახლა გაგზავნა</Button><Button disabled={voucherBusy || voucherQuery.data.status !== 'active'} color="warning" onClick={() => voucherAction('redeem')}>გამოყენებულად მონიშვნა</Button></Box></div> : <Alert severity="warning">ვაუჩერი არ მოიძებნა.</Alert>}</section>}
               <section className="zzv-agreement-dialog__section">
                 <h3><span>04</span> ხელმოწერები</h3>
                 <div className="zzv-agreement-dialog__signatures">

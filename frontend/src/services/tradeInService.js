@@ -97,6 +97,26 @@ export const tradeInService = {
     return response.data;
   },
 
+  getVoucher: async (token) => {
+    const response = await api.get(`/trade-in/voucher/${token}`);
+    return response.data;
+  },
+
+  getAdminVoucher: async (id) => {
+    const response = await api.get(`/shop/admin/trade-in/quotes/${id}/voucher`);
+    return response.data;
+  },
+
+  resendAdminVoucher: async (id) => {
+    const response = await api.post(`/shop/admin/trade-in/quotes/${id}/voucher/resend`);
+    return response.data;
+  },
+
+  redeemAdminVoucher: async (id) => {
+    const response = await api.post(`/shop/admin/trade-in/quotes/${id}/voucher/redeem`);
+    return response.data;
+  },
+
   getAdminAgreementPdf: async (id) => {
     const response = await api.get(`/shop/admin/trade-in/quotes/${id}/agreement/pdf`, { responseType: 'blob' });
     return response.data;

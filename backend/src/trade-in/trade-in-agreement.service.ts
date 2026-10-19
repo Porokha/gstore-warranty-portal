@@ -10,6 +10,7 @@ import { TradeInStaffSignature } from './entities/trade-in-staff-signature.entit
 import { TradeInStaffSignatureProfile } from './entities/trade-in-staff-signature-profile.entity';
 import { TradeInStaffSigningLink, StaffSigningPurpose } from './entities/trade-in-staff-signing-link.entity';
 import { TradeInService } from './trade-in.service';
+import { TradeInVoucherService } from './trade-in-voucher.service';
 
 const detailKeys = [
   'seller_name', 'personal_id', 'phone', 'address', 'brand_model', 'storage', 'color',
@@ -48,6 +49,7 @@ export class TradeInAgreementService {
     @InjectRepository(TradeInStaffSigningLink) private readonly staffSigningLinks: Repository<TradeInStaffSigningLink>,
     @InjectRepository(User) private readonly users: Repository<User>,
     private readonly tradeInService: TradeInService,
+    private readonly vouchers: TradeInVoucherService,
   ) {}
 
   private async quote(id: number) {
@@ -428,7 +430,7 @@ export class TradeInAgreementService {
   }
 
   async finalize(quoteId: number, userId: number) {
-    return this.agreements.manager.transaction(async (manager) => {
+    const result = await this.agreements.manager.transaction(async (manager) => {
       const agreement = await this.lockedAgreement(manager, quoteId);
       if (!agreement) throw new NotFoundException('Agreement not found.');
       if (agreement.finalized_at) throw new BadRequestException('Agreement is already finalized.');
@@ -463,8 +465,15 @@ export class TradeInAgreementService {
       quote.pricing_path = pricingPath;
       await manager.save(quote);
       await manager.save(agreement);
+      if (details.settlement_method === 'gstore_credit') {
+        await this.vouchers.issue(manager, quoteId, details.final_price + details.credit_bonus);
+      }
       return this.view(agreement);
     });
+    if (result.details.settlement_method === 'gstore_credit') {
+      await this.vouchers.send(quoteId).catch(() => undefined);
+    }
+    return result;
   }
 
   async getPdf(quoteId: number) {

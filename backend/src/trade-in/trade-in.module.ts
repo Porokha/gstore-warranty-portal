@@ -14,9 +14,13 @@ import { TradeInStaffSigningLink } from './entities/trade-in-staff-signing-link.
 import { TradeInStaffSignatureProfile } from './entities/trade-in-staff-signature-profile.entity';
 import { User } from '../users/entities/user.entity';
 import { TradeInAgreementService } from './trade-in-agreement.service';
+import { TradeInVoucher } from './entities/trade-in-voucher.entity';
+import { TradeInVoucherService } from './trade-in-voucher.service';
+import { SmsModule } from '../sms/sms.module';
 
 @Module({
   imports: [
+    SmsModule,
     TypeOrmModule.forFeature([
       TradeInCategory,
       TradeInProduct,
@@ -24,6 +28,7 @@ import { TradeInAgreementService } from './trade-in-agreement.service';
       TradeInQuote,
       TradeInSetting,
       TradeInAgreement,
+      TradeInVoucher,
       TradeInStaffSignature,
       TradeInStaffSigningLink,
       TradeInStaffSignatureProfile,
@@ -31,6 +36,6 @@ import { TradeInAgreementService } from './trade-in-agreement.service';
     ]),
   ],
   controllers: [TradeInPublicController, TradeInAdminController],
-  providers: [TradeInService, TradeInAgreementService],
+  providers: [TradeInService, TradeInAgreementService, TradeInVoucherService],
 })
 export class TradeInModule {}
