@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { randomBytes, randomInt } from 'crypto';
@@ -69,6 +69,8 @@ export class TradeInVoucherService {
     return {
       ...this.view(voucher), public_url: this.url(voucher), sms_status: voucher.sms_status,
       sms_attempt_count: voucher.sms_attempt_count, sms_last_attempt_at: voucher.sms_last_attempt_at,
+      pos_order_id: voucher.pos_order_id, pos_order_number: voucher.pos_order_number,
+      pos_applied_amount: voucher.pos_applied_amount === null ? null : Number(voucher.pos_applied_amount),
     };
   }
 
@@ -124,5 +126,58 @@ export class TradeInVoucherService {
       .where('quote_id = :quoteId AND redeemed_at IS NULL AND expires_at > :now', { quoteId, now: new Date() }).execute();
     if (!result.affected) throw new BadRequestException('Voucher is missing, used or expired.');
     return this.adminView(quoteId);
+  }
+
+  async validateForPos(code: string) {
+    const voucher = await this.vouchers.findOne({ where: { code } });
+    if (!voucher) return { valid: false, reason: 'not_found' };
+    if (voucher.redeemed_at) return { valid: false, reason: 'used' };
+    if (voucher.expires_at.getTime() <= Date.now()) return { valid: false, reason: 'expired' };
+    return {
+      valid: true, code: voucher.code, amount_gel: Number(voucher.amount),
+      currency: 'GEL', expires_at: voucher.expires_at,
+    };
+  }
+
+  async redeemForPos(input: {
+    code: string;
+    order_id: string;
+    order_number?: string;
+    order_total_gel: number;
+    applied_amount_gel: number;
+  }) {
+    const voucher = await this.vouchers.findOne({ where: { code: input.code } });
+    if (!voucher) throw new NotFoundException('Voucher not found.');
+    const faceValue = Math.round(Number(voucher.amount) * 100);
+    if (Math.round(input.applied_amount_gel * 100) !== faceValue) {
+      throw new BadRequestException('The full voucher amount must be applied.');
+    }
+    if (Math.round(input.order_total_gel * 100) < faceValue) {
+      throw new BadRequestException('Order total is less than the voucher amount.');
+    }
+    if (voucher.redeemed_at) return this.posRedemptionResult(voucher, input.order_id, true);
+    if (voucher.expires_at.getTime() <= Date.now()) throw new ConflictException('Voucher has expired.');
+
+    const redeemedAt = new Date();
+    const result = await this.vouchers.createQueryBuilder().update(TradeInVoucher)
+      .set({
+        redeemed_at: redeemedAt, pos_order_id: input.order_id,
+        pos_order_number: input.order_number || null, pos_applied_amount: voucher.amount,
+      })
+      .where('id = :id AND redeemed_at IS NULL AND expires_at > :now', { id: voucher.id, now: redeemedAt })
+      .execute();
+    if (result.affected) return this.posRedemptionResult({ ...voucher, redeemed_at: redeemedAt, pos_order_id: input.order_id }, input.order_id, false);
+
+    const current = await this.vouchers.findOne({ where: { id: voucher.id } });
+    if (current?.redeemed_at) return this.posRedemptionResult(current, input.order_id, true);
+    throw new ConflictException('Voucher has expired.');
+  }
+
+  private posRedemptionResult(voucher: TradeInVoucher, orderId: string, alreadyRedeemed: boolean) {
+    if (voucher.pos_order_id !== orderId) throw new ConflictException('Voucher was used by another order.');
+    return {
+      success: true, code: voucher.code, amount_gel: Number(voucher.amount), currency: 'GEL',
+      order_id: voucher.pos_order_id, redeemed_at: voucher.redeemed_at, already_redeemed: alreadyRedeemed,
+    };
   }
 }

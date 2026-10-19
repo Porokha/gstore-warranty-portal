@@ -1583,6 +1583,12 @@
     "posWarrantyWebhookSecretHint": "საერთო bearer secret, რომელსაც pos.gstore.ge გამოიყენებს order_upserted event-ების გასაგზავნად",
     "posWarrantyWebhookUrl": "POS order upsert URL",
     "posWarrantyWebhookUrlHint": "ეს webhook მისამართი მიაწოდეთ POS dispatcher-ს warranty portal sync-ისთვის",
+    "posVoucherSection": "POS Trade-in ვაუჩერი",
+    "posVoucherSecret": "ვაუჩერის API საიდუმლო გასაღები",
+    "posVoucherSecretHint": "ცალკე Bearer გასაღები (მინიმუმ 32 სიმბოლო) POS-ში ვაუჩერის შესამოწმებლად და გამოსაყენებლად. შეინახეთ აქ და იგივე მნიშვნელობა მიუთითეთ POS-ის სერვერზე.",
+    "posVoucherGenerate": "უსაფრთხო გასაღების გენერირება",
+    "posVoucherValidateUrl": "ვაუჩერის შემოწმების მისამართი",
+    "posVoucherRedeemUrl": "ვაუჩერის გამოყენების მისამართი",
     "saveSuccess": "API გასაღებები წარმატებით შენახულია!",
     "saveError": "API გასაღებების შენახვა ვერ მოხერხდა",
     "saveButton": "გასაღებების შენახვა"

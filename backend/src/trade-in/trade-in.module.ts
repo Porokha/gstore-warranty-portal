@@ -37,5 +37,6 @@ import { SmsModule } from '../sms/sms.module';
   ],
   controllers: [TradeInPublicController, TradeInAdminController],
   providers: [TradeInService, TradeInAgreementService, TradeInVoucherService],
+  exports: [TradeInVoucherService],
 })
 export class TradeInModule {}

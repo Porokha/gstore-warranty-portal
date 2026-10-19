@@ -37,6 +37,7 @@ const ApiKeysSettings = () => {
     mobilesentrix_connected: false,
     mobilesentrix_webhook_secret: '',
     pos_warranty_webhook_secret: '',
+    pos_trade_in_voucher_secret: '',
   });
   const [mobileSentrixTestQuery, setMobileSentrixTestQuery] = useState('iphone lcd');
   const [mobileSentrixTestResult, setMobileSentrixTestResult] = useState(null);
@@ -66,6 +67,7 @@ const ApiKeysSettings = () => {
         mobilesentrix_connected: Boolean(apiKeys.mobilesentrix_connected),
         mobilesentrix_webhook_secret: apiKeys.mobilesentrix_webhook_secret || '',
         pos_warranty_webhook_secret: apiKeys.pos_warranty_webhook_secret || '',
+        pos_trade_in_voucher_secret: apiKeys.pos_trade_in_voucher_secret || '',
       });
     }
   }, [apiKeys]);
@@ -485,6 +487,30 @@ const ApiKeysSettings = () => {
             InputProps={{ readOnly: true }}
             helperText={t('apiKeys.posWarrantyWebhookUrlHint')}
           />
+        </Grid>
+
+        <Grid item xs={12} sx={{ mt: 2 }}>
+          <Typography variant="h6" gutterBottom>{t('apiKeys.posVoucherSection')}</Typography>
+          <Divider sx={{ mb: 2 }} />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label={t('apiKeys.posVoucherSecret')}
+            value={formData.pos_trade_in_voucher_secret}
+            onChange={(e) => handleChange('pos_trade_in_voucher_secret', e.target.value)}
+            type="password"
+            helperText={t('apiKeys.posVoucherSecretHint')}
+          />
+          <Button sx={{ mt: 1 }} variant="outlined" onClick={() => {
+            const bytes = new Uint8Array(32);
+            window.crypto.getRandomValues(bytes);
+            handleChange('pos_trade_in_voucher_secret', Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join(''));
+          }}>{t('apiKeys.posVoucherGenerate')}</Button>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <TextField fullWidth label={t('apiKeys.posVoucherValidateUrl')} value="https://zezva.ge/api/integrations/pos/trade-in-vouchers/validate" InputProps={{ readOnly: true }} />
+          <TextField sx={{ mt: 2 }} fullWidth label={t('apiKeys.posVoucherRedeemUrl')} value="https://zezva.ge/api/integrations/pos/trade-in-vouchers/redeem" InputProps={{ readOnly: true }} />
         </Grid>
 
         <Grid item xs={12}>

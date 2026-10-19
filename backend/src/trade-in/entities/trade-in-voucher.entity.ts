@@ -26,6 +26,15 @@ export class TradeInVoucher {
   @Column({ nullable: true })
   redeemed_by_user_id: number | null;
 
+  @Column({ type: 'varchar', length: 120, nullable: true })
+  pos_order_id: string | null;
+
+  @Column({ type: 'varchar', length: 120, nullable: true })
+  pos_order_number: string | null;
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
+  pos_applied_amount: string | null;
+
   @Column({ type: 'varchar', length: 16, default: 'pending' })
   sms_status: string;
 

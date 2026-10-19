@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Setting } from './settings.entity';
@@ -55,6 +55,7 @@ export class SettingsService {
     mobilesentrix_connected?: boolean;
     mobilesentrix_webhook_secret?: string;
     pos_warranty_webhook_secret?: string;
+    pos_trade_in_voucher_secret?: string;
   }> {
     const settings = await this.getAll();
     return {
@@ -77,6 +78,7 @@ export class SettingsService {
         Boolean(settings.MOBILESENTRIX_ACCESS_TOKEN_SECRET),
       mobilesentrix_webhook_secret: settings.MOBILESENTRIX_WEBHOOK_SECRET,
       pos_warranty_webhook_secret: settings.POS_WARRANTY_WEBHOOK_SECRET,
+      pos_trade_in_voucher_secret: settings.POS_TRADE_IN_VOUCHER_SECRET,
     };
   }
 
@@ -97,7 +99,11 @@ export class SettingsService {
     mobilesentrix_access_token_secret?: string;
     mobilesentrix_webhook_secret?: string;
     pos_warranty_webhook_secret?: string;
+    pos_trade_in_voucher_secret?: string;
   }): Promise<void> {
+    if (keys.pos_trade_in_voucher_secret && keys.pos_trade_in_voucher_secret.length < 32) {
+      throw new BadRequestException('POS voucher secret must be at least 32 characters.');
+    }
     const mappings = [
       { key: 'WOOCOMMERCE_URL', value: keys.woocommerce_url },
       { key: 'WOOCOMMERCE_CONSUMER_KEY', value: keys.woocommerce_consumer_key },
@@ -115,6 +121,7 @@ export class SettingsService {
       { key: 'MOBILESENTRIX_ACCESS_TOKEN_SECRET', value: keys.mobilesentrix_access_token_secret },
       { key: 'MOBILESENTRIX_WEBHOOK_SECRET', value: keys.mobilesentrix_webhook_secret },
       { key: 'POS_WARRANTY_WEBHOOK_SECRET', value: keys.pos_warranty_webhook_secret },
+      { key: 'POS_TRADE_IN_VOUCHER_SECRET', value: keys.pos_trade_in_voucher_secret },
     ];
 
     for (const mapping of mappings) {

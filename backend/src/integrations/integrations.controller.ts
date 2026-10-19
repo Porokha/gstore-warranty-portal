@@ -20,6 +20,8 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { UserRole } from '../users/entities/user.entity';
 import { PosOrderUpsertDto } from './dto/pos-order-upsert.dto';
 import { IntegrationsService } from './integrations.service';
+import { PosVoucherRedeemDto, PosVoucherValidateDto } from './dto/pos-voucher.dto';
+import { TradeInVoucherService } from '../trade-in/trade-in-voucher.service';
 
 @Controller('integrations')
 export class IntegrationsController {
@@ -28,6 +30,7 @@ export class IntegrationsController {
   constructor(
     private readonly configService: ConfigService,
     private readonly integrationsService: IntegrationsService,
+    private readonly vouchers: TradeInVoucherService,
   ) {}
 
   @Post('mobilesentrix/oauth/connect')
@@ -158,5 +161,25 @@ export class IntegrationsController {
   ) {
     await this.integrationsService.assertPosWebhookAuthorization(authorization);
     return this.integrationsService.handlePosOrderUpsert(payload);
+  }
+
+  @Post('pos/trade-in-vouchers/validate')
+  @HttpCode(HttpStatus.OK)
+  async validatePosVoucher(
+    @Body() payload: PosVoucherValidateDto,
+    @Headers('authorization') authorization?: string,
+  ) {
+    await this.integrationsService.assertPosVoucherAuthorization(authorization);
+    return this.vouchers.validateForPos(payload.code);
+  }
+
+  @Post('pos/trade-in-vouchers/redeem')
+  @HttpCode(HttpStatus.OK)
+  async redeemPosVoucher(
+    @Body() payload: PosVoucherRedeemDto,
+    @Headers('authorization') authorization?: string,
+  ) {
+    await this.integrationsService.assertPosVoucherAuthorization(authorization);
+    return this.vouchers.redeemForPos(payload);
   }
 }

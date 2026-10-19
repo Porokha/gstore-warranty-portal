@@ -10,6 +10,7 @@ import { IntegrationsController } from './integrations.controller';
 import { IntegrationsService } from './integrations.service';
 import { PosWarrantyInboundEvent } from './entities/pos-warranty-inbound-event.entity';
 import { MobileSentrixSyncJob } from './entities/mobilesentrix-sync-job.entity';
+import { TradeInModule } from '../trade-in/trade-in.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { MobileSentrixSyncJob } from './entities/mobilesentrix-sync-job.entity';
     SettingsModule,
     SmsModule,
     WarrantiesModule,
+    TradeInModule,
   ],
   controllers: [IntegrationsController],
   providers: [IntegrationsService],

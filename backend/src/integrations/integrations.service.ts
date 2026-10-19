@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
+import { timingSafeEqual } from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
@@ -170,6 +171,19 @@ export class IntegrationsService implements OnModuleInit, OnModuleDestroy {
     const token = bearer.slice(7).trim();
     if (!token || token !== secret) {
       throw new UnauthorizedException('Invalid bearer token');
+    }
+  }
+
+  async assertPosVoucherAuthorization(authorizationHeader?: string): Promise<void> {
+    const secret = (await this.settingsService.get('POS_TRADE_IN_VOUCHER_SECRET')) ||
+      this.configService.get<string>('POS_TRADE_IN_VOUCHER_SECRET') || '';
+    if (secret.length < 32) throw new ServiceUnavailableException('POS voucher integration is not configured securely.');
+    const bearer = authorizationHeader?.trim() || '';
+    if (!bearer.startsWith('Bearer ')) throw new UnauthorizedException('Missing bearer token.');
+    const supplied = Buffer.from(bearer.slice(7).trim());
+    const expected = Buffer.from(secret);
+    if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) {
+      throw new UnauthorizedException('Invalid bearer token.');
     }
   }
 

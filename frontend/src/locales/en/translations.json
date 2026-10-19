@@ -1583,6 +1583,12 @@
     "posWarrantyWebhookSecretHint": "Shared bearer secret used by pos.gstore.ge when sending order_upserted events",
     "posWarrantyWebhookUrl": "POS Order Upsert URL",
     "posWarrantyWebhookUrlHint": "Give this webhook endpoint to the POS dispatcher for warranty portal sync",
+    "posVoucherSection": "POS Trade-in Voucher",
+    "posVoucherSecret": "Voucher API secret",
+    "posVoucherSecretHint": "Separate bearer secret (at least 32 characters) for POS voucher validation and redemption. Save it here and configure the same value on the POS server.",
+    "posVoucherGenerate": "Generate secure secret",
+    "posVoucherValidateUrl": "Validate voucher URL",
+    "posVoucherRedeemUrl": "Redeem voucher URL",
     "saveSuccess": "API keys saved successfully!",
     "saveError": "Failed to save API keys",
     "saveButton": "Save API Keys"
