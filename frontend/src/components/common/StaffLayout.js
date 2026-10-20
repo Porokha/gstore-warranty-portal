@@ -309,14 +309,18 @@ const StaffLayout = () => {
             py: 1,
           }}
         >
-          {!sidebarCollapsed && (
+          {sidebarCollapsed ? (
+            <Box component="img" src="/brand-logotype-original.svg" alt="ZEZVA" sx={{ width: 32, height: 32 }} />
+          ) : (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Box component="img" src="/figma-staff/dashboard-logo.svg" alt="ZEZVA" width={99} height={16} />
             </Box>
           )}
-          <IconButton onClick={toggleSidebar} size="small" aria-label={sidebarCollapsed ? 'Expand navigation' : 'Collapse navigation'} sx={{ color: '#9c97ae', width: 36, height: 36, borderRadius: '8px' }}>
-            <Box component="img" src="/figma-staff/nav-collapse.svg" alt="" width={20} height={20} sx={{ transform: sidebarCollapsed ? 'rotate(180deg)' : 'none' }} />
-          </IconButton>
+          {!sidebarCollapsed && (
+            <IconButton onClick={toggleSidebar} size="small" aria-label="Collapse navigation" sx={{ color: '#9c97ae', width: 36, height: 36, borderRadius: '8px' }}>
+              <Box component="img" src="/figma-staff/nav-collapse.svg" alt="" width={20} height={20} />
+            </IconButton>
+          )}
         </Toolbar>
         
         <Box 
@@ -451,6 +455,27 @@ const StaffLayout = () => {
         </Box>
 
       </Drawer>
+
+      {sidebarCollapsed && (
+        <IconButton
+          onClick={toggleSidebar}
+          size="small"
+          aria-label="Expand navigation"
+          sx={{
+            position: 'fixed',
+            top: 19,
+            left: COLLAPSED_DRAWER_WIDTH,
+            zIndex: (theme) => theme.zIndex.drawer + 2,
+            width: 28,
+            height: 30,
+            bgcolor: '#14121c',
+            borderRadius: '0 8px 8px 0',
+            '&:hover': { bgcolor: '#322c3d' },
+          }}
+        >
+          <Box component="img" src="/figma-staff/nav-collapse.svg" alt="" width={18} height={18} sx={{ transform: 'rotate(180deg)' }} />
+        </IconButton>
+      )}
 
       {/* Main Content Area */}
       <Box sx={{ flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column', maxWidth: '100%', overflow: 'hidden' }}>
