@@ -182,6 +182,7 @@ const CreateCasePage = () => {
     {
       onSuccess: (data) => {
         queryClient.invalidateQueries('cases');
+        queryClient.invalidateQueries('partners');
         printServiceCaseLabel(data, {
           customerName: [formData.customer_name, formData.customer_last_name]
             .filter(Boolean)
@@ -249,30 +250,18 @@ const CreateCasePage = () => {
       return;
     }
 
-    let partnerId = selectedPartner?.id;
-    if (isPartnerCase && partnerMode === 'new') {
-      try {
-        const createdPartner = await partnersService.create({
-          name: partnerForm.name.trim(),
-          contact_person: partnerForm.contact_person.trim() || undefined,
-          phone: partnerForm.phone.trim() || undefined,
-          email: partnerForm.email.trim() || undefined,
-          notes: partnerForm.notes.trim() || undefined,
-          active: true,
-        });
-        partnerId = createdPartner.id;
-        queryClient.invalidateQueries('partners');
-      } catch (partnerError) {
-        setError(partnerError.response?.data?.message || t('partners.createFailed') || 'Failed to create partner');
-        return;
-      }
-    }
-
     // Build submit data, converting empty strings to undefined
     const submitData = {
       warranty_id: formData.warranty_id ? parseInt(formData.warranty_id) : undefined,
       case_type: isPartnerCase ? 'partner' : 'standard',
-      partner_id: isPartnerCase ? partnerId : undefined,
+      partner_id: isPartnerCase && partnerMode === 'existing' ? selectedPartner?.id : undefined,
+      new_partner: isPartnerCase && partnerMode === 'new' ? {
+        name: partnerForm.name.trim(),
+        contact_person: partnerForm.contact_person.trim() || undefined,
+        phone: partnerForm.phone.trim() || undefined,
+        email: partnerForm.email.trim() || undefined,
+        notes: partnerForm.notes.trim() || undefined,
+      } : undefined,
       sku: formData.sku,
       imei: formData.imei || undefined,
       serial_number: formData.serial_number,

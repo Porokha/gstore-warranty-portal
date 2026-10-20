@@ -39,6 +39,9 @@ export class PaymentsService {
         case_.status_level !== CaseStatusLevel.COMPLETED) {
       throw new BadRequestException('Offers can only be created for pending or completed cases');
     }
+    if (case_.result_type !== createOfferDto.offer_type) {
+      throw new BadRequestException('Offer must match the case result');
+    }
 
     if (
       createOfferDto.offer_type === 'payable' &&
@@ -227,9 +230,16 @@ export class PaymentsService {
     if (payment.offer_type !== ResultType.PAYABLE) {
       throw new BadRequestException('Only payable offers can be marked as failed');
     }
+    if (payment.payment_status !== PaymentStatus.PENDING) {
+      throw new BadRequestException('Only pending payments can be marked as failed');
+    }
 
-    payment.payment_status = PaymentStatus.FAILED;
-    return this.paymentsRepository.save(payment);
+    const updated = await this.paymentsRepository.update(
+      { id: paymentId, payment_status: PaymentStatus.PENDING },
+      { payment_status: PaymentStatus.FAILED },
+    );
+    if (!updated.affected) throw new BadRequestException('Payment is no longer pending');
+    return this.findOne(paymentId);
   }
 
   async sendPaymentReminder(paymentId: number): Promise<CasePayment> {

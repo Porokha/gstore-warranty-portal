@@ -30,7 +30,8 @@ export class PaymentsController {
 
   // Protected routes (staff only)
   @Post('cases/:caseId/offers')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.TECH_MANAGER, UserRole.SUPER_TECHNICIAN)
   createOffer(
     @Param('caseId', ParseIntPipe) caseId: number,
     @Body() createOfferDto: CreateOfferDto,
@@ -101,7 +102,8 @@ export class PaymentsController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.TECH_MANAGER, UserRole.SUPER_TECHNICIAN)
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.paymentsService.remove(id);

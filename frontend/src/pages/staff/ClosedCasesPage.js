@@ -43,18 +43,22 @@ const ClosedCasesPage = () => {
     technician_id: searchParams.get('technician_id') || '',
     search: searchParams.get('search') || '',
   });
+  const [page, setPage] = useState(1);
 
-  const { data: cases, isLoading } = useQuery(
-    ['cases', 'closed', filters],
-    () => casesService.getAll(filters),
+  const { data, isLoading, isError } = useQuery(
+    ['cases', 'closed', filters, page],
+    () => casesService.getAll({ ...filters, page, limit: 50 }),
     {
-      keepPreviousData: true,
+      keepPreviousData: false,
     }
   );
+  const cases = data?.data || [];
+  const total = Number(data?.total || 0);
 
   const handleFilterChange = (key, value) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
+    setPage(1);
     
     const params = new URLSearchParams();
     Object.keys(newFilters).forEach((k) => {
@@ -210,6 +214,12 @@ const ClosedCasesPage = () => {
           </TableBody>
         </Table>
       </TableContainer>
+      {isError && <p role="alert">{t('common.errorLoading')}</p>}
+      {total > 50 && <Box display="flex" justifyContent="flex-end" alignItems="center" gap={2} p={2}>
+        <Button disabled={page === 1} onClick={() => setPage(page - 1)}>{t('common.previous')}</Button>
+        <span>{page} / {Math.ceil(total / 50)}</span>
+        <Button disabled={page * 50 >= total} onClick={() => setPage(page + 1)}>{t('common.next')}</Button>
+      </Box>}
     </div>
   );
 };

@@ -1,9 +1,11 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { CaseStatusLevel, CaseType, ResultType, ServiceCase } from './entities/service-case.entity';
 import { CasePayment } from '../payments/entities/case-payment.entity';
 import { CaseStatusHistory } from './entities/case-status-history.entity';
 import { AuditLog } from '../audit/entities/audit-log.entity';
 import { CasesService } from './cases.service';
+import { Partner } from '../partners/entities/partner.entity';
+import { CasesController } from './cases.controller';
 
 describe('CasesService partner cases', () => {
   it('does not create a new case for an archived partner', async () => {
@@ -43,6 +45,80 @@ describe('CasesService partner cases', () => {
     } as any, 1)).rejects.toThrow(BadRequestException);
     expect(partnerQuery.setLock).toHaveBeenCalledWith('pessimistic_write');
     expect(save).not.toHaveBeenCalled();
+  });
+});
+
+describe('CasesService creation', () => {
+  it('allocates case numbers from a locked database counter', async () => {
+    const query = jest.fn().mockResolvedValueOnce([{ last_number: 509 }]).mockResolvedValueOnce([]);
+    const service = new CasesService({} as any, {} as any, {} as any, {} as any, {} as any, {} as any, {} as any, {} as any);
+    expect(await service.generateCaseNumber({ query } as any)).toBe('SCN-000510');
+    expect(query.mock.calls[0][0]).toContain('FOR UPDATE');
+    expect(query.mock.calls[1]).toEqual(['UPDATE case_number_sequence SET last_number = ? WHERE id = 1', [510]]);
+  });
+
+  it('saves a new partner, case and initial note in one transaction', async () => {
+    const saved: string[] = [];
+    const manager = {
+      getRepository: (entity: any) => entity === Partner
+        ? { create: (value: any) => value, save: async (value: any) => { saved.push('partner'); return { ...value, id: 12 }; } }
+        : entity === ServiceCase
+          ? { save: async (value: any) => { saved.push('case'); return { ...value, id: 44 }; } }
+          : { create: (value: any) => value, save: async () => { saved.push('history'); } },
+    };
+    const transaction = jest.fn((callback) => callback(manager));
+    const service = new CasesService(
+      { create: (value: any) => value, manager: { transaction } } as any,
+      {} as any, {} as any,
+      { findById: jest.fn().mockResolvedValue({ id: 1, role: 'admin' }) } as any,
+      {} as any, {} as any, {} as any, {} as any,
+    );
+    jest.spyOn(service, 'generateCaseNumber').mockResolvedValue('SCN-000510');
+    const result = await service.create({
+      case_type: CaseType.PARTNER, new_partner: { name: 'Partner' },
+      device_type: 'Laptop', sku: 'A', serial_number: 'B', product_title: 'Device', customer_initial_note: 'Check screen',
+    } as any, 1);
+    expect(transaction).toHaveBeenCalledTimes(1);
+    expect(saved).toEqual(['partner', 'case', 'history']);
+    expect(result.partner_id).toBe(12);
+  });
+});
+
+describe('Case list pagination and filters', () => {
+  it('applies pagination before returning rows', async () => {
+    const query = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      getManyAndCount: jest.fn().mockResolvedValue([[{ id: 4 }], 121]),
+    };
+    const service = new CasesService({ createQueryBuilder: () => query } as any, {} as any, {} as any, {} as any, {} as any, {} as any, {} as any, {} as any);
+    await expect(service.findPage({}, 3, 25)).resolves.toEqual({ data: [{ id: 4 }], total: 121, page: 3, limit: 25 });
+    expect(query.skip).toHaveBeenCalledWith(50);
+    expect(query.take).toHaveBeenCalledWith(25);
+  });
+
+  it('keeps a comma-separated technician status filter intact', async () => {
+    const service = { findAll: jest.fn().mockResolvedValue([]) };
+    const controller = new CasesController(service as any, {} as any);
+    await (controller.findAll as any)('1,2,3', undefined, undefined, undefined, undefined, undefined,
+      undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined,
+      { user: { role: 'technician' } });
+    expect(service.findAll).toHaveBeenCalledWith(expect.objectContaining({ status: [1, 2, 3] }));
+  });
+});
+
+describe('CasesService assignment permissions', () => {
+  it('rejects technician reassignment even when the API is called directly', async () => {
+    const cases = { findOne: jest.fn().mockResolvedValue({ id: 5, assigned_technician_id: 1 }), save: jest.fn() };
+    const service = new CasesService(
+      cases as any, {} as any, {} as any,
+      { findById: jest.fn().mockResolvedValue({ id: 1, role: 'technician' }) } as any,
+      {} as any, {} as any, {} as any, {} as any,
+    );
+    await expect(service.update(5, { assigned_technician_id: 2 } as any, 1)).rejects.toThrow(ForbiddenException);
+    expect(cases.save).not.toHaveBeenCalled();
   });
 });
 

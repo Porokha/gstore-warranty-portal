@@ -11,6 +11,7 @@ import {
   Request,
   ParseIntPipe,
   Header,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -45,20 +46,24 @@ export class CasesController {
     @Query('end_date') end_date?: string,
     @Query('closeToDeadline') closeToDeadline?: string,
     @Query('due') due?: string,
+    @Query('case_scope') caseScope?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
     @Request() req?,
   ) {
     const filters: any = {};
     
     // Parse status - validate it's a valid number
     if (status !== undefined && status !== null && status !== '') {
-      const statusNum = parseInt(status, 10);
-      if (!isNaN(statusNum) && statusNum >= 1 && statusNum <= 4) {
-        filters.status = statusNum as CaseStatusLevel;
-      } else if (status.includes(',')) {
-        // Handle comma-separated statuses
+      if (status.includes(',')) {
         const statuses = status.split(',').map(s => parseInt(s.trim(), 10)).filter(s => !isNaN(s) && s >= 1 && s <= 4);
         if (statuses.length > 0) {
           filters.status = statuses;
+        }
+      } else {
+        const statusNum = Number(status);
+        if (Number.isInteger(statusNum) && statusNum >= 1 && statusNum <= 4) {
+          filters.status = statusNum as CaseStatusLevel;
         }
       }
     }
@@ -66,6 +71,8 @@ export class CasesController {
     if (result) filters.result = result;
     if (priority) filters.priority = priority;
     if (case_type && Object.values(CaseType).includes(case_type)) filters.case_type = case_type;
+    if (caseScope === 'standard') filters.case_type = CaseType.STANDARD;
+    if (caseScope === 'partner') filters.case_type = CaseType.PARTNER;
     if (device_type) filters.device_type = device_type;
     
     // Parse technician_id - validate it's a valid number
@@ -87,6 +94,14 @@ export class CasesController {
       filters.excludePendingFromDeadline = true;
     }
 
+    if (page !== undefined) {
+      const pageNumber = Number(page);
+      const pageLimit = limit === undefined ? 25 : Number(limit);
+      if (!Number.isInteger(pageNumber) || pageNumber < 1 || !Number.isInteger(pageLimit) || pageLimit < 1 || pageLimit > 500) {
+        throw new BadRequestException('Invalid case pagination');
+      }
+      return this.casesService.findPage(filters, pageNumber, pageLimit);
+    }
     return this.casesService.findAll(filters);
   }
 
@@ -97,8 +112,6 @@ export class CasesController {
 
   @Post()
   create(@Body() createDto: CreateCaseDto, @Request() req) {
-    // Log received data for debugging
-    console.log('Received case creation request:', JSON.stringify(createDto, null, 2));
     return this.casesService.create(createDto, req.user.id);
   }
 

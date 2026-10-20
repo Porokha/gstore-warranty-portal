@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan, MoreThan, Like, In } from 'typeorm';
+import { EntityManager, Repository, LessThan, MoreThan, Like, In } from 'typeorm';
 import { CaseType, ServiceCase, CaseStatusLevel, ResultType, Priority } from './entities/service-case.entity';
 import { CaseStatusHistory } from './entities/case-status-history.entity';
 import { CreateCaseDto } from './dto/create-case.dto';
@@ -27,6 +27,23 @@ import { Partner } from '../partners/entities/partner.entity';
 import { PickupService } from './pickup.service';
 import { AuditLog } from '../audit/entities/audit-log.entity';
 
+type CaseListFilters = {
+  status?: CaseStatusLevel | CaseStatusLevel[];
+  result?: ResultType;
+  priority?: Priority;
+  case_type?: CaseType;
+  device_type?: string;
+  technician_id?: number;
+  tags?: string[];
+  search?: string;
+  customer?: string;
+  start_date?: Date;
+  end_date?: Date;
+  closeToDeadline?: boolean;
+  due?: boolean;
+  excludePendingFromDeadline?: boolean;
+};
+
 @Injectable()
 export class CasesService {
   constructor(
@@ -43,21 +60,12 @@ export class CasesService {
     private pickupService: PickupService,
   ) {}
 
-  async generateCaseNumber(): Promise<string> {
-    const lastCase = await this.casesRepository.findOne({
-      where: {},
-      order: { id: 'DESC' },
-    });
-
-    let nextNumber = 1;
-    if (lastCase && lastCase.case_number) {
-      const match = lastCase.case_number.match(/SCN-(\d+)/);
-      if (match) {
-        nextNumber = parseInt(match[1], 10) + 1;
-      }
-    }
-
-    return `SCN-${nextNumber.toString().padStart(6, '0')}`;
+  async generateCaseNumber(manager: EntityManager): Promise<string> {
+    const [counter] = await manager.query('SELECT last_number FROM case_number_sequence WHERE id = 1 FOR UPDATE');
+    if (!counter) throw new Error('Case number sequence is not initialized');
+    const nextNumber = Number(counter.last_number) + 1;
+    await manager.query('UPDATE case_number_sequence SET last_number = ? WHERE id = 1', [nextNumber]);
+    return `SCN-${String(nextNumber).padStart(6, '0')}`;
   }
 
   async create(createDto: CreateCaseDto, createdBy: number): Promise<ServiceCase> {
@@ -68,7 +76,7 @@ export class CasesService {
       throw new BadRequestException('IMEI is required for phone devices');
     }
 
-    if (isPartnerCase && !createDto.partner_id) {
+    if (isPartnerCase && Boolean(createDto.partner_id) === Boolean(createDto.new_partner)) {
       throw new BadRequestException('Partner is required for partner service cases');
     }
 
@@ -77,7 +85,6 @@ export class CasesService {
       throw new NotFoundException('User not found');
     }
 
-    const caseNumber = await this.generateCaseNumber();
     const now = new Date();
     const deadlineDays = createDto.deadline_days || 14; // Default 14 days
     const deadlineAt = new Date(now.getTime() + deadlineDays * 24 * 60 * 60 * 1000);
@@ -85,7 +92,7 @@ export class CasesService {
       user.role === UserRole.TECHNICIAN ? user.id : createDto.assigned_technician_id;
 
     const newCase = this.casesRepository.create({
-      case_number: caseNumber,
+      case_number: '',
       warranty_id: createDto.warranty_id,
       case_type: createDto.case_type || CaseType.STANDARD,
       partner_id: createDto.partner_id,
@@ -110,31 +117,34 @@ export class CasesService {
       created_by: createdBy,
     });
 
-    const savedCase = isPartnerCase
-      ? await this.casesRepository.manager.transaction(async (manager) => {
-          const partner = await manager.getRepository(Partner)
-            .createQueryBuilder('partner')
+    const savedCase = await this.casesRepository.manager.transaction(async (manager) => {
+      if (isPartnerCase) {
+        const partners = manager.getRepository(Partner);
+        if (createDto.new_partner) {
+          const partner = await partners.save(partners.create({ ...createDto.new_partner, active: true }));
+          newCase.partner_id = partner.id;
+        } else {
+          const partner = await partners.createQueryBuilder('partner')
             .setLock('pessimistic_write')
             .where('partner.id = :id', { id: createDto.partner_id })
             .getOne();
-          if (!partner || partner.archived_at) {
-            throw new BadRequestException('Partner is unavailable');
-          }
-          return manager.getRepository(ServiceCase).save(newCase);
-        })
-      : await this.casesRepository.save(newCase);
-
-    // Create initial history entry
-    await this.createHistoryEntry(
-      savedCase.id,
-      createdBy,
-      null,
-      CaseStatusLevel.OPENED,
-      null,
-      null,
-      null,
-      createDto.customer_initial_note || null,
-    );
+          if (!partner || partner.archived_at) throw new BadRequestException('Partner is unavailable');
+        }
+      }
+      newCase.case_number = await this.generateCaseNumber(manager);
+      const saved = await manager.getRepository(ServiceCase).save(newCase);
+      const histories = manager.getRepository(CaseStatusHistory);
+      await histories.save(histories.create({
+        case_id: saved.id,
+        changed_by: createdBy,
+        previous_status_level: null,
+        new_status_level: CaseStatusLevel.OPENED,
+        previous_result: null,
+        new_result: null,
+        note_private: createDto.customer_initial_note || null,
+      }));
+      return saved;
+    });
 
     // Send SMS notification when case is opened
     if (!this.isPartnerCase(savedCase) && savedCase.customer_phone) {
@@ -163,23 +173,7 @@ export class CasesService {
     return savedCase;
   }
 
-  async findAll(filters?: {
-    status?: CaseStatusLevel | CaseStatusLevel[];
-    result?: ResultType;
-    priority?: Priority;
-    case_type?: CaseType;
-    device_type?: string;
-    technician_id?: number;
-    tags?: string[];
-    search?: string;
-    customer?: string;
-    start_date?: Date;
-    end_date?: Date;
-    closeToDeadline?: boolean;
-    due?: boolean;
-    excludePendingFromDeadline?: boolean;
-  }): Promise<ServiceCase[]> {
-    try {
+  private buildCaseQuery(filters?: CaseListFilters) {
       const query = this.casesRepository.createQueryBuilder('sc')
         .leftJoinAndSelect('sc.assigned_technician', 'technician')
         .leftJoinAndSelect('sc.warranty', 'warranty')
@@ -330,11 +324,19 @@ export class CasesService {
         query.andWhere('sc.opened_at <= :end_date', { end_date: filters.end_date });
       }
 
-      return await query.getMany();
-    } catch (error) {
-      console.error('Error in findAll cases:', error);
-      throw error;
-    }
+      return query;
+  }
+
+  async findAll(filters?: CaseListFilters): Promise<ServiceCase[]> {
+    return this.buildCaseQuery(filters).getMany();
+  }
+
+  async findPage(filters: CaseListFilters, page: number, limit: number) {
+    const [data, total] = await this.buildCaseQuery(filters)
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+    return { data, total, page, limit };
   }
 
   async findOne(id: number): Promise<ServiceCase> {
@@ -367,8 +369,11 @@ export class CasesService {
 
     // Technicians can only update limited fields.
     if (!isManagementRole(user.role) && isTechnicianRole(user.role)) {
+      if (updateDto.assigned_technician_id !== undefined) {
+        throw new ForbiddenException('Technicians cannot reassign cases');
+      }
       // Technicians can only update limited fields
-      const allowedFields = ['assigned_technician_id', 'priority', 'tags'];
+      const allowedFields = ['priority', 'tags'];
       Object.keys(updateDto).forEach((key) => {
         if (!allowedFields.includes(key)) {
           delete updateDto[key];

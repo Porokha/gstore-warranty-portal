@@ -1,6 +1,8 @@
 import { Controller, Get, Query, UseGuards, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { DashboardService } from './dashboard.service';
+import { Request } from '@nestjs/common';
+import { UserRole } from '../users/entities/user.entity';
 
 @Controller('dashboard')
 @UseGuards(JwtAuthGuard)
@@ -14,6 +16,7 @@ export class DashboardController {
     @Query('start') start?: string,
     @Query('end') end?: string,
     @Query('device_type') deviceType?: string,
+    @Request() req?: any,
   ) {
     try {
       const timeFilter =
@@ -25,6 +28,10 @@ export class DashboardController {
           : undefined;
 
       const stats = await this.dashboardService.getDashboardStats(timeFilter);
+      if (req.user.role !== UserRole.ADMIN && req.user.role !== UserRole.SUPER_TECHNICIAN) {
+        delete stats.timeFiltered.totalMoneyIn;
+        delete stats.timeFiltered.totalPayments;
+      }
       
       // If device type is specified, get average completion time for that device type
       if (deviceType) {

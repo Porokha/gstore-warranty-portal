@@ -1,5 +1,7 @@
-import { IsString, IsNotEmpty, IsOptional, IsInt, IsEnum, IsArray, ValidateIf } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsInt, IsEnum, IsArray, ValidateIf, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 import { CaseType, Priority } from '../entities/service-case.entity';
+import { CreatePartnerDto } from '../../partners/dto/create-partner.dto';
 
 export class CreateCaseDto {
   @IsOptional()
@@ -13,6 +15,11 @@ export class CreateCaseDto {
   @IsOptional()
   @IsInt()
   partner_id?: number;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CreatePartnerDto)
+  new_partner?: CreatePartnerDto;
 
   @IsString()
   @IsNotEmpty()

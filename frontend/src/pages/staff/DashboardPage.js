@@ -153,7 +153,7 @@ const DashboardPage = () => {
   );
   const { data: recentCases = [], isLoading: casesLoading } = useQuery(
     'recent-cases',
-    () => casesService.getAll({ limit: 5, sort: 'opened_at', order: 'DESC' }),
+    () => casesService.getAll({ page: 1, limit: 5 }),
     {
       refetchInterval: 30000,
       select: (data) => Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [],

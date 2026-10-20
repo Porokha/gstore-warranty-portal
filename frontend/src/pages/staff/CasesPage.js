@@ -13,10 +13,7 @@ const scopes = ['all', 'standard', 'partner'];
 const periods = ['all', 'today', 'yesterday', 'last30'];
 const sizes = [25, 50, 100, 250];
 
-const apiDate = (date) => {
-  const pad = (value) => String(value).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-};
+const apiDate = (date) => date.toISOString();
 const periodDates = (period) => {
   if (period === 'all') return {};
   const start = new Date();
@@ -71,13 +68,14 @@ const CasesPage = () => {
     return sizes.includes(stored) ? stored : 25;
   });
   const queryFilters = useMemo(() => {
-    const { case_scope, time_range, ...rest } = filters;
+    const { time_range, ...rest } = filters;
     return filters.search.trim() ? rest : { ...rest, ...periodDates(time_range) };
   }, [filters]);
+  const requestSize = pageSize === 'all' ? 500 : pageSize;
   const { data, isLoading, isFetching, isError } = useQuery(
-    ['cases', queryFilters],
-    () => casesService.getAll(queryFilters),
-    { keepPreviousData: true, staleTime: 30_000 },
+    ['cases', queryFilters, page, requestSize],
+    () => casesService.getAll({ ...queryFilters, page, limit: requestSize }),
+    { keepPreviousData: false, staleTime: 30_000 },
   );
   const allRows = useMemo(() => {
     if (Array.isArray(data)) return data;
@@ -85,17 +83,18 @@ const CasesPage = () => {
     if (Array.isArray(data?.data?.data)) return data.data.data;
     return [];
   }, [data]);
-  const rows = useMemo(() => allRows.filter((row) => filters.case_scope === 'all'
-    || (filters.case_scope === 'partner' ? row.case_type === 'partner' : row.case_type !== 'partner')), [allRows, filters.case_scope]);
-  const allAllowed = rows.length <= 500;
-  const effectiveSize = pageSize === 'all' && allAllowed ? Math.max(rows.length, 1) : pageSize === 'all' ? 25 : pageSize;
-  const pageCount = Math.max(1, Math.ceil(rows.length / effectiveSize));
-  const visible = rows.slice((page - 1) * effectiveSize, page * effectiveSize);
+  const rows = allRows;
+  const total = Number(data?.total ?? rows.length);
+  const allAllowed = total <= 500;
+  const effectiveSize = requestSize;
+  const pageCount = Math.max(1, Math.ceil(total / effectiveSize));
+  const visible = rows;
   const selectedPage = visible.length > 0 && visible.every((row) => selected.includes(row.id));
   const hasFilters = Boolean(filters.search || filters.customer || filters.status || filters.result || filters.priority || filters.device_type || filters.technician_id || filters.due || filters.closeToDeadline || filters.time_range !== 'all');
 
-  useEffect(() => { setPage(1); setSelected([]); }, [queryFilters, filters.case_scope]);
-  useEffect(() => { if (page > pageCount) setPage(pageCount); }, [page, pageCount]);
+  useEffect(() => { setPage(1); setSelected([]); }, [queryFilters]);
+  useEffect(() => { setSelected([]); }, [page]);
+  useEffect(() => { if (data && page > pageCount) setPage(pageCount); }, [data, page, pageCount]);
   useEffect(() => {
     if (pageSize === 'all' && !allAllowed) {
       setPageSize(25);
@@ -181,7 +180,7 @@ const CasesPage = () => {
     <nav className="zzv-case-list__tabs" aria-label={t('case.caseType')}>
         {scopes.map((scope) => <button key={scope} type="button" className={filters.case_scope === scope ? 'is-active' : ''} onClick={() => changeFilter('case_scope', scope)}>
         {t(scope === 'all' ? 'case.listAll' : scope === 'partner' ? 'case.listPartner' : 'case.listStandard')}
-        <span>{scope === 'all' ? allRows.length : allRows.filter((row) => scope === 'partner' ? row.case_type === 'partner' : row.case_type !== 'partner').length}</span>
+        {filters.case_scope === scope && <span>{total}</span>}
       </button>)}
     </nav>
     <div className="zzv-case-list__search"><img src={icon('search')} alt="" /><input type="search" value={filters.search} onChange={(event) => changeFilter('search', event.target.value)} placeholder={t('case.listSearchPlaceholder')} aria-label={t('common.search')} />{isFetching && !isLoading && <CircularProgress size={16} />}</div>
@@ -230,7 +229,7 @@ const CasesPage = () => {
         </tr>;
       })}</tbody></table></div>
       <footer className="zzv-case-list__pagination">
-        <span>{t('case.rangeOfTotal', { from: (page - 1) * effectiveSize + 1, to: Math.min(page * effectiveSize, rows.length), total: rows.length })}</span>
+        <span>{t('case.rangeOfTotal', { from: (page - 1) * effectiveSize + 1, to: Math.min(page * effectiveSize, total), total })}</span>
         <div><label><span className="zzv-case-list__sr-only">{t('case.pageSize')}</span><select value={pageSize} onChange={(event) => { const size = event.target.value === 'all' ? 'all' : Number(event.target.value); setPageSize(size); localStorage.setItem('cases-table_pageSize', String(size)); setPage(1); setSelected([]); }}>{sizes.map((size) => <option key={size} value={size}>{size} {t('case.perPage')}</option>)}<option value="all" disabled={!allAllowed}>{t('case.timeAll')}</option></select></label>
           <button type="button" disabled={page === 1} onClick={() => setPage(page - 1)}><img src={icon('back')} alt="" />{t('common.previous')}</button>
           <button type="button" disabled={page === pageCount} onClick={() => setPage(page + 1)}>{t('common.next')}<img src={icon('next')} alt="" /></button></div>

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from 'react-query';
@@ -10,6 +10,7 @@ import {
   CircularProgress,
   IconButton,
   Tooltip,
+  Button,
 } from '@mui/material';
 import {
   FolderOpen as ActiveCasesIcon,
@@ -54,6 +55,7 @@ const MyCasesPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const technicianId = user?.id;
+  const [page, setPage] = useState(1);
 
   const activeFilters = useMemo(
     () => ({ technician_id: technicianId, status: [1, 2, 3] }),
@@ -74,25 +76,25 @@ const MyCasesPage = () => {
 
   const { data: activeCases, isLoading: isLoadingActive } = useQuery(
     ['technician-cases', 'active', technicianId],
-    () => casesService.getAll(activeFilters),
+    () => casesService.getAll({ ...activeFilters, page: 1, limit: 1 }),
     { enabled: Boolean(technicianId) },
   );
 
   const { data: dueCases, isLoading: isLoadingDue } = useQuery(
     ['technician-cases', 'due', technicianId],
-    () => casesService.getAll(dueFilters),
+    () => casesService.getAll({ ...dueFilters, page: 1, limit: 1 }),
     { enabled: Boolean(technicianId) },
   );
 
   const { data: completedCases, isLoading: isLoadingCompleted } = useQuery(
     ['technician-cases', 'completed', technicianId],
-    () => casesService.getAll(completedFilters),
+    () => casesService.getAll({ ...completedFilters, page: 1, limit: 1 }),
     { enabled: Boolean(technicianId) },
   );
 
   const { data: allCases, isLoading: isLoadingAll } = useQuery(
-    ['technician-cases', 'all', technicianId],
-    () => casesService.getAll(allFilters),
+    ['technician-cases', 'all', technicianId, page],
+    () => casesService.getAll({ ...allFilters, page, limit: 50 }),
     { enabled: Boolean(technicianId) },
   );
 
@@ -185,9 +187,10 @@ const MyCasesPage = () => {
     );
   }
 
-  const activeCount = normalizeCases(activeCases).length;
-  const dueCount = normalizeCases(dueCases).length;
-  const completedCount = normalizeCases(completedCases).length;
+  const activeCount = Number(activeCases?.total || 0);
+  const dueCount = Number(dueCases?.total || 0);
+  const completedCount = Number(completedCases?.total || 0);
+  const totalCases = Number(allCases?.total || 0);
 
   return (
     <Box className="zzv-staff-workspace zzv-staff-workspace--my-cases">
@@ -254,6 +257,7 @@ const MyCasesPage = () => {
       </Grid>
 
       <CustomDataTable
+        key={page}
         title={t('common.myServiceCases') || 'My Service Cases'}
         subtitle={t('case.caseListSubtitle') || 'Cases currently assigned to you'}
         columns={columns}
@@ -265,6 +269,11 @@ const MyCasesPage = () => {
         selectable={false}
         defaultRowsPerPage={10}
       />
+      {totalCases > 50 && <Box display="flex" justifyContent="flex-end" alignItems="center" gap={2} p={2}>
+        <Button disabled={page === 1} onClick={() => setPage(page - 1)}>{t('common.previous')}</Button>
+        <span>{page} / {Math.ceil(totalCases / 50)}</span>
+        <Button disabled={page * 50 >= totalCases} onClick={() => setPage(page + 1)}>{t('common.next')}</Button>
+      </Box>}
     </Box>
   );
 };
