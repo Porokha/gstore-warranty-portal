@@ -289,6 +289,7 @@ const StaffLayout = () => {
           '& .MuiDrawer-paper': {
             width: drawerWidth,
             boxSizing: 'border-box',
+            overflowX: 'hidden',
             bgcolor: '#14121c',
             color: '#9c97ae',
             borderRight: '1px solid #14121c',
@@ -303,23 +304,16 @@ const StaffLayout = () => {
             minHeight: '68px !important',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            px: sidebarCollapsed ? 1 : 1.5,
+            justifyContent: sidebarCollapsed ? 'center' : 'space-between',
+            px: sidebarCollapsed ? 0 : 1.5,
             py: 1,
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {sidebarCollapsed ? (
-              <Box
-                component="img"
-                src="/brand-logotype-original.svg"
-                alt="ZEZVA mini logo"
-                sx={{ width: 32, height: 32 }}
-              />
-            ) : (
+          {!sidebarCollapsed && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Box component="img" src="/figma-staff/dashboard-logo.svg" alt="ZEZVA" width={99} height={16} />
-            )}
-          </Box>
+            </Box>
+          )}
           <IconButton onClick={toggleSidebar} size="small" aria-label={sidebarCollapsed ? 'Expand navigation' : 'Collapse navigation'} sx={{ color: '#9c97ae', width: 36, height: 36, borderRadius: '8px' }}>
             <Box component="img" src="/figma-staff/nav-collapse.svg" alt="" width={20} height={20} sx={{ transform: sidebarCollapsed ? 'rotate(180deg)' : 'none' }} />
           </IconButton>
@@ -329,15 +323,16 @@ const StaffLayout = () => {
           sx={{ 
             display: 'flex',
             flexDirection: 'column',
-            overflow: sidebarCollapsed ? 'hidden' : 'auto',
+            overflowX: 'hidden',
+            overflowY: 'auto',
             flex: 1,
             '&::-webkit-scrollbar': {
-              display: sidebarCollapsed ? 'none' : 'auto',
+              display: sidebarCollapsed ? 'none' : undefined,
             },
             scrollbarWidth: sidebarCollapsed ? 'none' : 'thin',
           }}
         >
-          <List sx={{ px: 1.5, py: 0 }}>
+          <List sx={{ px: sidebarCollapsed ? 1 : 1.5, py: 0 }}>
             {menuItems.map((item) => {
               const isActive = location.pathname === item.path || 
                 (item.path === '/staff/my-cases' && location.pathname.startsWith('/staff/my-cases')) ||
@@ -351,6 +346,7 @@ const StaffLayout = () => {
                     onClick={() => setMobileMenuOpen(false)}
                     onMouseEnter={() => prefetchStaffPage(item.path)}
                     onFocus={() => prefetchStaffPage(item.path)}
+                    title={sidebarCollapsed ? item.label : undefined}
                     selected={isActive}
                     sx={{
                       height: 40,
@@ -379,19 +375,14 @@ const StaffLayout = () => {
                     >
                       <Box component="img" src={item.icon} alt="" width={20} height={20} sx={{ filter: isActive ? 'brightness(0) invert(1)' : 'none' }} />
                     </Box>
-                    <ListItemText 
+                    {!sidebarCollapsed && <ListItemText
                       primary={item.label}
                       primaryTypographyProps={{
-                        fontSize: '14px',
+                        fontSize: '12px',
                         color: isActive ? '#ffffff' : '#9c97ae',
                         fontWeight: isActive ? 600 : 400,
                       }}
-                      sx={{
-                        opacity: sidebarCollapsed ? 0 : 1,
-                        maxWidth: sidebarCollapsed ? 0 : '100%',
-                        transition: 'opacity 0.2s ease',
-                      }}
-                    />
+                    />}
                   </ListItemButton>
                 </ListItem>
               );
@@ -402,7 +393,7 @@ const StaffLayout = () => {
             <Box sx={{ mt: 'auto', pb: 1.5 }}>
               <Divider sx={{ borderColor: '#26222f', my: 1.5, mx: 1.5 }} />
 
-              <List sx={{ px: 1.5, py: 0 }}>
+              <List sx={{ px: sidebarCollapsed ? 1 : 1.5, py: 0 }}>
                 {bottomMenuItems.map((item) => {
                   const isActive = location.pathname === item.path;
                   return (
@@ -413,6 +404,7 @@ const StaffLayout = () => {
                         onClick={() => setMobileMenuOpen(false)}
                         onMouseEnter={() => prefetchStaffPage(item.path)}
                         onFocus={() => prefetchStaffPage(item.path)}
+                        title={sidebarCollapsed ? item.label : undefined}
                         selected={isActive}
                         sx={{
                           height: 40,
@@ -441,19 +433,14 @@ const StaffLayout = () => {
                         >
                           <Box component="img" src={item.icon} alt="" width={20} height={20} sx={{ filter: isActive ? 'brightness(0) invert(1)' : 'none' }} />
                         </Box>
-                        <ListItemText 
+                        {!sidebarCollapsed && <ListItemText
                           primary={item.label}
                           primaryTypographyProps={{
-                            fontSize: '14px',
+                            fontSize: '12px',
                             color: isActive ? '#ffffff' : '#9c97ae',
                             fontWeight: isActive ? 600 : 400,
                           }}
-                          sx={{
-                            opacity: sidebarCollapsed ? 0 : 1,
-                            maxWidth: sidebarCollapsed ? 0 : '100%',
-                            transition: 'opacity 0.2s ease',
-                          }}
-                        />
+                        />}
                       </ListItemButton>
                     </ListItem>
                   );
@@ -466,7 +453,7 @@ const StaffLayout = () => {
       </Drawer>
 
       {/* Main Content Area */}
-      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
+      <Box sx={{ flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column', maxWidth: '100%', overflow: 'hidden' }}>
         {/* Top Header */}
         <AppBar
           position="sticky"
