@@ -110,6 +110,48 @@ describe('Case list pagination and filters', () => {
 });
 
 describe('CasesService assignment permissions', () => {
+  it.each(['admin', 'super_technician'])(
+    'persists reassignment by a %s with the relation and foreign key in sync', async (role) => {
+      const originalTechnician = { id: 2, role: 'technician' };
+      const newTechnician = { id: 3, role: 'technician' };
+      const case_ = {
+        id: 5, case_type: CaseType.STANDARD, partner_id: null,
+        assigned_technician_id: 2, assigned_technician: originalTechnician,
+      };
+      const cases = {
+        findOne: jest.fn().mockResolvedValue(case_),
+        save: jest.fn(async (value) => {
+          expect(value.assigned_technician_id).toBe(3);
+          expect(value.assigned_technician).toBe(newTechnician);
+          return value;
+        }),
+      };
+      const service = new CasesService(
+        cases as any, {} as any, {} as any,
+        { findById: jest.fn(async (id) => id === 1 ? { id: 1, role } : newTechnician) } as any,
+        {} as any, { log: jest.fn() } as any, {} as any, {} as any,
+      );
+      await service.update(5, { assigned_technician_id: 3 }, 1);
+      expect(cases.save).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it('clears both the technician relation and foreign key when unassigned', async () => {
+    const case_ = {
+      id: 5, case_type: CaseType.STANDARD, partner_id: null,
+      assigned_technician_id: 2, assigned_technician: { id: 2, role: 'technician' },
+    };
+    const cases = { findOne: jest.fn().mockResolvedValue(case_), save: jest.fn(async (value) => value) };
+    const service = new CasesService(
+      cases as any, {} as any, {} as any,
+      { findById: jest.fn().mockResolvedValue({ id: 1, role: 'admin' }) } as any,
+      {} as any, { log: jest.fn() } as any, {} as any, {} as any,
+    );
+    await service.update(5, { assigned_technician_id: null } as any, 1);
+    expect(case_.assigned_technician_id).toBeNull();
+    expect(case_.assigned_technician).toBeNull();
+  });
+
   it('rejects technician reassignment even when the API is called directly', async () => {
     const cases = { findOne: jest.fn().mockResolvedValue({ id: 5, assigned_technician_id: 1 }), save: jest.fn() };
     const service = new CasesService(

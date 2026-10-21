@@ -387,9 +387,10 @@ export class CasesService {
       });
     }
 
+    let assignedTechnician: User | null = null;
     if (updateDto.assigned_technician_id != null) {
-      const technician = await this.usersService.findById(updateDto.assigned_technician_id);
-      if (!technician || !isTechnicianRole(technician.role) || technician.is_postponed) {
+      assignedTechnician = await this.usersService.findById(updateDto.assigned_technician_id);
+      if (!assignedTechnician || !isTechnicianRole(assignedTechnician.role) || assignedTechnician.is_postponed) {
         throw new BadRequestException('Assigned user must be an active technician');
       }
     }
@@ -408,6 +409,9 @@ export class CasesService {
 
     const oldData = { ...case_ };
     Object.assign(case_, updateDto);
+    if (updateDto.assigned_technician_id !== undefined) {
+      case_.assigned_technician = assignedTechnician;
+    }
     if (nextCaseType !== CaseType.PARTNER) case_.partner_id = null;
     if (updateDto.deadline_at) {
       case_.deadline_at = new Date(updateDto.deadline_at);
