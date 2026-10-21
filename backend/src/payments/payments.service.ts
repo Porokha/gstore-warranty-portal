@@ -71,6 +71,14 @@ export class PaymentsService {
       offer_amount: createOfferDto.offer_amount || null,
       payment_method: createOfferDto.payment_method || null,
       payment_status: PaymentStatus.PENDING,
+      ...(existingOffer ? {
+        bog_transaction_id: null,
+        generated_code: null,
+        code_status: null,
+        code_generated_at: null,
+        code_used_at: null,
+        last_reminder_sent_at: null,
+      } : {}),
       estimated_days_after_payment: createOfferDto.estimated_days_after_payment || null,
       replacement_product_title: createOfferDto.replacement_product_title || null,
     });

@@ -530,6 +530,14 @@ export class CasesService {
             offer_amount: offer?.offer_amount ?? (effectiveResult === ResultType.COVERED ? 0 : null),
             payment_method: offer?.payment_method ?? null,
             payment_status: PaymentStatus.PENDING,
+            ...(cancelledOffer ? {
+              bog_transaction_id: null,
+              generated_code: null,
+              code_status: null,
+              code_generated_at: null,
+              code_used_at: null,
+              last_reminder_sent_at: null,
+            } : {}),
             estimated_days_after_payment: offer?.estimated_days_after_payment ?? null,
             replacement_product_title: offer?.replacement_product_title?.trim() || null,
           }));
