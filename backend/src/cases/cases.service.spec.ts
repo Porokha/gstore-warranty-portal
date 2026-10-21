@@ -110,6 +110,56 @@ describe('Case list pagination and filters', () => {
 });
 
 describe('CasesService assignment permissions', () => {
+  it('keeps partner and warranty relations aligned when their IDs change', async () => {
+    const newPartner = { id: 9, name: 'Partner', archived_at: null };
+    const case_ = {
+      id: 5, case_type: CaseType.PARTNER, partner_id: 7, partner: { id: 7 },
+      warranty_id: 2, warranty: { id: 2 },
+    };
+    const cases = { findOne: jest.fn().mockResolvedValue(case_), save: jest.fn(async (value) => value) };
+    const service = new CasesService(
+      cases as any, {} as any,
+      { findOne: jest.fn().mockResolvedValue(newPartner) } as any,
+      { findById: jest.fn().mockResolvedValue({ id: 1, role: 'admin' }) } as any,
+      {} as any, { log: jest.fn() } as any, {} as any, {} as any,
+    );
+
+    await service.update(5, { partner_id: 9, warranty_id: 3 }, 1);
+
+    expect(case_.partner_id).toBe(9);
+    expect(case_.partner).toBe(newPartner);
+    expect(case_.warranty_id).toBe(3);
+    expect(case_.warranty).toEqual({ id: 3 });
+  });
+
+  it('clears the loaded partner relation when converting to a standard case', async () => {
+    const case_ = { id: 5, case_type: CaseType.PARTNER, partner_id: 7, partner: { id: 7 } };
+    const cases = { findOne: jest.fn().mockResolvedValue(case_), save: jest.fn(async (value) => value) };
+    const service = new CasesService(
+      cases as any, {} as any, {} as any,
+      { findById: jest.fn().mockResolvedValue({ id: 1, role: 'admin' }) } as any,
+      {} as any, { log: jest.fn() } as any, {} as any, {} as any,
+    );
+
+    await service.update(5, { case_type: CaseType.STANDARD }, 1);
+
+    expect(case_.partner_id).toBeNull();
+    expect(case_.partner).toBeNull();
+  });
+
+  it('rejects clearing the non-nullable case deadline', async () => {
+    const cases = { findOne: jest.fn().mockResolvedValue({ id: 5 }), save: jest.fn() };
+    const service = new CasesService(
+      cases as any, {} as any, {} as any,
+      { findById: jest.fn().mockResolvedValue({ id: 1, role: 'admin' }) } as any,
+      {} as any, {} as any, {} as any, {} as any,
+    );
+
+    await expect(service.update(5, { deadline_at: null } as any, 1))
+      .rejects.toThrow('Deadline is required');
+    expect(cases.save).not.toHaveBeenCalled();
+  });
+
   it.each(['admin', 'super_technician'])(
     'persists reassignment by a %s with the relation and foreign key in sync', async (role) => {
       const originalTechnician = { id: 2, role: 'technician' };

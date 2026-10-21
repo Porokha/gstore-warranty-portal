@@ -686,6 +686,7 @@
     "replacementTitleRequired": "Enter the replacement product title.",
     "completionResultRequired": "Choose a result before completing the case.",
     "updateFailed": "The case could not be updated.",
+    "deadlineRequired": "Enter a deadline before saving the case.",
     "generatedPickupCode": "Pickup code generated",
     "requirePickupPin": "Require a PIN before handing over the device",
     "requirePickupPinHelp": "Optional. If unchecked, staff can mark the device collected without entering a PIN.",

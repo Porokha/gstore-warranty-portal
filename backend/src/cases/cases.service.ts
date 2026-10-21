@@ -24,6 +24,7 @@ import { AuditService } from '../audit/audit.service';
 import { CasePayment, PaymentStatus } from '../payments/entities/case-payment.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Partner } from '../partners/entities/partner.entity';
+import { Warranty } from '../warranties/entities/warranty.entity';
 import { PickupService } from './pickup.service';
 import { AuditLog } from '../audit/entities/audit-log.entity';
 
@@ -372,6 +373,9 @@ export class CasesService {
       throw new NotFoundException('User not found');
     }
     const case_ = await this.findOne(id);
+    if (updateDto.deadline_at === null || updateDto.deadline_at === '') {
+      throw new BadRequestException('Deadline is required');
+    }
 
     // Technicians can only update limited fields.
     if (!isManagementRole(user.role) && isTechnicianRole(user.role)) {
@@ -397,9 +401,10 @@ export class CasesService {
 
     const nextCaseType = updateDto.case_type || case_.case_type;
     const nextPartnerId = updateDto.partner_id !== undefined ? updateDto.partner_id : case_.partner_id;
+    let partner: Partner | null = null;
     if (nextCaseType === CaseType.PARTNER) {
       if (!nextPartnerId) throw new BadRequestException('Partner case requires a partner');
-      const partner = await this.partnersRepository.findOne({ where: { id: nextPartnerId } });
+      partner = await this.partnersRepository.findOne({ where: { id: nextPartnerId } });
       if (!partner || partner.archived_at) {
         throw new BadRequestException('Partner is unavailable');
       }
@@ -412,7 +417,15 @@ export class CasesService {
     if (updateDto.assigned_technician_id !== undefined) {
       case_.assigned_technician = assignedTechnician;
     }
-    if (nextCaseType !== CaseType.PARTNER) case_.partner_id = null;
+    if (updateDto.warranty_id !== undefined) {
+      case_.warranty = updateDto.warranty_id == null ? null : ({ id: updateDto.warranty_id } as Warranty);
+    }
+    if (nextCaseType === CaseType.PARTNER) {
+      case_.partner = partner;
+    } else {
+      case_.partner_id = null;
+      case_.partner = null;
+    }
     if (updateDto.deadline_at) {
       case_.deadline_at = new Date(updateDto.deadline_at);
     }

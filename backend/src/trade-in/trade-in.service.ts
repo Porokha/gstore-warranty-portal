@@ -521,10 +521,10 @@ export class TradeInService {
     const next = {
       ...dto,
       name: dto.name === undefined ? undefined : isMacBook(product) ? normalizeMacBookName(dto.name) : dto.name.trim(),
-      brand: dto.brand?.trim() || null,
-      category: dto.category?.trim() || null,
-      category2: dto.category2?.trim() || null,
-      image_src: dto.image_src?.trim() || null,
+      brand: dto.brand === undefined ? undefined : dto.brand?.trim() || null,
+      category: dto.category === undefined ? undefined : dto.category?.trim() || null,
+      category2: dto.category2 === undefined ? undefined : dto.category2?.trim() || null,
+      image_src: dto.image_src === undefined ? undefined : dto.image_src?.trim() || null,
     };
     Object.entries(next).forEach(([key, value]) => {
       if (value !== undefined) {

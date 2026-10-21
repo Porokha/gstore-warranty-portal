@@ -114,7 +114,9 @@ const CaseDetailPage = () => {
   );
 
   const [localCaseData, setLocalCaseData] = useState(null);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [pendingCaseChanges, setPendingCaseChanges] = useState({});
+  const [caseSaveError, setCaseSaveError] = useState('');
+  const hasUnsavedChanges = Object.keys(pendingCaseChanges).length > 0;
 
   // Initialize local data when case loads
   React.useEffect(() => {
@@ -129,9 +131,14 @@ const CaseDetailPage = () => {
       onSuccess: (savedCase) => {
         queryClient.setQueryData(['case', id], (previous) => ({ ...previous, ...savedCase }));
         setLocalCaseData((previous) => ({ ...previous, ...savedCase }));
-        setHasUnsavedChanges(false);
+        setPendingCaseChanges({});
+        setCaseSaveError('');
         queryClient.invalidateQueries(['case', id]);
         queryClient.invalidateQueries('cases');
+      },
+      onError: (error) => {
+        const message = error.response?.data?.message;
+        setCaseSaveError(Array.isArray(message) ? message.join(', ') : message || t('case.updateFailed'));
       },
     }
   );
@@ -328,23 +335,17 @@ const CaseDetailPage = () => {
 
   const handleFieldChange = (field, value) => {
     setLocalCaseData((prev) => ({ ...prev, [field]: value }));
-    setHasUnsavedChanges(true);
+    setPendingCaseChanges((prev) => ({ ...prev, [field]: value }));
+    setCaseSaveError('');
   };
 
   const handleSaveChanges = () => {
     if (!localCaseData || !hasUnsavedChanges) return;
-    
-    // Build update object with only changed fields
-    const updateData = {};
-    Object.keys(localCaseData).forEach((key) => {
-      if (case_[key] !== localCaseData[key]) {
-        updateData[key] = localCaseData[key];
-      }
-    });
-
-    if (Object.keys(updateData).length > 0) {
-      updateCaseMutation.mutate(updateData);
+    if (pendingCaseChanges.deadline_at === null) {
+      setCaseSaveError(t('case.deadlineRequired'));
+      return;
     }
+    updateCaseMutation.mutate(pendingCaseChanges);
   };
 
   // Extract status timestamps from history
@@ -406,6 +407,7 @@ const CaseDetailPage = () => {
             </button>
           </div>
         </header>
+        {caseSaveError && <Alert severity="error" sx={{ mx: 2, mt: 2, borderRadius: '6px' }}>{caseSaveError}</Alert>}
         <Tabs className="zzv-case-detail__tabs" value={tab} onChange={(e, newValue) => setTab(newValue)} variant="scrollable" scrollButtons={false}>
           <Tab label={t('common.details')} />
           <Tab label={t('case.statusAndResult')} />
