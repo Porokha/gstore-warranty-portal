@@ -5,7 +5,7 @@ START TRANSACTION;
 
 CREATE TEMPORARY TABLE trade_in_metadata_repair (
   source_id INT NOT NULL PRIMARY KEY,
-  slug VARCHAR(255) NOT NULL,
+  slug VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   brand VARCHAR(255) NOT NULL,
   category VARCHAR(255) NOT NULL,
   category2 VARCHAR(255) NOT NULL,
