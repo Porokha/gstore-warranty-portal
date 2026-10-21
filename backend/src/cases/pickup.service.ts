@@ -2,8 +2,9 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { createHmac, randomInt, timingSafeEqual } from 'crypto';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { AuditService } from '../audit/audit.service';
+import { AuditLog } from '../audit/entities/audit-log.entity';
 import { PaymentStatus } from '../payments/entities/case-payment.entity';
 import { CasePickup } from './entities/case-pickup.entity';
 import { CaseStatusLevel, ResultType, ServiceCase } from './entities/service-case.entity';
@@ -133,11 +134,15 @@ export class PickupService {
     return result;
   }
 
-  async resetForReopen(caseId: number, userId: number) {
-    const pickup = await this.pickups.findOne({ where: { case_id: caseId } });
+  async resetForReopen(caseId: number, userId: number, manager: EntityManager = this.pickups.manager) {
+    const pickup = await manager.findOne(CasePickup, { where: { case_id: caseId }, lock: { mode: 'pessimistic_write' } });
     if (!pickup) return;
-    await this.audit.log(userId, 'CASE_PICKUP_RESET_ON_REOPEN', { caseId, collectedAt: pickup.collected_at });
-    await this.pickups.update(caseId, {
+    await manager.getRepository(AuditLog).save(manager.getRepository(AuditLog).create({
+      user_id: userId,
+      action: 'CASE_PICKUP_RESET_ON_REOPEN',
+      payload_json: { caseId, collectedAt: pickup.collected_at },
+    }));
+    await manager.getRepository(CasePickup).update(caseId, {
       pin_hash: null,
       issued_at: null,
       expires_at: null,

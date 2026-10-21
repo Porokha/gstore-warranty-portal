@@ -13,10 +13,12 @@ import {
   HttpStatus,
   Res,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { promises as fs } from 'fs';
+import { isAllowedUpload, hasValidUploadSignature, uploadExtension } from './upload-validation';
 import { Response } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -37,6 +39,10 @@ export class FilesController {
       storage: diskStorage({
         destination: (req, file, cb) => {
           const caseId = req.params.caseId;
+          if (!/^[1-9]\d*$/.test(caseId)) {
+            cb(new BadRequestException('Invalid case ID'), '');
+            return;
+          }
           const uploadPath = `uploads/cases/${caseId}`;
           const fs = require('fs');
           const path = require('path');
@@ -49,7 +55,7 @@ export class FilesController {
         filename: (req, file, cb) => {
           const timestamp = Date.now();
           const randomStr = Math.random().toString(36).substring(2, 15);
-          const ext = extname(file.originalname);
+          const ext = uploadExtension(file.originalname);
           cb(null, `${timestamp}_${randomStr}${ext}`);
         },
       }),
@@ -57,20 +63,10 @@ export class FilesController {
         fileSize: 50 * 1024 * 1024, // 50MB
       },
       fileFilter: (req, file, cb) => {
-        const allowedMimes = [
-          'image/jpeg',
-          'image/png',
-          'image/gif',
-          'image/webp',
-          'video/mp4',
-          'video/quicktime',
-          'video/x-msvideo',
-          'application/pdf',
-        ];
-        if (allowedMimes.includes(file.mimetype)) {
+        if (isAllowedUpload(file.originalname, file.mimetype)) {
           cb(null, true);
         } else {
-          cb(new Error('Invalid file type'), false);
+          cb(new BadRequestException('Invalid file type'), false);
         }
       },
     }),
@@ -81,14 +77,24 @@ export class FilesController {
     @CurrentUser() user: any,
   ) {
     if (!file) {
-      throw new Error('No file uploaded');
+      throw new BadRequestException('No file uploaded');
     }
-
-    // Update file path to match the saved location
-    const fileUrl = `/uploads/cases/${caseId}/${file.filename}`;
-    file.path = fileUrl;
-
-    return this.filesService.uploadFile(caseId, file, user.id);
+    try {
+      const handle = await fs.open(file.path, 'r');
+      const bytes = Buffer.alloc(16);
+      try {
+        await handle.read(bytes, 0, bytes.length, 0);
+      } finally {
+        await handle.close();
+      }
+      if (!hasValidUploadSignature(uploadExtension(file.filename), bytes)) {
+        throw new BadRequestException('File content does not match its type');
+      }
+      return await this.filesService.uploadFile(caseId, file, user.id);
+    } catch (error) {
+      await fs.unlink(file.path).catch(() => undefined);
+      throw error;
+    }
   }
 
   @Get('cases/:caseId')

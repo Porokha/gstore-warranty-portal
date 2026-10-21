@@ -58,13 +58,14 @@ export class PaymentsService {
       },
     });
 
-    if (existingOffer) {
+    if (existingOffer && existingOffer.payment_status !== PaymentStatus.CANCELLED) {
       throw new BadRequestException(
         `An offer of type ${createOfferDto.offer_type} already exists for this case`
       );
     }
 
     const payment = this.paymentsRepository.create({
+      ...(existingOffer ? { id: existingOffer.id } : {}),
       case_id: caseId,
       offer_type: createOfferDto.offer_type,
       offer_amount: createOfferDto.offer_amount || null,
@@ -123,13 +124,15 @@ export class PaymentsService {
     device_type?: string;
     payment_status?: PaymentStatus;
     payment_method?: string;
-  }): Promise<CasePayment[]> {
+  }, page = 1, limit = 50, includeHistory = false): Promise<{ data: CasePayment[]; total: number; page: number; limit: number }> {
     const query = this.paymentsRepository.createQueryBuilder('payment')
       .leftJoinAndSelect('payment.case_', 'case')
       .leftJoinAndSelect('case.assigned_technician', 'technician')
-      .leftJoinAndSelect('case.status_history', 'history')
-      .orderBy('payment.created_at', 'DESC')
-      .addOrderBy('history.created_at', 'ASC');
+      .orderBy('payment.created_at', 'DESC');
+    if (includeHistory) {
+      query.leftJoinAndSelect('case.status_history', 'history')
+        .addOrderBy('history.created_at', 'ASC');
+    }
 
     if (filters?.start_date) {
       query.andWhere('payment.created_at >= :start_date', { start_date: filters.start_date });
@@ -151,7 +154,8 @@ export class PaymentsService {
       query.andWhere('payment.payment_method = :payment_method', { payment_method: filters.payment_method });
     }
 
-    return query.getMany();
+    const [data, total] = await query.skip((page - 1) * limit).take(limit).getManyAndCount();
+    return { data, total, page, limit };
   }
 
   async findOne(id: number): Promise<CasePayment> {
@@ -169,8 +173,9 @@ export class PaymentsService {
 
   async update(id: number, updateDto: UpdatePaymentDto): Promise<CasePayment> {
     const payment = await this.findOne(id);
-    if (payment.payment_status === PaymentStatus.PAID) {
-      throw new BadRequestException('Paid offers cannot be edited');
+    if (payment.payment_status === PaymentStatus.PAID || payment.payment_status === PaymentStatus.CANCELLED ||
+      payment.case_?.result_type !== payment.offer_type) {
+      throw new BadRequestException('Only the current unpaid offer can be edited');
     }
     if (updateDto.offer_amount !== undefined) payment.offer_amount = updateDto.offer_amount;
     return this.paymentsRepository.save(payment);
@@ -180,39 +185,47 @@ export class PaymentsService {
     paymentId: number,
     bogTransactionId?: string,
   ): Promise<CasePayment> {
-    const payment = await this.findOne(paymentId);
-
-    if (payment.offer_type !== ResultType.PAYABLE) {
+    const current = await this.findOne(paymentId);
+    if (current.offer_type !== ResultType.PAYABLE) {
       throw new BadRequestException('Only payable offers can be marked as paid');
     }
-
-    if (payment.payment_status === PaymentStatus.PAID) {
-      throw new BadRequestException('Payment is already marked as paid');
-    }
-
-    payment.payment_status = PaymentStatus.PAID;
-    if (bogTransactionId) {
-      payment.bog_transaction_id = bogTransactionId;
-    }
-
-    // If code exists, mark it as used
-    if (payment.generated_code && payment.code_status === CodeStatus.ACTIVE) {
-      payment.code_status = CodeStatus.USED;
-      payment.code_used_at = new Date();
-    }
-
-    const savedPayment = await this.paymentsRepository.save(payment);
+    const savedPayment = await this.paymentsRepository.manager.transaction(async (manager) => {
+      // Lock the case first, matching the lock order used by case status changes.
+      const case_ = await manager.findOne(ServiceCase, {
+        where: { id: current.case_id },
+        lock: { mode: 'pessimistic_write' },
+      });
+      const payment = await manager.findOne(CasePayment, {
+        where: { id: paymentId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!case_ || !payment) throw new NotFoundException('Case payment not found');
+      if (payment.offer_type !== ResultType.PAYABLE || case_.result_type !== ResultType.PAYABLE ||
+        case_.status_level < CaseStatusLevel.PENDING) {
+        throw new BadRequestException('Only the current payable case offer can be marked paid');
+      }
+      if (payment.payment_status !== PaymentStatus.PENDING) {
+        throw new BadRequestException('Only pending payments can be marked paid');
+      }
+      payment.payment_status = PaymentStatus.PAID;
+      if (bogTransactionId) payment.bog_transaction_id = bogTransactionId;
+      if (payment.generated_code && payment.code_status === CodeStatus.ACTIVE) {
+        payment.code_status = CodeStatus.USED;
+        payment.code_used_at = new Date();
+      }
+      return manager.save(payment);
+    });
 
     // Send SMS notification for payment confirmation
-    if (payment.case_ && payment.case_.case_type !== CaseType.PARTNER && payment.case_.customer_phone) {
+    if (current.case_ && current.case_.case_type !== CaseType.PARTNER && current.case_.customer_phone) {
       try {
         await this.smsService.sendSms({
-          phone: payment.case_.customer_phone,
+          phone: current.case_.customer_phone,
           templateKey: 'sms.payment.confirmed',
           language: Language.KA,
           variables: {
-            case_number: payment.case_.case_number,
-            amount: payment.offer_amount || 0,
+            case_number: current.case_.case_number,
+            amount: savedPayment.offer_amount || 0,
             transaction_id: bogTransactionId || 'N/A',
           },
         });
@@ -222,6 +235,20 @@ export class PaymentsService {
     }
 
     return savedPayment;
+  }
+
+  async retryFailed(paymentId: number): Promise<CasePayment> {
+    const payment = await this.findOne(paymentId);
+    if (payment.offer_type !== ResultType.PAYABLE || payment.case_?.result_type !== ResultType.PAYABLE ||
+      payment.case_.status_level !== CaseStatusLevel.PENDING) {
+      throw new BadRequestException('Only failed offers on pending payable cases can be retried');
+    }
+    const updated = await this.paymentsRepository.update(
+      { id: paymentId, payment_status: PaymentStatus.FAILED },
+      { payment_status: PaymentStatus.PENDING },
+    );
+    if (!updated.affected) throw new BadRequestException('Payment is no longer failed');
+    return this.findOne(paymentId);
   }
 
   async markAsFailed(paymentId: number): Promise<CasePayment> {
@@ -251,6 +278,11 @@ export class PaymentsService {
 
     if (payment.payment_status !== PaymentStatus.PENDING) {
       throw new BadRequestException('Payment reminders can only be sent for pending payments');
+    }
+
+    if (payment.case_?.result_type !== ResultType.PAYABLE ||
+      payment.case_.status_level !== CaseStatusLevel.PENDING) {
+      throw new BadRequestException('Payment reminders require the current pending payable result');
     }
 
     if (!payment.case_) {

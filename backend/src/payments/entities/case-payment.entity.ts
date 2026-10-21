@@ -18,6 +18,7 @@ export enum PaymentStatus {
   PENDING = 'pending',
   PAID = 'paid',
   FAILED = 'failed',
+  CANCELLED = 'cancelled',
 }
 
 export enum CodeStatus {
@@ -51,7 +52,7 @@ export class CasePayment {
 
   @Column({
     type: 'enum',
-    enum: ['pending', 'paid', 'failed'],
+    enum: ['pending', 'paid', 'failed', 'cancelled'],
     default: 'pending',
   })
   payment_status: PaymentStatus;

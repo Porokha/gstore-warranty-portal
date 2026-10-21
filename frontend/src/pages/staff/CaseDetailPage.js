@@ -209,6 +209,20 @@ const CaseDetailPage = () => {
     }
   );
 
+  const retryPaymentMutation = useMutation(
+    (paymentId) => paymentsService.retryFailed(paymentId),
+    {
+      onSuccess: () => {
+        setPaymentActionError('');
+        queryClient.invalidateQueries(['case', id]);
+        queryClient.invalidateQueries(['case-payments', id]);
+      },
+      onError: (error) => {
+        setPaymentActionError(error.response?.data?.message || t('payment.retryFailed'));
+      },
+    }
+  );
+
   const sendPaymentReminderMutation = useMutation(
     (paymentId) => paymentsService.sendPaymentReminder(paymentId),
     {
@@ -259,6 +273,7 @@ const CaseDetailPage = () => {
       pending: t('payment.pending'),
       paid: t('payment.paid'),
       failed: t('payment.failed'),
+      cancelled: t('payment.cancelled'),
     };
     return labels[status] || status;
   };
@@ -871,7 +886,9 @@ const CaseDetailPage = () => {
                         size="small"
                       />
                     </Box>
-                    {canManageCases && ['payable', 'replaceable'].includes(payment.offer_type) && payment.payment_status !== 'paid' && editingPaymentId !== payment.id && (
+                    {canManageCases && ['payable', 'replaceable'].includes(payment.offer_type) &&
+                      payment.offer_type === case_?.result_type &&
+                      !['paid', 'cancelled'].includes(payment.payment_status) && editingPaymentId !== payment.id && (
                       <Box className="zzv-case-payment-card__actions" display="flex" gap={1} flexWrap="wrap">
                         <Button
                           variant="outlined"
@@ -883,7 +900,14 @@ const CaseDetailPage = () => {
                         </Button>
                       </Box>
                     )}
-                    {canManageCases && payment.offer_type === 'payable' && payment.payment_status !== 'paid' && (
+                    {canManageCases && case_?.status_level === 3 && case_?.result_type === 'payable' && payment.offer_type === 'payable' && payment.payment_status === 'failed' && (
+                      <Box className="zzv-case-payment-card__actions" display="flex" gap={1} flexWrap="wrap">
+                        <Button variant="outlined" size="small" onClick={() => retryPaymentMutation.mutate(payment.id)} disabled={retryPaymentMutation.isLoading}>
+                          {t('payment.retry')}
+                        </Button>
+                      </Box>
+                    )}
+                    {canManageCases && case_?.status_level === 3 && case_?.result_type === 'payable' && payment.offer_type === 'payable' && payment.payment_status === 'pending' && (
                       <Box className="zzv-case-payment-card__actions" display="flex" gap={1} flexWrap="wrap">
                         <Button
                           variant="contained"

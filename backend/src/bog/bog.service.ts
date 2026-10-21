@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import axios, { AxiosInstance } from 'axios';
 import * as crypto from 'crypto';
 import { CasePayment, PaymentStatus } from '../payments/entities/case-payment.entity';
+import { CaseStatusLevel, ResultType } from '../cases/entities/service-case.entity';
 import { PaymentsService } from '../payments/payments.service';
 
 interface BOGPaymentRequest {
@@ -123,6 +124,10 @@ export class BogService {
 
     if (payment.payment_status !== PaymentStatus.PENDING) {
       throw new BadRequestException('Can only initiate payment for pending payments');
+    }
+    if (payment.offer_type !== ResultType.PAYABLE || payment.case_?.result_type !== ResultType.PAYABLE ||
+      payment.case_.status_level !== CaseStatusLevel.PENDING) {
+      throw new BadRequestException('This payment is no longer the current payable offer');
     }
 
     // Generate order ID for BOG (using payment ID)

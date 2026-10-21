@@ -13,6 +13,7 @@ import {
   HttpStatus,
   Request,
   Header,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -93,6 +94,14 @@ export class PaymentsController {
     return this.paymentsService.markAsFailed(id);
   }
 
+  @Post(':id/retry')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.TECH_MANAGER, UserRole.SUPER_TECHNICIAN)
+  @HttpCode(HttpStatus.OK)
+  retryFailed(@Param('id', ParseIntPipe) id: number) {
+    return this.paymentsService.retryFailed(id);
+  }
+
   @Post(':id/send-payment-reminder')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.TECH_MANAGER, UserRole.SUPER_TECHNICIAN)
@@ -118,15 +127,25 @@ export class PaymentsController {
     @Query('device_type') deviceType?: string,
     @Query('payment_status') paymentStatus?: string,
     @Query('payment_method') paymentMethod?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('include_history') includeHistory?: string,
   ) {
     const filters: any = {};
+    const parseDate = (value: string, endOfDay: boolean) => {
+      const date = /^\d{4}-\d{2}-\d{2}$/.test(value)
+        ? new Date(`${value}T${endOfDay ? '23:59:59.999' : '00:00:00.000'}+04:00`)
+        : new Date(value);
+      if (Number.isNaN(date.getTime())) throw new BadRequestException('Invalid payment date filter');
+      return date;
+    };
     
     if (startDate) {
-      filters.start_date = new Date(startDate);
+      filters.start_date = parseDate(startDate, false);
     }
     
     if (endDate) {
-      filters.end_date = new Date(endDate);
+      filters.end_date = parseDate(endDate, true);
     }
     
     if (deviceType) {
@@ -141,7 +160,12 @@ export class PaymentsController {
       filters.payment_method = paymentMethod;
     }
 
-    return this.paymentsService.findAll(filters);
+    const pageNumber = page === undefined ? 1 : Number(page);
+    const pageLimit = limit === undefined ? 50 : Number(limit);
+    if (!Number.isInteger(pageNumber) || pageNumber < 1 || !Number.isInteger(pageLimit) || pageLimit < 1 || pageLimit > 200) {
+      throw new BadRequestException('Invalid payment pagination');
+    }
+    return this.paymentsService.findAll(filters, pageNumber, pageLimit, includeHistory === 'true');
   }
 
   @Get('stats/summary')

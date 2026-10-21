@@ -8,6 +8,9 @@ export const paymentsService = {
     if (filters.device_type) params.append('device_type', filters.device_type);
     if (filters.payment_status) params.append('payment_status', filters.payment_status);
     if (filters.payment_method) params.append('payment_method', filters.payment_method);
+    if (filters.page) params.append('page', String(filters.page));
+    if (filters.limit) params.append('limit', String(filters.limit));
+    if (filters.include_history) params.append('include_history', 'true');
 
     const response = await api.get(`/payments?${params.toString()}`);
     return response.data;
@@ -45,6 +48,11 @@ export const paymentsService = {
 
   markAsFailed: async (id) => {
     const response = await api.post(`/payments/${id}/mark-failed`);
+    return response.data;
+  },
+
+  retryFailed: async (id) => {
+    const response = await api.post(`/payments/${id}/retry`);
     return response.data;
   },
 

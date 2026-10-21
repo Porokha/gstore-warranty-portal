@@ -4,7 +4,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import * as crypto from 'crypto';
-import { join } from 'path';
+import { extname, join } from 'path';
 
 // Polyfill for crypto.randomUUID if not available (for NestJS schedule)
 if (typeof globalThis.crypto === 'undefined') {
@@ -68,6 +68,22 @@ async function bootstrap() {
 
   // API prefix
   app.setGlobalPrefix('api');
+  const publicUploadExtensions = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.mov', '.avi', '.pdf']);
+  app.use('/uploads', (req, res, next) => {
+    let extension = '';
+    try {
+      extension = extname(decodeURIComponent(req.path)).toLowerCase();
+    } catch {
+      res.status(404).end();
+      return;
+    }
+    if (!publicUploadExtensions.has(extension)) {
+      res.status(404).end();
+      return;
+    }
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    next();
+  });
   app.useStaticAssets(join(process.cwd(), 'uploads'), {
     prefix: '/uploads',
   });

@@ -120,13 +120,27 @@ describe('CasesService assignment permissions', () => {
     await expect(service.update(5, { assigned_technician_id: 2 } as any, 1)).rejects.toThrow(ForbiddenException);
     expect(cases.save).not.toHaveBeenCalled();
   });
+
+  it('rejects assignment to a non-technician and a partner case without a partner', async () => {
+    const cases = { findOne: jest.fn().mockResolvedValue({ id: 5, case_type: CaseType.STANDARD, partner_id: null }), save: jest.fn() };
+    const service = new CasesService(
+      cases as any, {} as any, {} as any,
+      { findById: jest.fn(async (id) => ({ id, role: 'manager' })) } as any,
+      {} as any, {} as any, {} as any, {} as any,
+    );
+    await expect(service.update(5, { assigned_technician_id: 2 } as any, 1))
+      .rejects.toThrow('active technician');
+    await expect(service.update(5, { case_type: CaseType.PARTNER } as any, 1))
+      .rejects.toThrow('requires a partner');
+    expect(cases.save).not.toHaveBeenCalled();
+  });
 });
 
 describe('CasesService status changes', () => {
   const setup = (case_: any, payments: any[] = [], role = 'manager') => {
     const caseSave = jest.fn(async (value) => value);
     const offerSave = jest.fn(async (value) => {
-      payments.push(value);
+      if (!payments.includes(value)) payments.push(value);
       return value;
     });
     const query = {
@@ -184,7 +198,7 @@ describe('CasesService status changes', () => {
     };
     const { service, pickup } = setup(case_, case_.payments);
 
-    const result = await service.changeStatus(6, { new_status_level: CaseStatusLevel.COMPLETED, require_pickup_pin: true } as any, 1);
+    const result = await service.changeStatus(6, { new_status_level: CaseStatusLevel.COMPLETED, require_pickup_pin: true, note_public: 'Repair completed' } as any, 1);
 
     expect((result as any).pickup_code).toBe('012345');
     expect(case_.pickup_pin_required).toBe(true);
@@ -203,7 +217,7 @@ describe('CasesService status changes', () => {
     };
     const { service, pickup, offerSave } = setup(case_);
 
-    const result = await service.changeStatus(7, { new_status_level: CaseStatusLevel.COMPLETED } as any, 1);
+    const result = await service.changeStatus(7, { new_status_level: CaseStatusLevel.COMPLETED, note_public: 'Repair completed' } as any, 1);
 
     expect(result.pickup_pin_required).toBe(false);
     expect(pickup.issue).not.toHaveBeenCalled();
@@ -226,6 +240,28 @@ describe('CasesService status changes', () => {
     await service.changeStatus(8, request as any, 1);
     expect(caseSave).toHaveBeenCalledTimes(1);
     expect(offerSave).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['technician', 'tech-manager', 'super_technician', 'manager', 'admin'])(
+    'lets %s move an opened case directly to pending', async (role) => {
+      const case_ = { id: 18, status_level: CaseStatusLevel.OPENED, result_type: null, customer_phone: null };
+      const { service } = setup(case_, [], role);
+      await service.changeStatus(18, { new_status_level: CaseStatusLevel.PENDING, result_type: ResultType.COVERED } as any, 1);
+      expect(case_.status_level).toBe(CaseStatusLevel.PENDING);
+    },
+  );
+
+  it('prevents a technician from moving a case backwards while managers can', async () => {
+    const technicianCase = { id: 19, status_level: CaseStatusLevel.PENDING, result_type: ResultType.COVERED };
+    await expect(setup(technicianCase, [], 'technician').service.changeStatus(19, {
+      new_status_level: CaseStatusLevel.INVESTIGATING,
+    } as any, 1)).rejects.toThrow(ForbiddenException);
+
+    const managerCase = { id: 20, status_level: CaseStatusLevel.PENDING, result_type: ResultType.COVERED };
+    await setup(managerCase, [], 'manager').service.changeStatus(20, {
+      new_status_level: CaseStatusLevel.INVESTIGATING,
+    } as any, 1);
+    expect(managerCase.result_type).toBeNull();
   });
 
   it('lets a technician repair a legacy pending case that is missing its payable offer', async () => {
@@ -260,5 +296,31 @@ describe('CasesService status changes', () => {
     const { service, sms } = setup(case_, [{ offer_type: ResultType.COVERED, offer_amount: 0 }]);
     await service.changeStatus(11, { new_status_level: CaseStatusLevel.COMPLETED, note_private: 'Follow-up' } as any, 1);
     expect(sms.sendSms).not.toHaveBeenCalled();
+  });
+
+  it('cancels a stale payable offer when the result changes', async () => {
+    const case_ = { id: 21, status_level: CaseStatusLevel.PENDING, result_type: ResultType.PAYABLE, customer_phone: null };
+    const oldOffer = { id: 4, offer_type: ResultType.PAYABLE, payment_status: 'pending', offer_amount: 250 };
+    const { service, offerSave } = setup(case_, [oldOffer]);
+    await service.changeStatus(21, { new_status_level: CaseStatusLevel.PENDING, result_type: ResultType.COVERED } as any, 1);
+    expect(oldOffer.payment_status).toBe('cancelled');
+    expect(offerSave).toHaveBeenCalledWith(oldOffer);
+  });
+
+  it('requires a public note when a covered case first becomes completed', async () => {
+    const case_ = { id: 22, status_level: CaseStatusLevel.PENDING, result_type: ResultType.COVERED };
+    const { service, caseSave } = setup(case_);
+    await expect(service.changeStatus(22, { new_status_level: CaseStatusLevel.COMPLETED, note_public: '   ' } as any, 1))
+      .rejects.toThrow('public note is required');
+    expect(caseSave).not.toHaveBeenCalled();
+  });
+
+  it('resets pickup in the status transaction when reopening a completed case', async () => {
+    const case_ = { id: 23, status_level: CaseStatusLevel.COMPLETED, result_type: ResultType.COVERED };
+    const { service, pickup } = setup(case_);
+    jest.spyOn(service, 'findOne').mockResolvedValue(case_ as any);
+    await service.reopen(23, 1);
+    expect(pickup.resetForReopen).toHaveBeenCalledWith(23, 1, expect.any(Object));
+    expect(case_.status_level).toBe(CaseStatusLevel.PENDING);
   });
 });

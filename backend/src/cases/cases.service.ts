@@ -90,6 +90,12 @@ export class CasesService {
     const deadlineAt = new Date(now.getTime() + deadlineDays * 24 * 60 * 60 * 1000);
     const assignedTechnicianId =
       user.role === UserRole.TECHNICIAN ? user.id : createDto.assigned_technician_id;
+    if (assignedTechnicianId) {
+      const technician = await this.usersService.findById(assignedTechnicianId);
+      if (!technician || !isTechnicianRole(technician.role) || technician.is_postponed) {
+        throw new BadRequestException('Assigned user must be an active technician');
+      }
+    }
 
     const newCase = this.casesRepository.create({
       case_number: '',
@@ -381,15 +387,28 @@ export class CasesService {
       });
     }
 
-    if (updateDto.partner_id && updateDto.partner_id !== case_.partner_id) {
-      const partner = await this.partnersRepository.findOne({ where: { id: updateDto.partner_id } });
+    if (updateDto.assigned_technician_id != null) {
+      const technician = await this.usersService.findById(updateDto.assigned_technician_id);
+      if (!technician || !isTechnicianRole(technician.role) || technician.is_postponed) {
+        throw new BadRequestException('Assigned user must be an active technician');
+      }
+    }
+
+    const nextCaseType = updateDto.case_type || case_.case_type;
+    const nextPartnerId = updateDto.partner_id !== undefined ? updateDto.partner_id : case_.partner_id;
+    if (nextCaseType === CaseType.PARTNER) {
+      if (!nextPartnerId) throw new BadRequestException('Partner case requires a partner');
+      const partner = await this.partnersRepository.findOne({ where: { id: nextPartnerId } });
       if (!partner || partner.archived_at) {
         throw new BadRequestException('Partner is unavailable');
       }
+    } else if (updateDto.partner_id != null) {
+      throw new BadRequestException('Standard cases cannot be linked to a partner');
     }
 
     const oldData = { ...case_ };
     Object.assign(case_, updateDto);
+    if (nextCaseType !== CaseType.PARTNER) case_.partner_id = null;
     if (updateDto.deadline_at) {
       case_.deadline_at = new Date(updateDto.deadline_at);
     }
@@ -431,7 +450,10 @@ export class CasesService {
         const previousResult = case_.result_type;
         const effectiveResult = newStatus < CaseStatusLevel.PENDING ? null : newResult || previousResult;
         const payments = await offers.find({ where: { case_id: id } });
-        const existingOffer = payments.find((payment) => payment.offer_type === effectiveResult);
+        const existingOffer = payments.find((payment) =>
+          payment.offer_type === effectiveResult && payment.payment_status !== PaymentStatus.CANCELLED);
+        const cancelledOffer = payments.find((payment) =>
+          payment.offer_type === effectiveResult && payment.payment_status === PaymentStatus.CANCELLED);
         const offer = changeStatusDto.offer;
 
         if (offer && (newStatus < CaseStatusLevel.PENDING || offer.offer_type !== effectiveResult)) {
@@ -461,6 +483,10 @@ export class CasesService {
         if (newStatus === CaseStatusLevel.COMPLETED && !effectiveResult) {
           throw new BadRequestException('Choose a result before completing the case');
         }
+        if (newStatus === CaseStatusLevel.COMPLETED && previousStatus !== CaseStatusLevel.COMPLETED &&
+          effectiveResult === ResultType.COVERED && !changeStatusDto.note_public?.trim()) {
+          throw new BadRequestException('A public note is required to complete a covered case');
+        }
         if (payments.some((payment) => payment.payment_status === PaymentStatus.PAID && payment.offer_type !== effectiveResult)) {
           throw new BadRequestException('A paid offer cannot be changed to another result');
         }
@@ -487,10 +513,18 @@ export class CasesService {
           case_.closed_at = null;
         }
         const savedCase = await cases.save(case_);
+        for (const payment of payments) {
+          if (payment.offer_type !== effectiveResult &&
+            (payment.payment_status === PaymentStatus.PENDING || payment.payment_status === PaymentStatus.FAILED)) {
+            payment.payment_status = PaymentStatus.CANCELLED;
+            await offers.save(payment);
+          }
+        }
         let offerCreated = false;
         if (!existingOffer && effectiveResult &&
           (offer || (effectiveResult === ResultType.COVERED && newStatus === CaseStatusLevel.COMPLETED))) {
           await offers.save(offers.create({
+            ...(cancelledOffer ? { id: cancelledOffer.id } : {}),
             case_id: id,
             offer_type: effectiveResult,
             offer_amount: offer?.offer_amount ?? (effectiveResult === ResultType.COVERED ? 0 : null),
@@ -516,12 +550,12 @@ export class CasesService {
           action: 'CASE_STATUS_CHANGED',
           payload_json: { caseId: id, previousStatus, newStatus, previousResult, newResult, offerCreated },
         }));
+        if (previousStatus === CaseStatusLevel.COMPLETED && newStatus < CaseStatusLevel.COMPLETED) {
+          await this.pickupService.resetForReopen(id, user.id, manager);
+        }
         return { case_, savedCase, previousStatus, previousResult, offerCreated, replayed: false };
       });
     if (replayed) return savedCase;
-    if (previousStatus === CaseStatusLevel.COMPLETED && newStatus < CaseStatusLevel.COMPLETED) {
-      await this.pickupService.resetForReopen(id, user.id);
-    }
 
     let pickupCode: string | null = null;
     let pickupWarning = false;
@@ -627,25 +661,10 @@ export class CasesService {
       throw new BadRequestException('Case is not completed');
     }
 
-    case_.status_level = CaseStatusLevel.PENDING;
-    case_.closed_at = null;
-    case_.pickup_pin_required = false;
-
-    const savedCase = await this.casesRepository.save(case_);
-    await this.pickupService.resetForReopen(id, user.id);
-
-    await this.createHistoryEntry(
-      id,
-      user.id,
-      CaseStatusLevel.COMPLETED,
-      CaseStatusLevel.PENDING,
-      case_.result_type,
-      case_.result_type,
-      'Case reopened by admin',
-      null,
-    );
-
-    return savedCase;
+    return this.changeStatus(id, {
+      new_status_level: CaseStatusLevel.PENDING,
+      note_private: 'Case reopened by admin',
+    }, user.id);
   }
 
   async addInternalNote(

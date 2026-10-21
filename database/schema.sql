@@ -125,7 +125,7 @@ CREATE TABLE IF NOT EXISTS case_payments (
     offer_type ENUM('covered', 'payable', 'replaceable') NOT NULL,
     offer_amount DECIMAL(10, 2),
     payment_method ENUM('onsite', 'online'),
-    payment_status ENUM('pending', 'paid', 'failed') DEFAULT 'pending',
+    payment_status ENUM('pending', 'paid', 'failed', 'cancelled') DEFAULT 'pending',
     bog_transaction_id VARCHAR(255),
     estimated_days_after_payment INT,
     generated_code VARCHAR(6),

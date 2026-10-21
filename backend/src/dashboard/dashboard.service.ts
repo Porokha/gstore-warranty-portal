@@ -98,10 +98,11 @@ export class DashboardService {
     const activeWarrantiesWhere: any = {
       warranty_end: MoreThan(now),
     };
-    if (timeFilter?.start) {
+    if (timeFilter?.start && timeFilter?.end) {
+      activeWarrantiesWhere.purchase_date = Between(timeFilter.start, timeFilter.end);
+    } else if (timeFilter?.start) {
       activeWarrantiesWhere.purchase_date = MoreThan(timeFilter.start);
-    }
-    if (timeFilter?.end) {
+    } else if (timeFilter?.end) {
       activeWarrantiesWhere.purchase_date = LessThanOrEqual(timeFilter.end);
     }
 
@@ -113,11 +114,11 @@ export class DashboardService {
     const expiredWarrantiesWhere: any = {
       warranty_end: LessThan(now),
     };
+    const expiredEnd = timeFilter?.end && timeFilter.end < now ? timeFilter.end : now;
     if (timeFilter?.start) {
-      expiredWarrantiesWhere.warranty_end = MoreThan(timeFilter.start);
-    }
-    if (timeFilter?.end) {
-      expiredWarrantiesWhere.warranty_end = LessThanOrEqual(timeFilter.end);
+      expiredWarrantiesWhere.warranty_end = Between(timeFilter.start, expiredEnd);
+    } else if (timeFilter?.end) {
+      expiredWarrantiesWhere.warranty_end = LessThanOrEqual(expiredEnd);
     }
 
     const expiredWarranties = await this.warrantiesRepository.count({
@@ -168,23 +169,15 @@ export class DashboardService {
 
 
     // Financial stats
-    const paymentsWhere: any = {
-      payment_status: PaymentStatus.PAID,
-    };
-    if (timeFilter?.start) {
-      paymentsWhere.created_at = MoreThan(timeFilter.start);
-    }
-    if (timeFilter?.end) {
-      paymentsWhere.created_at = LessThanOrEqual(timeFilter.end);
-    }
-
-    const payments = await this.paymentsRepository.find({
-      where: paymentsWhere,
-      select: ['offer_amount'],
-    });
-
-    const totalPayments = payments.length;
-    const totalMoneyIn = payments.reduce((sum, p) => sum + Number(p.offer_amount || 0), 0);
+    const paymentsQuery = this.paymentsRepository.createQueryBuilder('payment')
+      .select('COUNT(payment.id)', 'count')
+      .addSelect('COALESCE(SUM(payment.offer_amount), 0)', 'amount')
+      .where('payment.payment_status = :paid', { paid: PaymentStatus.PAID });
+    if (timeFilter?.start) paymentsQuery.andWhere('payment.created_at >= :paymentStart', { paymentStart: timeFilter.start });
+    if (timeFilter?.end) paymentsQuery.andWhere('payment.created_at <= :paymentEnd', { paymentEnd: timeFilter.end });
+    const paymentTotals = await paymentsQuery.getRawOne();
+    const totalPayments = Number(paymentTotals?.count || 0);
+    const totalMoneyIn = Number(paymentTotals?.amount || 0);
 
     return {
       realTime: {

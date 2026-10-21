@@ -34,14 +34,21 @@ const FinancePage = () => {
     payment_status: '',
     payment_method: '',
   });
+  const [page, setPage] = useState(1);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
 
-  const { data: payments, isLoading, error } = useQuery(
-    ['payments', filters],
-    () => paymentsService.getAll(filters)
+  const { data: paymentPage, isLoading, error } = useQuery(
+    ['payments', filters, page],
+    () => paymentsService.getAll({ ...filters, page, limit: 50 })
   );
+  const payments = paymentPage?.data || [];
+  const total = paymentPage?.total || 0;
+  const pageCount = Math.max(1, Math.ceil(total / 50));
 
   const handleFilterChange = (key, value) => {
     setFilters({ ...filters, [key]: value });
+    setPage(1);
   };
 
   const csvEscape = (value) => {
@@ -57,8 +64,20 @@ const FinancePage = () => {
       .join(' | ');
   };
 
-  const handleExport = () => {
-    const rows = payments || [];
+  const handleExport = async () => {
+    setExporting(true);
+    setExportError('');
+    try {
+      const rows = [];
+      let exportPage = 1;
+      let exportTotal = 0;
+      do {
+        const batch = await paymentsService.getAll({ ...filters, page: exportPage, limit: 200, include_history: true });
+        if (!batch.data.length && batch.total > rows.length) throw new Error('Export changed while loading');
+        rows.push(...batch.data);
+        exportTotal = batch.total;
+        exportPage += 1;
+      } while (rows.length < exportTotal);
     const headers = [
       'Payment Date',
       'Case Number',
@@ -110,6 +129,11 @@ const FinancePage = () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    } catch (exportFailure) {
+      setExportError(exportFailure.response?.data?.message || t('common.errorLoading'));
+    } finally {
+      setExporting(false);
+    }
   };
 
   const getPaymentStatusColor = (status) => {
@@ -145,11 +169,12 @@ const FinancePage = () => {
           variant="outlined"
           startIcon={<DownloadIcon />}
           onClick={handleExport}
-          disabled={!payments || payments.length === 0}
+          disabled={!total || exporting}
         >
-          {t('common.export')}
+          {exporting ? t('common.loading') : t('common.export')}
         </Button>
       </Box>
+      {exportError && <Alert severity="error">{exportError}</Alert>}
 
       {/* Filters */}
       <Paper className="zzv-staff-workspace__filters">
@@ -266,6 +291,12 @@ const FinancePage = () => {
           </TableBody>
         </Table>
       </TableContainer>
+      <Box display="flex" justifyContent="flex-end" alignItems="center" gap={2} mt={2}>
+        <Typography variant="body2">{total} {t('common.total')}</Typography>
+        <Button disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>{t('common.previous')}</Button>
+        <Typography variant="body2">{page} / {pageCount}</Typography>
+        <Button disabled={page >= pageCount} onClick={() => setPage((current) => current + 1)}>{t('common.next')}</Button>
+      </Box>
     </Box>
   );
 };
