@@ -2995,6 +2995,7 @@ button.zzv-public-header-action { cursor: pointer; }
 .is-selected > .zzv-trade-answer-control { border: 6px solid var(--zzv-purple-500); }
 .is-selected > .zzv-trade-answer-control.is-checkbox { border-width: 5px; }
 .zzv-trade-answer-badge { display: grid; flex: 0 0 38px; place-items: center; width: 38px; height: 38px; border-radius: 8px; background: #e8f6ed; color: #16804b; font-weight: 800; }
+.zzv-trade-grade-open-box { flex-basis: 72px; width: 72px; font-size: 11px; white-space: nowrap; }
 .zzv-trade-grade-c, .zzv-trade-grade-d { background: #fff1da; color: #9a6400; }
 .zzv-trade-grade-e { background: #ffe5e5; color: #a93636; }
 .zzv-trade-answer-icon { display: grid; flex: 0 0 38px; place-items: center; width: 38px; height: 38px; }
@@ -3868,6 +3869,7 @@ button.zzv-public-header-action { cursor: pointer; }
   .zzv-trade-answer-control { flex-basis: 16px; width: 16px; height: 16px; border-width: 1px; }
   .is-selected > .zzv-trade-answer-control { border-width: 5px; }
   .zzv-trade-answer-badge { flex-basis: 32px; width: 32px; height: 36px; border: 1px solid currentColor; border-radius: 4px; font-size: 12px; }
+  .zzv-trade-grade-open-box { flex-basis: 72px; width: 72px; font-size: 11px; }
   .zzv-trade-answer-icon { flex-basis: 40px; width: 40px; height: 40px; border-radius: 12px; background: #f6f4fb; }
   .zzv-trade-answer-icon img { max-width: 22px; max-height: 22px; }
   .zzv-trade-flow--condition .zzv-trade-answer.is-muted { margin-top: 24px; border-style: dashed; }

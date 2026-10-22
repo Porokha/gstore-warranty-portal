@@ -29,6 +29,15 @@ describe('trade-in quote labels', () => {
     expect(tradeInConditionGrade(question, answer)).toBe('A');
   });
 
+  it('assigns condition grades by answer order regardless of edited wording', () => {
+    const answers = ['ახალი / Open Box', 'ძალიან კარგი', 'კარგი', 'დამაკმაყოფილებელი', 'დაზიანებული']
+      .map((text) => ({ text }));
+    const question = { label: 'condition', answers };
+    expect(answers.map((answer) => tradeInConditionGrade(question, answer)))
+      .toEqual(['Open Box', 'A', 'A-', 'B', 'C']);
+    expect(tradeInConditionGrade({ label: 'storage_size', answers }, answers[0])).toBeNull();
+  });
+
   it('prepopulates legacy display copy in the editable JSON tree', () => {
     const tree = [{ name: 'Condition', questions: [{ label: 'condition', text: 'Condition?', answers: [{ text: 'Excellent', value: 100 }] }] }];
     const [question] = hydrateTradeInPricingCopy(tree)[0].questions;

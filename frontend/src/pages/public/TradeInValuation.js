@@ -48,7 +48,7 @@ const faultOptions = [
 function SelectionRow({ selected, onClick, title, subtitle, value, badge, multiple = false, muted = false, icon }) {
   return (
     <button type="button" className={`zzv-trade-answer${selected ? ' is-selected' : ''}${muted ? ' is-muted' : ''}`} aria-pressed={selected} onClick={onClick}>
-      {badge && <span className={`zzv-trade-answer-badge zzv-trade-grade-${badge.replace('+', 'plus').toLowerCase()}`}>{badge}</span>}
+      {badge && <span className={`zzv-trade-answer-badge zzv-trade-grade-${badge.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>{badge}</span>}
       {icon && <span className="zzv-trade-answer-icon"><img src={icon} alt="" /></span>}
       <span className="zzv-trade-answer-copy"><strong>{title}</strong>{subtitle && <small>{subtitle}</small>}</span>
       {value && <strong className="zzv-trade-answer-value">{value}</strong>}

@@ -57,9 +57,14 @@ const conditionDisplay = {
   broken: { grade: 'E', helpKa: 'შეკეთებას საჭიროებს', helpEn: 'Needs repair' },
 };
 
-export const tradeInConditionGrade = (question, answer) => question?.label === 'condition'
-  ? conditionDisplay[String(answer?.text || '').trim().toLowerCase()]?.grade || null
-  : null;
+const conditionGrades = ['Open Box', 'A', 'A-', 'B', 'C'];
+
+export const tradeInConditionGrade = (question, answer) => {
+  if (question?.label !== 'condition') return null;
+  const answerIndex = (question.answers || []).findIndex((item) => item === answer);
+  if (answerIndex >= 0) return conditionGrades[answerIndex] || null;
+  return conditionDisplay[String(answer?.text || '').trim().toLowerCase()]?.grade || null;
+};
 
 export const tradeInQuestionText = (question, language) => language === 'ka'
   ? question?.text_ka || questionDisplayLabelsKa[question?.label] || question?.text || ''
