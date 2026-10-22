@@ -46,9 +46,10 @@ const faultOptions = [
 ];
 
 function SelectionRow({ selected, onClick, title, subtitle, value, badge, multiple = false, muted = false, icon }) {
+  const gradeClass = badge === 'A-' ? 'a-minus' : badge === '?' ? 'unknown' : badge?.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   return (
     <button type="button" className={`zzv-trade-answer${selected ? ' is-selected' : ''}${muted ? ' is-muted' : ''}`} aria-pressed={selected} onClick={onClick}>
-      {badge && <span className={`zzv-trade-answer-badge zzv-trade-grade-${badge.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>{badge}</span>}
+      {badge && <span className={`zzv-trade-answer-badge zzv-trade-grade-${gradeClass}`}>{badge === 'Open Box' ? 'NEW' : badge}</span>}
       {icon && <span className="zzv-trade-answer-icon"><img src={icon} alt="" /></span>}
       <span className="zzv-trade-answer-copy"><strong>{title}</strong>{subtitle && <small>{subtitle}</small>}</span>
       {value && <strong className="zzv-trade-answer-value">{value}</strong>}
@@ -370,7 +371,7 @@ export default function TradeInValuation({ product, t, language, initialStorage 
               const accessoryIcon = isAccessories ? (/box/i.test(answer.text) ? '/figma-home/trade-accessory-box.svg' : /cable|adapter/i.test(answer.text) ? '/figma-home/imgIconPlug.svg' : '/figma-home/imgIconSmartphone.svg') : null;
               return <SelectionRow key={`${answer.text}-${index}`} selected={selectedIndexes.includes(index)} onClick={() => setSelectedIndexes((current) => isMulti ? current.includes(index) ? current.filter((item) => item !== index) : [...current, index] : [index])} title={tradeInAnswerText(question, answer, language)} subtitle={tradeInAnswerHelp(question, answer, language)} badge={grade} icon={accessoryIcon} multiple={isMulti} value={isCondition ? money(conditionPreview(answer)) : amount(answer) ? `${amount(answer) > 0 ? '+' : '-'}${money(Math.abs(amount(answer)))}` : null} />;
             })}
-            {isCondition && <SelectionRow selected={false} onClick={() => { setFaults([]); setManualAssessment(true); setPhase('faults'); }} title={language === 'ka' ? 'არ ვიცი — ჩვენ შევაფასებთ' : 'Not sure — we will assess it'} subtitle={language === 'ka' ? 'ფასის დიაპაზონს მიიღებ' : 'Get an estimated price range'} muted />}
+            {isCondition && <SelectionRow selected={false} onClick={() => { setFaults([]); setManualAssessment(true); setPhase('faults'); }} title={language === 'ka' ? 'არ ვიცი — ჩვენ შევაფასებთ' : 'Not sure — we will assess it'} subtitle={language === 'ka' ? 'ფასის დიაპაზონს მიიღებ' : 'Get an estimated price range'} badge="?" muted />}
           </div>
           {error && <p className="zzv-trade-error">{error}</p>}
           <button className="zzv-trade-primary" type="button" onClick={() => { if (!selectedIndexes.length && !isMulti) return setError(t('public.tradeIn.answerRequired')); advance(selectedIndexes.map((index) => answers[index]).filter(Boolean), selectedIndexes); }}>{isAccessories ? (language === 'ka' ? 'შეაფასე' : 'See estimate') : t('public.tradeIn.continue')}</button>
