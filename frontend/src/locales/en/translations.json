@@ -680,7 +680,7 @@
     "internalNoteDeleteFailed": "The internal note could not be deleted.",
     "bothPaymentMethods": "Both",
     "technicianForwardOnly": "Technicians can only move the case forward.",
-    "coveredPublicNoteRequired": "A public note is required for a covered result.",
+    "coveredPublicNoteRequired": "Add a public note to complete this covered case; no note was recorded at the pending stage.",
     "payableAmountRequired": "Enter an amount for the payable offer.",
     "paymentMethodRequired": "Select a payment method.",
     "replacementTitleRequired": "Enter the replacement product title.",

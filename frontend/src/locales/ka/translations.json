@@ -680,7 +680,7 @@
     "internalNoteDeleteFailed": "შიდა შენიშვნის წაშლა ვერ მოხერხდა.",
     "bothPaymentMethods": "ორივე",
     "technicianForwardOnly": "ტექნიკოსს ქეისის მხოლოდ შემდეგ ეტაპზე გადატანა შეუძლია.",
-    "coveredPublicNoteRequired": "გარანტიით დაფარული შედეგისთვის საჯარო შენიშვნა აუცილებელია.",
+    "coveredPublicNoteRequired": "გარანტიით დაფარული ქეისის დასასრულებლად დაამატეთ საჯარო შენიშვნა; მოლოდინის ეტაპზე შენიშვნა არ დაფიქსირებულა.",
     "payableAmountRequired": "შეიყვანეთ გადასახდელი შეთავაზების თანხა.",
     "paymentMethodRequired": "აირჩიეთ გადახდის მეთოდი.",
     "replacementTitleRequired": "შეიყვანეთ შემცვლელი პროდუქტის დასახელება.",

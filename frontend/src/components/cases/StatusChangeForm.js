@@ -47,6 +47,11 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange, sta
     ['payable', 'replaceable'].includes(formData.result_type) &&
     !case_.payments?.some((payment) => payment.offer_type === formData.result_type);
   const hasNotes = Boolean(formData.note_public || formData.note_private);
+  const hasPendingNote = case_.status_history?.some((history) =>
+    Number(history.new_status_level) === 3 &&
+    Boolean(history.note_public?.trim() || history.note_private?.trim()));
+  const requiresCoveredCompletionNote = formData.result_type === 'covered' &&
+    formData.new_status_level === 4 && case_.status_level !== 4 && !hasPendingNote;
   const canSubmit =
     hasStatusChange ||
     hasOfferAction ||
@@ -124,8 +129,7 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange, sta
     }
 
     // Special validation for Covered
-    if (formData.result_type === 'covered' && formData.new_status_level === 4 &&
-      case_.status_level !== 4 && !formData.note_public) {
+    if (requiresCoveredCompletionNote && !formData.note_public.trim()) {
       setError(t('case.coveredPublicNoteRequired'));
       return;
     }
@@ -379,7 +383,7 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange, sta
         </section>
       )}
 
-      <details className="zzv-case-flow__panel zzv-case-flow__note-panel" open={formData.result_type === 'covered' ? true : undefined}>
+      <details className="zzv-case-flow__panel zzv-case-flow__note-panel" open={requiresCoveredCompletionNote ? true : undefined}>
         <summary>{t('case.statusNotes')}</summary>
         <div className="zzv-case-flow__panel-content">
           <p className="zzv-case-flow__helper">{t('case.statusNotesHelp')}</p>
@@ -393,7 +397,7 @@ const StatusChangeForm = ({ case_, onStatusChange, isLoading, onDraftChange, sta
           value={formData.note_public}
           onChange={handleChange}
           margin="normal"
-          required={formData.result_type === 'covered'}
+          required={requiresCoveredCompletionNote}
         />
 
         <TextField

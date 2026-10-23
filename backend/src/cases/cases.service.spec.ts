@@ -242,7 +242,18 @@ describe('CasesService status changes', () => {
     };
     const cases = { createQueryBuilder: () => query, save: caseSave };
     const offers = { find: jest.fn(async () => payments), create: (value) => value, save: offerSave };
-    const histories = { create: (value) => value, save: jest.fn(async (value) => value) };
+    const historyQuery = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getExists: jest.fn(async () => case_.status_history?.some((history) =>
+        history.new_status_level === CaseStatusLevel.PENDING &&
+        Boolean(history.note_public?.trim() || history.note_private?.trim())) || false),
+    };
+    const histories = {
+      create: (value) => value,
+      save: jest.fn(async (value) => value),
+      createQueryBuilder: () => historyQuery,
+    };
     const manager = {
       getRepository: (entity) => entity === ServiceCase ? cases : entity === CasePayment ? offers : entity === CaseStatusHistory || entity === AuditLog ? histories : null,
     };
@@ -406,6 +417,24 @@ describe('CasesService status changes', () => {
       .rejects.toThrow('public note is required');
     expect(caseSave).not.toHaveBeenCalled();
   });
+
+  it.each(['note_public', 'note_private'])(
+    'completes a covered case without a duplicate note after a pending-stage %s', async (noteField) => {
+      const case_ = {
+        id: 24,
+        status_level: CaseStatusLevel.PENDING,
+        result_type: ResultType.COVERED,
+        customer_phone: null,
+        status_history: [{ new_status_level: CaseStatusLevel.PENDING, [noteField]: 'Assessment recorded' }],
+      };
+      const { service, caseSave } = setup(case_);
+
+      await service.changeStatus(24, { new_status_level: CaseStatusLevel.COMPLETED } as any, 1);
+
+      expect(caseSave).toHaveBeenCalledTimes(1);
+      expect(case_.status_level).toBe(CaseStatusLevel.COMPLETED);
+    },
+  );
 
   it('resets pickup in the status transaction when reopening a completed case', async () => {
     const case_ = { id: 23, status_level: CaseStatusLevel.COMPLETED, result_type: ResultType.COVERED };

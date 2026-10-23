@@ -502,7 +502,17 @@ export class CasesService {
         }
         if (newStatus === CaseStatusLevel.COMPLETED && previousStatus !== CaseStatusLevel.COMPLETED &&
           effectiveResult === ResultType.COVERED && !changeStatusDto.note_public?.trim()) {
-          throw new BadRequestException('A public note is required to complete a covered case');
+          const hasPendingNote = await manager.getRepository(CaseStatusHistory)
+            .createQueryBuilder('history')
+            .where('history.case_id = :id AND history.new_status_level = :pending', {
+              id,
+              pending: CaseStatusLevel.PENDING,
+            })
+            .andWhere("(TRIM(COALESCE(history.note_public, '')) <> '' OR TRIM(COALESCE(history.note_private, '')) <> '')")
+            .getExists();
+          if (!hasPendingNote) {
+            throw new BadRequestException('A public note is required to complete a covered case without a pending-stage note');
+          }
         }
         if (payments.some((payment) => payment.payment_status === PaymentStatus.PAID && payment.offer_type !== effectiveResult)) {
           throw new BadRequestException('A paid offer cannot be changed to another result');

@@ -41,6 +41,41 @@ describe('StatusChangeForm drafts', () => {
     expect(container.querySelector('input[type="checkbox"]').checked).toBe(true);
   });
 
+  it('requires a public note only if no pending-stage note was recorded', () => {
+    const case_ = { id: 6, status_level: 3, result_type: 'covered', payments: [], status_history: [] };
+    act(() => root.render(<StatusChangeForm case_={case_} onStatusChange={jest.fn()} />));
+    expect(container.querySelector('textarea[name="note_public"]').required).toBe(false);
+
+    act(() => container.querySelector('[aria-label="case.chooseNextStage: status.completed"]').click());
+    expect(container.querySelector('textarea[name="note_public"]').required).toBe(true);
+
+    act(() => root.render(<StatusChangeForm case_={{ ...case_, status_history: [
+      { new_status_level: 3, note_private: 'Assessment recorded' },
+    ] }} onStatusChange={jest.fn()} />));
+    expect(container.querySelector('textarea[name="note_public"]').required).toBe(false);
+  });
+
+  it('submits covered completion without repeating a pending-stage note', async () => {
+    const onStatusChange = jest.fn().mockResolvedValue({ status_level: 4 });
+    act(() => root.render(<StatusChangeForm
+      case_={{ id: 7, status_level: 3, result_type: 'covered', payments: [], status_history: [
+        { new_status_level: 3, note_public: 'Assessment recorded' },
+      ] }}
+      onStatusChange={onStatusChange}
+    />));
+
+    act(() => container.querySelector('[aria-label="case.chooseNextStage: status.completed"]').click());
+    await act(async () => {
+      container.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    });
+
+    expect(onStatusChange).toHaveBeenCalledWith(expect.objectContaining({
+      new_status_level: 4,
+      result_type: 'covered',
+      note_public: null,
+    }));
+  });
+
   it('submits the payable offer with the stage change in one request', async () => {
     const onStatusChange = jest.fn().mockResolvedValue({ status_level: 3 });
     act(() => root.render(<StatusChangeForm
