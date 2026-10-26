@@ -500,6 +500,26 @@
     "payableAlreadyPending": "A payable offer already exists and is waiting for payment confirmation.",
     "payableAlreadyPaid": "The payable offer is paid. You can now complete the case."
   },
+  "financeReport": {
+    "description": "Service-case offers and payments, with dates shown in Tbilisi time",
+    "filters": "Report filters",
+    "clearFilters": "Clear filters",
+    "dateBasis": "Filter dates by",
+    "deviceTypes": { "Phone": "Phone", "Tablet": "Tablet", "Laptop": "Laptop", "Desktop": "Desktop", "Other": "Other" },
+    "offerCreated": "Offer created",
+    "paidAt": "Paid at",
+    "historicalPaidAtHint": "Exact paid times were not stored for older payments. Payment-date filters exclude those records; use offer-created dates to include them.",
+    "matchingRecords": "Matching records",
+    "paidTotal": "Paid payable offers",
+    "pendingTotal": "Pending payable offers",
+    "totalsHint": "Totals include payable offers only. Pending amounts are not collected revenue.",
+    "showing": "Showing {{first}}-{{last}} of {{total}} records",
+    "noRecords": "No payment records match these filters.",
+    "invalidRange": "Start date must not be after end date.",
+    "exportAll": "Export all {{count}} records",
+    "exporting": "Preparing report...",
+    "exportFailed": "The finance report could not be exported. Please try again."
+  },
   "settings": {
     "smsNotifications": "SMS Notifications",
     "smsNotificationsDescription": "Control when SMS notifications are automatically sent to customers",

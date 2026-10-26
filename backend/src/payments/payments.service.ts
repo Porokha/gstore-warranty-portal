@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository, SelectQueryBuilder } from 'typeorm';
 import { CasePayment, PaymentStatus, CodeStatus } from './entities/case-payment.entity';
 import { CaseType, ServiceCase, CaseStatusLevel, ResultType } from '../cases/entities/service-case.entity';
 import { CreateOfferDto } from './dto/create-offer.dto';
@@ -13,6 +13,16 @@ import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { SmsService } from '../sms/sms.service';
 import { Language } from '../sms/entities/sms-template.entity';
 import { SmsStatus } from '../sms/entities/sms-log.entity';
+import { financeCsvHeader, financeCsvRow } from './finance-export';
+
+export type FinanceFilters = {
+  start_date?: Date;
+  end_date?: Date;
+  date_basis?: 'created' | 'paid';
+  device_type?: string;
+  payment_status?: PaymentStatus;
+  payment_method?: string;
+};
 
 @Injectable()
 export class PaymentsService {
@@ -126,44 +136,67 @@ export class PaymentsService {
     });
   }
 
-  async findAll(filters?: {
-    start_date?: Date;
-    end_date?: Date;
-    device_type?: string;
-    payment_status?: PaymentStatus;
-    payment_method?: string;
-  }, page = 1, limit = 50, includeHistory = false): Promise<{ data: CasePayment[]; total: number; page: number; limit: number }> {
-    const query = this.paymentsRepository.createQueryBuilder('payment')
-      .leftJoinAndSelect('payment.case_', 'case')
+  private financeQuery(filters: FinanceFilters = {}, selectCase = true): SelectQueryBuilder<CasePayment> {
+    const query = this.paymentsRepository.createQueryBuilder('payment');
+    if (selectCase) query.leftJoinAndSelect('payment.case_', 'case');
+    else query.leftJoin('payment.case_', 'case');
+
+    const dateColumn = filters.date_basis === 'paid' ? 'payment.paid_at' : 'payment.created_at';
+    if (filters.start_date) query.andWhere(`${dateColumn} >= :start_date`, { start_date: filters.start_date });
+    if (filters.end_date) query.andWhere(`${dateColumn} <= :end_date`, { end_date: filters.end_date });
+    if (filters.device_type) query.andWhere('case.device_type = :device_type', { device_type: filters.device_type });
+    if (filters.payment_status) query.andWhere('payment.payment_status = :payment_status', { payment_status: filters.payment_status });
+    if (filters.payment_method) query.andWhere('payment.payment_method = :payment_method', { payment_method: filters.payment_method });
+    return query;
+  }
+
+  async findAll(filters: FinanceFilters = {}, page = 1, limit = 50, includeHistory = false): Promise<{ data: CasePayment[]; total: number; page: number; limit: number }> {
+    const query = this.financeQuery(filters)
       .leftJoinAndSelect('case.assigned_technician', 'technician')
-      .orderBy('payment.created_at', 'DESC');
+      .orderBy('payment.created_at', 'DESC')
+      .addOrderBy('payment.id', 'DESC');
     if (includeHistory) {
       query.leftJoinAndSelect('case.status_history', 'history')
         .addOrderBy('history.created_at', 'ASC');
     }
-
-    if (filters?.start_date) {
-      query.andWhere('payment.created_at >= :start_date', { start_date: filters.start_date });
-    }
-
-    if (filters?.end_date) {
-      query.andWhere('payment.created_at <= :end_date', { end_date: filters.end_date });
-    }
-
-    if (filters?.device_type) {
-      query.andWhere('case.device_type = :device_type', { device_type: filters.device_type });
-    }
-
-    if (filters?.payment_status) {
-      query.andWhere('payment.payment_status = :payment_status', { payment_status: filters.payment_status });
-    }
-
-    if (filters?.payment_method) {
-      query.andWhere('payment.payment_method = :payment_method', { payment_method: filters.payment_method });
-    }
-
     const [data, total] = await query.skip((page - 1) * limit).take(limit).getManyAndCount();
     return { data, total, page, limit };
+  }
+
+  async getFinanceSummary(filters: FinanceFilters = {}) {
+    const raw = await this.financeQuery(filters, false)
+      .select('COUNT(payment.id)', 'count')
+      .addSelect("COALESCE(SUM(CASE WHEN payment.offer_type = 'payable' AND payment.payment_status = 'paid' THEN payment.offer_amount ELSE 0 END), 0)", 'paid_amount')
+      .addSelect("COALESCE(SUM(CASE WHEN payment.offer_type = 'payable' AND payment.payment_status = 'pending' THEN payment.offer_amount ELSE 0 END), 0)", 'pending_amount')
+      .getRawOne();
+    return {
+      count: Number(raw?.count || 0),
+      paid_amount: Number(raw?.paid_amount || 0),
+      pending_amount: Number(raw?.pending_amount || 0),
+    };
+  }
+
+  async exportFinanceCsv(filters: FinanceFilters = {}): Promise<string> {
+    const matchingIds = await this.financeQuery(filters, false)
+      .select('payment.id', 'id')
+      .orderBy('payment.id', 'ASC')
+      .getRawMany();
+    const lines = ['\uFEFF' + financeCsvHeader];
+    for (let offset = 0; offset < matchingIds.length; offset += 200) {
+      const ids = matchingIds.slice(offset, offset + 200).map((row) => Number(row.id));
+      const payments = await this.paymentsRepository.find({
+        where: { id: In(ids) },
+        relations: ['case_', 'case_.assigned_technician', 'case_.status_history'],
+      });
+      const byId = new Map(payments.map((payment) => [payment.id, payment]));
+      for (const id of ids) {
+        const payment = byId.get(id);
+        if (!payment) throw new Error(`Finance export lost payment ${id} while loading`);
+        lines.push(financeCsvRow(payment));
+      }
+    }
+
+    return lines.join('\r\n');
   }
 
   async findOne(id: number): Promise<CasePayment> {
@@ -216,6 +249,7 @@ export class PaymentsService {
         throw new BadRequestException('Only pending payments can be marked paid');
       }
       payment.payment_status = PaymentStatus.PAID;
+      payment.paid_at = new Date();
       if (bogTransactionId) payment.bog_transaction_id = bogTransactionId;
       if (payment.generated_code && payment.code_status === CodeStatus.ACTIVE) {
         payment.code_status = CodeStatus.USED;

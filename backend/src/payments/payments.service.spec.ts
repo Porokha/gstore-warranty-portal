@@ -35,6 +35,26 @@ describe('PaymentsService.update', () => {
 });
 
 describe('PaymentsService payment state', () => {
+  it('records an exact paid timestamp when a payable offer is marked paid', async () => {
+    const payment = {
+      id: 6, case_id: 2, offer_type: ResultType.PAYABLE, payment_status: PaymentStatus.PENDING,
+      case_: { id: 2, status_level: CaseStatusLevel.PENDING, result_type: ResultType.PAYABLE },
+    };
+    const repository = {
+      findOne: jest.fn().mockResolvedValue(payment),
+      manager: { transaction: jest.fn((callback) => callback({
+        findOne: jest.fn((entity) => entity === ServiceCase ? payment.case_ : payment),
+        save: jest.fn(async (value) => value),
+      })) },
+    };
+    const service = new PaymentsService(repository as any, {} as any, { sendSms: jest.fn() } as any);
+
+    await service.markAsPaid(6);
+
+    expect(payment.payment_status).toBe(PaymentStatus.PAID);
+    expect(payment).toHaveProperty('paid_at', expect.any(Date));
+  });
+
   it('rejects reminders for a stale payable offer after the result changed', async () => {
     const payment = {
       id: 8, offer_type: ResultType.PAYABLE, payment_status: PaymentStatus.PENDING,
@@ -131,5 +151,31 @@ describe('PaymentsService finance pagination', () => {
     expect(query.leftJoinAndSelect).not.toHaveBeenCalledWith('case.status_history', 'history');
     await service.findAll({}, 1, 200, true);
     expect(query.leftJoinAndSelect).toHaveBeenCalledWith('case.status_history', 'history');
+  });
+
+  it('exports every matching payment across multiple batches', async () => {
+    const allIds = Array.from({ length: 450 }, (_, index) => index + 1);
+    const repository = {
+      createQueryBuilder: jest.fn(() => {
+        return {
+          leftJoin: jest.fn().mockReturnThis(),
+          select: jest.fn().mockReturnThis(),
+          orderBy: jest.fn().mockReturnThis(),
+          getRawMany: jest.fn(async () => allIds.map((id) => ({ id }))),
+        };
+      }),
+      find: jest.fn(async (options) => options.where.id.value.map((id) => ({
+        id,
+        created_at: new Date('2026-10-24T10:00:00Z'),
+        updated_at: new Date('2026-10-24T10:00:00Z'),
+      }))),
+    };
+    const service = new PaymentsService(repository as any, {} as any, {} as any);
+
+    const csv = await service.exportFinanceCsv();
+
+    expect(csv.split('\r\n')).toHaveLength(451);
+    expect(csv).toContain('"450","2026-10-24 14:00:00"');
+    expect(repository.find).toHaveBeenCalledTimes(3);
   });
 });

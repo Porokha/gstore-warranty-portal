@@ -57,6 +57,9 @@ export class CasePayment {
   })
   payment_status: PaymentStatus;
 
+  @Column({ type: 'datetime', nullable: true })
+  paid_at: Date | null;
+
   @Column({ nullable: true })
   bog_transaction_id: string;
 

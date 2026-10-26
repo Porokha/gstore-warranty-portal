@@ -1,18 +1,34 @@
 import api from './api';
 
+const financeParams = (filters) => {
+  const params = new URLSearchParams();
+  if (filters.start_date) params.append('start_date', filters.start_date);
+  if (filters.end_date) params.append('end_date', filters.end_date);
+  if (filters.date_basis) params.append('date_basis', filters.date_basis);
+  if (filters.device_type) params.append('device_type', filters.device_type);
+  if (filters.payment_status) params.append('payment_status', filters.payment_status);
+  if (filters.payment_method) params.append('payment_method', filters.payment_method);
+  return params;
+};
+
 export const paymentsService = {
   getAll: async (filters = {}) => {
-    const params = new URLSearchParams();
-    if (filters.start_date) params.append('start_date', filters.start_date);
-    if (filters.end_date) params.append('end_date', filters.end_date);
-    if (filters.device_type) params.append('device_type', filters.device_type);
-    if (filters.payment_status) params.append('payment_status', filters.payment_status);
-    if (filters.payment_method) params.append('payment_method', filters.payment_method);
+    const params = financeParams(filters);
     if (filters.page) params.append('page', String(filters.page));
     if (filters.limit) params.append('limit', String(filters.limit));
     if (filters.include_history) params.append('include_history', 'true');
 
     const response = await api.get(`/payments?${params.toString()}`);
+    return response.data;
+  },
+
+  getFinanceSummary: async (filters = {}) => {
+    const response = await api.get(`/payments/reports/finance/summary?${financeParams(filters)}`);
+    return response.data;
+  },
+
+  exportFinance: async (filters = {}) => {
+    const response = await api.get(`/payments/reports/finance.csv?${financeParams(filters)}`, { responseType: 'blob' });
     return response.data;
   },
 
