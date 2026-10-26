@@ -806,6 +806,7 @@
     "closeDate": "Close date",
     "customerName": "Customer name",
     "customerLastName": "Customer last name",
+    "customerPhone": "Customer phone",
     "phone": "Phone",
     "email": "Email",
     "technician": "Technician",
