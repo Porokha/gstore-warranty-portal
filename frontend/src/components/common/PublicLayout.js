@@ -8,6 +8,18 @@ import { isPublicShopEnabled } from '../../utils/publicShopAvailability';
 
 const CLARITY_PROJECT_ID = 'wf9ncn570j';
 const GTM_CONTAINER_ID = 'GTM-567T4CBG';
+const RESPOND_WIDGET_ID = 'respondio__widget';
+const RESPOND_WIDGET_URL = 'https://cdn.respond.io/webchat/widget/widget.js?cId=c324653688760c8dfe6500959a79ea0';
+
+const ensureRespondWidget = () => {
+  if (document.getElementById(RESPOND_WIDGET_ID)) return;
+  const script = document.createElement('script');
+  script.id = RESPOND_WIDGET_ID;
+  script.src = RESPOND_WIDGET_URL;
+  script.async = true;
+  script.onerror = () => script.remove();
+  document.body.appendChild(script);
+};
 
 const PublicLayout = () => {
   const navigate = useNavigate();
@@ -106,9 +118,10 @@ const PublicLayout = () => {
     }
 
     setMobileMenuOpen(false);
+    ensureRespondWidget();
 
     let attempts = 0;
-    const maxAttempts = 20;
+    const maxAttempts = 50;
 
     const tryOpen = () => {
       if (window.$respond?.do) {
@@ -118,7 +131,7 @@ const PublicLayout = () => {
 
       attempts += 1;
       if (attempts < maxAttempts) {
-        window.setTimeout(tryOpen, 150);
+        window.setTimeout(tryOpen, 200);
       }
     };
 
@@ -248,6 +261,8 @@ const PublicLayout = () => {
         <IconButton
           aria-label="Open chat"
           onClick={openRespondChat}
+          onPointerEnter={ensureRespondWidget}
+          onFocus={ensureRespondWidget}
           sx={{
             width: 60,
             height: 60,
@@ -312,6 +327,9 @@ const PublicLayout = () => {
             </div>
           </div>
           <div className="zzv-public-mobile-menu-bottom">
+            <button type="button" className="zzv-public-mobile-menu-chat" onClick={openRespondChat}>
+              {i18n.language === 'ka' ? 'კითხვა გაქვს? მოგვწერე' : 'Chat with us'}
+            </button>
             <button type="button" onClick={() => { setMobileMenuOpen(false); navigate('/trade-in'); }}>{i18n.language === 'ka' ? 'შეაფასე ტელეფონი' : 'Value your phone'}</button>
           </div>
         </div>

@@ -59,9 +59,9 @@ function ButtonLink({ to, variant = 'primary', children }) {
 function BrandPair() {
   return (
     <div className="zzv-figma-brand-pair" aria-hidden="true">
-      <img src={asset('imgZezvaBrandColor.svg')} alt="" />
+      <img src={asset('imgZezvaBrandColor.svg')} alt="" loading="lazy" decoding="async" />
       <span>×</span>
-      <img src={asset('imgGstoreBrandColor.svg')} alt="" />
+      <img src={asset('imgGstoreBrandColor.svg')} alt="" loading="lazy" decoding="async" />
     </div>
   );
 }
@@ -111,7 +111,7 @@ function StepCard({ step }) {
     <article className="zzv-figma-step">
       <span className="zzv-figma-step-number">{step[0]}</span>
       <div className="zzv-figma-step-visual">
-        <img src={asset(step[3])} alt="" />
+        <img src={asset(step[3])} alt="" loading="lazy" decoding="async" />
       </div>
       <div className="zzv-figma-step-caption">
         <strong>{step[1]}</strong>
@@ -229,7 +229,7 @@ function LandingPage() {
           <aside className="zzv-figma-selector">
             <h2>შეაფასე შენი მოწყობილობა</h2>
             <div className="zzv-figma-selector-grid">
-              <HeroDropdown label="ბრენდი" value={heroBrand} options={(brandsQuery.data || []).map((item) => ({ value: item.brand, label: item.coming_soon ? `${item.brand} · მალე` : item.brand, disabled: item.coming_soon }))} placeholder="აირჩიე ბრენდი" onChange={(value) => { setHeroBrand(value); setHeroSearch(''); setHeroProduct(null); setHeroStorage(''); setHeroCondition(''); }} />
+              <HeroDropdown label="ბრენდი" value={heroBrand} options={(Array.isArray(brandsQuery.data) ? brandsQuery.data : []).map((item) => ({ value: item.brand, label: item.coming_soon ? `${item.brand} · მალე` : item.brand, disabled: item.coming_soon }))} placeholder="აირჩიე ბრენდი" onChange={(value) => { setHeroBrand(value); setHeroSearch(''); setHeroProduct(null); setHeroStorage(''); setHeroCondition(''); }} />
               <div className={`zzv-figma-select-field zzv-figma-model-field${!heroBrand ? ' is-mobile-pending' : ''}`} ref={modelRef}>
                 <label htmlFor="home-hero-model">მოდელი</label>
                 <input id="home-hero-model" className="zzv-figma-select" role="combobox" aria-autocomplete="list" aria-expanded={modelOpen} value={heroProduct ? heroProduct.name : heroSearch} disabled={!heroBrand} onFocus={() => { if (heroProduct) { setHeroProduct(null); setHeroSearch(''); setHeroStorage(''); setHeroCondition(''); } setModelOpen(true); }} onChange={(event) => { setHeroSearch(event.target.value); setHeroProduct(null); setHeroStorage(''); setHeroCondition(''); setModelOpen(true); }} placeholder="მოძებნე მოდელი" autoComplete="off" />
@@ -275,34 +275,34 @@ function LandingPage() {
               <p>ძველი — თანხად ან ტექნიკად.</p>
               <strong>₾2,282</strong>
               <small>მაქსიმალური შეფასება</small>
-              <img src={asset('imgImage350.png')} alt="" />
+              <img src={asset('imgImage350.png')} alt="" loading="lazy" decoding="async" />
             </Link>
             {shopEnabled ? (
               <Link className="zzv-figma-mini-card" to="/shop">
                 <span>მაღაზია</span>
                 <strong>ნაწილები</strong>
                 <small>გახსენი კატალოგი</small>
-                <img src={asset('imgShop1.png')} alt="" />
+                <img src={asset('imgShop1-440.webp')} alt="" width="440" height="440" loading="lazy" decoding="async" />
               </Link>
             ) : (
               <div className="zzv-figma-mini-card zzv-figma-shop-disabled" aria-disabled="true">
                 <span>მაღაზია</span>
                 <strong>მალე</strong>
                 <small>მაღაზია მზადდება</small>
-                <img src={asset('imgShop1.png')} alt="" />
+                <img src={asset('imgShop1-440.webp')} alt="" width="440" height="440" loading="lazy" decoding="async" />
               </div>
             )}
             <Link className="zzv-figma-mini-card" to="/warranty-service?tab=warranty">
               <span>გარანტია</span>
               <strong>12 თვე</strong>
               <small>დაცული შენაძენი</small>
-              <img src={asset('imgShield1.png')} alt="" />
+              <img src={asset('imgShield1-440.webp')} alt="" width="440" height="440" loading="lazy" decoding="async" />
             </Link>
             <Link className="zzv-figma-wide-card" to="/warranty-service?tab=case">
               <span>სერვისი</span>
               <strong>1,200+</strong>
               <small>დასრულებული შეკეთება</small>
-              <img src={asset('imgShield2.png')} alt="" />
+              <img src={asset('imgShield2.png')} alt="" loading="lazy" decoding="async" />
             </Link>
           </div>
         </div>
@@ -315,11 +315,11 @@ function LandingPage() {
           <p>გარანტიის კოდით ან სერვისის ნომრით — რეგისტრაცია არ სჭირდება.</p>
           <ul>
             <li>
-              <img src={asset('imgCheck.svg')} alt="" />
+              <img src={asset('imgCheck.svg')} alt="" loading="lazy" decoding="async" />
               <span>ნახავ, რა ეტაპზეა შეკეთება</span>
             </li>
             <li>
-              <img src={asset('imgCheck.svg')} alt="" />
+              <img src={asset('imgCheck.svg')} alt="" loading="lazy" decoding="async" />
               <span>გარანტიის ვადა და დაფარვა</span>
             </li>
           </ul>
@@ -367,12 +367,12 @@ function LandingPage() {
             {partIcons.map(([label, icon, count]) => (
               shopEnabled ? (
                 <Link className="zzv-figma-part-card" to="/shop" key={label}>
-                  <div><img src={asset(icon)} alt="" /><strong aria-hidden="true">↗</strong></div>
+                  <div><img src={asset(icon)} alt="" loading="lazy" decoding="async" /><strong aria-hidden="true">↗</strong></div>
                   <span>{label}</span>
                 </Link>
               ) : (
                 <div className="zzv-figma-part-card zzv-figma-shop-disabled" key={label} aria-disabled="true">
-                  <div><img src={asset(icon)} alt="" /><strong>{count}</strong></div>
+                  <div><img src={asset(icon)} alt="" loading="lazy" decoding="async" /><strong>{count}</strong></div>
                   <span>{label}</span>
                 </div>
               )
@@ -388,7 +388,7 @@ function LandingPage() {
             <div className="zzv-figma-review-quote">
               <div className="zzv-figma-stars" aria-hidden="true">
                 {Array.from({ length: 5 }).map((_, index) => (
-                  <img key={index} src={asset('imgStateFilled.svg')} alt="" />
+                  <img key={index} src={asset('imgStateFilled.svg')} alt="" loading="lazy" decoding="async" />
                 ))}
               </div>
               <p>ეკრანი შემიცვალეს ორ დღეში, გარანტიაც მომცეს. ძველი ტელეფონიც ჩავაბარე — თანხა იმავე დღეს ავიღე.</p>
@@ -435,7 +435,7 @@ function LandingPage() {
                   <div className="zzv-figma-widget-record">
                     <div className="zzv-figma-widget-record-label">
                       <span>
-                        <img src={asset('imgLandingShieldCheck.svg')} alt="" />
+                        <img src={asset('imgLandingShieldCheck.svg')} alt="" loading="lazy" decoding="async" />
                       </span>
                       <div>
                         <strong>გარანტია</strong>
@@ -468,7 +468,7 @@ function LandingPage() {
                   <div className="zzv-figma-widget-record">
                     <div className="zzv-figma-widget-record-label">
                       <span>
-                        <img src={asset('imgLandingWrench.svg')} alt="" />
+                        <img src={asset('imgLandingWrench.svg')} alt="" loading="lazy" decoding="async" />
                       </span>
                       <div>
                         <strong>სერვისის სტატუსი</strong>
@@ -518,7 +518,7 @@ function LandingPage() {
             <ButtonLink to="/trade-in">დაიწყე შეფასება</ButtonLink>
           </div>
           <div className="zzv-figma-footer-bottom">
-            <img src={asset('imgBrandMark.svg')} alt="ZEZVA" />
+            <img src={asset('imgBrandMark.svg')} alt="ZEZVA" loading="lazy" decoding="async" />
             <nav>
               {footerLinks.map(([label, to]) => (
                 to === '/shop' && !shopEnabled ? <span key={label} aria-disabled="true">{label} · მალე</span> : <Link key={label} to={to}>{label}</Link>
@@ -533,10 +533,10 @@ function LandingPage() {
             <ButtonLink to="/trade-in">შეაფასე უფასოდ</ButtonLink>
           </div>
           <div className="zzv-figma-footer-mobile-brand">
-            <img src={asset('imgBrandMark.svg')} alt="ZEZVA" />
+            <img src={asset('imgBrandMark.svg')} alt="ZEZVA" loading="lazy" decoding="async" />
             <p>ტელეფონის გადაცვლა, შეკეთება და ორიგინალი ნაწილები — ერთ ადგილას.</p>
             <div className="zzv-figma-footer-social" aria-label="Social media">
-              {socialLinks.map(({ name, url, icon }) => <a key={name} href={url} target="_blank" rel="noopener noreferrer" aria-label={name}><img src={asset(icon)} alt="" /></a>)}
+              {socialLinks.map(({ name, url, icon }) => <a key={name} href={url} target="_blank" rel="noopener noreferrer" aria-label={name}><img src={asset(icon)} alt="" loading="lazy" decoding="async" /></a>)}
             </div>
           </div>
           <div className="zzv-figma-footer-mobile-links">

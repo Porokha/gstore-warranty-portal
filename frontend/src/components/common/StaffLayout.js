@@ -1,4 +1,5 @@
 import React from 'react';
+import '../../styles/figma-admin.css';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {

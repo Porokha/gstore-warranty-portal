@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import '../../styles/figma-admin.css';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';

@@ -1,4 +1,5 @@
 import React from 'react';
+import '../../styles/figma-admin.css';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   AppBar,
