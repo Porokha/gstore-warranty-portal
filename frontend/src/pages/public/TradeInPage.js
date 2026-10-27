@@ -20,6 +20,7 @@ import {
 import { useInfiniteQuery, useQuery } from 'react-query';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
+import '../../styles/figma-trade.css';
 import { tradeInService } from '../../services/tradeInService';
 import FigmaTradeInValuation from './TradeInValuation';
 

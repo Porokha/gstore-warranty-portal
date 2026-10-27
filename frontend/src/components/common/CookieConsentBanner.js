@@ -21,17 +21,15 @@ export const readCookieConsent = () => {
 
 const CookieConsentBanner = () => {
   const { t } = useTranslation();
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(() => {
+    try {
+      return !window.localStorage.getItem(STORAGE_KEY);
+    } catch (error) {
+      return true;
+    }
+  });
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [choices, setChoices] = useState({ analytics: false, marketing: false });
-
-  useEffect(() => {
-    try {
-      setVisible(!window.localStorage.getItem(STORAGE_KEY));
-    } catch (error) {
-      setVisible(true);
-    }
-  }, []);
 
   useEffect(() => {
     const openSettings = () => {
