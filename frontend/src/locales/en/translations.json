@@ -107,7 +107,7 @@
     "moveCategoryUp": "Move {{category}} up",
     "moveCategoryDown": "Move {{category}} down",
     "availabilityStates": { "hidden": "Hidden", "soon": "Soon", "active": "Active" },
-    "statuses": { "pending": "Pending", "contacted": "Contacted", "accepted": "Accepted", "completed": "Completed", "cancelled": "Cancelled" }
+    "statuses": { "pending": "Pending", "contacted": "Contacted", "no_answer": "No Answer", "accepted": "Accepted", "completed": "Completed", "cancelled": "Cancelled" }
   },
   "shopOrders": {
     "title": "Orders",

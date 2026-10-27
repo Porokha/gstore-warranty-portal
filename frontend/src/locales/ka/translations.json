@@ -107,7 +107,7 @@
     "moveCategoryUp": "{{category}}-ის ზემოთ გადატანა",
     "moveCategoryDown": "{{category}}-ის ქვემოთ გადატანა",
     "availabilityStates": { "hidden": "გამორთულია", "soon": "მალე", "active": "აქტიური" },
-    "statuses": { "pending": "მოლოდინში", "contacted": "დაკავშირებული", "accepted": "მიღებული", "completed": "დასრულებული", "cancelled": "გაუქმებული" }
+    "statuses": { "pending": "მოლოდინში", "contacted": "დაკავშირებული", "no_answer": "ვერ ვუკავშირდებით", "accepted": "მიღებული", "completed": "დასრულებული", "cancelled": "გაუქმებული" }
   },
   "shopOrders": {
     "title": "შეკვეთები",

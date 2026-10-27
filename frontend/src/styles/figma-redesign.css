@@ -181,6 +181,7 @@
 .zzv-shop-tradein__status .MuiOutlinedInput-notchedOutline { border: 0; }
 .zzv-shop-tradein__status--pending { color: #b96b14; background: #fff6e9; }
 .zzv-shop-tradein__status--contacted { color: #3868c4; background: #edf3ff; }
+.zzv-shop-tradein__status--no_answer { color: #805b17; background: #f9f2df; }
 .zzv-shop-tradein__status--accepted { color: #5f32d4; background: #f2edff; }
 .zzv-shop-tradein__status--completed { color: #188256; background: #eaf8f1; }
 .zzv-shop-tradein__status--cancelled { color: #9c5563; background: #fdf0f1; }

@@ -42,6 +42,20 @@ describe('TradeInService quote viewing', () => {
     });
   });
 
+  it('allows a quote to be marked no answer without losing its details', async () => {
+    const quote = { id: 7, status: 'pending', customer_email: 'customer@example.com', notes: 'Call after 5', viewed_at: null };
+    manager.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce(quote);
+
+    await service.updateQuote(7, { status: 'no_answer' } as any);
+
+    expect(quote).toMatchObject({
+      status: 'no_answer',
+      customer_email: 'customer@example.com',
+      notes: 'Call after 5',
+    });
+    expect(manager.save).toHaveBeenCalledWith(quote);
+  });
+
   it('requires the agreement flow before marking a quote completed', async () => {
     manager.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: 7, status: 'accepted' });
     await expect(service.updateQuote(7, { status: 'completed' } as any)).rejects.toThrow(BadRequestException);

@@ -12,6 +12,7 @@ import { TradeInProduct } from './trade-in-product.entity';
 export enum TradeInQuoteStatus {
   PENDING = 'pending',
   CONTACTED = 'contacted',
+  NO_ANSWER = 'no_answer',
   ACCEPTED = 'accepted',
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
@@ -52,7 +53,7 @@ export class TradeInQuote {
 
   @Column({
     type: 'enum',
-    enum: ['pending', 'contacted', 'accepted', 'completed', 'cancelled'],
+    enum: ['pending', 'contacted', 'no_answer', 'accepted', 'completed', 'cancelled'],
     default: TradeInQuoteStatus.PENDING,
   })
   status: TradeInQuoteStatus;

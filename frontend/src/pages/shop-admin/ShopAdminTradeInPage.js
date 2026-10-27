@@ -56,7 +56,8 @@ const headerCell = {
   textTransform: 'uppercase',
 };
 
-const quoteGridColumns = '125px minmax(210px, 1.3fr) 130px minmax(300px, 1.2fr) 105px 145px 116px';
+const quoteGridColumns = '125px minmax(210px, 1.3fr) 130px minmax(300px, 1.2fr) 105px 185px 116px';
+const quoteStatuses = ['pending', 'contacted', 'no_answer', 'accepted', 'completed', 'cancelled'];
 
 const phoneDialerHref = (phone) => {
   const value = String(phone || '').trim();
@@ -618,7 +619,7 @@ const ShopAdminTradeInPage = () => {
               <FormControl size="small" sx={{ minWidth: 180 }}>
                 <Select value={quoteStatus} displayEmpty onChange={(event) => { setQuoteStatus(event.target.value); setQuotePage(1); }}>
                   <MenuItem value="">{t('shopTradeIn.allStatuses')}</MenuItem>
-                  {['pending', 'contacted', 'accepted', 'completed', 'cancelled'].map((status) => (
+                  {quoteStatuses.map((status) => (
                     <MenuItem key={status} value={status}>{t(`shopTradeIn.statuses.${status}`)}</MenuItem>
                   ))}
                 </Select>
@@ -680,7 +681,7 @@ const ShopAdminTradeInPage = () => {
 
         {tab === 0 && (
           <Box className="zzv-shop-tradein__quote-filters">
-            {['', 'pending', 'contacted', 'accepted', 'completed', 'cancelled'].map((status) => (
+            {['', ...quoteStatuses].map((status) => (
               <button key={status || 'all'} type="button" className={quoteStatus === status ? 'is-active' : ''} onClick={() => { setQuoteStatus(status); setQuotePage(1); }}>
                 {status ? t(`shopTradeIn.statuses.${status}`) : t('shopTradeIn.all')}
               </button>
@@ -715,7 +716,7 @@ const ShopAdminTradeInPage = () => {
             {tab === 0 && (
               <>
               <Box className="zzv-shop-tradein__quotes-scroll">
-                <Box sx={{ minWidth: 1260 }}>
+                <Box sx={{ minWidth: 1320 }}>
                   <Box className="zzv-shop-tradein__quote-row zzv-shop-tradein__quote-row--head" sx={{ display: 'grid', gridTemplateColumns: quoteGridColumns, gap: 2, px: 2, py: 1.25, bgcolor: '#f8f9fc' }}>
                     {[t('shopTradeIn.number'), t('shopTradeIn.deviceCustomer'), t('shopTradeIn.phone'), t('shopTradeIn.offer'), t('shopTradeIn.created'), t('shopTradeIn.status'), t('shopTradeIn.actions')].map((label) => <Typography key={label} sx={headerCell}>{label}</Typography>)}
                   </Box>
@@ -759,7 +760,7 @@ const ShopAdminTradeInPage = () => {
                         onChange={(event) => quoteMutation.mutate({ id: quote.id, payload: { status: event.target.value } })}
                         sx={{ borderRadius: '7px !important', fontSize: 12 }}
                       >
-                        {['pending', 'contacted', 'accepted', 'completed', 'cancelled'].map((status) => <MenuItem key={status} value={status} disabled={status === 'completed' && quote.status !== 'completed'}>{t(`shopTradeIn.statuses.${status}`)}</MenuItem>)}
+                        {quoteStatuses.map((status) => <MenuItem key={status} value={status} disabled={status === 'completed' && quote.status !== 'completed'}>{t(`shopTradeIn.statuses.${status}`)}</MenuItem>)}
                       </Select>
                       <Stack direction="row" spacing={0.5}>
                         <Tooltip title={t('shopTradeIn.viewRequest')}>
@@ -1190,7 +1191,7 @@ const ShopAdminTradeInPage = () => {
             <div className="zzv-tradein-quote-edit__fields">
               <div><label htmlFor="tradein-quote-product">{t('shopTradeIn.product')}</label><TextField id="tradein-quote-product" size="small" fullWidth value={quoteForm.product_name} onChange={(event) => setQuoteForm((prev) => ({ ...prev, product_name: event.target.value }))} /></div>
               <div><label htmlFor="tradein-quote-offer">{t('shopTradeIn.finalOfferGel')}</label><TextField id="tradein-quote-offer" size="small" fullWidth type="number" inputProps={{ min: 0, step: 0.01 }} value={quoteForm.final_price} onChange={(event) => setQuoteForm((prev) => ({ ...prev, final_price: event.target.value }))} /></div>
-              <div><label htmlFor="tradein-quote-status">{t('shopTradeIn.status')}</label><TextField id="tradein-quote-status" select size="small" fullWidth value={quoteForm.status} onChange={(event) => setQuoteForm((prev) => ({ ...prev, status: event.target.value }))}>{['pending', 'contacted', 'accepted', 'completed', 'cancelled'].map((status) => <MenuItem key={status} value={status} disabled={status === 'completed' && quoteForm.status !== 'completed'}>{t(`shopTradeIn.statuses.${status}`)}</MenuItem>)}</TextField></div>
+              <div><label htmlFor="tradein-quote-status">{t('shopTradeIn.status')}</label><TextField id="tradein-quote-status" select size="small" fullWidth value={quoteForm.status} onChange={(event) => setQuoteForm((prev) => ({ ...prev, status: event.target.value }))}>{quoteStatuses.map((status) => <MenuItem key={status} value={status} disabled={status === 'completed' && quoteForm.status !== 'completed'}>{t(`shopTradeIn.statuses.${status}`)}</MenuItem>)}</TextField></div>
               <div><label htmlFor="tradein-quote-date">{t('shopTradeIn.created')}</label><TextField id="tradein-quote-date" size="small" fullWidth value={editingQuote?.created_at ? new Date(editingQuote.created_at).toLocaleDateString(i18n.language === 'ka' ? 'ka-GE' : 'en-GB') : ''} InputProps={{ readOnly: true }} /></div>
             </div>
           </section>
