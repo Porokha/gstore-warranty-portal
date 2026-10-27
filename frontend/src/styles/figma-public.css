@@ -5,7 +5,7 @@
   --zzv-bg-inverse: #14121c;
   --zzv-text-primary: #14121c;
   --zzv-text-secondary: #5b5670;
-  --zzv-text-tertiary: #9c97ae;
+  --zzv-text-tertiary: #6b647d;
   --zzv-border-subtle: #eae7f2;
   --zzv-border-default: #d6d2e2;
   --zzv-purple-500: #7c4df5;
@@ -445,6 +445,7 @@ button.zzv-public-header-action { cursor: pointer; }
   font: 400 16px/1.55 var(--zzv-font);
 }
 .zzv-figma-select:is(select, button) { cursor: pointer; }
+.zzv-figma-select::placeholder { color: var(--zzv-text-tertiary); opacity: 1; }
 .zzv-figma-select:is(input, select):focus { outline: none; border-color: var(--zzv-purple-500); box-shadow: 0 0 0 3px rgba(124,77,245,.12); }
 .zzv-figma-select:disabled { background: var(--zzv-bg-subtle); cursor: not-allowed; }
 .zzv-figma-select.is-muted { color: var(--zzv-text-tertiary); }
@@ -454,7 +455,7 @@ button.zzv-public-header-action { cursor: pointer; }
 .zzv-figma-dropdown .zzv-figma-select > span { overflow: hidden; flex: 1; text-overflow: ellipsis; white-space: nowrap; }
 .zzv-figma-dropdown .zzv-figma-select svg { width: 20px; height: 20px; flex: 0 0 auto; transition: transform .18s ease; }
 .zzv-figma-dropdown .zzv-figma-select[aria-expanded="true"] svg { transform: rotate(180deg); }
-.zzv-figma-dropdown .zzv-figma-select:disabled { opacity: .6; cursor: not-allowed; }
+.zzv-figma-dropdown .zzv-figma-select:disabled { cursor: not-allowed; }
 .zzv-figma-dropdown-list { position: absolute; z-index: 12; top: 100%; right: 0; left: 0; max-height: 240px; overflow-y: auto; margin-top: 5px; padding: 5px; border: 1px solid var(--zzv-border-default); border-radius: 12px; background: #fff; box-shadow: 0 16px 36px rgba(20,18,28,.16); }
 .zzv-figma-dropdown-list button { display: block; width: 100%; padding: 10px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--zzv-text-primary); font: 400 14px/1.4 var(--zzv-font); text-align: left; cursor: pointer; }
 .zzv-figma-dropdown-list button:hover:not(:disabled), .zzv-figma-dropdown-list button[aria-selected="true"] { background: #f1edff; color: #5f32d4; }
@@ -708,6 +709,7 @@ button.zzv-public-header-action { cursor: pointer; }
   right: 20px;
   bottom: 12px;
   width: 110px;
+  height: auto;
 }
 
 .zzv-figma-status {
@@ -754,10 +756,9 @@ button.zzv-public-header-action { cursor: pointer; }
 
 .zzv-figma-status p {
   max-width: 560px;
-  color: rgba(255, 255, 255, 0.68);
+  color: #dad7e3;
   font-size: 14px;
   line-height: 1.5;
-  opacity: 0.55;
 }
 
 .zzv-figma-status ul {
@@ -853,7 +854,7 @@ button.zzv-public-header-action { cursor: pointer; }
 }
 
 .zzv-figma-input:focus { border-color: var(--zzv-purple-500); }
-.zzv-figma-input::placeholder { color: var(--zzv-text-tertiary); }
+.zzv-figma-input::placeholder { color: var(--zzv-text-tertiary); opacity: 1; }
 
 .zzv-figma-widget-submit {
   width: 100%;
